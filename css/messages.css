@@ -1,0 +1,1380 @@
+/* ==========================================================================
+   Messages workspace styles — Round 13 redesign.
+
+   Design approach (see design plan notes below for the reasoning):
+     - Built entirely from the existing NextaStore brand tokens in main.css
+       (ink-green / store-green / accent-gold / paper) — no new palette.
+     - Fluid, clamp()-based spacing and type so the layout scales
+       continuously across phone widths instead of jumping at a handful of
+       named breakpoints. Structural breakpoints are reserved for real
+       layout-mode changes (two-pane -> single sliding pane).
+     - One real IA improvement: an All / Unread segmented filter, animated
+       with a CSS :has() selector rather than JS-measured pixel math.
+     - Read receipts read as tick marks (a chat-native idiom), not text.
+     - Safe-area and dvh aware, now that this app also runs as an installed
+       PWA (status bar can sit above the topbar with no browser chrome).
+     - One motion beat on mobile (the pane slide) — everything else is
+       instant state, no scattered hover choreography.
+
+   Structure of this file:
+     1. Shared app topbar (.messages-topbar) — also used by favorites.html,
+        following.html and orders.html; only messages-page-scoped rules were
+        added here so the other pages are unaffected.
+     2. Page shell layout (body.messages-page / .messages-shell).
+     3. Conversation list (search, filter tabs, header, rows, states).
+     4. Conversation thread (header, day dividers, grouped bubbles, composer,
+        empty/loading/error states for every scenario).
+     5. Buyer order-history page (orders.html) — unchanged from the previous
+        revision; kept verbatim since favorites/following/orders all depend
+        on these selectors.
+     6. Responsive: fluid scale + structural breakpoints + orientation/
+        safe-area/container-query refinements.
+   ========================================================================== */
+
+:root {
+    /* Fluid tokens for the messages workspace only — interpolate smoothly
+       between a small phone and a comfortable desktop pane instead of
+       jumping at fixed breakpoints. */
+    --msg-pad-inline: clamp(0.85rem, 3.6vw, 1.3rem);
+    --msg-pad-block: clamp(0.7rem, 2.6vw, 1.1rem);
+    --msg-avatar: clamp(40px, 10vw, 46px);
+    --msg-bubble-font: clamp(0.83rem, 0.78rem + 0.2vw, 0.9rem);
+    --msg-radius: clamp(14px, 3vw, 18px);
+}
+
+.messages-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid rgba(11, 59, 43, 0.10);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 18px rgba(11, 59, 43, 0.04);
+    flex-shrink: 0;
+    /* backdrop-filter creates its own stacking context, which silently traps
+       any absolutely-positioned descendant (the notification preview and
+       account-menu dropdown live inside .account-nav-slot here) below
+       whatever comes later in the DOM — in this case the whole messages
+       workspace in <main>. Giving the topbar itself a position + z-index
+       (same convention as .navbar in main.css) lifts that entire stacking
+       context above <main> so the dropdowns render on top as expected. */
+    position: relative;
+    z-index: 1000;
+}
+
+/* PWA / notch safe-area: only applied on the messages page shell so other
+   pages that share .messages-topbar are unaffected. */
+body.messages-page .messages-topbar {
+    padding-top: max(var(--spacing-md), calc(env(safe-area-inset-top) + 0.55rem));
+    padding-left: max(var(--spacing-lg), calc(env(safe-area-inset-left) + var(--spacing-lg)));
+    padding-right: max(var(--spacing-lg), calc(env(safe-area-inset-right) + var(--spacing-lg)));
+}
+
+/* ---- Page shell: flex column so the workspace fills the viewport without
+   guessing the topbar's exact height (it can wrap on very narrow screens).
+   The messages page has no marketing footer (see messages.html) — like any
+   inbox-style app view (Gmail, Slack, DM panels) the topbar + workspace
+   should own the full viewport instead of ceding space to page chrome
+   underneath, which is what made the workspace feel cramped on mobile.
+
+   height (not min-height) + overflow:hidden pins the topbar and the credit
+   line in place on every device: the page itself never scrolls, so the
+   header and "Powered by" line stay visible no matter what. Only the two
+   inner panes below (.conversation-list-body and .thread-messages) get
+   their own scrollbars — the WhatsApp-style behaviour asked for: you never
+   need to scroll the page to reach the composer or send a message, you
+   only scroll to see older chats/messages.
+
+   Round 8: `height: 100dvh` + `overflow: hidden` alone is not enough. Two
+   real bugs came from relying on it:
+     1. `dvh`/`svh` disagree across engines on exactly what "dynamic
+        viewport" means once a page is launched from the home screen —
+        this is the actual source of the browser-vs-PWA size difference
+        (a plain browser tab and the installed standalone app were
+        resolving a different pixel value for the same physical screen).
+     2. iOS Safari has a long-standing bug where focusing an input (the
+        conversation search box, the composer) can still scroll the whole
+        *document* upward to "reveal" it, even though the document is
+        `overflow: hidden` and shouldn't be scrollable at all — which is
+        exactly what was shoving the topbar off the top of the screen.
+   `position: fixed; inset: 0` pins the shell to the viewport itself
+   rather than sizing it with a length unit, which a fixed element cannot
+   be document-scrolled out of — that alone fixes bug 2. Bug 1 is fixed by
+   computing the real, current visual-viewport height ourselves in JS
+   (see `syncViewportHeight` in js/messages.js) into `--app-vh` and using
+   that instead of trusting the browser's own dvh/svh resolution — so a
+   browser tab and the same page running as an installed PWA now measure
+   the same thing, identically, on every device. `height: 100dvh` is kept
+   only as the pre-JS fallback (first paint, or if JS is ever disabled). */
+body.messages-page {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+/* Slim credit line — the full marketing footer was removed from this page
+   because a brand lockup, five links and a copyright line ate real chat
+   space on mobile; this is deliberately a single unobtrusive line instead.
+   It now stays visible at all times, including with a thread open on
+   mobile — it costs one slim row of the fixed shell's height, which the
+   flexible panes above it simply give back the way they already do for
+   every other fixed-height element in this column. */
+.messages-credit {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0.5rem 1rem max(0.5rem, env(safe-area-inset-bottom));
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--gray-500);
+    background: #fff;
+    border-top: 1px solid rgba(11, 59, 43, 0.08);
+}
+.messages-credit .brand-link { color: var(--primary, #00b074); font-weight: 600; }
+
+.messages-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    width: 100%;
+    max-width: 1240px;
+    margin: 1.25rem auto;
+    border: 1px solid rgba(11, 59, 43, 0.10);
+    border-radius: 24px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+/* ==========================================================================
+   Conversation list
+   ========================================================================== */
+
+.conversation-list {
+    border-right: 1px solid rgba(11, 59, 43, 0.10);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #FBFDFC;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    container-type: inline-size;
+    container-name: convlist;
+}
+
+.conversation-list-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #FBFDFC;
+    flex-shrink: 0;
+}
+
+.conversation-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 1.2rem var(--msg-pad-inline) 0.9rem;
+    background: linear-gradient(135deg, #F0FAF5, #fff);
+    border-bottom: 1px solid rgba(1, 176, 117, 0.12);
+}
+.conversation-list-header h2 { margin: 0; font-size: 1.15rem; }
+.conversation-total-badge {
+    background: var(--accent-gold);
+    color: #5B3D00;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.24rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.conversation-total-badge.hidden { display: none; }
+
+.conversation-search-wrap {
+    position: relative;
+    padding: 0.85rem var(--msg-pad-inline) 0.6rem;
+    background: linear-gradient(135deg, #F0FAF5, #fff);
+}
+.conversation-search-wrap i.fa-search {
+    position: absolute;
+    left: calc(var(--msg-pad-inline) + 0.55rem);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 0.78rem;
+    pointer-events: none;
+}
+.conversation-search-wrap input {
+    width: 100%;
+    padding: 0.62rem 2.1rem 0.62rem 2.15rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.82rem;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.conversation-search-wrap input::-webkit-search-cancel-button { display: none; }
+.conversation-search-wrap input:focus { border-color: var(--store-green); box-shadow: 0 0 0 3px rgba(1, 176, 117, 0.10); }
+.conversation-search-clear {
+    position: absolute;
+    right: calc(var(--msg-pad-inline) + 0.3rem);
+    top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: var(--gray-100);
+    width: 22px;
+    height: 22px;
+    min-height: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--gray-600);
+    font-size: 0.62rem;
+    cursor: pointer;
+    padding: 0;
+}
+.conversation-search-clear.hidden { display: none; }
+
+/* ---- Segmented All / Unread filter ----
+   A single sliding pill, positioned with a CSS :has() selector instead of
+   JS measuring button widths — it only ever has two equal-width children,
+   so a 50% transform is exact with no measurement needed. */
+.conversation-filter-tabs {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin: 0.7rem var(--msg-pad-inline) 0.9rem;
+    padding: 3px;
+    background: var(--gray-100);
+    border-radius: 999px;
+    isolation: isolate;
+}
+.conversation-filter-tabs::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    width: calc(50% - 3px);
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(11, 59, 43, 0.14);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+}
+.conversation-filter-tabs:has(.filter-tab[data-filter="unread"].is-active)::after {
+    transform: translateX(100%);
+}
+.filter-tab {
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    padding: 0.42rem 0.5rem;
+    min-height: 32px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+.filter-tab.is-active { color: var(--ink); }
+.filter-tab:focus-visible { outline: 2px solid var(--store-green); outline-offset: 2px; }
+
+.conversation-list-body { flex: 1; min-height: 0; }
+
+/* ---- Custom pull-to-refresh (conversation list + an open thread's older
+   history) ----
+   Native pull-to-refresh needs the *document* to scroll and rubber-band,
+   but this page is deliberately pinned to the screen (position:fixed
+   shell above) so the header/search/filter/composer/credit line can never
+   be scrolled out of view — on the browser tab or the installed PWA. That
+   blocks native pull-to-refresh too, in both places, so it's reimplemented
+   by hand: a small indicator that grows while someone drags down past the
+   very top of an already-scrolled-to-top pane, and fires a refresh once
+   released past its threshold. See bindPullToRefresh() in js/messages.js.
+   Shared by #conversationList (refreshes the list) and #threadMessages
+   (loads older messages) — same look, same behaviour, both places. */
+.ptr-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 0;
+    overflow: hidden;
+    color: var(--store-green);
+    font-size: 0.78rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.ptr-indicator:not(.is-active) { transition: height 0.18s ease; }
+.ptr-indicator i { font-size: 0.85rem; transition: transform 0.15s ease; }
+.ptr-indicator.is-ready i { transform: rotate(180deg); }
+.ptr-indicator.is-loading i { animation: ptr-spin 0.7s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .ptr-indicator.is-loading i { animation: none; }
+}
+
+.conversation-item {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+    width: 100%;
+    padding: var(--msg-pad-block) var(--msg-pad-inline);
+    border: 0;
+    border-bottom: 1px solid #EDF2EF;
+    background: #fff;
+    color: inherit;
+    text-align: left;
+    min-height: 74px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.conversation-item::before {
+    /* Left accent bar — replaces the old inset box-shadow so active AND
+       unread can each speak without fighting for the same visual slot. */
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: transparent;
+}
+.conversation-item.is-unread::before { background: var(--accent-gold); }
+.conversation-item.active::before { background: var(--store-green); }
+
+.conversation-item:hover { background: #F3FAF7; }
+.conversation-item:focus-visible { outline: 2px solid var(--store-green); outline-offset: -2px; }
+.conversation-item.active { background: #EAF8F1; }
+.conversation-item.is-unread .conversation-item-name { font-weight: 800; color: var(--ink); }
+.conversation-item.is-unread .conversation-item-preview { color: var(--gray-800); font-weight: 600; }
+
+.conversation-item-topline { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.conversation-item-topline time { font-size: 0.7rem; color: var(--gray-500); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+.conversation-item-thumb {
+    position: relative;
+    width: var(--msg-avatar);
+    height: var(--msg-avatar);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E6F6EF, #DCF3E7);
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(1, 176, 117, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--store-green);
+    flex-shrink: 0;
+    font-size: 1rem;
+    transition: box-shadow 0.15s ease;
+}
+.conversation-item-thumb .presence-dot { right: -1px; bottom: -1px; width: 9px; height: 9px; border-width: 1.5px; }
+.conversation-item.is-unread .conversation-item-thumb { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(255, 176, 56, 0.5); }
+
+.conversation-item-info { flex: 1; min-width: 0; }
+.conversation-item-name { font-weight: 600; font-size: 0.84rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.conversation-item-preview { display: block; font-size: 0.8125rem; color: var(--gray-600); margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-item-unread-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-gold); box-shadow: 0 0 0 4px rgba(255, 176, 56, 0.13); flex-shrink: 0; margin-top: 4px; }
+
+.conversation-product-context { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--gray-600); margin: 0.25rem 0; }
+.conversation-product-thumb { width: 22px; height: 22px; border-radius: 5px; background-size: cover; background-position: center; flex: 0 0 auto; }
+.conversation-unread-count { min-width: 22px; height: 22px; border-radius: 999px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; padding: 0 0.35rem; align-self: center; flex-shrink: 0; }
+
+.messages-load-more, .messages-load-older {
+    display: block;
+    margin: 0.9rem auto;
+    border-radius: 999px;
+}
+
+/* Container query: once the list itself gets tight (a squeezed tablet
+   sidebar, not just a narrow phone), drop the product-context row so the
+   name and preview keep breathing room. */
+@container convlist (max-width: 300px) {
+    .conversation-product-context { display: none; }
+}
+
+/* ---- Loading / error / empty states shared by the conversation list ---- */
+.message-list-skeleton { display: flex; gap: 0.85rem; padding: 1rem 1.1rem; align-items: center; }
+.message-list-skeleton .skeleton-avatar { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; }
+.message-list-skeleton .skeleton-lines { flex: 1; min-width: 0; }
+.loading-spinner-inline { text-align: center; padding: var(--spacing-xl); color: var(--gray-500, #6b7280); }
+
+.conversation-list-body > .empty-state { padding: 2.5rem 1.5rem; }
+.conversation-list-body > .empty-state.compact { padding: 2rem 1.25rem; }
+.conversation-list-body > .empty-state .empty-icon,
+.conversation-search-empty .empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 0.9rem;
+    border-radius: 18px;
+    background: #EAF8F1;
+    color: var(--store-green);
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+}
+.conversation-list-body > .empty-state h3 { color: var(--ink); font-size: 1rem; }
+.conversation-list-body > .empty-state p { color: var(--gray-600); font-size: 0.85rem; }
+
+/* ==========================================================================
+   Conversation thread
+   ========================================================================== */
+
+.conversation-thread { display: flex; flex-direction: column; background: #fff; min-height: 0; position: relative; }
+.conversation-thread .empty-state { margin: auto; }
+.conversation-thread > .empty-state { padding: 2.5rem; }
+.conversation-thread > .empty-state .empty-icon { width: 68px; height: 68px; margin: 0 auto 0.9rem; border-radius: 20px; background: #EAF8F1; color: var(--store-green); display: grid; place-items: center; font-size: 1.55rem; }
+.conversation-thread > .empty-state h3 { color: var(--ink); }
+.conversation-thread > .empty-state p { color: var(--gray-600); }
+
+.thread-view { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; }
+.thread-view.hidden { display: none; }
+#threadEmptyState.hidden { display: none; }
+
+.thread-header-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(11, 59, 43, 0.10);
+    background: linear-gradient(135deg, #fff, #F7FBF9);
+    flex-shrink: 0;
+}
+.thread-back-btn {
+    display: none;
+    border: 0;
+    background: transparent;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    color: var(--ink);
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 0.6rem;
+    align-items: center;
+    justify-content: center;
+}
+.thread-back-btn:hover { background: var(--gray-100); }
+
+.thread-header {
+    display: flex;
+    align-items: center;
+    min-height: 60px;
+    padding: var(--msg-pad-block) 1.3rem;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+}
+.thread-header-identity { display: flex !important; flex-direction: row !important; align-items: center; gap: 0.75rem; min-width: 0; }
+/* Buyer-side headers render as an <a> (see js/messages.js renderThread /
+   prepareNewConversation) so the name/avatar can jump straight to that
+   store's page — reset the default link look so it still reads as plain
+   header text, with just a subtle hover/focus cue that it's tappable. */
+a.thread-header-identity { text-decoration: none; color: inherit; cursor: pointer; border-radius: 10px; transition: background 0.15s ease; padding: 0.3rem 0.4rem; margin: -0.3rem -0.4rem; }
+a.thread-header-identity:hover, a.thread-header-identity:focus-visible { background: rgba(1, 176, 117, 0.08); }
+a.thread-header-identity:hover strong { text-decoration: underline; text-decoration-color: rgba(11, 59, 43, 0.35); }
+a.thread-header-identity:focus-visible { outline: 2px solid var(--store-green); outline-offset: 2px; }
+.thread-header-avatar {
+    position: relative;
+    width: var(--msg-avatar);
+    height: var(--msg-avatar);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #E6F6EF, #DCF3E7);
+    background-size: cover;
+    background-position: center;
+    color: var(--store-green);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(1, 176, 117, 0.14);
+}
+.thread-header-avatar .presence-dot { right: -1px; bottom: -1px; }
+/* NOTE: was ".thread-header div" — that also matched .thread-header-identity
+   itself (it's a div too), and being class+type it beat the plain-class rule
+   above on specificity, silently flipping the identity row to a grid and
+   stacking the avatar above the name instead of beside it. Scoping to the
+   text wrapper only (its direct child div) fixes the avatar/name layout
+   without touching anything else. */
+.thread-header-identity > div { display: grid; gap: 0.15rem; min-width: 0; line-height: 1.3; }
+.thread-header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95rem; letter-spacing: -0.01em; }
+.thread-header span { font-size: 0.75rem; color: var(--gray-500); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The presence line sits under the product-name subtitle (or on its own,
+   when there is no product) rather than inline with it — .thread-header
+   span above already gives it the right size/color, this just puts it on
+   its own row and hides it while nothing is known yet. */
+.thread-header-status { display: block; }
+.thread-header-status:empty { display: none; }
+
+.thread-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding: var(--msg-pad-inline);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: radial-gradient(circle at top right, rgba(46, 221, 162, 0.07), transparent 35%);
+    /* Deliberately NOT scroll-behavior: smooth here. Every "jump to
+       bottom" in messages.js (opening a thread, a fresh send, a poll that
+       lands while already at the bottom) sets scrollTop directly, and this
+       property animated ALL of those the same way a real scroll gesture
+       is animated — including the very first paint of a long thread, which
+       made simply opening a conversation look like a slow, janky scroll
+       down instead of just... being at the bottom already. The one place
+       an animated scroll is actually wanted — the "jump to newest" button —
+       asks for it explicitly via scrollTo({behavior:'smooth'}) instead
+       (see scrollBottomBtn's click handler), which works with or without
+       this being set here. */
+}
+
+.thread-day-divider { display: flex; align-items: center; justify-content: center; margin: 0.6rem 0 0.35rem; }
+.thread-day-divider:first-child { margin-top: 0; }
+.thread-day-divider span {
+    background: rgba(11, 59, 43, 0.07);
+    color: var(--gray-600);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.32rem 0.8rem;
+    border-radius: 999px;
+}
+
+.thread-message {
+    max-width: min(70%, 480px);
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--msg-radius) var(--msg-radius) var(--msg-radius) 6px;
+    font-size: var(--msg-bubble-font);
+    line-height: 1.45;
+    background: #F1F5F3;
+    color: var(--gray-800);
+    box-shadow: 0 2px 8px rgba(11, 59, 43, 0.04);
+    align-self: flex-start;
+    overflow-wrap: anywhere;
+}
+.thread-message span:first-child { white-space: pre-wrap; }
+
+.thread-message.is-mine {
+    border-radius: var(--msg-radius) var(--msg-radius) 6px var(--msg-radius);
+    background: linear-gradient(135deg, var(--brand-green-light), var(--brand-green-dark));
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(0, 133, 88, 0.16);
+    align-self: flex-end;
+}
+
+/* Consecutive bubbles from the same sender: keep a soft continuation corner
+   so the run reads as one block instead of repeating a hard "new message"
+   tail on every line. */
+.thread-message.is-mine.is-grouped { border-top-right-radius: 6px; }
+.thread-message:not(.is-mine).is-grouped { border-top-left-radius: 6px; }
+
+.thread-message-meta { display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; font-size: 0.68rem; opacity: 0.75; margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
+.thread-message-meta time { line-height: 1; }
+
+/* Read receipts as WhatsApp-style ticks — the idiom people already read a
+   chat with — rather than the literal words "Sent"/"Read". The text stays
+   for screen readers via the visually-hidden span the JS still emits. */
+.message-receipt { display: inline-flex; align-items: center; line-height: 1; font-size: 0.85em; }
+.message-receipt::before { content: '\2713'; }
+/* The "read" double-tick used to be a pale mint (#C9F4E3) on the same green
+   bubble as the "sent" single-tick, so the two states were nearly
+   indistinguishable at a glance — defeating the point of a read receipt.
+   A clearly different hue (the light-blue "seen" convention most chat apps
+   use) reads as a distinct state at this size against either bubble color. */
+.message-receipt[data-status="read"]::before { content: '\2713\2713'; color: #53BDEB; letter-spacing: -1px; }
+/* BUG FIX: .is-pending and .is-failed render their own <i> icon (a clock,
+   a warning triangle) instead of the tick — but the bare `::before` rule
+   above matches EVERY .message-receipt regardless of what other class it
+   also carries, so without this override both a pending AND a failed
+   message showed the checkmark glyph and the icon overlapping right next
+   to each other. */
+.message-receipt.is-pending::before,
+.message-receipt.is-failed::before { content: none; }
+.message-receipt.is-pending { color: inherit; opacity: 0.75; }
+.message-receipt.is-failed { color: var(--danger); }
+.message-receipt .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.scroll-bottom-btn {
+    position: absolute;
+    right: 1.15rem;
+    bottom: 5.5rem;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--store-green);
+    border: 1px solid rgba(11, 59, 43, 0.12);
+    box-shadow: var(--shadow-md);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.scroll-bottom-btn:hover { transform: translateY(-2px); }
+.scroll-bottom-btn.hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(6px); }
+.scroll-bottom-btn-label.hidden { display: none; }
+/* When a poll delivers a genuinely new message while the reader has
+   scrolled up to review older ones, the button grows a pill with a label
+   instead of staying a bare arrow — distinguishing "you're not at the
+   bottom" (always available once scrolled up) from "something you haven't
+   seen just arrived" (only when it's actually true). */
+.scroll-bottom-btn.has-new {
+    width: auto;
+    height: 36px;
+    padding: 0 0.85rem 0 0.7rem;
+    border-radius: 999px;
+    gap: 0.4rem;
+    background: var(--store-green);
+    color: #fff;
+    border-color: transparent;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.scroll-bottom-btn.has-new .scroll-bottom-btn-label { display: inline; }
+
+.thread-reply {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: var(--msg-pad-block) var(--msg-pad-inline);
+    border-top: 1px solid rgba(11, 59, 43, 0.10);
+    background: rgba(255, 255, 255, 0.96);
+    flex-shrink: 0;
+    padding-bottom: max(var(--msg-pad-block), calc(env(safe-area-inset-bottom) + 0.6rem));
+}
+/* flex-wrap is nowrap by default, but pinning it explicitly here means the
+   +, the text field and Send are *guaranteed* to stay on one row on every
+   device — including narrow phones — rather than depending on none of the
+   three children ever growing past the row's width by accident. */
+.thread-reply-row { display: flex; flex-wrap: nowrap; gap: var(--spacing-sm); align-items: flex-end; }
+.thread-reply textarea {
+    width: 100%;
+    min-height: 48px;
+    max-height: 140px;
+    resize: none;
+    border: 1px solid var(--gray-200);
+    border-radius: 14px;
+    padding: 0.75rem 3.7rem 0.75rem 0.9rem;
+    font: inherit;
+    font-size: 16px;
+    background: #fff;
+    outline: none;
+    /* Hidden by default: at one empty row the field's scrollHeight can end
+       up a hair taller than its clientHeight (rounding on line-height +
+       padding), which made a scrollbar/scroll affordance flash in before
+       anyone had typed a single character. js/messages.js (autoResizeInput)
+       switches this to `auto` only once real content actually needs it
+       (past the 140px cap), so a scrollbar only ever appears when there's
+       something to scroll to. */
+    overflow-y: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.thread-reply textarea:focus { border-color: var(--store-green); box-shadow: 0 0 0 3px rgba(1, 176, 117, 0.10); }
+.thread-reply .btn { min-width: 96px; flex-shrink: 0; }
+#threadSendBtn.btn-primary {
+    height: 48px;
+    border-radius: 999px;
+    padding: 0 1.35rem;
+    box-shadow: 0 6px 18px rgba(0, 133, 88, 0.22);
+}
+#threadSendBtn.btn-primary:hover:not(:disabled) { box-shadow: 0 8px 22px rgba(0, 133, 88, 0.3); }
+#threadSendBtn.btn-primary i { transition: transform 0.15s ease; }
+#threadSendBtn.btn-primary:not(:disabled):hover i { transform: translate(2px, -1px); }
+.thread-reply input {
+    flex: 1;
+    border: 1px solid var(--gray-200, #ececec);
+    border-radius: var(--border-radius-md, 10px);
+    padding: 0.6rem var(--spacing-md);
+    font-size: 0.875rem;
+}
+
+.message-composer-field { position: relative; flex: 1; min-width: 0; }
+.message-char-count { position: absolute; right: 0.8rem; bottom: 0.65rem; font-size: 0.7rem; color: var(--gray-500); pointer-events: none; }
+.message-char-count.is-near-limit { color: var(--danger); }
+
+.composer-hint { font-size: 0.7rem; color: var(--gray-500); padding-left: 0.15rem; }
+
+.new-conversation-prompt { text-align: center; margin: auto; padding: 2.5rem; color: var(--gray-500); }
+.new-conversation-prompt i { width: 68px; height: 68px; margin: 0 auto 0.9rem; border-radius: 20px; background: #EAF8F1; color: var(--store-green); display: grid; place-items: center; font-size: 1.55rem; }
+.new-conversation-prompt h3 { margin: 0.2rem 0; color: var(--ink); }
+.new-conversation-prompt p { margin: 0; font-size: 0.85rem; color: var(--gray-600); }
+
+/* ==========================================================================
+   Composer attachments — the "+" menu, its two actions (share your
+   location / share a product from your store), the product picker modal,
+   and the rich cards a sent attachment renders as in the thread.
+   ========================================================================== */
+
+.composer-attach { position: relative; flex: 0 0 auto; }
+.composer-attach-btn {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray-200);
+    background: #fff;
+    color: var(--store-green);
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
+}
+.composer-attach-btn i { display: block; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.composer-attach-btn:hover:not(:disabled) { background: var(--primary-light); border-color: rgba(1, 176, 117, 0.35); }
+.composer-attach-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.composer-attach-btn.is-active { background: var(--store-green); border-color: transparent; color: #fff; }
+.composer-attach-btn.is-active i { transform: rotate(45deg); }
+
+/* Popover menu — anchored above the button (chat composers live at the
+   bottom of the screen, so opening downward would run off-viewport). */
+.attach-menu {
+    position: absolute;
+    bottom: calc(100% + 0.6rem);
+    left: 0;
+    min-width: 216px;
+    background: #fff;
+    border: 1px solid rgba(11, 59, 43, 0.10);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    padding: 0.4rem;
+    display: grid;
+    gap: 0.1rem;
+    z-index: 30;
+    animation: attachMenuIn 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.attach-menu.hidden { display: none; }
+@keyframes attachMenuIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.attach-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0.62rem 0.65rem;
+    border-radius: 11px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.attach-menu-item:hover, .attach-menu-item:focus-visible { background: var(--primary-light); outline: none; }
+.attach-menu-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--primary-light);
+    color: var(--store-green);
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+/* ---- Product picker modal (seller sharing one of their own products) ---- */
+.attach-product-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 59, 43, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1200;
+}
+.attach-product-panel {
+    width: min(420px, 100%);
+    max-height: 80vh;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: attachPanelIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes attachPanelIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.attach-product-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 1.05rem 1.1rem; border-bottom: 1px solid var(--gray-100); flex-shrink: 0; }
+.attach-product-panel-head h3 { margin: 0; font-size: 1rem; }
+.attach-product-panel-head .modal-close {
+    border: 0;
+    background: var(--gray-100);
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--gray-600);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+.attach-product-panel-head .modal-close:hover { background: var(--gray-200); color: var(--ink); }
+.attach-product-search { position: relative; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--gray-100); flex-shrink: 0; }
+.attach-product-search i { position: absolute; left: 1.6rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.78rem; pointer-events: none; }
+.attach-product-search input {
+    width: 100%;
+    padding: 0.62rem 0.9rem 0.62rem 2.15rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.attach-product-search input:focus { border-color: var(--store-green); box-shadow: 0 0 0 3px rgba(1, 176, 117, 0.10); }
+.attach-product-list { overflow-y: auto; padding: 0.5rem; flex: 1; min-height: 160px; }
+.attach-product-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0.6rem 0.55rem;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+}
+.attach-product-item:hover, .attach-product-item:focus-visible { background: var(--gray-50); outline: none; }
+.attach-product-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 11px;
+    background-color: var(--gray-100);
+    background-size: cover;
+    background-position: center;
+    color: var(--gray-400);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.attach-product-info { flex: 1; min-width: 0; display: grid; gap: 0.12rem; }
+.attach-product-info strong { font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attach-product-info span { font-size: 0.76rem; color: var(--gray-500); }
+.attach-product-item > i.fa-chevron-right { color: var(--gray-300); font-size: 0.75rem; flex-shrink: 0; }
+
+/* ---- Attachment confirm-before-send modal ----
+   All three "share a ___" flows (live location, store location, product)
+   used to send the instant something was picked, with no way back and no
+   chance to add or edit a caption afterwards. This shows exactly the card
+   the recipient is about to see — reusing messageContentHtml, not a
+   separate mockup — with an editable caption, before it actually sends. */
+.attach-confirm-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 59, 43, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1200;
+}
+.attach-confirm-panel {
+    width: min(420px, 100%);
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: attachPanelIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.attach-confirm-head { display: flex; align-items: center; justify-content: space-between; padding: 1.05rem 1.1rem; border-bottom: 1px solid var(--gray-100); flex-shrink: 0; }
+.attach-confirm-head h3 { margin: 0; font-size: 1rem; }
+.attach-confirm-head .modal-close {
+    border: 0; background: var(--gray-100); width: 32px; height: 32px; min-height: 0;
+    border-radius: 50%; font-size: 1.2rem; line-height: 1; color: var(--gray-600);
+    cursor: pointer; display: grid; place-items: center;
+}
+.attach-confirm-head .modal-close:hover { background: var(--gray-200); color: var(--ink); }
+.attach-confirm-body { padding: 1rem 1.1rem; overflow-y: auto; display: grid; gap: 0.7rem; }
+/* The preview card is genuinely non-interactive-by-default here (button
+   clicks on it are caught and repurposed to open the map preview instead
+   of doing nothing silently — see openAttachmentConfirm) so it can't be
+   mistaken for "tap here to send". */
+.attach-confirm-preview { pointer-events: auto; }
+.attach-confirm-preview .message-product-card,
+.attach-confirm-preview .message-location-card { cursor: default; }
+.attach-confirm-preview .message-product-card:hover,
+.attach-confirm-preview .message-location-card:hover { transform: none; box-shadow: 0 2px 8px rgba(11, 59, 43, 0.05); }
+.attach-confirm-caption-label { font-size: 0.78rem; font-weight: 600; color: var(--gray-500); }
+.attach-confirm-caption {
+    width: 100%;
+    resize: none;
+    border: 1px solid var(--gray-200);
+    border-radius: 14px;
+    padding: 0.65rem 0.85rem;
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.attach-confirm-caption:focus { border-color: var(--store-green); box-shadow: 0 0 0 3px rgba(1, 176, 117, 0.10); }
+.attach-confirm-footer { display: flex; gap: 0.6rem; padding: 0.9rem 1.1rem; border-top: 1px solid var(--gray-100); flex-shrink: 0; }
+.attach-confirm-footer .btn { flex: 1; }
+
+@media (max-width: 560px) {
+    .attach-confirm-modal { align-items: flex-end; padding: 0; }
+    .attach-confirm-panel {
+        width: 100%;
+        max-height: 86vh;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
+        animation: attachPanelInMobile 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* ---- Location preview modal ----
+   Tapping a shared-location card used to open Google Maps in a new tab —
+   an immediate trip out of the app just to see the pin. This modal instead
+   enlarges the same map in place; "Open in Google Maps" inside it is the
+   only thing that still leaves the platform, and now that's a deliberate
+   choice the person makes, not something a tap did to them. */
+.location-preview-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 59, 43, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1200;
+}
+.location-preview-panel {
+    width: min(560px, 100%);
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: attachPanelIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.location-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 1rem 1.1rem; border-bottom: 1px solid var(--gray-100); flex-shrink: 0; }
+.location-preview-head h3 { margin: 0; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.location-preview-head .modal-close { border: 0; background: var(--gray-100); width: 32px; height: 32px; min-height: 0; border-radius: 50%; font-size: 1.2rem; line-height: 1; color: var(--gray-600); cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+.location-preview-head .modal-close:hover { background: var(--gray-200); color: var(--ink); }
+.location-preview-map { position: relative; width: 100%; height: min(52vh, 420px); background: var(--gray-100); flex-shrink: 0; overflow: hidden; }
+.location-preview-footer { display: flex; gap: 0.6rem; padding: 0.9rem 1.1rem; border-top: 1px solid var(--gray-100); flex-shrink: 0; }
+.location-preview-footer .btn { flex: 1; }
+
+@media (max-width: 560px) {
+    .location-preview-modal { align-items: flex-end; padding: 0; }
+    .location-preview-panel { width: 100%; max-height: 86vh; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+    .location-preview-map { height: 44vh; }
+}
+
+/* ---- Rich attachment bubbles in the thread ---- */
+/* An attachment message's own card carries its visual weight (background,
+   border, shadow), so the surrounding chat bubble steps back to a plain
+   transparent wrapper instead of layering another background behind it —
+   otherwise a "mine" bubble's green gradient would clash right through a
+   white product card sitting inside it. */
+.thread-message.is-attachment {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    max-width: min(80%, 320px);
+}
+.thread-message.is-attachment.is-mine { background: transparent; box-shadow: none; color: var(--gray-800); }
+.thread-message.is-attachment .thread-message-meta { padding: 0 0.15rem; }
+
+.attachment-caption { margin-top: 0.4rem; padding: 0 0.15rem; font-size: var(--msg-bubble-font); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.message-product-card, .message-location-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--msg-radius);
+    box-shadow: 0 2px 8px rgba(11, 59, 43, 0.05);
+    text-decoration: none;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.message-product-card:hover, .message-location-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.thread-message.is-mine .message-product-card,
+.thread-message.is-mine .message-location-card {
+    background: linear-gradient(135deg, #fff, #F3FBF7);
+    border-color: rgba(1, 176, 117, 0.22);
+}
+
+.message-product-card { padding: 0.7rem 0.8rem; gap: 0.85rem; }
+.message-product-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background-color: var(--gray-100);
+    background-size: cover;
+    background-position: center;
+    color: var(--gray-400);
+    font-size: 1.1rem;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.message-product-info { flex: 1; min-width: 0; display: grid; gap: 0.2rem; }
+/* A small "what kind of card is this" eyebrow — a product card can land in
+   the thread without the recipient having asked for it (a seller sharing
+   from their catalog), so it's worth a half-second of extra context before
+   the product name reads as just another line of chat. */
+.message-product-eyebrow { display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-400); }
+.message-product-eyebrow i { font-size: 0.7rem; }
+.message-product-info strong { font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-product-bottom { display: flex; align-items: center; gap: 0.4rem; }
+.message-product-price { font-size: 0.8rem; color: var(--store-green); font-weight: 700; }
+.message-product-oos { font-size: 0.68rem; font-weight: 700; color: var(--danger); background: rgba(217, 60, 60, 0.1); padding: 0.1rem 0.45rem; border-radius: 999px; }
+.message-card-go { color: var(--gray-300); font-size: 0.75rem; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--gray-50); display: grid; place-items: center; transition: background 0.15s ease, color 0.15s ease; }
+.message-product-card:hover .message-card-go { background: var(--store-green); color: #fff; }
+
+.message-location-card { flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; }
+/* The visual "frame" for the map — sized, clipped and vignetted here.
+   `.message-location-preview` inside it is left as a plain, unstyled slot
+   (just position/size) because NextaStoreMapPreview.render() replaces its
+   entire innerHTML with the stitched map tiles; the expand icon and label
+   scrim below are siblings of that slot, not children, so they survive
+   the map re-render untouched. */
+.message-location-media {
+    position: relative;
+    width: 100%;
+    height: 148px;
+    background: var(--gray-100);
+    overflow: hidden;
+    /* Softens the visible seam where two adjacent OpenStreetMap tiles meet
+       (adjacent tiles can differ very slightly in exposure/compression) —
+       a subtle inward vignette reads as an intentional stylistic frame
+       instead of a rendering glitch, and unifies the mosaic at a glance. */
+    box-shadow: inset 0 0 22px rgba(11, 59, 43, 0.16);
+}
+.message-location-preview { position: absolute; inset: 0; }
+.message-location-preview .map-preview-frame { filter: saturate(1.08) contrast(1.02); }
+/* Fallback pin shown only when a message has no usable coordinates (see
+   messageContentHtml) — the has-coordinates case renders its own marker via
+   NextaStoreMapPreview (js/map-preview.js), the same clean tile-stitched
+   preview used on the storefront and order pages: no OpenStreetMap iframe
+   chrome (zoom controls, "Report a problem" / donation / API-terms links)
+   bleeding into a 148px-tall card. */
+.message-location-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); color: var(--danger); font-size: 1.5rem; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); z-index: 2; }
+/* A small "this expands" affordance in the corner — the whole card is
+   already tappable, but a bare map thumbnail with no visible control
+   doesn't read as interactive at a glance the way a card with a button or
+   link on it does. */
+.message-location-expand {
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(17, 24, 20, 0.55); color: #fff; font-size: 0.7rem;
+    display: grid; place-items: center; pointer-events: none;
+}
+/* Label + hint laid directly over the map as a bottom scrim, the same
+   pattern real map apps use for a pin card — reads as one cohesive object
+   instead of a map thumbnail with a plain caption row stapled underneath. */
+.message-location-scrim {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    display: flex; align-items: center; gap: 0.55rem;
+    padding: 1.4rem 0.75rem 0.65rem;
+    background: linear-gradient(180deg, rgba(11, 59, 43, 0) 0%, rgba(9, 33, 24, 0.78) 100%);
+}
+.message-location-pin-badge {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--store-green); color: #fff; font-size: 0.72rem;
+    display: grid; place-items: center; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.message-location-text { min-width: 0; display: grid; gap: 0.05rem; color: #fff; }
+.message-location-text strong { font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.message-location-text span { font-size: 0.68rem; color: rgba(255, 255, 255, 0.85); }
+
+/* Optimistic bubble shown the instant something is sent, before the server
+   confirms it — same idiom as the existing "Sending…" text receipt. */
+.thread-message.is-pending { opacity: 0.6; }
+.thread-message.is-pending .message-product-card,
+.thread-message.is-pending .message-location-card { pointer-events: none; }
+
+/* A send that failed used to just vanish along with whatever was typed or
+   picked — this keeps the bubble, visibly flagged, with a way to try again
+   or explicitly give up on it, matching how every mainstream chat app
+   handles a failed send. Full opacity (unlike .is-pending above) — this
+   needs to stand out, not fade into the background. */
+.thread-message.is-failed:not(.is-attachment),
+.thread-message.is-failed .message-product-card,
+.thread-message.is-failed .message-location-card { box-shadow: 0 0 0 1.5px rgba(217, 60, 60, 0.55); }
+.message-failed-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+}
+.message-failed-label { color: var(--danger); display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600; }
+.message-failed-retry,
+.message-failed-discard {
+    border: 0;
+    background: none;
+    padding: 0.15rem 0.1rem;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.message-failed-retry { color: var(--store-green); }
+.message-failed-retry:hover { text-decoration: underline; }
+.message-failed-discard { color: var(--gray-400); }
+.message-failed-discard:hover { color: var(--danger); text-decoration: underline; }
+
+@media (max-width: 560px) {
+    .attach-product-modal { align-items: flex-end; padding: 0; }
+    .attach-product-panel {
+        width: 100%;
+        max-height: 82vh;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
+        animation: attachPanelInMobile 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes attachPanelInMobile {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .thread-message.is-attachment { max-width: 84%; }
+}
+
+/* ==========================================================================
+   Buyer order-history page (orders.html) — shared with favorites.html /
+   following.html via this same stylesheet. Unchanged.
+   ========================================================================== */
+
+.orders-page { max-width: 900px; margin: 0 auto; padding: var(--spacing-xl) var(--spacing-lg); }
+.orders-page h1 { margin-bottom: var(--spacing-lg); font-size: 1.4rem; }
+.orders-empty { text-align: center; padding: 4rem 1rem; }
+.orders-empty > i { font-size: 3rem; color: var(--gray-400); margin-bottom: 1rem; }
+
+.order-card {
+    border: 1px solid var(--gray-200, #ececec);
+    border-radius: var(--border-radius-md, 10px);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+.order-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm); }
+.order-card-header strong { font-size: 0.9375rem; }
+.order-card-store { font-size: 0.8125rem; color: var(--gray-500, #6b7280); margin-bottom: var(--spacing-sm); }
+.order-card-items { font-size: 0.8125rem; color: var(--gray-700, #374151); margin-bottom: var(--spacing-sm); }
+.order-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; }
+
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; text-transform: capitalize; background: var(--gray-100, #f6f7f8); color: var(--gray-700, #374151); }
+.badge-delivered { background: rgba(0, 176, 116, 0.12); color: var(--primary-dark, #00875a); }
+.badge-cancelled { background: rgba(224, 86, 86, 0.12); color: #b91c1c; }
+.badge-shipped, .badge-processing { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+
+.order-card-rich { cursor: pointer; padding: 0; overflow: hidden; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.order-card-rich:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(20, 30, 40, 0.07); }
+.order-card-rich header, .order-card-rich footer { padding: 0.95rem 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+.order-card-rich header { border-bottom: 1px solid var(--gray-100); }
+.order-card-rich footer { border-top: 1px solid var(--gray-100); font-size: 0.75rem; color: var(--gray-500); }
+.order-store { display: flex; align-items: center; gap: 0.7rem; }
+.order-store-logo { width: 42px; height: 42px; border-radius: 12px; background: var(--gray-100); display: grid; place-items: center; overflow: hidden; flex: 0 0 auto; }
+.order-store-logo img { width: 100%; height: 100%; object-fit: cover; }
+.order-store small { display: block; color: var(--gray-500); font-size: 0.72rem; margin-top: 0.15rem; }
+.order-status { padding: 0.28rem 0.65rem; border-radius: 999px; font-size: 0.7rem; text-transform: capitalize; font-weight: 700; background: var(--gray-100); color: var(--gray-700); }
+.status-delivered { background: #e8f7f0; color: #087443; }
+.status-shipped, .status-processing { background: #edf4ff; color: #1d4ed8; }
+.status-cancelled { background: #fff0f0; color: #b42318; }
+.order-preview { display: grid; grid-template-columns: 52px 1fr auto; gap: 0.8rem; align-items: center; padding: 1rem 1.1rem; }
+.order-thumb { width: 52px; height: 52px; border-radius: 10px; background: var(--gray-100); display: grid; place-items: center; color: var(--gray-400); }
+.order-preview span { display: block; color: var(--gray-500); font-size: 0.75rem; margin-top: 0.2rem; }
+.order-total { font-size: 1rem; }
+.order-detail-modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 1000; display: grid; place-items: center; padding: 1rem; }
+.order-detail-panel { position: relative; width: min(620px, 100%); max-height: 90vh; overflow: auto; background: #fff; border-radius: 20px; padding: 1.35rem; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18); }
+.order-detail-panel > .modal-close { position: absolute; right: 1rem; top: 1rem; border: 0; background: var(--gray-100); border-radius: 50%; width: 34px; height: 34px; font-size: 1.2rem; }
+.order-detail-head { display: flex; justify-content: space-between; align-items: start; padding-right: 2.5rem; }
+.order-detail-head h2 { margin: 0.3rem 0 1.2rem; }
+.order-detail-store { display: flex; gap: 0.7rem; align-items: center; border-top: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100); padding: 1rem 0; }
+.order-detail-store small { display: block; color: var(--gray-500); margin-top: 0.2rem; }
+.detail-items { margin: 1rem 0; }
+.detail-items > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--gray-100); font-size: 0.85rem; }
+.delivery-detail { background: var(--gray-50, #f8faf9); border-radius: 12px; padding: 0.9rem 1rem; margin: 1rem 0; }
+.delivery-detail div + div { margin-top: 0.7rem; }
+.delivery-detail dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-500); }
+.delivery-detail dd { margin: 0.2rem 0 0; font-size: 0.85rem; }
+.detail-total { display: flex; justify-content: space-between; font-size: 1rem; padding: 0.8rem 0; }
+.detail-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+
+.order-trust-strip { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+.order-trust-strip span { padding: 0.45rem 0.65rem; border-radius: 999px; background: #f3f7f5; font-size: 0.75rem; font-weight: 700; }
+.seller-pickup-box { display: grid; gap: 0.3rem; padding: 0.8rem; background: #f7faf8; border-radius: 12px; margin-bottom: 1rem; }
+.seller-pickup-box span, .seller-pickup-box small { color: var(--gray-600); }
+.seller-pickup-box a { font-weight: 700; color: var(--primary, #00b074); }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* Tablet: keep the two-pane layout but tighten it a little. */
+@media (max-width: 1080px) {
+    .messages-shell { grid-template-columns: minmax(260px, 300px) 1fr; margin: 1rem; }
+}
+
+/* Phone / narrow tablet: single sliding pane, edge-to-edge, app-like. This
+   is the one true structural break — everything below it is fluid via the
+   clamp() tokens at the top of this file, so it holds up at literally any
+   width in between (320px through 880px), not just the common device
+   widths. */
+@media (max-width: 880px) {
+    .messages-shell {
+        display: block;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow: hidden;
+        height: 100%;
+    }
+    .conversation-list,
+    .conversation-thread {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .conversation-list { transform: translateX(0); z-index: 1; border-right: 0; }
+    .conversation-thread { transform: translateX(100%); z-index: 2; }
+    .messages-shell.is-thread-active .conversation-list { transform: translateX(-30%); }
+    .messages-shell.is-thread-active .conversation-thread { transform: translateX(0); }
+
+    .thread-back-btn { display: inline-flex; }
+    .conversation-item { min-height: 76px; }
+    .thread-message { max-width: 86%; }
+    .composer-hint { display: none; }
+    .scroll-bottom-btn { bottom: 5.2rem; }
+
+    /* "Select a conversation" is a two-pane (desktop/tablet) affordance —
+       on a single-pane phone layout there's nothing beside the list for it
+       to explain, so it never gets to render at all here, not even for an
+       instant while the thread pane is off-screen. */
+    #threadEmptyState { display: none !important; }
+
+    body.messages-page .messages-topbar {
+        padding-top: max(0.7rem, calc(env(safe-area-inset-top) + 0.45rem));
+        padding-bottom: 0.7rem;
+    }
+}
+
+/* Send button collapses to icon-only once the composer row gets tight. */
+@media (max-width: 560px) {
+    .thread-reply .btn span { display: none; }
+    .thread-reply .btn { min-width: 48px; width: 48px; height: 48px; padding: 0; border-radius: 50%; }
+    .conversation-list-header { padding: 1rem var(--msg-pad-inline) 0.75rem; }
+    .thread-header { padding: 0.9rem 0.9rem 0.9rem 0.4rem; }
+}
+
+@media (max-width: 420px) {
+    .conversation-thread > .empty-state,
+    .conversation-list-body > .empty-state { padding: 2rem 1.1rem; }
+    .thread-header-avatar { width: 36px; height: 36px; }
+}
+
+/* Very small phones and foldable cover screens (Z Flip ~260px, Fold cover
+   ~280px, older 320px devices): trim the last bits of chrome so nothing
+   clips or forces horizontal scroll. */
+@media (max-width: 340px) {
+    .thread-reply { gap: 0.25rem; }
+    .thread-reply-row { gap: 0.4rem; }
+    .message-char-count { right: 0.6rem; font-size: 0.65rem; }
+    .conversation-search-wrap i.fa-search { left: 1.3rem; }
+    .conversation-item-thumb { width: 38px; height: 38px; border-radius: 11px; }
+    .filter-tab { font-size: 0.72rem; padding: 0.38rem 0.3rem; }
+    .thread-message { font-size: 0.82rem; }
+}
+
+/* Phones rotated to landscape lose most of their vertical room — reclaim it
+   from chrome rather than the message list. */
+@media (max-width: 880px) and (max-height: 480px) and (orientation: landscape) {
+    body.messages-page .messages-topbar { padding-top: max(0.5rem, env(safe-area-inset-top)); padding-bottom: 0.5rem; }
+    .conversation-list-header { padding-top: 0.7rem; padding-bottom: 0.5rem; }
+    .conversation-search-wrap { padding-top: 0.5rem; padding-bottom: 0.4rem; }
+    .conversation-filter-tabs { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+    .thread-header { min-height: 48px; padding-top: 0.6rem; padding-bottom: 0.6rem; }
+    .thread-day-divider { margin: 0.35rem 0 0.2rem; }
+    .thread-reply textarea { min-height: 38px; }
+}
+
+@media (max-width: 520px) {
+    .detail-actions { flex-direction: column; }
+    .detail-actions .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .conversation-list, .conversation-thread { transition: none !important; }
+    .conversation-filter-tabs::after { transition: none !important; }
+    .thread-messages { scroll-behavior: auto; }
+}
+
+
+/* ---- Thread loading skeleton + load error (see openConversation) ---- */
+.thread-skeleton{display:flex;flex-direction:column;gap:.65rem;padding:1rem}
+.thread-skeleton-bubble{display:block;height:2.4rem;border-radius:16px;align-self:flex-start}
+.thread-skeleton-bubble.is-mine{align-self:flex-end}
+.thread-skeleton-bubble.is-w1{width:52%}
+.thread-skeleton-bubble.is-w2{width:38%}
+.thread-skeleton-bubble.is-w3{width:62%}
+.thread-skeleton-title{display:block;width:8rem;height:.9rem;border-radius:6px}
+.thread-load-error{margin:auto;padding:2rem 1rem}

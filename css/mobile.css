@@ -1,0 +1,502 @@
+/* NextaStore mobile refinement layer
+   Loaded last on every page so mobile layout fixes are centralized and
+   page-specific CSS remains easy to maintain. No JavaScript behaviour is
+   changed here; this file only controls sizing, wrapping, spacing and flow.
+*/
+
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{min-width:0;max-width:100%;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%}
+button,input,select,textarea{max-width:100%}
+
+@media (max-width: 768px){
+  .container{width:100%;padding-left:14px;padding-right:14px}
+  .page-breadcrumb,.breadcrumb-container{padding-left:14px!important;padding-right:14px!important}
+  /* The breadcrumb is just a "you are here" trail, not something that needs
+     every word visible — with a long store name and product name it was
+     wrapping across three lines on mobile. Keep it to one line and ellipsis
+     the long middle/last segments instead; "Marketplace" and the separators
+     stay full-size so the trail itself still reads clearly. */
+  .breadcrumb{flex-wrap:nowrap}
+  .breadcrumb a,.breadcrumb .breadcrumb-current{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .breadcrumb .separator,.breadcrumb>a:first-child{flex:0 0 auto}
+  /* Give the current page a bit more of the remaining room than the store
+     link in between, since it's the one answering "where am I". */
+  .breadcrumb a:not(:first-child){max-width:32%}
+  .breadcrumb .breadcrumb-current{max-width:46%}
+  .card,.panel,.empty-state,.loading-state{max-width:100%;padding:16px}
+  .section-header,.section-toolbar,.panel-heading,.card-header{gap:10px}
+  .section-header,.section-toolbar{align-items:flex-start;flex-wrap:wrap}
+  .section-header>*,.section-toolbar>*{min-width:0}
+  .actions,.form-actions,.hero-buttons,.promotion-buttons{flex-wrap:wrap}
+  .actions .btn,.form-actions .btn{min-width:0}
+  .text-truncate,.truncate{max-width:100%}
+  .page-init-skeleton{padding-left:18px;padding-right:18px}
+
+  /* Common page chrome */
+  .navbar,.marketplace-header,.store-detail-nav,.product-detail-nav,
+  .messages-topbar,.stores-topbar,.subscription-topbar,.cart-topbar,
+  .safety-topbar,.onboarding-topbar,.pf-header,.builder-header,
+  .admin-topbar{min-width:0;padding-left:14px!important;padding-right:14px!important}
+  .navbar-menu{max-width:100%;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .navbar-menu::-webkit-scrollbar,.admin-nav::-webkit-scrollbar,.filter-tabs::-webkit-scrollbar{display:none}
+  .account-nav-slot{min-width:0;margin-left:auto}
+
+  /* Keep large cards as content cards instead of viewport-height slabs. */
+  .card,.panel,.admin-panel,.subscription-panel,.subscription-status-card,
+  .subscription-goal-card,.badge-tier,.safety-card,.store-card,.products-section,
+  .auth-card,.auth-side,.settings-card,.stat-card,.kpi-card,.quick-action{height:auto!important;min-height:0!important}
+
+  /* Prevent flex/grid children from forcing horizontal overflow. */
+  .grid>* , .dashboard-grid>*, .analytics-grid>*, .activity-grid>*,
+  .admin-overview-grid>*, .subscription-grid>*, .store-content>*,
+  .store-detail-grid>*, .products-grid>*, .stores-directory-grid>*,
+  .message-shell>*, .orders-page>*{min-width:0}
+
+  /* Long values in cards */
+  .email,.username,.user-name,.store-name,.product-name,.product-title,
+  .order-id,.transaction-reference,.transaction-id,.account-menu-name,
+  .admin-table td,.detail-list strong,.admin-report h3,.followup-title{overflow-wrap:anywhere;word-break:break-word}
+
+  /* Compact common stat/card treatment. */
+  .stats-grid,.kpi-grid{gap:10px}
+  .stat-card,.kpi-card{padding:12px}
+  .stat-card strong,.kpi-card strong{font-size:1rem}
+  .icon-tile{width:42px;height:42px;font-size:1rem}
+
+  /* Tables remain readable without widening the page. */
+  .table-wrap,.admin-table-wrap,.data-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{max-width:none}
+
+  /* Modal/dialog sizing */
+  .site-dialog-overlay,.modal-overlay{padding:12px!important}
+  .site-dialog,.modal,.modal-content{width:min(100%,680px)!important;max-width:100%!important;max-height:calc(100dvh - 24px)!important}
+  .site-dialog{overflow:auto}
+  .modal-footer,.site-dialog-actions,.admin-modal-footer{flex-wrap:wrap}
+  .modal-footer .btn,.site-dialog-actions .btn{min-width:120px}
+
+  /* Marketplace */
+  .marketplace-container{width:100%;overflow-x:hidden}
+  .header-content{min-width:0}
+  .header-left,.header-right{min-width:0}
+  .marketplace-search{width:100%;max-width:none}
+  .marketplace-hero{min-height:0!important}
+  .hero-actions{flex-wrap:wrap}
+  .category-grid{gap:10px}
+  .products-grid,.stores-grid{min-width:0}
+  .products-grid .product-card,.stores-grid .store-card{min-width:0;width:100%}
+
+  /* Dashboard */
+  .dashboard-container{min-width:0}
+  .main-content{min-width:0;width:100%}
+  .dashboard-content{min-width:0}
+  .welcome-banner{min-height:0!important}
+  .quick-actions-bar{min-width:0}
+  .storefront-grid{min-width:0}
+
+  /* Dashboard mobile drawer (hamburger nav): the drawer used a plain
+     `height:100vh`, which on phones is the *largest* possible viewport —
+     taller than what's actually visible once the browser's address bar or
+     home-indicator area is accounted for. That let the bottom of the drawer
+     (Logout button) render below the visible screen with no way to scroll to
+     it. Using the small dynamic viewport unit and reserving the safe-area
+     inset keeps the footer inside what's actually on screen; splitting the
+     drawer into a scrollable nav list plus a footer that never shrinks keeps
+     Logout reachable even with a long nav list on a short phone. */
+  .sidebar{
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .sidebar-nav{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .sidebar-footer{
+    flex:0 0 auto;
+  }
+  /* Comfortable 44x44px minimum touch targets on every drawer control,
+     including the Logout button. */
+  .sidebar-nav .nav-item{min-height:44px}
+  .sidebar-footer .logout-btn{min-height:44px;padding:10px 12px}
+  .menu-toggle{min-width:44px;min-height:44px}
+
+  /* Store detail / storefront */
+  .store-detail-header,.store-detail-page,.store-content,.store-hero-inner{min-width:0}
+  .store-banner{max-height:180px}
+  .store-card{width:100%;max-width:100%;margin-left:0;margin-right:0}
+  .store-meta{display:flex;flex-wrap:wrap}
+  .store-actions{display:flex;flex-wrap:wrap}
+  .store-actions .btn{min-width:0}
+  .products-section{overflow:hidden}
+  .products-grid .product-card{overflow:hidden}
+
+  /* Product detail */
+  .product-detail-page,.product-detail-main,.product-detail-content{min-width:0}
+  .product-gallery,.product-info,.product-card{min-width:0;max-width:100%}
+  .product-gallery img{max-height:55vh;object-fit:contain}
+  .product-actions{flex-wrap:wrap}
+
+  /* Forms / onboarding / builder */
+  /* `.onboarding-form-row` / `.onboarding-review-grid` used to be collapsed
+     here too, but those two classes exist only on onboarding.html and that
+     page's own stylesheet now collapses them at 600px instead — a tablet in
+     this range has room for the two-up layout, and the !important here was
+     overriding it. */
+  .form-row,.form-grid,
+  .admin-modal-grid,.admin-settings-card form,.permission-check-grid{grid-template-columns:1fr!important}
+  .admin-modal-grid .full{grid-column:auto}
+  .form-actions .btn,.pf-actions .btn,.builder-actions .btn{width:auto;max-width:100%}
+  .onboarding-container,.builder-container,.pf-page{min-width:0}
+
+  /* Auth pages: compact card without making the whole viewport a card. */
+  .auth-container{width:100%;padding:12px 14px!important}
+  .auth-card{width:100%;max-width:460px;margin:0 auto}
+  .auth-side{min-height:0!important}
+
+  /* Store directory */
+  .stores-page{padding-left:14px!important;padding-right:14px!important}
+  .stores-tools{min-width:0}
+
+  /* Messages / orders */
+  .messages-shell,.orders-page{min-width:0}
+  .conversation-list,.conversation-list-body,.message-list,.order-card,.order-item{min-width:0}
+
+  /* Subscription */
+  .subscription-shell{width:100%;min-width:0}
+  .subscription-hero,.subscription-status-card,.subscription-goal-card,.subscription-panel{max-width:100%}
+  .subscription-pay-number{min-width:0}
+
+  /* Admin */
+  .admin-shell,.admin-main{width:100%;min-width:0}
+  .admin-welcome{align-items:flex-start}
+  .admin-filter-bar label{min-width:0;width:100%}
+  .admin-filter-bar select{width:100%}
+  .admin-report{grid-template-columns:1fr}
+  .admin-settings-card form{grid-template-columns:1fr!important}
+  .admin-followup-layout{grid-template-columns:1fr}
+  .role-row,.admin-followup-row,.audit-row{flex-direction:column;align-items:flex-start}
+  .admin-status{align-self:flex-start}
+}
+
+@media (max-width: 600px){
+  body{font-size:15px}
+  .footer{padding-left:14px;padding-right:14px}
+  .footer-links{gap:10px 16px}
+
+  .btn{max-width:100%}
+  .btn-lg{width:100%;justify-content:center}
+  .hero-buttons .btn,.hero-actions .btn{flex:1 1 150px}
+
+  /* Two compact cards are preferable to giant single-column metric cards. */
+  .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  .storefront-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+  .products-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+  .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+
+  .section-header h2,.section-toolbar h2{font-size:1.15rem}
+  .card,.panel,.subscription-panel{border-radius:16px;padding:14px}
+  .card-header{align-items:flex-start;flex-wrap:wrap}
+
+  .account-menu-dropdown,.notification-preview{right:0;max-width:calc(100vw - 24px)}
+  .site-dialog-actions .btn,.modal-footer .btn,.admin-modal-footer .btn{flex:1 1 140px}
+
+  /* This was padding the whole card (`.store-card`), which pushed the
+     banner image in on all sides and broke its edge-to-edge look — visible
+     as a white margin around the green banner. The card itself shouldn't
+     have padding; only the info panel below the banner should. */
+  .store-card .store-info{padding:16px}
+  .store-logo{flex:0 0 auto}
+  .product-details{min-width:0}
+  .product-details h3,.product-title{line-height:1.3}
+
+  .subscription-hero{padding:18px!important}
+  .subscription-status-card{padding:16px!important}
+  .subscription-goal-card{padding:14px!important}
+  .subscription-panel{padding:15px!important}
+  .subscription-price-chip{max-width:100%;align-items:flex-start}
+  .subscription-panel-heading{flex-wrap:wrap}
+  .subscription-payment-row{align-items:flex-start;flex-direction:column}
+  .subscription-payment-status{align-self:flex-start}
+
+  .admin-welcome{flex-direction:column}
+  .admin-welcome .btn{width:100%}
+
+  .store-card-identity{min-width:0}
+  .store-branding-info{min-width:0;width:100%}
+  .store-actions .btn{flex:1 1 150px}
+
+  /* The name sits beside the overlapping logo via a fixed 76px indent,
+     which only reads well when the name fits on one line. At mobile card
+     widths longer names wrap to 2-3 lines and every wrapped line inherited
+     that same 76px indent, leaving the text squeezed into a narrow column
+     and looking misaligned next to the logo. Below this width the name
+     drops under the logo instead, with the full card width to wrap into. */
+  .store-card .store-info{padding-top:40px}
+  .store-card .store-name{padding-left:0;display:block;min-height:0;margin-top:6px}
+}
+
+@media (max-width: 420px){
+  .container{padding-left:12px;padding-right:12px}
+  .navbar,.marketplace-header,.store-detail-nav,.product-detail-nav,
+  .messages-topbar,.stores-topbar,.subscription-topbar,.cart-topbar,
+  .safety-topbar,.onboarding-topbar,.pf-header,.builder-header,
+  .admin-topbar{padding-left:12px!important;padding-right:12px!important}
+
+  .stats-grid,.kpi-grid{gap:8px}
+  .stat-card,.kpi-card{padding:10px}
+  .stat-card span,.kpi-card span{font-size:.6rem}
+  .stat-card strong,.kpi-card strong{font-size:.92rem}
+
+  .products-grid,.storefront-grid{gap:8px}
+  .products-grid .product-card,.storefront-grid .product-card{border-radius:12px}
+  .product-details{padding:9px!important}
+  .product-details h3,.product-card h3{font-size:.76rem!important}
+  .product-price,.current-price{font-size:.88rem!important}
+
+  .hero-content h1{font-size:1.65rem}
+  .hero-actions .btn{flex-basis:100%}
+
+
+  .store-actions .btn{flex-basis:100%}
+  .subscription-hero h1{font-size:1.6rem}
+  .subscription-hero p{font-size:.76rem}
+  .subscription-submit-btn{min-height:46px}
+}
+
+@media (max-width: 360px){
+  .stats-grid,.kpi-grid{grid-template-columns:1fr!important}
+  .products-grid,.storefront-grid{grid-template-columns:1fr 1fr!important}
+  .navbar-brand img,.stores-topbar .brand-lockup img,.cart-topbar .brand-lockup img{max-width:120px}
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ==========================================================================
+   Overlay + header-fit layer (appended last, after every page stylesheet, so
+   these rules win without needing !important on anything structural).
+
+   Two classes of problem are handled here:
+
+   A) CLIPPING ANCESTORS. `.navbar-menu` above sets `overflow-x:auto` for long
+      menus. Per spec, `overflow-x:auto` with a `visible` overflow-y computes
+      overflow-y to `auto` as well, which turns the nav strip into a scroll
+      container and clips every dropdown inside it to ~44px. On index.html that
+      made the bell and account menus look completely dead on mobile. The
+      account slot is pulled out of the scrolling area instead.
+
+   B) HEADER ROWS THAT OUTGROW THE SCREEN. The marketplace / stores / cart
+      top bars put a text link, the account trigger and the cart button on one
+      row. At 430px that row is wider than the viewport, so the last item (the
+      cart button) is sliced in half at the right edge — the "just a circle"
+      report. These rows now shrink and wrap instead of overflowing.
+
+   Positioning of the panels themselves is handled by js/ui-overlays.js.
+   ========================================================================== */
+
+/* --- A. never let a scroll container clip a floating panel ---------------- */
+.navbar-menu { overflow: visible; flex-wrap: wrap; }
+.navbar-menu > li { min-width: 0; }
+.account-nav-slot,
+.notification-nav-wrap,
+.account-menu { overflow: visible; }
+
+/* The account slot sits outside any horizontally scrolling menu region. */
+.navbar-menu .account-nav-slot { flex: 0 0 auto; }
+
+/* Panels the engine has positioned are already clamped to the viewport; stop
+   stylesheet widths/offsets from fighting the inline values it sets. */
+[data-overlay-placed] {
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+}
+
+/* --- B. header rows fit the screen --------------------------------------- */
+@media (max-width: 768px) {
+    /* The previous approach kept `.header-content` as a flex row and pushed
+       the search bar onto its own line with `order:3; width:100%`. That's
+       correct in principle, but "does header-center end up alone on its
+       line" was actually decided by whether header-left + header-right
+       together left enough room to *not* need a wrap before header-center's
+       own forced break was reached — and header-right's content changes by
+       login state (Login+Create account vs. an avatar vs. avatar+store
+       badge+cart). Different states wrapped at different points, which is
+       exactly the inconsistency reported: same page, different accounts,
+       different number of rows.
+
+       A grid with named areas removes that dependency entirely. The search
+       row's existence is declared, not inferred from leftover space, so it
+       is identical across every login state, every screen width in this
+       range, and however wide `.header-right` happens to render. */
+    .marketplace-header .header-content {
+        display: grid;
+        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+        grid-template-areas: "left right" "center center";
+        align-items: center;
+        row-gap: 10px;
+        column-gap: 10px;
+        flex-wrap: unset; /* grid ignores this; kept off in case a later rule re-adds flex */
+    }
+    .marketplace-header .header-left { grid-area: left; min-width: 0; }
+    .marketplace-header .header-right {
+        grid-area: right;
+        justify-self: end;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: 8px;
+        column-gap: 8px;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .marketplace-header .header-center {
+        grid-area: center;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+    }
+    .header-center .search-bar,
+    .header-center .marketplace-search {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+    .header-center .search-bar input,
+    .header-center .marketplace-search input { min-width: 0; width: 100%; }
+
+    .header-content { gap: 10px; }
+    .header-content > * { min-width: 0; }
+
+    .header-right,
+    .marketplace-header-actions,
+    .stores-topbar-right,
+    .cart-topbar,
+    .store-detail-nav,
+    .product-detail-nav,
+    .stores-topbar-inner,
+    .nav-right {
+        flex-wrap: wrap;
+        row-gap: 8px;
+        column-gap: 10px;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* `.stores-topbar-right` and `.nav-right` both ship `flex-shrink:0`, which
+       is what forced these rows past the viewport edge and sliced the cart
+       button. Wrapping alone isn't enough while the group refuses to shrink —
+       it has to be allowed to give up space too. */
+    .stores-topbar-right,
+    .nav-right,
+    .nav-left {
+        flex-shrink: 1;
+        min-width: 0;
+    }
+    .nav-left { overflow: hidden; }
+    .back-link { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* The cart button is the last item on these rows and was the one getting
+       sliced. Pin its size so flex can never shrink it into a sliver, and let
+       the flexible text items give up space instead. */
+    .cart-btn {
+        flex: 0 0 auto;
+        width: 2.5rem;
+        height: 2.5rem;
+        /* Cart access matters more than the guest auth buttons, and putting
+           it first is what lets it land on its own top line instead of
+           being pushed underneath a wrapped "Login"/"Create account" pair. */
+        order: -1;
+    }
+    .cart-btn i { font-size: 1rem; line-height: 1; }
+    .header-link { flex: 0 1 auto; white-space: nowrap; }
+
+    /* Guest state puts two nowrap buttons ("Login" + "Create account") in
+       here. On the marketplace header specifically this slot sits in a grid
+       column that only gets the leftover width after the logo, so those two
+       buttons together are routinely wider than the column: without wrap
+       "Create account" ran off the right edge of the viewport entirely
+       (clipped by html's overflow-x:hidden), which is what made the cart
+       button next to it disappear. Letting the slot wrap keeps both buttons
+       fully on-screen, stacked, instead of silently cut off. */
+    .account-nav-slot { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; row-gap: 8px; }
+    .account-menu-trigger { min-width: 0; max-width: 100%; }
+
+    /* Guest state fills `.account-nav-slot` with just the Login/Create-account
+       buttons (no `.account-menu`). As a flex item, that slot is sized by its
+       *unwrapped* content (both buttons side by side) when the outer row
+       decides what fits next to the cart button — so even though "Login"
+       alone would easily fit beside the cart icon, the browser saw the pair
+       too wide and pushed the whole slot to its own line under the cart,
+       instead of letting "Login" join it. Flattening the slot with
+       `display:contents` makes its two buttons direct flex items of the
+       header row, so they wrap individually and "Login" lands next to the
+       cart. Skipped whenever the slot holds the real account menu (avatar +
+       notifications), whose logged-in layout already wraps correctly. */
+    .marketplace-header-actions .account-nav-slot:not(:has(.account-menu)) {
+        display: contents;
+    }
+
+    /* main.css defines `.account-trigger-name{display:inline-flex}` *after*
+       its own `max-width:480px` hide rule, so the later declaration wins and
+       the name kept taking space at every size. Cap it here instead. */
+    .account-trigger-name {
+        max-width: 84px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cart-topbar { justify-content: flex-start; }
+    .cart-topbar .btn { flex: 0 1 auto; }
+    .cart-topbar .account-nav-slot { margin-left: auto; }
+}
+
+@media (max-width: 480px) {
+    /* Avatar + chevron alone is unambiguous at this width, and dropping the
+       name is what buys the cart button room on the same row. */
+    .account-trigger-name { display: none; }
+    .header-content { gap: 8px; }
+    .marketplace-header-actions,
+    .stores-topbar-right { column-gap: 8px; }
+    .cart-btn { width: 2.35rem; height: 2.35rem; }
+}
+
+/* --- Panel internals stay readable once height-capped --------------------- */
+/* Scoped to `.open` — the base rule is `display:none`, and an unscoped
+   `display:flex` here would leave the panel permanently on screen. */
+.notification-nav-wrap.open .notification-preview { display: flex; flex-direction: column; }
+.notification-preview-head { flex: 0 0 auto; }
+.notification-preview-list { flex: 1 1 auto; min-height: 0; }
+.account-menu-dropdown { overscroll-behavior: contain; }
+.notification-preview-list,
+.search-preview-dropdown,
+.search-results-dropdown { overscroll-behavior: contain; }
+
+@media (max-width: 640px) {
+    /* Full-width panels need slightly roomier touch targets. */
+    .account-menu-item { min-height: 48px; }
+    .notification-preview-item { padding: .85rem 1rem; }
+    .notification-preview-main strong,
+    .notification-preview-main span { white-space: normal; }
+}
+
+/* Account menu (every page except the dashboard, which has its own drawer):
+   on a short screen the panel is height-capped and scrolls. Keep Log out
+   pinned to its bottom edge so it is never something you have to scroll to. */
+.account-menu-dropdown .account-menu-logout {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid var(--gray-100);
+  z-index: 1;
+}

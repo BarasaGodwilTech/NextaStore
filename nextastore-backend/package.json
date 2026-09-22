@@ -1,0 +1,60 @@
+{
+  "name": "nextastore-backend",
+  "version": "2.0.0",
+  "description": "REST API backend for the NextaStore platform (auth, stores, products, orders, dashboard) \u2014 PostgreSQL/Prisma edition.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "prisma:generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed:dev": "node scripts/seed-dev.js",
+    "generate:vapid-keys": "node scripts/generate-vapid-keys.js",
+    "qa:static": "node scripts/qa-static.js",
+    "test:seo": "node scripts/seo-test.js",
+    "test:push": "node scripts/push-sw-test.js && node scripts/push-backend-test.js && node scripts/push-page-test.js && node scripts/push-prompt-test.js",
+    "test:push-prompt": "node scripts/push-prompt-test.js",
+    "test:push-browser": "node scripts/push-sw-browser-test.js",
+    "test:presence": "node scripts/presence-test.js",
+    "test:new-product-notify": "node scripts/notify-followers-test.js",
+    "test:integration": "node scripts/integration-test.js",
+    "test:auth-browser": "node scripts/auth-browser-tests/run.js",
+    "test:presence-browser": "node scripts/presence-browser-test.js",
+    "test:presence-messages-browser": "node scripts/presence-messages-browser-test.js",
+    "test:messages-perf-browser": "node scripts/messages-perf-browser-test.js",
+    "test:messages-flows-browser": "node scripts/messages-flows-browser-test.js",
+    "test:notifications-dots-browser": "node scripts/notifications-dots-browser-test.js",
+    "test:notifications-filter-browser": "node scripts/notifications-filter-browser-test.js",
+    "test:notifications-browser": "node scripts/notifications-browser-test.js",
+    "test:mobile-drawer-browser": "node scripts/mobile-drawer-browser-test.js",
+    "test:admin-rbac": "node scripts/admin-rbac-test.js",
+    "test:admin-console-browser": "node scripts/admin-console-browser-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.637.0",
+    "@prisma/client": "^5.19.1",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.9.14",
+    "rate-limit-redis": "^4.2.0",
+    "web-push": "^3.6.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "prisma": "^5.19.1"
+  }
+}

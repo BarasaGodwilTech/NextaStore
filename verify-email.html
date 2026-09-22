@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Verify Email - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <div class="auth-form-side" style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+        <div class="auth-card" style="text-align:center;">
+            <div class="auth-header">
+                <a href="index.html" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                <h1 id="verifyHeading"><i class="fas fa-spinner fa-spin"></i> Verifying...</h1>
+                <p id="verifyMessage">Hang on a moment.</p>
+            </div>
+            <a href="marketplace.html" class="btn btn-primary btn-block btn-lg" id="verifyContinueBtn" style="display:none;">Continue</a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
+    <script>
+        (async () => {
+            const token = new URLSearchParams(window.location.search).get('token');
+            // Same reasoning as forgot-password.html: clean the token out of
+            // the visible URL/history right away. This page's token is used
+            // once, immediately, below, so nothing else needs it afterward.
+            if (token && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('token');
+                window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+            }
+            const heading = document.getElementById('verifyHeading');
+            const message = document.getElementById('verifyMessage');
+            const continueBtn = document.getElementById('verifyContinueBtn');
+
+            if (!token) {
+                heading.innerHTML = '<i class="fas fa-circle-exclamation"></i> Missing link';
+                message.textContent = 'This page needs a verification link from your email — check your inbox.';
+                return;
+            }
+
+            try {
+                await app.apiRequest('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
+                heading.innerHTML = '<i class="fas fa-circle-check"></i> Email verified';
+                message.textContent = 'Your email is confirmed. You\u2019re all set.';
+                continueBtn.style.display = 'block';
+            } catch (error) {
+                heading.innerHTML = '<i class="fas fa-circle-exclamation"></i> Link invalid or expired';
+                message.textContent = error.message || 'Request a new verification email and try again.';
+            }
+        })();
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

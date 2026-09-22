@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Sign in required · NextaStore</title>
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="icon" href="../assets/brand/png/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="../assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="../assets/brand/png/favicon/favicon-64.png">
+    <link rel="apple-touch-icon" href="../assets/brand/png/favicon/favicon-64.png">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="errors.css">
+</head>
+<body>
+    <main class="error-stage">
+        <a class="error-lockup" href="../index.html" aria-label="NextaStore home"><img src="../assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <p class="error-code">401</p>
+        <h1>Sign in required</h1>
+        <p class="error-sub">Your session may have expired. Sign in to continue.</p>
+        <div class="error-actions">
+            <a class="btn btn-primary" href="../login.html">Sign in</a>
+            <a class="btn btn-outline" href="../signup.html">Create account</a>
+        </div>
+    </main>
+
+    <footer class="error-legal">
+        &copy; 2026 NextaStore <span class="sep">&middot;</span> <a href="../safety.html">Trust &amp; Safety</a> <span class="sep">&middot;</span> Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a>
+    </footer>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

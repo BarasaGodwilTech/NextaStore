@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>NextaStore — Build Your Online Store</title>
+    <meta name="description" content="Launch a mobile-first online store built for East African entrepreneurs. Accept Mobile Money, manage orders, and grow — all in one place.">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 85% 15%, rgba(226, 154, 46, 0.35), transparent 40%),
+                linear-gradient(160deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+            color: white;
+            padding: var(--spacing-3xl) var(--spacing-xl);
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at 80% 20%, black, transparent 65%);
+            pointer-events: none;
+        }
+        .hero-inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: var(--spacing-2xl);
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        /* Hero brand block: app icon with the solid-white wordmark beneath it.
+           The white wordmark asset is the only treatment with enough contrast
+           on the dark hero — the color wordmark renders "Nexta" in dark ink
+           and disappears here. Single canonical rule set for this element. */
+        .hero-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: var(--spacing-lg);
+        }
+        .hero-brand-icon {
+            width: 76px;
+            height: 76px;
+            border-radius: 18px;
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.30);
+        }
+        .hero-brand-wordmark { width: min(290px, 68vw); height: auto; }
+        .hero-eyebrow { color: var(--primary); }
+        .hero h1 { font-size: 3rem; margin-bottom: var(--spacing-lg); color: white; max-width: 560px; }
+        .hero p.lede { max-width: 480px; margin: 0 0 var(--spacing-xl); color: rgba(255,255,255,0.85); }
+        .hero-buttons { display: flex; gap: var(--spacing-md); flex-wrap: wrap; }
+        .hero-stats { display: flex; gap: var(--spacing-2xl); margin-top: var(--spacing-2xl); flex-wrap: wrap; }
+        .hero-stats div strong { display: block; font-family: var(--font-display); font-size: 1.75rem; color: white; }
+        .hero-stats div span { font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+
+        /* Phone mockup built with CSS, no stock photography needed */
+        .hero-mock { display: flex; justify-content: center; }
+        .phone {
+            width: 250px;
+            background: var(--ink);
+            border-radius: 34px;
+            padding: 12px;
+            box-shadow: var(--shadow-xl);
+            transform: rotate(3deg);
+        }
+        .phone-screen { background: var(--paper); border-radius: 24px; overflow: hidden; }
+        .phone-bar { background: white; padding: 0.6rem 0.9rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--gray-200); }
+        .phone-bar .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+        .phone-bar span { font-size: 0.7rem; font-weight: 700; color: var(--ink); }
+        .phone-banner { height: 70px; background: linear-gradient(120deg, #00B074, #00794F); }
+        .phone-products { padding: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .phone-card { background: white; border-radius: 10px; padding: 0.5rem; box-shadow: var(--shadow-sm); }
+        .phone-card .thumb { height: 46px; border-radius: 6px; margin-bottom: 0.4rem; }
+        .phone-card .thumb.a { background: #FBE3DC; }
+        .phone-card .thumb.b { background: var(--secondary-light); }
+        .phone-card .thumb.c { background: var(--primary-light); }
+        .phone-card .thumb.d { background: #E9E4F8; }
+        .phone-card p { font-size: 0.6rem; margin-bottom: 0.15rem; color: var(--ink); font-weight: 600; }
+        .phone-card span { font-size: 0.6rem; color: var(--primary-dark); font-weight: 700; }
+
+        .features { padding: var(--spacing-3xl) var(--spacing-xl); background: white; }
+        .section-head { max-width: 560px; margin: 0 auto var(--spacing-2xl); text-align: center; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-xl); max-width: var(--max-width); margin: 0 auto; }
+        .feature-card { padding: var(--spacing-xl); border: 1px solid var(--gray-100); border-radius: var(--border-radius-lg); }
+        .feature-card .icon-tile { margin-bottom: var(--spacing-lg); }
+        .feature-card h3 { font-family: var(--font-body); font-size: 1.0625rem; }
+
+        .cta-section { background: var(--gray-50); padding: var(--spacing-3xl) var(--spacing-xl); text-align: center; }
+        .cta-section h2 { max-width: 480px; margin: 0 auto var(--spacing-md); }
+
+        /* Footer styles live once in css/main.css (.footer) — shared by every page. */
+
+        .section-container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--spacing-xl); }
+        .deals-section { background: var(--paper); padding: var(--spacing-3xl) 0; }
+        .deals-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--spacing-xl); flex-wrap: wrap; gap: var(--spacing-sm); }
+        .deals-head h2 { margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .deals-head p { margin-bottom: 0; color: var(--gray-600); }
+
+        .stores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--spacing-lg); }
+        .store-card { background: white; border-radius: var(--border-radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100); transition: box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; }
+        .store-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+        .store-banner { height: 140px; position: relative; background: linear-gradient(120deg, #00B074 0%, #00794F 100%); }
+        .store-banner img { width: 100%; height: 100%; object-fit: cover; }
+        .store-details { padding: var(--spacing-lg); }
+        .store-logo { width: 50px; height: 50px; border-radius: 50%; background-color: var(--primary-light); overflow: hidden; color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem; margin-bottom: var(--spacing-sm); }
+        .store-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .store-logo-initial { display: none; }
+        .store-logo[data-fallback-initial] .store-logo-initial { display: block; }
+        .store-details h3 { font-size: 1rem; margin-bottom: var(--spacing-xs); font-family: var(--font-body); font-weight: 600; }
+        .store-details p { font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-md); }
+        .store-meta { display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md); }
+        .store-meta span { font-size: 0.8125rem; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
+        .store-meta i { color: var(--primary-dark); }
+        .store-card .btn { width: 100%; }
+        .deals-cta { text-align: center; padding: var(--spacing-2xl); background: white; border-radius: var(--border-radius-lg); border: 1px solid var(--gray-100); margin-top: var(--spacing-xl); }
+        .deals-cta p { font-size: 1.0625rem; color: var(--gray-600); margin-bottom: var(--spacing-lg); }
+
+        .promotion-section { background: linear-gradient(150deg, var(--ink) 0%, #33261B 100%); color: white; padding: var(--spacing-3xl) 0; }
+        .promotion-content { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--spacing-xl); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2xl); align-items: center; }
+        .promotion-text h2 { color: white; margin-bottom: var(--spacing-xl); }
+        .promotion-features { list-style: none; margin-bottom: var(--spacing-xl); }
+        .promotion-features li { display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md); font-size: 1rem; }
+        .promotion-features i { color: var(--primary); font-size: 1.1rem; width: 1.2em; }
+        .promotion-buttons { display: flex; gap: var(--spacing-md); flex-wrap: wrap; }
+        .promotion-image { display: grid; gap: var(--spacing-md); }
+        .promo-card { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255,255,255,0.1); padding: var(--spacing-lg) var(--spacing-xl); border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: var(--spacing-lg); }
+        .promo-card i { font-size: 1.5rem; color: var(--primary); flex-shrink: 0; }
+        .promo-card h3 { color: white; margin-bottom: 0.15rem; font-family: var(--font-body); font-size: 1rem; }
+        .promo-card p { color: rgba(255, 255, 255, 0.7); margin-bottom: 0; font-size: 0.875rem; }
+
+        @media (max-width: 900px) {
+            .hero-inner { grid-template-columns: 1fr; }
+            .hero-mock { order: -1; }
+            .phone { transform: none; margin: 0 auto; }
+            .promotion-content { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.1rem; }
+            .hero-stats { gap: var(--spacing-xl); }
+            .features-grid { grid-template-columns: 1fr; }
+            .deals-grid { grid-template-columns: 1fr 1fr; }
+            .promotion-buttons { flex-direction: column; }
+            .promotion-buttons .btn { width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .deals-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <ul class="navbar-menu">
+            <li><a href="#features">Features</a></li>
+            <li><a href="marketplace.html">Marketplace</a></li>
+            <li class="account-nav-slot" data-account-nav></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <div>
+                <div class="hero-brand">
+                    <img class="hero-brand-icon" src="assets/brand/png/icon/icon-512.png" alt="NextaStore app icon" width="76" height="76">
+                    <img class="hero-brand-wordmark" src="assets/brand/png/wordmark/wordmark-white.png" alt="NextaStore">
+                </div>
+                <div class="eyebrow hero-eyebrow"><i class="fas fa-bolt"></i> Built for East African sellers</div>
+                <h1>Your store, live in minutes — not weeks.</h1>
+                <p class="lede">Set up a mobile-first storefront, accept MTN &amp; Airtel Mobile Money, and manage orders from one simple dashboard. No developers, no code.</p>
+                <div class="hero-buttons">
+                    <a href="signup.html" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
+                    <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-play"></i> See How It Works</a>
+                </div>
+                <div class="hero-stats">
+                    <div><strong>Mobile-first</strong><span>Built for shoppers on any device</span></div>
+                    <div><strong>Local</strong><span>Made for East African sellers</span></div>
+                    <div><strong>Simple</strong><span>Store, products and orders in one place</span></div>
+                </div>
+            </div>
+            <div class="hero-mock">
+                <div class="phone">
+                    <div class="phone-screen">
+                        <div class="phone-bar"><div class="dot">A</div><span>Amina's Crafts</span></div>
+                        <div class="phone-banner"></div>
+                        <div class="phone-products">
+                            <div class="phone-card"><div class="thumb a"></div><p>Beaded Necklace</p><span>UGX 12,000</span></div>
+                            <div class="phone-card"><div class="thumb b"></div><p>Kanzu Wear</p><span>UGX 45,000</span></div>
+                            <div class="phone-card"><div class="thumb c"></div><p>Coffee Beans</p><span>UGX 18,000</span></div>
+                            <div class="phone-card"><div class="thumb d"></div><p>Print Dress</p><span>UGX 55,000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-head">
+            <div class="eyebrow"><i class="fas fa-layer-group"></i> Everything you need</div>
+            <h2>One platform, from first sale to scale</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-tile tone-primary"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <h3>Easy Store Builder</h3>
+                <p>Pick a theme, add your products, and publish — no technical knowledge required.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-secondary"><i class="fas fa-mobile-screen"></i></div>
+                <h3>Mobile Optimized</h3>
+                <p>Every storefront is designed mobile-first, since that's how most of your customers will shop.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-coral"><i class="fas fa-credit-card"></i></div>
+                <h3>Local Payments</h3>
+                <p>Accept MTN Mobile Money, Airtel Money, and card payments without extra setup.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-primary"><i class="fas fa-chart-line"></i></div>
+                <h3>Real Analytics</h3>
+                <p>Track orders, revenue, and your best-selling products from a single dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-secondary"><i class="fas fa-share-nodes"></i></div>
+                <h3>Share Your Store</h3>
+                <p>Easily share your store link via WhatsApp, Facebook, and Twitter to reach more customers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-coral"><i class="fas fa-headset"></i></div>
+                <h3>24/7 Support</h3>
+                <p>Reach a real person whenever something's not working or you're not sure what to do next.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-tile tone-primary"><i class="fas fa-shield-halved"></i></div>
+                <h3>Secure &amp; Reliable</h3>
+                <p>Your store and customer data are protected with enterprise-grade security.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>Ready to start selling?</h2>
+        <p class="lede" style="margin: 0 auto var(--spacing-xl);">Join thousands of entrepreneurs already trading on NextaStore.</p>
+        <a href="signup.html" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Create Your Store Now</a>
+    </section>
+
+    <section class="deals-section" id="deals">
+        <div class="section-container">
+            <div class="deals-head">
+                <h2><i class="fas fa-fire" style="color: var(--coral);"></i> Featured Stores</h2>
+                <p>Discover amazing stores from sellers across the marketplace</p>
+                <a href="stores.html" class="btn-link">View all stores</a>
+            </div>
+            <!-- Loading State -->
+            <div class="loading-state active" id="featuredStoresLoadingState">
+                <div class="stores-grid">
+                    <div class="store-card">
+                        <div class="store-banner">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="store-details">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="store-card">
+                        <div class="store-banner">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="store-details">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="store-card">
+                        <div class="store-banner">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="store-details">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="store-card">
+                        <div class="store-banner">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="store-details">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actual Content -->
+            <div class="loading-content hidden" id="featuredStoresContent">
+                <div class="stores-grid" id="featuredStoresGrid">
+                    <!-- Featured stores will be loaded here -->
+                </div>
+            </div>
+            <div class="deals-cta">
+                <p>Explore our full marketplace with hundreds of stores and thousands of products</p>
+                <a href="marketplace.html" class="btn btn-primary"><i class="fas fa-store"></i> Visit Marketplace</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="promotion-section">
+        <div class="promotion-content">
+            <div class="promotion-text">
+                <h2>Why sellers choose NextaStore</h2>
+                <ul class="promotion-features">
+                    <li><i class="fas fa-circle-check"></i> <strong>Easy setup</strong> — launch your store in minutes</li>
+                    <li><i class="fas fa-circle-check"></i> <strong>Local payments</strong> — MTN MoMo &amp; Airtel Money</li>
+                    <li><i class="fas fa-circle-check"></i> <strong>Mobile first</strong> — optimized for African markets</li>
+                    <li><i class="fas fa-circle-check"></i> <strong>24/7 support</strong> — dedicated help whenever you need it</li>
+                    <li><i class="fas fa-circle-check"></i> <strong>Secure</strong> — enterprise-grade protection</li>
+                </ul>
+                <div class="promotion-buttons">
+                    <a href="signup.html" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
+                    <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-circle-info"></i> Learn More</a>
+                </div>
+            </div>
+            <div class="promotion-image">
+                <div class="promo-card"><i class="fas fa-chart-line"></i><div><h3>Track your growth</h3><p>Monitor sales, visitors, and conversions from one dashboard.</p></div></div>
+                <div class="promo-card"><i class="fas fa-mobile-screen-button"></i><div><h3>Mobile optimized</h3><p>Your store looks great on any device, phone to desktop.</p></div></div>
+                <div class="promo-card"><i class="fas fa-money-bill-wave"></i><div><h3>Easy payments</h3><p>Accept Mobile Money and card payments seamlessly.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-auth-aware-link>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
+    <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script>
+        async function loadFeaturedStores() {
+            const storesGrid = document.getElementById('featuredStoresGrid');
+            try {
+                // GET /store/public returns a single store (the one
+                // resolved from ?store= or the logged-in owner's own store),
+                // not a list — calling this here made `stores.length`
+                // undefined, so the "no stores yet" empty state showed even
+                // when the platform had real stores. /store/public/all is
+                // the actual list endpoint (same one the marketplace uses).
+                const response = await app.apiRequest('/store/public/all');
+                const stores = response.data || [];
+
+                // Hide loading state and show content
+                document.getElementById('featuredStoresLoadingState')?.classList.remove('active');
+                document.getElementById('featuredStoresContent')?.classList.remove('hidden');
+
+                if (!stores.length) {
+                    storesGrid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1; padding: var(--spacing-xl);">
+                            <div class="empty-icon"><i class="fas fa-store"></i></div>
+                            <h3>No stores yet</h3>
+                            <p>Be the first to start selling on NextaStore!</p>
+                            <a href="signup.html" class="btn btn-primary"><i class="fas fa-rocket"></i> Create Your Store</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                storesGrid.innerHTML = stores.slice(0, 4).map(store => {
+                    const bannerUrl = store.banner ? app.resolveImageUrl(store.banner) : '';
+                    const logoUrl = store.logo ? app.resolveImageUrl(store.logo) : '';
+                    const bannerFallback = `background: ${store.bannerColor || window.NextaStoreBanner?.DEFAULT_BANNER_COLOR || '#00B074'}`;
+                    const storeUrl = app.storeLink(store);
+
+                    return `
+                    <div class="store-card" onclick="window.location.href='${storeUrl}'">
+                        <div class="store-banner" style="${bannerUrl ? '' : bannerFallback}">
+                            ${bannerUrl ? `<img src="${app.escapeHtml(bannerUrl)}" alt="" onerror="var p=this.parentElement;this.remove();if(p)p.setAttribute('style','${bannerFallback}')">` : ''}
+                        </div>
+                        <div class="store-details">
+                            <div class="store-logo" ${logoUrl ? '' : 'data-fallback-initial'}>
+                                ${logoUrl ? `<img src="${app.escapeHtml(logoUrl)}" alt="" onerror="var p=this.parentElement;this.remove();if(p)p.setAttribute('data-fallback-initial','')">` : ''}
+                                <span class="store-logo-initial">${app.escapeHtml(app.getInitial(store.name))}</span>
+                            </div>
+                            <h3>${app.escapeHtml(store.name)} <span class="store-badge-row">${app.renderSellerBadges(store, { limit: 2 })}</span></h3>
+                            <p>${app.escapeHtml(store.description || 'Quality products from Uganda')}</p>
+                            <div class="store-meta">
+                                <span><i class="fas fa-award"></i> ${store.badges?.length || 0} badge${store.badges?.length === 1 ? "" : "s"}</span>
+                                <span><i class="fas fa-box"></i> ${store.productCount || 0} products</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm">Visit Store</button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (error) {
+                console.error('Error loading featured stores:', error);
+                // Hide loading state and show error
+                document.getElementById('featuredStoresLoadingState')?.classList.remove('active');
+                document.getElementById('featuredStoresContent')?.classList.remove('hidden');
+                storesGrid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1; padding: var(--spacing-xl);">
+                        <div class="empty-icon"><i class="fas fa-store"></i></div>
+                        <h3>Coming Soon</h3>
+                        <p>Amazing stores are setting up their shops on NextaStore.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load featured stores when page loads
+        document.addEventListener('DOMContentLoaded', loadFeaturedStores);
+
+        // Note: this section used to render a "Deals" product grid via a
+        // loadDeals()/renderDeals() pair that targeted #dealsGrid/#dealsCta/
+        // #dealsLoadingState — none of which exist in this markup anymore
+        // (the section was repurposed to show Featured Stores, above, via
+        // loadFeaturedStores()). That left loadDeals() calling
+        // `.style`/`.innerHTML` on `null` on every single page load,
+        // throwing inside the fetch's .then chain (silently swallowed as an
+        // unhandled rejection) instead of ever rendering anything.
+        // Removed as dead code rather than reconnected — deal‑ified
+        // trending products already exist on marketplace.html.
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

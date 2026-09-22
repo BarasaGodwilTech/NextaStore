@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Messages - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/messages.css">
+    <link rel="stylesheet" href="css/map-picker.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-required class="messages-page">
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <header class="messages-topbar">
+        <a href="marketplace.html" class="logo brand-lockup" aria-label="NextaStore — back to marketplace"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <div class="account-nav-slot" data-account-nav></div>
+    </header>
+
+    <main class="messages-shell" id="messagesShell">
+        <aside class="conversation-list" id="conversationList">
+            <div class="conversation-list-sticky">
+                <div class="conversation-list-header">
+                    <h2>Messages</h2>
+                    <span class="conversation-total-badge hidden" id="conversationTotalBadge"></span>
+                </div>
+                <div class="conversation-search-wrap">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" id="conversationSearchInput" placeholder="Search conversations" aria-label="Search conversations" autocomplete="off">
+                    <button type="button" class="conversation-search-clear hidden" id="conversationSearchClear" aria-label="Clear search"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="conversation-filter-tabs" role="tablist" aria-label="Filter conversations">
+                    <button type="button" class="filter-tab is-active" id="filterTabAll" data-filter="all" role="tab" aria-selected="true">All</button>
+                    <button type="button" class="filter-tab" id="filterTabUnread" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+                </div>
+            </div>
+            <div class="ptr-indicator" id="convListPtr" aria-hidden="true"><i class="fas fa-arrow-down"></i><span>Pull to refresh</span></div>
+            <div class="conversation-list-body" id="conversationListBody">
+                <div class="message-list-skeleton"><div class="skeleton skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text-sm"></div></div></div>
+                <div class="message-list-skeleton"><div class="skeleton skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton skeleton-text" style="width:70%"></div><div class="skeleton skeleton-text-sm" style="width:45%"></div></div></div>
+                <div class="message-list-skeleton"><div class="skeleton skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton skeleton-text" style="width:85%"></div><div class="skeleton skeleton-text-sm" style="width:55%"></div></div></div>
+            </div>
+        </aside>
+
+        <section class="conversation-thread" id="conversationThread">
+            <div class="empty-state" id="threadEmptyState">
+                <div class="empty-icon"><i class="fas fa-comments"></i></div>
+                <h3>Select a conversation</h3>
+                <p>Pick a conversation on the left to see the messages.</p>
+            </div>
+
+            <div class="thread-view hidden" id="threadView">
+                <div class="thread-header-row">
+                    <button type="button" class="thread-back-btn" id="threadBackBtn" aria-label="Back to conversations"><i class="fas fa-arrow-left"></i></button>
+                    <div class="thread-header" id="threadHeader"></div>
+                </div>
+                <div class="ptr-indicator" id="threadPtr" aria-hidden="true"><i class="fas fa-arrow-down"></i><span>Pull for older messages</span></div>
+                <div class="thread-messages" id="threadMessages"></div>
+                <button type="button" class="scroll-bottom-btn hidden" id="scrollBottomBtn" aria-label="Scroll to latest messages"><i class="fas fa-arrow-down"></i><span class="scroll-bottom-btn-label hidden">New messages</span></button>
+                <form class="thread-reply" id="threadReplyForm">
+                    <div class="thread-reply-row">
+                        <div class="composer-attach" id="composerAttach">
+                            <button type="button" class="composer-attach-btn" id="composerAttachBtn" aria-haspopup="true" aria-expanded="false" aria-label="Add to your message" disabled><i class="fas fa-plus"></i></button>
+                            <div class="attach-menu hidden" id="composerAttachMenu" role="menu"></div>
+                        </div>
+                        <div class="message-composer-field">
+                            <textarea id="threadReplyInput" placeholder="Type a message…" autocomplete="off" maxlength="2000" rows="1" required aria-describedby="messageCharCount"></textarea>
+                            <span class="message-char-count" id="messageCharCount">0/2000</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="threadSendBtn" aria-label="Send message"><i class="fas fa-paper-plane"></i><span>Send</span></button>
+                    </div>
+                    <span class="composer-hint">Enter to send &middot; Shift + Enter for a new line</span>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <p class="messages-credit">Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener" class="brand-link">Nextawills Technologies</a></p>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/map-preview.js"></script>
+    <script src="js/thread-cache.js"></script>
+    <script src="js/messages.js"></script>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

@@ -1,0 +1,666 @@
+// NextaStore production schema.
+//
+// Design notes (see README.md "Database" section for the full rationale):
+//  - storeId is indexed on every store-scoped table — this is the multi-tenant
+//    boundary and every query in src/ filters through it.
+//  - deletedAt (soft delete) on Store/Product/Order — order history and a
+//    store's sales record must survive a product or store being removed.
+//  - OrderItem snapshots productName + unitPrice at the moment of purchase.
+//    Prices change and products get deleted; an order must never silently
+//    reflect today's price for something bought last month.
+//  - Order.total and OrderItem.unitPrice are ALWAYS computed server-side from
+//    Product.price at write time — never trust a client-supplied price/total.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+enum FulfillmentMethod {
+  delivery
+  pickup
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+}
+
+// A user's account type. "buyer" is the default for anyone who signs up to
+// shop; "seller" is anyone who owns (or has ever owned) a store. There's no
+// "both" value — sellers can always browse/buy too, so gating on role only
+// ever needs to ask "is this a seller-only action?", never "is this user
+// specifically a buyer?". A buyer becomes a seller in place (see
+// POST /user/become-seller) rather than needing a second account.
+enum UserRole {
+  buyer
+  seller
+  admin
+}
+
+enum UserAccountStatus {
+  active
+  suspended
+}
+
+enum AdminLevel {
+  standard
+  super_admin
+}
+
+enum AdminFollowUpStatus {
+  open
+  in_progress
+  done
+  cancelled
+}
+
+// Seller subscription (item: paid "verified" badge / SaaS access gate).
+// "trial" = the free evaluation window every new store gets automatically;
+// "active" = currently paid; "expired" = trial ran out and no payment is on
+// file. This column is a best-effort cache for admin/dashboard display —
+// the actual enforcement (what's visible on the public marketplace) always
+// recomputes live from trialEndsAt/subscriptionPaidUntil so it can never go
+// stale even if this column hasn't been refreshed yet. See helpers.js
+// subscriptionInfo() / isStoreCurrentlyActive().
+enum StoreSubscriptionStatus {
+  trial
+  active
+  expired
+}
+
+enum SubscriptionPaymentStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(buyer)
+  accountStatus UserAccountStatus @default(active)
+  adminLevel   AdminLevel @default(standard)
+  // Bumped on password change, password reset, and "log out everywhere".
+  // Every session token carries the tokenVersion it was issued under (see
+  // signSessionToken in src/middleware.js); a token whose value no longer
+  // matches this column is rejected as TOKEN_REVOKED. Starts at 0, same as
+  // every token issued before this column existed, so deploying this alone
+  // logs nobody out.
+  tokenVersion Int @default(0)
+  adminRoleId  String?
+  adminRole    AdminRole? @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
+  avatar       String?
+  cover        String?
+  emailVerifiedAt DateTime?
+  // Presence: when this person was last seen connected (see src/presence.js).
+  // Only meaningful while they are OFFLINE — while they are online, the live
+  // connection is the source of truth and this column is just a slow
+  // checkpoint (written at most every few minutes, plus once on disconnect)
+  // so a crash or restart never loses more than a few minutes of accuracy.
+  // Nullable: null means "never seen", which the UI shows as plain Offline.
+  lastActiveAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store Store?
+  storeFollows StoreFollow[]
+  productFavorites ProductFavorite[]
+
+  conversationsAsBuyer Conversation[] @relation("BuyerConversations")
+  messages             Message[]
+  notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
+  ordersAsBuyer        Order[]        @relation("BuyerOrders")
+  reviews              Review[]
+  orderReports         OrderReport[]
+  verificationTokens   VerificationToken[]
+  createdAdminRoles    AdminRole[] @relation("AdminRoleCreator")
+  adminFollowUps       AdminFollowUp[] @relation("FollowUpOwner")
+  adminFollowUpsAssigned AdminFollowUp[] @relation("FollowUpAssignee")
+  adminAuditLogs       AdminAuditLog[] @relation("AuditActor")
+  adminAuditTargetLogs AdminAuditLog[] @relation("AuditTargetUser")
+}
+
+
+model AdminRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @default("")
+  permissions String[] @default([])
+  createdById String?
+  createdBy   User?    @relation("AdminRoleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  followUps   AdminFollowUp[]
+}
+
+model AdminFollowUp {
+  id            String              @id @default(cuid())
+  title         String
+  note          String              @default("")
+  status        AdminFollowUpStatus @default(open)
+  dueAt         DateTime?
+  relatedUserId String?
+  relatedUser   User?               @relation("FollowUpOwner", fields: [relatedUserId], references: [id], onDelete: SetNull)
+  assignedToId  String?
+  assignedTo    User?               @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  adminRoleId   String?
+  adminRole     AdminRole?          @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  completedAt   DateTime?
+
+  @@index([status, dueAt])
+  @@index([relatedUserId])
+  @@index([assignedToId])
+}
+
+model AdminAuditLog {
+  id            String   @id @default(cuid())
+  actorId       String
+  actor         User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action        String
+  targetType    String
+  targetId      String?
+  targetUserId  String?
+  targetUser    User?    @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  metadata      Json     @default("{}")
+  createdAt     DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([targetUserId, createdAt])
+}
+
+model Store {
+  id           String    @id @default(cuid())
+  ownerId      String?   @unique
+  owner        User?     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  slug         String    @unique
+  name         String
+  description  String    @default("")
+  contactEmail String    @default("")
+  phoneNumber  String    @default("")
+  address      String    @default("")
+  theme        String    @default("default")
+  layout       String    @default("grid")
+  logo         String?
+  banner       String?
+  // Unified banner system: color + image both live here at the store level,
+  // so every page (storefront, dashboard, sub-pages) renders from this one
+  // source instead of each page keeping its own copy. #00B074 is the
+  // default green for every newly created store.
+  bannerColor  String    @default("#00B074")
+  district           String @default("")
+  detailedDirections String @default("")
+  // "lat,lng" string, matching the format the map picker already reads/writes.
+  mapCoordinates     String @default("")
+  // Kept as JSON (not flattened columns) so the existing frontend's
+  // `store.payments.mtnMomo` / `store.seo.title` shape needs zero changes.
+  payments     Json      @default("{\"mtnMomo\": true, \"airtelMoney\": true, \"card\": false}")
+  seo          Json      @default("{\"title\": \"\", \"description\": \"\", \"keywords\": \"\", \"analyticsId\": \"\"}")
+  followers    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  // Draft vs. live. Only onboarding.js's launch() ever sets this to true —
+  // every public read (marketplace, search, storefront-by-slug routing)
+  // must filter on it. Existing production stores are backfilled to true
+  // in the migration (they're already live); only stores created from that
+  // point forward start as drafts via the column's DB default.
+  isPublished  Boolean   @default(false)
+  // Primary seller trust flag. It is true only while a confirmed paid
+  // commitment of at least 6 months is active. Higher commitment tiers are
+  // exposed through the derived `badges` payload, not a separate rating.
+  verified     Boolean   @default(false)
+  // The commitment length of the latest approved Seller Pass payment.
+  // A public trust badge is earned only from a confirmed commitment of 6+ months.
+  badgeCommitmentMonths Int @default(0)
+
+  // Every store gets a free trial window from the moment it's created
+  // (DB column default, so this applies no matter which code path creates
+  // the store — signup or /user/become-seller — without either needing to
+  // set it explicitly). subscriptionPaidUntil is null until the first
+  // approved payment. The corrective production migration removes the
+  // original rollout's legacy five-year grant from stores with no approved
+  // payment.
+  subscriptionStatus    StoreSubscriptionStatus @default(trial)
+  trialEndsAt           DateTime                @default(dbgenerated("(now() + interval '7 days')"))
+  subscriptionPaidUntil DateTime?
+
+  products Product[]
+  orders   Order[]
+  conversations Conversation[]
+  followersRecords StoreFollow[]
+  subscriptionPayments SubscriptionPayment[]
+
+  @@index([createdAt])
+  // Also has GIN trigram indexes on name/description/district/address for
+  // fast ILIKE '%term%' search at scale — see migration
+  // 20260917120000_trigram_search_indexes (Prisma schema syntax can't
+  // express a non-default GIN operator class, so it isn't redeclared here).
+  //
+  // ⚠ THIS ALREADY HAPPENED ONCE: because these indexes only exist as raw
+  // SQL and not here, a later `prisma migrate dev` schema diff (migration
+  // 20260917123239_init) saw them as "unexpected" and auto-generated a
+  // migration that DROPPED 4 of the 6 — silently, with a green migration
+  // history, until a corrective migration
+  // (20260917190000_restore_trigram_search_indexes) put them back. Before
+  // running `prisma migrate dev` again, diff the generated migration.sql
+  // for `DROP INDEX ... _trgm_idx` and remove that line if present — don't
+  // let it ship. `npm run qa:static` also checks this automatically.
+}
+
+model StoreFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  storeId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@index([storeId])
+  @@index([userId])
+}
+
+// A buyer "liking"/saving a product for later — same shape as StoreFollow.
+// Unlike orders or reviews this carries no business logic of its own, it's
+// purely a saved-items list (see GET/POST/DELETE /favorites).
+model ProductFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  description   String    @default("")
+  price         Decimal   @db.Decimal(12, 2)
+  originalPrice Decimal?  @db.Decimal(12, 2)
+  // Denormalized: true when originalPrice > price. Prisma's query builder
+  // can't compare two columns of the same row in a `where` clause, so
+  // without this the /deals endpoint had to pull a working set of rows and
+  // filter in JS on every request — fine at demo scale, a real bottleneck
+  // once the catalog is large (it also silently returns fewer than 8 deals
+  // once discounted products fall outside the top-N pulled). Kept in sync
+  // by setOnSale() in helpers.js on every create/update — never set this
+  // directly from request payloads.
+  onSale        Boolean   @default(false)
+  category      String    @default("other")
+  images        Json      @default("[]")
+  image         String?
+  // Small (~480px) variants of `images`, same index-for-index, generated
+  // client-side at upload time (see product-form.js's canvas resize) so
+  // marketplace/store grids don't have to ship full-resolution photos for a
+  // ~200px card (item 5). Falls back to `images`/`image` for any product
+  // saved before this existed — see serializeProduct's computed `thumbnail`.
+  thumbnails    Json      @default("[]")
+  icon          String    @default("fa-box")
+  stock         Int       @default(0)
+  rating        Float     @default(0)
+  reviews       Int       @default(0)
+  sold          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  orderItems OrderItem[]
+  conversations Conversation[]
+  reviewEntries Review[]
+  favoritedBy ProductFavorite[]
+
+  @@index([storeId])
+  @@index([storeId, category])
+  @@index([storeId, createdAt])
+  @@index([storeId, sold])
+  @@index([storeId, price])
+  @@index([onSale, sold])
+  @@index([sold])
+  @@index([createdAt])
+  @@index([name])
+  // Also has GIN trigram indexes on name/description for fast ILIKE
+  // '%term%' search at scale — added as raw SQL in migration
+  // 20260917120000_trigram_search_indexes since Prisma's schema syntax
+  // can't express a non-default GIN operator class. Not redeclared here;
+  // don't let `prisma migrate dev`'s schema diff talk you into dropping it.
+  //
+  // ⚠ THIS ALREADY HAPPENED ONCE — see the matching warning on Store's
+  // trigram indexes above for what went wrong and how it was caught.
+}
+
+model Order {
+  // Short, human-friendly code (e.g. "3F9A1B2C") used as the primary key —
+  // the frontend displays order.id directly as the order number.
+  id            String      @id
+  storeId       String
+  store         Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  // Nullable so pre-existing orders placed before checkout required login
+  // still read back fine. Every order created from here on always has one —
+  // checkout now requires a buyer to be logged in (see POST /orders/public
+  // and item 13), which is also what makes a real "order history" page
+  // possible instead of no link back to a buyer account at all.
+  buyerId       String?
+  buyer         User?       @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: SetNull)
+  customerName  String
+  customerPhone String
+  deliveryAddress String @default("")
+  fulfillmentMethod FulfillmentMethod @default(delivery)
+  paymentMethod String?
+  paymentStatus PaymentStatus @default(unpaid)
+  flaggedAt DateTime?
+  flagReason String?
+  total         Decimal     @db.Decimal(12, 2)
+  status        OrderStatus @default(pending)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  items OrderItem[]
+  reports OrderReport[]
+
+  @@index([storeId])
+  @@index([storeId, customerPhone])
+  @@index([storeId, createdAt])
+  @@index([buyerId])
+}
+
+model OrderReport {
+  id         String   @id @default(cuid())
+  orderId    String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  reviewedAt DateTime?
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+
+  @@unique([orderId, reporterId])
+  @@index([orderId])
+  @@index([reporterId])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(12, 2)
+
+  @@index([orderId])
+}
+
+// Buyer <-> seller messaging (item 11). One conversation per
+// buyer/store/product combination (product optional — a buyer can also
+// message a store in general, outside any specific product page). Simple
+// polling from the frontend is fine to start; a WebSocket/SSE channel could
+// later push new messages instead of the client re-fetching on an interval.
+model Conversation {
+  id        String    @id @default(cuid())
+  buyerId   String
+  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages Message[]
+
+  // Product-specific threads are unique here. A PostgreSQL partial unique
+  // index in the production migration additionally enforces one general
+  // (productId IS NULL) thread per buyer/store pair, because Prisma schema
+  // syntax cannot express that partial constraint.
+  @@unique([buyerId, storeId, productId])
+  @@index([storeId])
+  @@index([buyerId])
+}
+
+// "text" is a normal chat bubble. "product" and "location" are rich
+// attachment messages (see item: in-chat product sharing / location
+// sharing) — their structured payload lives in `metadata` rather than
+// being crammed into `body`, so `body` stays free to hold an optional
+// caption the sender typed alongside the attachment.
+enum MessageType {
+  text
+  product
+  location
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  type           MessageType  @default(text)
+  // Snapshotted attachment payload, shaped by `type`:
+  //   product  -> { productId, name, price, image }  (captured at send
+  //               time so the bubble still renders correctly even if the
+  //               product is later edited, discounted or deleted)
+  //   location -> { lat, lng, label }
+  //   text     -> always {}
+  metadata       Json         @default("{}")
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  // Also has a PARTIAL index — "Message_unread_by_conversation_idx" on
+  // (conversationId, senderId) WHERE readAt IS NULL — added in migration
+  // 20260918110000_message_unread_perf_index. Prisma schema syntax can't
+  // express a partial index's WHERE clause (same limitation noted below for
+  // the trigram search indexes), so it's deliberately NOT declared as an
+  // @@index here: doing so would describe a full index of the same name to
+  // Prisma's drift detection, which would then "fix" the real partial index
+  // by replacing it with a full one on the next `prisma migrate dev` —
+  // exactly what happened to the trigram indexes once already (see
+  // 20260917190000_restore_trigram_search_indexes). Leave this as a
+  // migration-only index; `prisma migrate deploy` in production never runs
+  // drift detection and is unaffected.
+}
+
+// Backing store for the dashboard notification bell (item 12) and the
+// account-menu equivalent. Rows are created inline wherever the triggering
+// event happens (new order, new message, stock crossing the low-stock
+// threshold) rather than computed on read, so "unread" has a real,
+// persistent meaning instead of being derived from timestamps every time.
+enum NotificationType {
+  new_order
+  new_message
+  low_stock
+  subscription
+  new_product
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String           @default("")
+  link      String           @default("")
+  readAt    DateTime?
+  // Two-tier state: `readAt` is the per-item "unread" indicator inside the
+  // dropdown/list and only clears when that specific notification is opened.
+  // `acknowledgedAt` drives only the exterior bell badge count and clears in
+  // bulk the moment the bell is opened (PUT /notifications/acknowledge),
+  // independent of whether any individual item has been read yet.
+  acknowledgedAt DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([userId, acknowledgedAt])
+  @@index([userId, createdAt])
+}
+
+// One row per browser/device the person has granted push permission on and
+// the service worker successfully subscribed (see js/push.js,
+// service-worker.js, and POST /api/push/subscribe). A person who reads
+// NextaStore on their phone and their laptop has two rows here, and gets the
+// notification on both -- there's deliberately no "one subscription per
+// user" constraint. `endpoint` is the whole identity of a subscription (the
+// browser's push service assigns a fresh one if it ever needs to rotate it),
+// so it's the natural unique key and upsert target rather than the (id) pk.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique @db.Text
+  p256dh    String
+  auth      String
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Product reviews (item 14). One review per buyer per product — enforced
+// with @@unique rather than in application code, so a race between two
+// simultaneous submits can't both land. Product.rating/Product.reviews stay
+// as plain columns (not computed on every read) and are recalculated
+// whenever a review is created — see POST /reviews — so reading a product
+// never needs an extra aggregate query.
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  rating    Int
+  body      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@unique([productId, buyerId])
+  @@index([productId])
+}
+
+// A seller's self-reported mobile money payment toward their subscription.
+// NextaStore doesn't hold an MTN/Airtel merchant integration yet, so this is
+// deliberately a "submit reference code -> admin confirms" flow, the same
+// trust model the marketplace already uses for buyer/seller order payments
+// (see Order.paymentStatus). Swapping this for an automatic collections API
+// later only touches the approve step, not this shape.
+model SubscriptionPayment {
+  id           String                    @id @default(cuid())
+  storeId      String
+  store        Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  amount       Decimal                   @db.Decimal(12, 2)
+  method       String
+  reference    String
+  periodMonths Int                       @default(1)
+  status       SubscriptionPaymentStatus @default(pending)
+  note         String                    @default("")
+  submittedAt  DateTime                  @default(now())
+  reviewedAt   DateTime?
+  reviewedBy   String?
+
+  @@index([storeId])
+  @@index([status])
+}
+
+// Email verification + password reset (item 14). The token itself is never
+// stored — only its SHA-256 hash — so a leaked database dump can't be used
+// to reset accounts; whoever holds the raw token from the emailed link is
+// the only party who can redeem it. See src/mailer.js for how (and whether)
+// the email actually gets sent.
+enum VerificationTokenType {
+  password_reset
+  email_verify
+}
+
+model VerificationToken {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      VerificationTokenType
+  tokenHash String                @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime              @default(now())
+
+  @@index([userId, type])
+}
+
+// Single-row platform configuration — currently just the mobile money
+// merchant codes shown to sellers on subscription.html when they're told
+// where to send their subscription payment (see routes/admin.js settings
+// endpoints). Always read/written against the fixed id "singleton" rather
+// than a real multi-row table, since there is exactly one of these.
+
+// Platform-wide catalog of payment methods a store is allowed to advertise
+// at checkout (see `Store.payments` for each seller's own per-method
+// opt-in). This is the single source of truth the frontend fetches from
+// (`GET /api/payments/methods`) instead of the old hardcoded
+// cash/mtnMomo/airtelMoney/card list duplicated across cart-page.js,
+// dashboard.js, and orders.js. `isActive` is a platform-wide kill switch
+// (e.g. disable a method sitewide during an outage) independent of any
+// store's own toggle. `currency` and `allowedCountries` are honest
+// scaffolding: NextaStore is single-currency (UGX) and Uganda-only today
+// with no other consumer of either field, but they're here so a future
+// second market doesn't require another schema migration to add them.
+// `environment` ('live' | 'test') lets an admin stage a new method before
+// it's customer-facing — GET /api/payments/methods only returns 'test'
+// entries outside production (see config.isProd).
+model PaymentMethod {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  label            String
+  icon             String   @default("fa-money-bill")
+  isActive         Boolean  @default(true)
+  currency         String   @default("UGX")
+  allowedCountries String[] @default(["UG"])
+  environment      String   @default("live")
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model PlatformSettings {
+
+  id              String   @id @default("singleton")
+  mtnMomoCode     String   @default("")
+  mtnMomoName     String   @default("NextaStore")
+  airtelMoneyCode String   @default("")
+  airtelMoneyName String   @default("NextaStore")
+  updatedAt       DateTime @updatedAt
+}

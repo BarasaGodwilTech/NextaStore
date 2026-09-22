@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Stores - NextaStore</title><link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/stores.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head><body><header class="stores-topbar"><div class="stores-topbar-inner"><a href="marketplace.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a><div class="stores-topbar-right"><a href="marketplace.html" class="header-link">Marketplace</a><div class="account-nav-slot" data-account-nav></div><a href="cart.html" class="cart-btn" aria-label="Go to cart"><i class="fas fa-cart-shopping"></i><span class="cart-count">0</span></a></div></div></header><main class="stores-page"><section class="stores-hero"><span class="eyebrow">Seller directory</span><h1>Discover every store on NextaStore</h1><p>Discover independent sellers, explore their storefronts, and look for commitment badges that explain what a seller has chosen to verify with NextaStore.</p></section><section class="stores-tools"><div class="stores-search" id="storesSearchBar"><i class="fas fa-search"></i><input id="storesSearch" placeholder="Search stores or locations…" autocomplete="off"><div class="search-preview-dropdown" id="storesSearchPreview"></div></div><select id="storesCategory"><option value="all">All categories</option><option value="clothing">Clothing</option><option value="food">Food & Drinks</option><option value="crafts">Arts & Crafts</option><option value="home">Home & Living</option><option value="electronics">Electronics</option><option value="accessories">Accessories</option></select></section><div id="storesGrid" class="stores-directory-grid"><div class="directory-loading"><i class="fas fa-spinner fa-spin"></i> Loading stores…</div></div></main>
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+    <script src="js/api.js"></script><script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script><script src="js/cart.js"></script><script src="js/stores.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body></html>

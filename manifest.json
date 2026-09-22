@@ -1,0 +1,40 @@
+{
+  "name": "NextaStore",
+  "short_name": "NextaStore",
+  "description": "Build your online store. Mobile-first storefronts for East African entrepreneurs — accept Mobile Money, manage orders, and grow.",
+  "id": "/index.html",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0B3B2B",
+  "lang": "en",
+  "icons": [
+    { "src": "/assets/brand/png/icon/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-120.png", "sizes": "120x120", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/png/icon/icon-512-white-bg.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Marketplace",
+      "url": "/marketplace.html",
+      "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "url": "/dashboard.html",
+      "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cart",
+      "url": "/cart.html",
+      "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

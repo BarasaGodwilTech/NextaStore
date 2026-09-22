@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title id="pageTitle">Add Product - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/image-crop.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/product-form.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-required data-seller-required>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <div class="store-accent-bar" id="storeAccentBar"></div>
+    <div class="pf-page">
+        <!-- Breadcrumb -->
+        <div class="page-breadcrumb">
+            <div class="breadcrumb-container">
+                <div class="breadcrumb">
+                    <a href="dashboard.html">Dashboard</a>
+                    <span class="separator">/</span>
+                    <a href="dashboard.html" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
+                    <span class="separator">/</span>
+                    <span class="breadcrumb-current">Add Product</span>
+                </div>
+            </div>
+        </div>
+
+        <header class="pf-header">
+            <a href="#" class="back-btn" id="backLink"><i class="fas fa-arrow-left"></i> Back to Products</a>
+            <div class="pf-header-actions">
+                <span class="pf-draft-status" id="draftStatus" aria-live="polite"></span>
+                <button type="button" class="btn btn-outline btn-sm pf-header-save" id="saveBtnTop"><i class="fas fa-check"></i> Save</button>
+                <div class="account-nav-slot" data-account-nav></div>
+            </div>
+        </header>
+
+        <main class="pf-content">
+            <h1 id="formHeading">Add a new product</h1>
+            <p class="text-muted" id="formSubheading">Fill in the details below so shoppers know exactly what they're buying.</p>
+
+            <div class="pf-error-summary" id="formErrorSummary" role="alert" hidden>
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <strong id="formErrorSummaryTitle">Please fix the following before saving:</strong>
+                    <ul id="formErrorSummaryList"></ul>
+                </div>
+            </div>
+
+            <form id="productForm" class="pf-layout" novalidate>
+                <div class="pf-main">
+                    <div class="card" id="photosCard">
+                        <div class="card-header"><h3>Photos <span class="required-mark" title="Required">*</span></h3></div>
+                        <p class="form-hint" style="margin-top:-0.5rem; margin-bottom: var(--spacing-md);">Add up to 6 photos. The first photo is used as the cover image across your store.</p>
+                        <div class="image-gallery" id="imageGallery">
+                            <div class="gallery-add-tile" id="addImageTile">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                                <span>Add photo</span>
+                            </div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" multiple hidden>
+                        <div class="form-error" id="imageGalleryError"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3>Basic Information</h3></div>
+                        <div class="form-group">
+                            <label class="form-label" for="productName">Product Name <span class="required-mark" title="Required">*</span></label>
+                            <input type="text" class="form-input" id="productName" placeholder="e.g. Handmade Beaded Necklace" maxlength="80" required aria-describedby="productNameError">
+                            <div class="form-field-footer">
+                                <div class="form-error" id="productNameError"></div>
+                                <span class="char-counter" id="productNameCounter">0/80</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="productDescription">Description</label>
+                            <textarea class="form-textarea" id="productDescription" placeholder="What makes this product worth buying? Mention materials, size, and what makes it special." rows="5" maxlength="1000"></textarea>
+                            <div class="form-field-footer">
+                                <p class="form-hint" style="margin-top:0;">A clear description helps shoppers trust your listing.</p>
+                                <span class="char-counter" id="productDescriptionCounter">0/1000</span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" for="productCategory">Category</label>
+                            <select class="form-select" id="productCategory">
+                                <option value="clothing">Clothing</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="food">Food</option>
+                                <option value="home">Home &amp; Living</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="crafts">Arts &amp; Crafts</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pf-side">
+                    <div class="card">
+                        <div class="card-header"><h3>Pricing</h3></div>
+                        <div class="form-group">
+                            <label class="form-label" for="productPrice">Price (UGX) <span class="required-mark" title="Required">*</span></label>
+                            <input type="number" class="form-input" id="productPrice" min="0" step="1" inputmode="numeric" placeholder="0" required aria-describedby="productPriceError">
+                            <div class="form-field-footer">
+                                <div class="form-error" id="productPriceError"></div>
+                                <span class="form-live-preview" id="productPricePreview"></span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" for="productOriginalPrice">Original Price (optional)</label>
+                            <input type="number" class="form-input" id="productOriginalPrice" min="0" step="1" inputmode="numeric" placeholder="For showing a discount">
+                            <div class="form-field-footer">
+                                <p class="form-hint" style="margin-top:0;">Shown crossed out next to your price, with the discount percentage.</p>
+                            </div>
+                            <div class="form-error" id="productOriginalPriceError"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3>Inventory</h3></div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" for="productStock">Stock Quantity</label>
+                            <input type="number" class="form-input" id="productStock" min="0" step="1" inputmode="numeric" value="0">
+                            <p class="form-hint">Customers won't be able to order more than you have in stock. Set to 0 if it's currently unavailable.</p>
+                            <div class="form-error" id="productStockError"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pf-actions">
+                    <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn"><i class="fas fa-check"></i> Save Product</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script src="js/image-crop.js"></script>
+    <script src="js/product-form.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

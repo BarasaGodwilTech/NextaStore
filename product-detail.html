@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Product Details - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/product-detail.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <div class="store-accent-bar" id="storeAccentBar"></div>
+    <header class="product-detail-header">
+        <nav class="product-detail-nav">
+            <div class="nav-left">
+                <a href="#" class="back-link" id="backLink"><i class="fas fa-arrow-left"></i> <span id="backText">Back</span></a>
+            </div>
+            <div class="nav-right">
+                <div class="account-nav-slot" data-account-nav></div>
+                <button class="cart-btn" aria-label="Open cart">
+                    <i class="fas fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="page-breadcrumb">
+        <div class="breadcrumb-container">
+            <div class="breadcrumb">
+                <a href="marketplace.html">Marketplace</a>
+                <span class="separator">/</span>
+                <span class="breadcrumb-current">Product</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="product-detail-main">
+        <div class="product-detail-container">
+            <!-- Product Gallery -->
+            <div class="product-gallery">
+                <!-- Loading State -->
+                <div class="loading-state active" id="galleryLoadingState">
+                    <div class="main-image">
+                        <div class="skeleton skeleton-image"></div>
+                    </div>
+                    <div class="thumbnail-gallery">
+                        <div class="skeleton skeleton-avatar"></div>
+                        <div class="skeleton skeleton-avatar"></div>
+                        <div class="skeleton skeleton-avatar"></div>
+                    </div>
+                </div>
+
+                <!-- Actual Content -->
+                <div class="loading-content hidden" id="galleryContent">
+                    <div class="main-image" id="mainImage">
+                        <div class="image-placeholder">
+                            <i class="fas fa-box"></i>
+                        </div>
+                    </div>
+                    <div class="thumbnail-gallery" id="thumbnailGallery">
+                        <!-- Thumbnails will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="product-info">
+                <!-- Loading State -->
+                <div class="loading-state active" id="productLoadingState">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text" style="width: 40%; margin-bottom: 1rem;"></div>
+                    <div class="skeleton skeleton-price"></div>
+                    <div class="skeleton skeleton-description"></div>
+                    <div class="skeleton skeleton-meta"></div>
+                    <div class="skeleton skeleton-meta" style="width: 50%;"></div>
+                    <div class="skeleton skeleton-button" style="margin-top: 1rem;"></div>
+                </div>
+
+                <!-- Actual Content -->
+                <div class="loading-content hidden" id="productContent">
+                    <h1 id="productName"></h1>
+
+                    <div class="product-price-section">
+                        <div class="current-price" id="currentPrice"></div>
+                        <div class="original-price" id="originalPrice"></div>
+                        <div class="discount-badge" id="discountBadge"></div>
+                    </div>
+
+                    <div class="product-description">
+                        <h3>Description</h3>
+                        <p id="productDescription"></p>
+                    </div>
+
+                    <div class="product-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span>Category: <strong id="productCategory"></strong></span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-boxes-stacked"></i>
+                            <span>Stock: <strong id="productStock"></strong> available</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-truck"></i>
+                            <span>Shipping: <strong>Available</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quantity-section">
+                    <label class="form-label">Quantity</label>
+                    <div class="quantity-selector">
+                        <button class="qty-btn" id="decreaseQty" aria-label="Decrease quantity">-</button>
+                        <input type="number" class="qty-input" id="quantityInput" value="1" min="1" max="99">
+                        <button class="qty-btn" id="increaseQty" aria-label="Increase quantity">+</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-lg btn-block" id="addToCartBtn">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button class="btn btn-outline btn-lg" id="favoriteBtn">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="btn btn-outline btn-lg" id="shareBtn">
+                        <i class="fas fa-share"></i>
+                    </button>
+                    <button class="btn btn-outline btn-lg btn-message-seller" id="messageSellerBtn">
+                        <i class="fas fa-message"></i> Message seller
+                    </button>
+                </div>
+
+                <div class="store-info-card">
+                    <!-- Loading State -->
+                    <div class="loading-state active" id="storeLoadingState">
+                        <div class="store-info-header">
+                            <div class="skeleton skeleton-avatar"></div>
+                            <div class="store-mini-info">
+                                <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                                <div class="skeleton skeleton-text-sm" style="width: 40%;"></div>
+                            </div>
+                            <div class="skeleton skeleton-button" style="width: 80px; height: 32px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Actual Content -->
+                    <div class="loading-content hidden" id="storeContent">
+                        <div class="store-info-header">
+                            <div class="store-mini-logo" id="storeMiniLogo">S</div>
+                            <div class="store-mini-info">
+                                <h4 id="storeMiniName"></h4>
+                                <div class="store-mini-rating" id="storeMiniBadges" aria-label="Seller badges"></div>
+                            </div>
+                            <a href="#" class="btn btn-sm btn-outline" id="visitStoreBtn">Visit Store</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details Tabs -->
+        <div class="product-details-tabs">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="description">Description</button>
+                <button class="tab-btn" data-tab="shipping">Shipping & Returns</button>
+            </div>
+
+            <div class="tab-content active" id="descriptionTab">
+                <div class="tab-inner">
+                    <h3>Product Description</h3>
+                    <div id="fullDescription">
+                        <p>Detailed product description will appear here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="shippingTab">
+                <div class="tab-inner">
+                    <h3>Shipping Information</h3>
+                    <div class="shipping-info">
+                        <div class="shipping-item">
+                            <i class="fas fa-truck"></i>
+                            <div>
+                                <h4>Standard Shipping</h4>
+                                <p>Delivery within 3-5 business days</p>
+                                <p class="shipping-price">UGX 5,000</p>
+                            </div>
+                        </div>
+                        <div class="shipping-item">
+                            <i class="fas fa-bolt"></i>
+                            <div>
+                                <h4>Express Shipping</h4>
+                                <p>Delivery within 1-2 business days</p>
+                                <p class="shipping-price">UGX 15,000</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Return Policy</h3>
+                    <div class="return-policy">
+                        <p>Returns accepted within 7 days of delivery. Product must be in original condition and packaging.</p>
+                        <ul>
+                            <li>Free returns for defective products</li>
+                            <li>Customer pays return shipping for change of mind</li>
+                            <li>Refunds processed within 5-7 business days</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Products -->
+        <div class="related-products">
+            <div class="section-header">
+                <h2>Related Products</h2>
+                <a href="#" class="btn-link">View All</a>
+            </div>
+            <!-- Loading State -->
+            <div class="loading-state active" id="relatedLoadingState">
+                <div class="related-products-grid">
+                    <div class="related-product-card">
+                        <div class="related-product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="related-product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                    <div class="related-product-card">
+                        <div class="related-product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="related-product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                    <div class="related-product-card">
+                        <div class="related-product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="related-product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                    <div class="related-product-card">
+                        <div class="related-product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="related-product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Actual Content -->
+            <div class="loading-content hidden" id="relatedContent">
+                <div class="related-products-grid" id="relatedProductsGrid">
+                    <!-- Related products will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="cart-drawer-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" aria-label="Close cart">&times;</button>
+        </div>
+        <div class="cart-items"></div>
+        <div class="cart-footer">
+            <div class="checkout-form" id="checkoutForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="checkoutName" placeholder="Your name">
+                    <div class="form-error"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="checkoutPhone" placeholder="e.g. 07XXXXXXXX">
+                    <div class="form-error"></div>
+                </div>
+            </div>
+            <div class="cart-total"><span>Total:</span><span data-cart-total>UGX 0</span></div>
+            <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close">&times;</button>
+            <div class="modal-body">
+                <h2>Share Product</h2>
+                <p>Share this product with others</p>
+                <div class="share-options">
+                    <button class="share-btn" data-platform="whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                        WhatsApp
+                    </button>
+                    <button class="share-btn" data-platform="facebook">
+                        <i class="fab fa-facebook"></i>
+                        Facebook
+                    </button>
+                    <button class="share-btn" data-platform="twitter">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </button>
+                    <button class="share-btn" data-platform="copy">
+                        <i class="fas fa-link"></i>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script src="js/product-detail.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

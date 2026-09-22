@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Sign Up - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-page data-signup-page>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <!-- Breadcrumb -->
+    <div class="page-breadcrumb">
+        <div class="breadcrumb-container">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a>
+                <span class="separator">/</span>
+                <span class="breadcrumb-current">Create account</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <aside class="auth-side">
+            <a href="index.html" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
+            <div class="auth-side-content">
+                <h2 id="authSideHeading">Start selling today.</h2>
+                <p id="authSideCopy">Create your account and we'll set up a starter store for you — branding, store settings, and payment options ready to customize.</p>
+                <ul class="auth-side-points">
+                    <li><i class="fas fa-circle-check"></i> Free to start, no card required</li>
+                    <li><i class="fas fa-circle-check"></i> Launch in under 10 minutes</li>
+                    <li><i class="fas fa-circle-check"></i> Built for Mobile Money from day one</li>
+                </ul>
+            </div>
+            <p class="auth-side-quote">Join local entrepreneurs already selling on NextaStore.</p>
+        </aside>
+
+        <div class="auth-form-side">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <a href="index.html" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                    <h1>Create your account</h1>
+                    <p>Start building your online store today.</p>
+                </div>
+
+                <form id="signupForm" data-validate novalidate>
+                    <div class="form-group">
+                        <label class="form-label">I want to&hellip;</label>
+                        <div class="account-type-toggle" role="radiogroup" aria-label="Account type">
+                            <label class="account-type-option">
+                                <input type="radio" name="accountType" id="accountTypeBuyer" value="buyer" checked>
+                                <span class="account-type-option-card">
+                                    <i class="fas fa-bag-shopping"></i>
+                                    <strong>Shop</strong>
+                                    <span>Browse and buy from sellers</span>
+                                </span>
+                            </label>
+                            <label class="account-type-option">
+                                <input type="radio" name="accountType" id="accountTypeSeller" value="seller">
+                                <span class="account-type-option-card">
+                                    <i class="fas fa-store"></i>
+                                    <strong>Sell</strong>
+                                    <span>Set up your own store</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" id="name" class="form-input" placeholder="Jane Doe" autocomplete="name" required>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" required>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="password" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('password')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your password" autocomplete="new-password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-checkbox"><input type="checkbox" id="agreeTerms" required> <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span></label>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" id="signupSubmitBtn"><i class="fas fa-user-plus"></i> Create Account</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="login.html">Sign in</a></p>
+                    <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Swaps the side-panel pitch and submit-button copy to match
+        // whichever account type is selected, so the page never claims
+        // "we'll set up a starter store" for someone who just picked "Shop".
+        const ACCOUNT_TYPE_COPY = {
+            buyer: {
+                heading: 'Start shopping today.',
+                copy: 'Create your account to browse stores, save favorites, and check out — no store setup required.',
+                submit: '<i class="fas fa-user-plus"></i> Create Account'
+            },
+            seller: {
+                heading: 'Start selling today.',
+                copy: 'Create your account and we\u2019ll set up a starter store for you \u2014 branding, settings, and payment options ready to customize.',
+                submit: '<i class="fas fa-user-plus"></i> Create Seller Account'
+            }
+        };
+
+        function applyAccountTypeCopy() {
+            const selected = document.querySelector('input[name="accountType"]:checked')?.value || 'buyer';
+            const config = ACCOUNT_TYPE_COPY[selected];
+            document.getElementById('authSideHeading').textContent = config.heading;
+            document.getElementById('authSideCopy').textContent = config.copy;
+            document.getElementById('signupSubmitBtn').innerHTML = config.submit;
+        }
+
+        document.querySelectorAll('input[name="accountType"]').forEach(input => {
+            input.addEventListener('change', applyAccountTypeCopy);
+        });
+        applyAccountTypeCopy();
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.querySelector(`#${inputId}`).nextElementSibling.querySelector('i');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            icon.classList.toggle('fa-eye', !show);
+            icon.classList.toggle('fa-eye-slash', show);
+        }
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

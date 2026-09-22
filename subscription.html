@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Seller Pass · NextaStore</title>
+    <meta name="description" content="Manage your NextaStore Seller Pass, mobile-money payments and seller badges.">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/subscription.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-required data-seller-required>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true"><div class="skeleton skeleton-text-lg"></div><div class="skeleton skeleton-text"></div></div>
+
+    <header class="subscription-topbar">
+        <a href="dashboard.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <nav class="subscription-topnav" aria-label="Seller navigation">
+            <a href="dashboard.html"><i class="fas fa-gauge"></i><span>Dashboard</span></a>
+            <a href="store.html"><i class="fas fa-store"></i><span>My store</span></a>
+            <a href="messages.html"><i class="fas fa-message"></i><span>Messages</span></a>
+            <a href="subscription.html" class="is-active"><i class="fas fa-award"></i><span>Seller Pass</span></a>
+        </nav>
+        <div class="account-nav-slot" data-account-nav></div>
+    </header>
+
+    <main class="subscription-shell">
+        <section class="subscription-hero" aria-labelledby="subscriptionTitle">
+            <div>
+                <span class="subscription-eyebrow"><i class="fas fa-shield-heart"></i> Seller Pass</span>
+                <h1 id="subscriptionTitle">Build a longer commitment. Earn a stronger badge.</h1>
+                <p>Seller Pass keeps your store active after the free trial and records the paid coverage you have committed to. <strong>6 months is the first badge level.</strong> 12 and 24 months unlock higher badge levels.</p>
+                <div class="subscription-local-note"><i class="fas fa-mobile-screen-button"></i><span>Pay from MTN MoMo or Airtel Money, then enter the transaction ID here. We confirm the payment before changing your badge.</span></div>
+            </div>
+            <div class="subscription-hero-art" aria-hidden="true">
+                <div class="badge-coin badge-coin-main"><i class="fas fa-award"></i><span>Seller Pass</span></div>
+                <div class="badge-coin badge-coin-small"><i class="fas fa-check"></i></div>
+                <div class="badge-coin badge-coin-small badge-coin-small-2"><i class="fas fa-crown"></i></div>
+            </div>
+        </section>
+
+        <section id="subStatusCard" class="subscription-status-card" aria-live="polite"><div class="skeleton skeleton-text-lg"></div></section>
+
+        <section class="subscription-goal-card" id="subGoalCard" aria-live="polite"></section>
+
+        <section class="subscription-badge-section" aria-labelledby="badgeLadderTitle">
+            <div class="section-heading"><div><span class="panel-kicker">Your badge path</span><h2 id="badgeLadderTitle">What your paid coverage unlocks</h2></div><span class="section-heading-note">Badges describe platform commitment — not product quality.</span></div>
+            <div class="subscription-badge-ladder" id="subscriptionBadgeLadder">
+                <article class="badge-tier"><span class="badge-tier-icon verified"><i class="fas fa-circle-check"></i></span><div><strong>Verified Seller</strong><small>6 months of active paid coverage</small></div></article>
+                <article class="badge-tier"><span class="badge-tier-icon gold"><i class="fas fa-crown"></i></span><div><strong>Gold Partner</strong><small>12 months of active paid coverage</small></div></article>
+                <article class="badge-tier"><span class="badge-tier-icon platinum"><i class="fas fa-gem"></i></span><div><strong>Platinum Partner</strong><small>24 months of active paid coverage</small></div></article>
+            </div>
+        </section>
+
+        <div class="subscription-grid">
+            <section class="subscription-panel subscription-pay-panel">
+                <div class="subscription-panel-heading">
+                    <div><span class="panel-kicker">Step 1 · Pay</span><h2>Pay your chosen coverage</h2></div>
+                    <span class="subscription-price-chip"><strong id="subPriceLabel">UGX 20,000</strong><small>per month</small></span>
+                </div>
+                <div class="coverage-callout" id="coverageCallout">Choose a coverage period and we will show the exact total to send.</div>
+
+                <div class="subscription-pay-numbers" id="subPayNumbers" aria-label="NextaStore payment accounts"><div class="skeleton skeleton-text-sm"></div></div>
+
+                <form id="subPaymentForm" class="subscription-form" novalidate>
+                    <label><span>Paid coverage</span>
+                        <select id="subMonths" required>
+                            <option value="1">1 month · UGX 20,000</option>
+                            <option value="3">3 months · UGX 60,000</option>
+                            <option value="6">6 months · UGX 120,000 · Verified Seller</option>
+                            <option value="12">12 months · UGX 240,000 · Gold Partner</option>
+                            <option value="24">24 months · UGX 480,000 · Platinum Partner</option>
+                        </select>
+                        <small id="subMonthsHint" class="field-help">You can add another payment later while your current paid coverage is still active.</small>
+                    </label>
+                    <label><span>Exact amount you sent</span>
+                        <div class="subscription-amount-wrap"><span>UGX</span><input type="number" id="subAmount" inputmode="numeric" required></div>
+                        <small id="subAmountHint" class="field-help">The amount must match the selected coverage exactly.</small>
+                    </label>
+                    <label><span>Mobile money used</span>
+                        <select id="subMethod" required><option value="mtnMomo">MTN MoMo</option><option value="airtelMoney">Airtel Money</option></select>
+                    </label>
+                    <label><span>Transaction ID / reference</span>
+                        <input type="text" id="subReference" placeholder="e.g. the ID in your MTN/Airtel SMS" autocomplete="off" maxlength="120" required>
+                        <small class="field-help">Enter it exactly as shown in your mobile-money confirmation SMS.</small>
+                    </label>
+                    <button type="submit" class="btn btn-primary subscription-submit-btn" id="subSubmitBtn"><i class="fas fa-paper-plane"></i> Send payment for checking</button>
+                    <p class="subscription-form-note"><i class="fas fa-circle-info"></i><span>Payment only extends your Seller Pass after NextaStore confirms the money received. NextaStore does not process buyer-order payments on this page.</span></p>
+                </form>
+            </section>
+
+            <section class="subscription-panel subscription-history-panel">
+                <div class="subscription-panel-heading"><div><span class="panel-kicker">Step 2 · Submit</span><h2>Send the transaction ID</h2></div><span class="history-icon"><i class="fas fa-clock-rotate-left"></i></span></div>
+                <p class="subscription-panel-hint">After you pay, enter the transaction ID above and submit it. Your payment then appears below as Pending while we check it; Approved means the months have been added to your Seller Pass.</p>
+                <div id="subHistory"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+                <div class="subscription-help-card"><i class="fas fa-headset"></i><div><strong>Need help?</strong><p>Keep your mobile-money SMS or receipt. Do not send the same payment twice while a submission is still pending.</p></div></div>
+            </section>
+        </div>
+
+        <p class="subscription-footer-note"><i class="fas fa-lock"></i> Your transaction ID is used to check the payment you submitted to NextaStore. It is not shown to shoppers.</p>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/subscription.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

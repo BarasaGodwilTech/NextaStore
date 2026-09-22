@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Store Details - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/store-detail.css">
+    <link rel="stylesheet" href="css/map-picker.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <div class="store-accent-bar" id="storeAccentBar"></div>
+    <header class="store-detail-header">
+        <nav class="store-detail-nav">
+            <div class="nav-left">
+                <a href="marketplace.html" class="back-link"><i class="fas fa-arrow-left"></i> <span>Back to Marketplace</span></a>
+            </div>
+            <div class="nav-right">
+                <div class="account-nav-slot" data-account-nav></div>
+                <div class="search-bar">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <div class="store-search-wrap" id="storeSearchBar"><input type="text" id="storeSearch" placeholder="Search this store..." autocomplete="off"><div class="search-preview-dropdown" id="storeSearchPreview"></div></div>
+                </div>
+                <button class="cart-btn" aria-label="Open cart">
+                    <i class="fas fa-cart-shopping"></i>
+                    <span class="cart-count">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="page-breadcrumb">
+        <div class="breadcrumb-container">
+            <div class="breadcrumb">
+                <a href="marketplace.html">Marketplace</a>
+                <span class="separator">/</span>
+                <span class="breadcrumb-current" id="storeBreadcrumb">Store</span>
+            </div>
+        </div>
+    </div>
+
+    <section class="store-hero" id="storeHero">
+        <div class="store-banner" id="storeBanner"></div>
+
+        <div class="store-hero-inner">
+            <div class="store-card">
+                <!-- Loading State -->
+                <div class="loading-state active" id="storeLoadingState">
+                    <div class="store-card-identity">
+                        <div class="skeleton skeleton-avatar" style="width: 80px; height: 80px;"></div>
+                        <div class="store-branding-info">
+                            <div class="skeleton skeleton-text-lg" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 80%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 30%;"></div>
+                        </div>
+                        <div class="store-trust-signals" id="storeTrustSignalsSkeleton"></div>
+                    </div>
+                    <div class="store-actions">
+                        <div class="skeleton skeleton-button" style="width: 100px;"></div>
+                        <div class="skeleton skeleton-button" style="width: 100px;"></div>
+                    </div>
+                </div>
+
+                <!-- Actual Content -->
+                <div class="loading-content hidden" id="storeContent">
+                    <div class="store-card-identity">
+                        <div class="store-logo-wrap">
+                            <div class="store-logo" id="storeLogo"></div>
+                            <span class="presence-dot presence-dot--lg" id="storeSellerPresenceDot" data-presence-dot aria-hidden="true"></span>
+                        </div>
+                        <div class="store-branding-info">
+                            <h1 id="storeName"></h1>
+                            <span class="presence-status" id="storeSellerPresence" data-presence-label></span>
+                            <div id="storeBadges" class="store-badge-row store-badge-row--detail" aria-label="Seller badges"></div>
+                            <p id="storeDescription"></p>
+                            <div class="store-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-location-dot"></i>
+                                    <span id="storeLocation"></span>
+                                </div>
+                            </div>
+                            <div class="store-trust-signals" id="storeTrustSignals"></div>
+                        </div>
+                    </div>
+                    <div class="store-actions">
+                        <button class="btn btn-primary" id="contactBtn"><i class="fas fa-comment"></i> Message seller</button>
+                        <button class="btn btn-outline" id="followBtn"><i class="fas fa-heart"></i> Follow</button>
+                        <button class="btn btn-outline btn-icon" id="shareBtn" aria-label="Share this store"><i class="fas fa-share-nodes"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="store-content">
+        <aside class="store-sidebar">
+            <!-- Filter sections are populated/hidden by js/store-detail.js
+                 (renderStoreFilters) based on what THIS store actually sells —
+                 a store with no apparel never sees a category filter, and a
+                 store with zero products shows no filter panel at all. -->
+            <div class="store-filters" id="storeFilters">
+                <div class="sidebar-section" id="categorySection">
+                    <h3>Categories</h3>
+                    <ul class="category-list" id="categoryList"></ul>
+                </div>
+
+                <div class="sidebar-section" id="sortSection">
+                    <h3>Sort By</h3>
+                    <select class="form-select" id="sortSelect">
+                        <option value="popular">Most Popular</option>
+                        <option value="newest">Newest</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div class="sidebar-section" id="priceSection">
+                    <h3>Price Range</h3>
+                    <div class="price-filter">
+                        <input type="number" class="form-input" id="minPrice" placeholder="Min">
+                        <span>&ndash;</span>
+                        <input type="number" class="form-input" id="maxPrice" placeholder="Max">
+                    </div>
+                    <button class="btn btn-sm btn-outline btn-block" id="applyPriceFilter">Apply</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="storeInfoSection">
+                <h3>About This Store</h3>
+                <div class="store-info-card" id="storeInfoCard"></div>
+                <div id="storeMapPreview" style="display:none;margin-top:var(--spacing-md, 12px);"></div>
+            </div>
+        </aside>
+
+        <main class="products-section">
+            <div class="section-header">
+                <h2 id="productsHeading">Shop this store</h2>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" aria-label="Grid view"><i class="fas fa-table-cells"></i></button>
+                    <button class="view-btn" data-view="list" aria-label="List view"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state active" id="productsLoadingState">
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="skeleton skeleton-image"></div>
+                        </div>
+                        <div class="product-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actual Content -->
+            <div class="loading-content hidden" id="productsContent">
+                <div class="products-grid" id="productsGrid"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="cart-drawer-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" aria-label="Close cart">&times;</button>
+        </div>
+        <div class="cart-items"></div>
+        <div class="cart-footer">
+            <div class="checkout-form" id="checkoutForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="checkoutName" placeholder="Your name">
+                    <div class="form-error"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="checkoutPhone" placeholder="e.g. 07XXXXXXXX">
+                    <div class="form-error"></div>
+                </div>
+            </div>
+            <div class="order-confirmation" id="orderConfirmation" style="display:none;">
+                <div class="order-confirmation-icon"><i class="fas fa-circle-check"></i></div>
+                <h4>Order placed!</h4>
+                <p>Your order code is <strong id="orderConfirmationCode"></strong>. Save it — the seller uses it to look up your order.</p>
+                <button class="btn btn-primary btn-block" id="orderConfirmationCloseBtn">Continue Shopping</button>
+            </div>
+            <div class="cart-total"><span>Total:</span><span data-cart-total>UGX 0</span></div>
+            <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close">&times;</button>
+            <div class="modal-body">
+                <h2>Share Store</h2>
+                <p>Share this store with others</p>
+                <div class="share-options">
+                    <button class="share-btn" data-platform="whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                        WhatsApp
+                    </button>
+                    <button class="share-btn" data-platform="facebook">
+                        <i class="fab fa-facebook"></i>
+                        Facebook
+                    </button>
+                    <button class="share-btn" data-platform="twitter">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </button>
+                    <button class="share-btn" data-platform="copy">
+                        <i class="fas fa-link"></i>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script src="js/map-preview.js"></script>
+    <script src="js/store-detail.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

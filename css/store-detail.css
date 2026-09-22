@@ -1,0 +1,958 @@
+/* ==========================================================================
+   Store Detail Page — Clean, professional storefront layout
+   Built on the tokens defined in main.css (colors, spacing, radii, shadows).
+   ========================================================================== */
+
+/* ---- Top bar ---- */
+.store-detail-header {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--gray-200);
+    position: sticky;
+    top: 0;
+    z-index: 500;
+}
+
+.store-detail-nav {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-xl);
+    gap: var(--spacing-md);
+}
+
+.nav-left { min-width: 0; }
+
+.back-link {
+    background: none;
+    border: none;
+    color: var(--gray-600);
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    padding: 0.5rem 0.25rem;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+}
+
+.back-link:hover { color: var(--secondary); }
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-shrink: 0;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--gray-50);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-full);
+    padding: 0.5rem var(--spacing-md);
+    gap: 0.6rem;
+    color: var(--gray-500);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.search-bar:focus-within {
+    border-color: var(--secondary);
+    background: white;
+}
+
+.search-bar i { font-size: 0.875rem; flex-shrink: 0; }
+
+.search-bar input {
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 0.875rem;
+    width: 220px;
+    color: var(--ink);
+    min-width: 0;
+}
+
+/* .cart-btn / .cart-count are shared — see main.css */
+
+.mobile-sidebar-toggle { display: none; }
+
+/* ==========================================================================
+   Store hero — banner + floating identity card
+   ========================================================================== */
+.store-hero {
+    position: relative;
+    background: var(--paper);
+}
+
+.store-banner {
+    width: 100%;
+    height: 260px;
+    background: linear-gradient(120deg, #00B074 0%, #00794F 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.store-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* subtle scrim so a busy banner photo never fights the card above it */
+.store-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(28, 37, 33, 0) 55%, rgba(28, 37, 33, 0.28) 100%);
+    pointer-events: none;
+}
+
+.store-hero-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-xl);
+    position: relative;
+}
+
+.store-card {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--gray-100);
+    padding: var(--spacing-xl) var(--spacing-2xl);
+    margin-top: -64px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+/* .store-card-identity and .store-actions are meant to be the two flex row
+   items here (identity left, actions right, per justify-content:space-between
+   above) — but the shared .loading-state/.loading-content skeleton wrapper
+   pattern puts an extra div between them and .store-card, so that wrapper
+   became the actual (sole) flex item instead, sized to its own shrink-to-fit
+   content width. The result: everything collapsed into one narrow left-
+   aligned column with a large empty gap on the right where the action
+   buttons should have been. display:contents removes the wrapper from the
+   box tree (its children still render, now as direct flex items) so the
+   intended row layout applies, without touching the shared skeleton classes
+   used elsewhere on the site. */
+.store-card > .loading-state.active { display: contents; }
+.store-card > .loading-content { display: contents; }
+.store-card > .loading-content.hidden { display: none; }
+
+.store-card-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    min-width: 0;
+    flex: 1 1 420px;
+}
+
+/* Wraps #storeLogo rather than putting the presence dot inside it: JS
+   (renderStoreInfo) sets #storeLogo's innerHTML/textContent directly
+   depending on whether the store has a logo image, which would wipe out
+   any child element placed inside it. The wrapper carries the same
+   negative margin-top the logo used to have (the banner-overlap effect)
+   so the two together sit exactly where the plain .store-logo did. */
+.store-logo-wrap {
+    position: relative;
+    flex-shrink: 0;
+    margin-top: -56px;
+}
+
+.store-logo {
+    width: 112px;
+    height: 112px;
+    border-radius: var(--border-radius-lg);
+    border: 4px solid white;
+    box-shadow: 0 14px 30px rgba(11, 59, 43, 0.14);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.store-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.store-branding-info {
+    min-width: 0;
+    padding-bottom: 0.15rem;
+}
+
+.store-branding-info h1 {
+    margin-bottom: 0.4rem;
+    font-size: clamp(1.7rem, 3vw, 2.15rem);
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    line-height: 1.2;
+}
+
+/* Rating + verified badge sit on their own line under the store name so
+   the header reads: name → rating/verified → description → facts. */
+.store-rating-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.rating-value { font-weight: 700; color: var(--ink); }
+.rating-value i { color: var(--store-accent); }
+
+.store-branding-info p {
+    color: var(--gray-600);
+    margin-bottom: var(--spacing-md);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    max-width: 46ch;
+}
+
+.store-meta {
+    display: flex;
+    gap: 0.7rem 1.1rem;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--gray-600);
+}
+
+.meta-item i { color: var(--store-accent); font-size: 0.8125rem; }
+
+.store-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-shrink: 0;
+    padding-bottom: 0.15rem;
+    align-items: center;
+}
+
+/* Store actions carry the seller's accent color: the primary button
+   (Message seller) is tinted with --store-accent so two different stores
+   are visibly different beyond the banner strip. */
+.store-actions .btn-primary {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--store-accent) 68%, #fff), var(--store-accent));
+    border-color: transparent;
+}
+
+.store-actions .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--store-accent) 55%, #fff), color-mix(in srgb, var(--store-accent) 88%, #000));
+}
+
+.store-actions .btn-outline:hover:not(:disabled) {
+    border-color: var(--store-accent);
+    color: var(--store-accent);
+    background: color-mix(in srgb, var(--store-accent) 9%, #fff);
+}
+
+/* ==========================================================================
+   Content layout
+   ========================================================================== */
+.store-content {
+    max-width: var(--max-width);
+    margin: var(--spacing-2xl) auto;
+    padding: 0 var(--spacing-xl);
+    display: grid;
+    grid-template-columns: 264px 1fr;
+    gap: var(--spacing-2xl);
+    align-items: start;
+}
+
+/* ---- Sidebar ---- */
+.store-sidebar {
+    background: white;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    position: sticky;
+    top: 88px;
+}
+
+.sidebar-section {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.sidebar-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.sidebar-section h3 {
+    font-size: 0.8125rem;
+    margin-bottom: var(--spacing-sm);
+    color: var(--gray-500);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.category-list { list-style: none; }
+
+.category-list li { margin-bottom: 2px; }
+
+.category-list a {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.category-list a:hover {
+    background: var(--gray-50);
+    color: var(--ink);
+}
+
+.category-list li.active a {
+    color: var(--store-accent);
+    background: color-mix(in srgb, var(--store-accent) 8%, #fff);
+    border-left-color: var(--store-accent);
+    font-weight: 700;
+}
+
+/* Filter sections are shown/hidden per store via the [hidden] attribute
+   (renderStoreFilters in js/store-detail.js). */
+.store-filters .sidebar-section[hidden] { display: none; }
+#storeFilters[hidden] { display: none; }
+#storeInfoSection[hidden] { display: none; }
+
+.price-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.price-filter .form-input {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.875rem;
+}
+
+.price-filter span { color: var(--gray-400); flex-shrink: 0; }
+
+.store-info-card {
+    background: var(--gray-50);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+}
+
+.info-row:last-child { margin-bottom: 0; }
+
+.info-row i { color: var(--secondary); width: 1.1em; text-align: center; }
+
+/* ---- Products ---- */
+.products-section {
+    background: white;
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    min-width: 0;
+}
+
+/* Section divider picks up the store accent (Phase: storefront variety). */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--store-accent) 18%, var(--gray-200));
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+    font-size: 1.375rem;
+    position: relative;
+}
+
+/* Tab-style underline in the store accent under the section title. */
+.section-header h2::after {
+    content: "";
+    display: block;
+    width: 42px;
+    height: 3px;
+    margin-top: 0.5rem;
+    border-radius: 999px;
+    background: var(--store-accent);
+}
+
+.view-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--gray-100);
+    padding: 3px;
+    border-radius: var(--border-radius-sm);
+    flex-shrink: 0;
+}
+
+.view-btn {
+    background: transparent;
+    border: none;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+}
+
+.view-btn:hover { color: var(--ink); }
+
+.view-btn.active {
+    background: white;
+    color: var(--store-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Sort control matches the accent treatment on focus. */
+.sidebar-section .form-select:focus {
+    border-color: var(--store-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--store-accent) 12%, #fff);
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.products-grid.list-view { grid-template-columns: 1fr; }
+
+.product-card {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    border-color: var(--gray-200);
+}
+
+.product-image {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: var(--gray-100);
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.product-card:hover .product-image img { transform: scale(1.06); }
+
+.favorite-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.15s ease;
+    color: var(--gray-600);
+    z-index: 2;
+}
+
+.favorite-btn:hover { color: var(--coral); transform: scale(1.08); }
+
+.discount-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    background: var(--coral);
+    color: white;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    z-index: 2;
+}
+
+.product-details {
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.product-details h3 {
+    font-size: 0.9375rem;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-price {
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.4rem;
+    font-size: 1.0625rem;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.current-price {
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: var(--gray-400);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.product-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: var(--spacing-md);
+    font-size: 0.75rem;
+    color: var(--primary-dark);
+}
+
+.product-rating span:last-child { color: var(--gray-500); }
+
+.product-card .btn { width: 100%; margin-top: auto; }
+
+/* ---- List view ---- */
+.products-grid.list-view .product-card {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    align-items: stretch;
+}
+
+.products-grid.list-view .product-image { aspect-ratio: auto; height: 100%; min-height: 140px; }
+
+.products-grid.list-view .product-details {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+}
+
+.products-grid.list-view .product-details h3 { -webkit-line-clamp: 1; }
+
+.products-grid.list-view .product-details > div:first-child { flex: 1; min-width: 0; }
+
+.products-grid.list-view .product-details .btn { width: auto; margin-top: 0; flex-shrink: 0; }
+
+/* Cart drawer + items + footer are shared — see main.css */
+
+/* ==========================================================================
+   Modals
+   ========================================================================== */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 37, 33, 0.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+}
+
+.modal.open { display: flex; }
+
+.modal-content {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    max-width: 460px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow-xl);
+}
+
+.modal-close {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    background: var(--gray-100);
+    border: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--gray-600);
+    z-index: 1;
+    transition: background 0.15s ease;
+}
+
+.modal-close:hover { background: var(--gray-200); }
+
+.modal-body { padding: var(--spacing-xl); }
+.modal-body h2 { margin-bottom: 0.3rem; font-size: 1.375rem; }
+.modal-body > p { color: var(--gray-600); margin-bottom: var(--spacing-xl); }
+
+.share-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+
+.share-btn:hover {
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: var(--secondary-light);
+}
+
+.share-btn i { font-size: 1.15rem; }
+
+/* ==========================================================================
+   Footer — uses the shared .site-footer-slim treatment from main.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   Sidebar overlay (mobile filter drawer backdrop)
+   ========================================================================== */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 37, 33, 0.5);
+    z-index: 999;
+}
+
+.sidebar-overlay.active { display: block; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (min-width: 1400px) {
+    .products-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1025px) and (max-width: 1399px) {
+    .products-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .products-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+    .store-content { grid-template-columns: 1fr; }
+
+    .store-sidebar {
+        position: fixed;
+        top: 0;
+        left: -320px;
+        width: 300px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        border-radius: 0;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .store-sidebar.open { left: 0; }
+
+    .mobile-sidebar-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        order: -1;
+    }
+
+    .store-card {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+    }
+
+    /* .store-card-identity's flex-basis:420px (set for its desktop row
+       width, see base rule above) gets reinterpreted as a *height* basis
+       once flex-direction switches to column here, and flex-grow:1 then
+       stretched it to fill the card — leaving a large empty gap below the
+       description/meta before the action buttons. Reset it to size by its
+       actual content on narrow screens. */
+    .store-card-identity { flex: none; }
+
+    .store-actions { width: 100%; }
+    .store-actions .btn { flex: 1; }
+}
+
+@media (max-width: 860px) {
+    .search-bar input { width: 150px; }
+}
+
+@media (max-width: 768px) {
+    .store-detail-nav { padding: var(--spacing-sm) var(--spacing-md); }
+
+    .back-link span { display: none; }
+
+    .nav-right { gap: 0.6rem; }
+
+    .search-bar { padding: 0.45rem 0.75rem; }
+    .search-bar input { width: 120px; }
+
+    .store-banner { height: 150px; }
+
+    .store-hero-inner { padding: 0 var(--spacing-md); }
+
+    .store-card {
+        margin-top: -40px;
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-lg);
+    }
+
+    .store-card-identity {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+
+    .store-logo-wrap { margin-top: -36px; }
+
+    .store-logo {
+        width: 76px;
+        height: 76px;
+        font-size: 1.75rem;
+    }
+
+    .store-branding-info h1 { font-size: 1.3rem; }
+    .store-branding-info p { font-size: 0.875rem; max-width: none; }
+
+    .store-meta { gap: var(--spacing-md); }
+
+    .store-content { padding: 0 var(--spacing-md); margin: var(--spacing-lg) auto; }
+
+    .products-section { padding: var(--spacing-lg); }
+
+    .section-header { flex-wrap: wrap; gap: var(--spacing-sm); }
+
+    .products-grid { grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); }
+    .products-grid .product-card { min-width: 0; }
+
+    .products-grid.list-view .product-card { grid-template-columns: 120px 1fr; }
+    .products-grid.list-view .product-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: var(--spacing-md);
+    }
+    .products-grid.list-view .product-details .btn { width: 100%; }
+
+    .modal-body { padding: var(--spacing-lg); }
+    .share-options { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .search-bar { display: none; }
+
+    .store-branding-info h1 { font-size: 1.15rem; }
+    .store-meta { font-size: 0.75rem; gap: 0.75rem; }
+
+    /* Three separate full-width rows (Message seller / Follow / Share) ate
+       a lot of vertical space here. Keep them in one compact row instead —
+       the two text buttons share the space and shrink with an ellipsis if
+       they ever need to, the icon-only Share button stays a fixed small
+       square. Scoped with the .store-card ancestor so this reliably beats
+       mobile.css's own generic .store-actions rules (loaded after this
+       file) regardless of selector order. */
+    .store-card .store-actions { flex-wrap: nowrap; gap: 0.5rem; }
+    .store-card .store-actions .btn:not(.btn-icon) {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8rem;
+        gap: 0.35rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .store-card .store-actions .btn-icon { flex: 0 0 auto; width: 2.35rem; height: 2.35rem; padding: 0; }
+
+    .products-grid { grid-template-columns: 1fr; gap: var(--spacing-md); }
+
+    .product-details { padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md); }
+    .product-details h3 { font-size: 0.8125rem; }
+    .product-price { font-size: 0.9375rem; }
+
+    .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
+}
+
+/* Order confirmation panel — replaces the checkout form in the cart drawer
+   once an order is placed, instead of just a toast that scrolls away
+   leaving no record of the order code on screen. */
+.order-confirmation {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-sm);
+}
+
+.order-confirmation-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color, #00B074);
+    margin-bottom: var(--spacing-sm);
+}
+
+.order-confirmation h4 {
+    margin: 0 0 var(--spacing-xs);
+    font-size: 1.1rem;
+}
+
+.order-confirmation p {
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.order-confirmation strong {
+    color: var(--text-primary, #111827);
+    letter-spacing: 0.03em;
+}
+
+/* Trust signal pills + verified badge (single canonical definitions). */
+.store-trust-signals{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0}
+.store-trust-signals span{display:inline-flex;gap:.3rem;align-items:center;padding:.4rem .6rem;border-radius:999px;background:#f3f7f5;font-size:.72rem;font-weight:700;color:var(--gray-700,#344054)}
+.verified-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:800;color:var(--brand-green-dark);background:#E8F8F1;border:1px solid rgba(1,176,117,.15);padding:.22rem .45rem;border-radius:999px}
+
+/* The store's accent bar at the very top of the page (color painted by
+   js/store-banner.js from the store record). */
+.store-accent-bar{height:5px;background:linear-gradient(90deg,var(--store-accent),color-mix(in srgb,var(--store-accent) 55%,#fff))}
+
+/* Intentional empty states — a store with zero products should read as
+   "coming soon", not as a broken grid. Tinted with the store accent. */
+.store-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--store-accent) 7%, #fff), #fff);
+    border: 1px dashed color-mix(in srgb, var(--store-accent) 35%, var(--gray-200));
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-3xl) var(--spacing-xl);
+}
+
+.store-empty-state .empty-icon {
+    color: var(--store-accent);
+    background: color-mix(in srgb, var(--store-accent) 10%, #fff);
+}
+
+.store-empty-state h3 { color: var(--ink); }
+
+.store-empty-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: var(--spacing-sm);
+}
+
+@supports not (color: color-mix(in srgb, white, black)) {
+    .store-actions .btn-primary{background:var(--store-accent)}
+    .store-actions .btn-outline:hover:not(:disabled){background:#F3FBF7}
+    .section-header{border-bottom-color:var(--gray-200)}
+    .category-list li.active a{background:#F3FBF7}
+    .store-empty-state{background:#F7FCF9;border-color:var(--gray-200)}
+    .sidebar-section .form-select:focus{box-shadow:none}
+}
+
+.store-search-wrap{position:relative;min-width:190px}.store-search-wrap .search-preview-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border:1px solid var(--gray-200);border-radius:var(--border-radius-md);box-shadow:var(--shadow-lg);max-height:360px;overflow:auto;z-index:1200}.store-search-wrap.open .search-preview-dropdown{display:block}.store-search-wrap .search-preview-item{display:flex;align-items:center;gap:.7rem;padding:.65rem .85rem;text-decoration:none;color:var(--ink)}.store-search-wrap .search-preview-item:hover{background:var(--gray-50)}.store-search-wrap .search-preview-thumb{width:36px;height:36px;border-radius:9px;background:var(--gray-100) center/cover no-repeat;display:grid;place-items:center;flex:0 0 36px}.store-search-wrap .search-preview-name{font-weight:600;display:block}.store-search-wrap .search-preview-meta{font-size:.75rem;color:var(--gray-500)}.store-search-wrap .search-preview-empty{padding:.9rem;color:var(--gray-500);font-size:.875rem}
+
+/* Seller ratings retired: trust is communicated through objective badges. */
+.store-rating-line{display:none!important}.store-badge-row--detail{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 .65rem}.store-trust-signals{display:flex;flex-wrap:wrap;gap:.45rem}.store-trust-signals span{display:inline-flex;align-items:center;gap:.35rem}

@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Trust & Safety - NextaStore</title><link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/safety.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head><body><header class="safety-topbar"><a href="marketplace.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a><a href="marketplace.html" class="btn btn-ghost btn-sm">Back to marketplace</a><div class="account-nav-slot" data-account-nav></div></header><main class="safety-page"><section class="safety-hero"><span class="eyebrow">Trust & Safety</span><h1>Safer buying and selling on NextaStore</h1><p>NextaStore helps buyers and independent sellers connect. Until wallet payments launch, the safest transaction is one where both sides agree on payment and fulfillment details before money or goods change hands.</p></section><div class="safety-grid"><section class="safety-card"><div class="safety-icon"><i class="fas fa-user-check"></i></div><h2>For buyers</h2><ul><li>Don't send full payment before agreeing on delivery or pickup details with the seller.</li><li>Prefer partial or on-delivery payment where the seller offers it.</li><li>If you visit the seller, check that the item matches the listing before completing payment.</li><li>Keep communication inside NextaStore messaging so there is a record if something goes wrong.</li></ul></section><section class="safety-card"><div class="safety-icon"><i class="fas fa-store"></i></div><h2>For sellers</h2><ul><li>Don't ship or hand over goods before payment is confirmed by the method you and the buyer agreed on.</li><li>Keep product and order details accurate; a mismatch is the buyer's main protection.</li><li>Respond through NextaStore messaging so the conversation is documented.</li></ul></section></div><section class="safety-card platform-card"><div class="safety-icon"><i class="fas fa-shield-halved"></i></div><h2>What NextaStore does — and doesn't do</h2><p>NextaStore verifies seller accounts and stores order requests. It currently <strong>does not process payment, hold funds in escrow, or guarantee delivery</strong>. Orders are requests sent separately to each seller, who confirms payment and fulfillment with the buyer.</p><p>Wallet and protected-payment features are planned for a future phase. Until then, use the order details, seller badges, and NextaStore messaging as your record.</p></section><a class="btn btn-primary" href="marketplace.html">Continue shopping</a></main>
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body></html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Login - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-page>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <!-- Breadcrumb -->
+    <div class="page-breadcrumb">
+        <div class="breadcrumb-container">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a>
+                <span class="separator">/</span>
+                <span class="breadcrumb-current">Login</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <aside class="auth-side">
+            <a href="index.html" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
+            <div class="auth-side-content">
+                <h2>Run your store from anywhere.</h2>
+                <p>Log back in to check today's orders, update your products, and keep an eye on sales.</p>
+                <ul class="auth-side-points">
+                    <li><i class="fas fa-circle-check"></i> Real-time orders &amp; revenue</li>
+                    <li><i class="fas fa-circle-check"></i> Mobile Money built in</li>
+                    <li><i class="fas fa-circle-check"></i> One dashboard, every device</li>
+                </ul>
+            </div>
+            <p class="auth-side-quote">"NextaStore paid for itself in the first week." — Amina, Kampala</p>
+        </aside>
+
+        <div class="auth-form-side">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <a href="index.html" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                    <h1>Welcome back</h1>
+                    <p>Log in to manage your store and grow your business.</p>
+                </div>
+
+                <p id="sessionNotice" class="auth-notice" role="status" hidden></p>
+
+                <form id="loginForm" data-validate novalidate>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" required>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group checkbox-row">
+                        <label class="form-checkbox"><input type="checkbox" id="rememberMe"> Remember me</label>
+                        <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-arrow-right-to-bracket"></i> Sign In</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="signup.html">Sign up free</a></p>
+                    <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.querySelector('.password-toggle i');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            icon.classList.toggle('fa-eye', !show);
+            icon.classList.toggle('fa-eye-slash', show);
+        }
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

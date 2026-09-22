@@ -1,0 +1,90 @@
+/* ==========================================================================
+   Cart page styles — single consolidated pass (Round 11).
+   The Round 10 "visual redesign" block that used to sit at the end of this
+   file has been merged into the base rules below; there is exactly one rule
+   per selector. Media queries live at the end so breakpoint intent always
+   wins over base values.
+   ========================================================================== */
+
+.cart-topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem max(1rem,4vw);border-bottom:1px solid var(--gray-200);background:#fff}
+.cart-page{max-width:1180px;margin:auto;padding:1.75rem 1.25rem 4rem}
+.cart-heading{display:flex;justify-content:space-between;gap:1rem;align-items:end;position:relative;isolation:isolate;padding:2.25rem;border-radius:24px;margin-bottom:1.75rem;overflow:hidden;background:linear-gradient(135deg,#EAF9F2 0%,#F7FCFA 58%,#FFFFFF 100%);border:1px solid rgba(1,176,117,.14);box-shadow:var(--shadow-sm)}
+.cart-heading:after{content:"";position:absolute;right:-70px;top:-80px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--brand-green-light) 0,rgba(46,221,162,.08) 55%,transparent 70%);z-index:-1}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--primary,#00b074)}
+.cart-heading h1{margin:.3rem 0;font-size:clamp(2rem,4vw,2.6rem);letter-spacing:-.03em}
+.cart-heading p{margin:0;color:var(--gray-600);max-width:62ch}
+.cart-page-count{font-weight:700;background:#fff;border:1px solid var(--gray-200);border-radius:999px;padding:.55rem .85rem;box-shadow:var(--shadow-sm)}
+.cart-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,.8fr);gap:1.25rem}
+.cart-store-card,.checkout-card{background:#fff;border:1px solid var(--gray-200);border-radius:18px;box-shadow:0 8px 30px rgba(20,30,40,.05)}
+.cart-store-card{margin-bottom:1rem;overflow:hidden;border-color:rgba(11,59,43,.12);box-shadow:var(--shadow-sm)}
+.cart-store-card header{display:flex;gap:.8rem;align-items:center;padding:1.15rem 1.2rem;background:linear-gradient(135deg,#F2FAF6,#fff);border-bottom:1px solid var(--gray-200)}
+.cart-store-card header:after{content:"";width:7px;height:36px;border-radius:999px;background:linear-gradient(var(--brand-green-light),var(--store-green));margin-left:auto;opacity:.8}
+.store-avatar{width:50px;height:50px;border-radius:15px;background:var(--primary-light);color:var(--store-green);border:1px solid rgba(1,176,117,.14);display:grid;place-items:center;overflow:hidden}
+.store-avatar img{width:100%;height:100%;object-fit:cover}
+.cart-store-card h2{font-size:1.02rem;margin:0}
+.cart-store-card small{color:var(--gray-500)}
+.cart-line{display:grid;grid-template-columns:72px 1fr auto;gap:1rem;padding:1.1rem 1.2rem;border-bottom:1px solid var(--gray-100);align-items:center}
+.line-thumb{width:72px;height:72px;border-radius:12px;background:#fff;border:1px solid var(--gray-200);display:grid;place-items:center;overflow:hidden}
+.line-thumb img{width:100%;height:100%;object-fit:cover}
+.line-info h3{font-size:.95rem;margin:0 0 .2rem}
+.line-info p{font-size:.8rem;color:var(--gray-500);margin:0 0 .55rem}
+.line-controls{display:flex;align-items:center;gap:.45rem}
+.line-controls button:not(.link-danger){width:30px;height:30px;border:1px solid var(--gray-200);border-radius:8px;background:#fff}
+.link-danger{border:0;background:none;color:#b42318;font-size:.78rem;margin-left:.5rem}
+.cart-store-card footer{display:flex;justify-content:space-between;padding:.9rem 1.1rem}
+.checkout-card{position:sticky;top:1rem;height:max-content;padding:1.25rem;border-color:rgba(1,176,117,.2);box-shadow:var(--shadow-md);background:linear-gradient(180deg,#fff 0%,#fbfefc 100%)}
+.checkout-card-head{padding-bottom:.2rem}
+.checkout-card h2{margin:.3rem 0 1rem;font-size:1.35rem}
+.checkout-note{display:flex;gap:.65rem;border:1px solid rgba(1,176,117,.12);background:#F2FAF6;border-radius:12px;padding:.8rem;font-size:.8rem;color:var(--gray-600);margin-bottom:1rem}
+.checkout-note p{margin:0}
+.trust-strip{margin-top:.75rem}
+.checkout-card label{display:block;font-size:.8rem;font-weight:600;margin:.8rem 0}
+.checkout-card input,.checkout-card textarea{display:block;width:100%;margin-top:.35rem;border:1px solid var(--gray-200);border-radius:10px;padding:.7rem;font:inherit;box-sizing:border-box}
+.checkout-summary{display:flex;justify-content:space-between;padding:1rem 0;border-top:1px solid var(--gray-200);margin-top:1rem}
+.cart-page-empty{max-width:620px;margin:4rem auto;padding:4rem 2rem;border:1px dashed rgba(1,176,117,.3);border-radius:24px;background:linear-gradient(145deg,#F2FAF6,#fff);box-shadow:var(--shadow-sm);text-align:center}
+.cart-page-empty:before{content:"";display:block;width:92px;height:92px;margin:0 auto 1.1rem;border-radius:28px;background:linear-gradient(135deg,#DDF8EC,#F4FCF8);box-shadow:inset 0 0 0 1px rgba(1,176,117,.12)}
+.cart-page-empty i{position:relative;display:block;margin-top:-5.2rem;margin-bottom:3.8rem;color:var(--store-green);font-size:2rem}
+.checkout-success{max-width:620px;margin:4rem auto;padding:3.5rem 2rem;border:1px solid rgba(1,176,117,.18);border-radius:24px;background:linear-gradient(145deg,#F0FBF6,#fff);box-shadow:var(--shadow-md);text-align:center}
+.success-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#DDF8EC,#BFF1DB);color:var(--brand-green-dark);box-shadow:0 0 0 8px rgba(46,221,162,.10);display:grid;place-items:center;margin:0 auto 1rem;font-size:1.5rem}
+.checkout-success h2{font-size:2rem;margin:.4rem 0;letter-spacing:-.025em}
+.success-orders{text-align:left;margin:1.5rem auto;max-width:420px;border:1px solid var(--gray-200);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow-sm)}
+.success-orders div{display:flex;justify-content:space-between;padding:.9rem 1rem;border-bottom:1px solid var(--gray-100)}
+.success-orders div:last-child{border:0}
+.success-actions{display:flex;justify-content:center;gap:.6rem;flex-wrap:wrap}
+
+/* Fulfillment / pickup / payment choices */
+.store-fulfillment{padding:1rem 1.1rem;border-bottom:1px solid var(--gray-100);display:grid;gap:1rem}
+.field-kicker{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-500);margin-bottom:.55rem}
+.fulfillment-options{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.choice-card{display:flex;gap:.6rem;align-items:flex-start;border:1px solid var(--gray-200);border-radius:12px;padding:.75rem;cursor:pointer}
+.choice-card.selected{border-color:var(--primary,#00b074);background:#f3fbf7}
+.choice-card input{margin-top:.2rem}
+.choice-card span{display:grid;gap:.2rem}
+.choice-card small,.payment-choice small{color:var(--gray-500);font-weight:400}
+.pickup-location{display:grid;gap:.25rem;margin-top:.7rem;padding:.75rem;border-radius:12px;background:#f8faf9}
+.pickup-location span{color:var(--gray-600);font-size:.82rem}
+.checkout-location-link{font-size:.8rem;font-weight:700;color:var(--primary,#00b074)}
+.pickup-location-warning{background:#fff8e8}
+.payment-choice{font-size:.78rem;font-weight:600}
+.payment-choice select{display:block;width:100%;margin:.35rem 0;border:1px solid var(--gray-200);border-radius:10px;padding:.65rem;font:inherit}
+.ack-line{display:flex!important;gap:.5rem;align-items:flex-start;font-size:.75rem!important;font-weight:500!important;line-height:1.4}
+.ack-line input{width:auto!important;margin-top:.2rem}
+.ack-line a{color:var(--primary,#00b074);font-weight:700}
+
+/* Media queries — breakpoint intent always wins over base values */
+@media(max-width:850px){
+    .cart-layout{grid-template-columns:1fr}
+    .checkout-card{position:static}
+    .cart-heading{align-items:start;flex-direction:column}
+}
+@media(max-width:620px){
+    .fulfillment-options{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+    .cart-line{grid-template-columns:56px 1fr}
+    .line-thumb{width:56px;height:56px}
+    .cart-line>strong{grid-column:2}
+    .cart-page{padding-top:1.5rem}
+    .cart-heading{padding:1.5rem}
+    .cart-page-empty,.checkout-success{padding:2.5rem 1rem}
+}

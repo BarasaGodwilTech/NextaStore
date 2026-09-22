@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Store directory styles — single consolidated pass (Round 11).
+   The trailing verified-badge/directory-meta override block was merged into
+   the base rules; there is exactly one rule per selector.
+   ========================================================================== */
+
+/* Header matches store-detail's — sticky, translucent-blur white bar,
+   brand on the left, a plain text link + account menu + round cart
+   button on the right. No icon-only nav row, so there's nothing to
+   collapse into bare "hamburger-looking" icons on narrow screens. */
+.stores-topbar{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:500}
+.stores-topbar-inner{max-width:var(--max-width,1240px);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem max(1rem,4vw)}
+.stores-topbar .logo{flex:0 0 auto}
+.stores-topbar .logo img{height:34px;width:auto;display:block}
+.stores-topbar-right{display:flex;align-items:center;gap:1rem;flex-shrink:0}
+.stores-topbar-right .header-link{font-size:.85rem;font-weight:600;color:var(--gray-600);text-decoration:none;white-space:nowrap}
+.stores-topbar-right .header-link:hover{color:var(--secondary)}
+.stores-page{max-width:1180px;margin:auto;padding:2.5rem 1.25rem 4rem}
+.stores-hero{margin-bottom:1.5rem}
+.stores-hero h1{font-size:2.2rem;margin:.35rem 0}
+.stores-hero p{color:var(--gray-600);max-width:650px}
+.stores-tools{display:grid;grid-template-columns:1fr 190px 150px;gap:.75rem;margin-bottom:1.5rem}
+.stores-search{position:relative}
+.stores-search i{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--gray-500)}
+.stores-search input,.stores-tools select{width:100%;box-sizing:border-box;border:1px solid var(--gray-200);border-radius:11px;padding:.75rem .9rem;background:#fff;font:inherit}
+.stores-search input{padding-left:2.4rem}
+.stores-directory-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.directory-store-card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--gray-200);border-radius:18px;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.directory-store-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(20,30,40,.08)}
+.directory-banner{height:120px;background:linear-gradient(135deg,#eaf5f0,#f5f7f6);background-size:cover;background-position:center;position:relative}
+.directory-logo{position:absolute;left:1rem;bottom:-22px;width:56px;height:56px;border-radius:15px;background:#fff;border:3px solid #fff;box-shadow:0 5px 15px rgba(0,0,0,.1);display:grid;place-items:center;overflow:hidden;color:var(--primary)}
+.directory-logo img{width:100%;height:100%;object-fit:cover}
+.directory-info{padding:2rem 1rem 1rem}
+.directory-title{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.directory-title h2{font-size:1rem;margin:0}
+.directory-title span{font-size:.75rem;font-weight:700;white-space:nowrap}
+.verified-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:800;color:var(--primary,#00b074);background:#eaf8f2;padding:.22rem .45rem;border-radius:999px}
+.directory-info p{font-size:.8rem;color:var(--gray-600);min-height:2.5em;margin:.5rem 0}
+.directory-meta{display:flex;gap:.8rem;flex-wrap:wrap;color:var(--gray-500);font-size:.72rem}
+.directory-loading{text-align:center;padding:4rem;color:var(--gray-500);grid-column:1/-1}
+@media(max-width:900px){.stores-directory-grid{grid-template-columns:repeat(2,1fr)}.stores-tools{grid-template-columns:1fr 1fr}.stores-search{grid-column:1/-1}.stores-topbar-inner{gap:.75rem}}
+@media(max-width:680px){
+  .stores-topbar-inner{padding:.6rem .9rem}
+  .stores-topbar-right{gap:.6rem}
+  .stores-topbar-right .header-link{display:none}
+}
+@media(max-width:600px){
+  .stores-directory-grid{grid-template-columns:1fr}
+  .stores-tools{grid-template-columns:1fr}
+  .stores-hero h1{font-size:1.7rem}
+}
+
+.stores-search .search-preview-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border:1px solid var(--gray-200);border-radius:var(--border-radius-md);box-shadow:var(--shadow-lg);max-height:360px;overflow:auto;z-index:1000}.stores-search.open .search-preview-dropdown{display:block}.stores-search .search-preview-item{display:flex;align-items:center;gap:.7rem;padding:.65rem .85rem;text-decoration:none;color:var(--ink)}.stores-search .search-preview-item:hover{background:var(--gray-50)}.stores-search .search-preview-thumb{width:36px;height:36px;border-radius:9px;background:var(--gray-100) center/cover no-repeat;display:grid;place-items:center;flex:0 0 36px}.stores-search .search-preview-name{font-weight:600;display:block}.stores-search .search-preview-meta{font-size:.75rem;color:var(--gray-500)}.stores-search .search-preview-empty{padding:.9rem;color:var(--gray-500);font-size:.875rem}
+
+.directory-badges{display:inline-flex;flex-wrap:wrap;gap:.3rem;align-items:center}.directory-badges .seller-badge{font-size:.62rem}

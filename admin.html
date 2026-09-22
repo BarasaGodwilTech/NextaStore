@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Admin Console · NextaStore</title>
+    <meta name="description" content="NextaStore administration console for users, payments, moderation and platform operations.">
+    <link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-required data-admin-required>
+    <header class="admin-topbar">
+        <a class="logo brand-lockup" href="marketplace.html"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <div class="admin-topbar-title"><span>Admin Console</span><small id="adminLevelLabel">Loading access…</small></div>
+        <div class="account-nav-slot" data-account-nav></div>
+    </header>
+
+    <div class="admin-shell">
+        <nav class="admin-nav" id="adminNav" aria-label="Administration sections">
+            <div class="admin-nav-group" data-nav-group>
+                <span class="admin-nav-label">Workspace</span>
+                <button class="is-active" data-admin-tab="overview"><i class="fas fa-house"></i><span>Overview</span></button>
+            </div>
+            <div class="admin-nav-group" data-nav-group>
+                <span class="admin-nav-label">People</span>
+                <button data-admin-tab="users"><i class="fas fa-users"></i><span>Users</span></button>
+                <button data-admin-tab="team"><i class="fas fa-user-shield"></i><span>Admin team</span></button>
+            </div>
+            <div class="admin-nav-group" data-nav-group>
+                <span class="admin-nav-label">Operations</span>
+                <button data-admin-tab="payments"><i class="fas fa-money-bill-wave"></i><span>Seller payments</span></button>
+                <button data-admin-tab="reports"><i class="fas fa-shield-halved"></i><span>Reports</span></button>
+                <button data-admin-tab="followups"><i class="fas fa-list-check"></i><span>Follow-ups</span></button>
+            </div>
+            <div class="admin-nav-group" data-nav-group>
+                <span class="admin-nav-label">Platform</span>
+                <button data-admin-tab="settings"><i class="fas fa-gear"></i><span>Platform</span></button>
+                <button data-admin-tab="audit"><i class="fas fa-clock-rotate-left"></i><span>Audit log</span></button>
+            </div>
+        </nav>
+
+    <main class="admin-main">
+        <section class="admin-welcome">
+            <div><span class="eyebrow">Operations</span><h1>Admin console</h1><p>Everything your role lets you manage, in one place.</p></div>
+            <button class="btn btn-outline" id="adminRefresh"><i class="fas fa-rotate"></i> Refresh</button>
+        </section>
+
+        <section class="admin-stats" id="adminStats">
+            <div class="admin-stat"><i class="fas fa-users"></i><div><strong id="statUsers">—</strong><span>Accounts</span></div></div>
+            <div class="admin-stat"><i class="fas fa-store"></i><div><strong id="statSellers">—</strong><span>Sellers</span></div></div>
+            <div class="admin-stat"><i class="fas fa-credit-card"></i><div><strong id="statPayments">—</strong><span>Payments waiting</span></div></div>
+            <div class="admin-stat"><i class="fas fa-flag"></i><div><strong id="statReports">—</strong><span>Reports waiting</span></div></div>
+            <div class="admin-stat"><i class="fas fa-user-shield"></i><div><strong id="statAdmins">—</strong><span>Administrators</span></div></div>
+            <div class="admin-stat"><i class="fas fa-list-check"></i><div><strong id="statFollowUps">—</strong><span>Open follow-ups</span></div></div>
+        </section>
+
+        <section class="admin-section is-active" data-admin-section="overview">
+            <div class="admin-overview-grid">
+                <article class="admin-panel admin-quick-panel"><div class="panel-heading"><div><span class="panel-kicker">Start here</span><h2>Today's queue</h2></div><i class="fas fa-inbox"></i></div><div class="quick-actions"><button class="quick-action" data-jump="users"><i class="fas fa-user-pen"></i><span>Find an account</span><small>Search accounts and open the ones you can manage.</small></button><button class="quick-action" data-jump="payments"><i class="fas fa-receipt"></i><span>Check seller payments</span><small>Approve only after the mobile-money payment is visible.</small></button><button class="quick-action" data-jump="followups"><i class="fas fa-phone"></i><span>Work follow-ups</span><small>Keep promises and outstanding cases in one queue.</small></button><button class="quick-action" data-jump="reports"><i class="fas fa-shield-heart"></i><span>Review reports</span><small>Handle buyer and seller safety issues with a record.</small></button></div></article>
+                <article class="admin-panel admin-guide-panel"><div class="panel-heading"><div><span class="panel-kicker">Trust rule</span><h2>What badges actually mean</h2></div><i class="fas fa-award"></i></div><p>Seller badges show confirmed paid commitment to NextaStore. They do not mean NextaStore guarantees product quality, delivery or a completed sale.</p><div class="guide-badges"><span class="seller-badge seller-badge--verified"><i class="fas fa-circle-check"></i> Verified Seller · 6+ months</span><span class="seller-badge seller-badge--gold"><i class="fas fa-crown"></i> Gold Partner · 12+ months</span><span class="seller-badge seller-badge--platinum"><i class="fas fa-gem"></i> Platinum Partner · 24+ months</span></div></article>
+            </div>
+        </section>
+
+        <section class="admin-section" data-admin-section="users">
+            <div class="section-toolbar"><div><span class="panel-kicker">Accounts</span><h2>Users & sellers</h2><p>Search every account, update account details, manage access and start password recovery.</p></div><button class="btn btn-outline" id="newFollowUpFromUsers"><i class="fas fa-plus"></i> New follow-up</button></div>
+            <div class="admin-filter-bar"><label><i class="fas fa-search"></i><input id="userSearch" placeholder="Search name or email…"></label><select id="userRoleFilter"><option value="">All roles</option><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="admin">Admin</option></select><select id="userStatusFilter"><option value="">All account status</option><option value="active">Active</option><option value="suspended">Suspended</option></select><button class="btn btn-outline btn-sm" id="userSearchBtn">Search</button></div>
+            <div class="admin-panel"><div id="usersList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading accounts…</div></div><div class="admin-pagination" id="usersPagination"></div></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="payments">
+            <div class="section-toolbar"><div><span class="panel-kicker">Seller Pass</span><h2>Mobile-money payments</h2><p>Approve only after confirming the transaction in the relevant merchant account. Extra payments stack onto active paid coverage.</p></div><button class="btn btn-outline" id="refreshSubPayments"><i class="fas fa-rotate"></i> Refresh</button></div>
+            <div class="admin-panel"><div id="subPaymentsList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading payments…</div></div></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="reports">
+            <div class="section-toolbar"><div><span class="panel-kicker">Trust & Safety</span><h2>Reports</h2><p>Review order issues and record when an item has been handled.</p></div><button class="btn btn-outline" id="refreshReports"><i class="fas fa-rotate"></i> Refresh</button></div>
+            <div class="admin-panel"><div id="reportsList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading reports…</div></div></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="followups">
+            <div class="section-toolbar"><div><span class="panel-kicker">Operations</span><h2>Follow-ups</h2><p>Record a promised call, payment check, seller onboarding issue or other case so nothing is forgotten.</p></div><button class="btn btn-primary" id="createFollowUp"><i class="fas fa-plus"></i> Add follow-up</button></div>
+            <div class="admin-followup-layout"><div class="admin-panel"><div id="followUpsList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading follow-ups…</div></div></div><aside class="admin-side-note"><i class="fas fa-lightbulb"></i><strong>Good admin habit</strong><p>Write the next action in the note, not just what already happened. Example: “Call seller tomorrow at 10:00 and confirm the Airtel receipt.”</p></aside></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="team">
+            <div class="section-toolbar"><div><span class="panel-kicker">Access control</span><h2>Admin team & roles</h2><p>Create focused admin roles and assign them to other administrators. You can only hand out permissions you hold yourself.</p></div><button class="btn btn-primary" id="createRole"><i class="fas fa-plus"></i> Create admin role</button></div>
+            <div class="admin-panel"><div id="rolesList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading roles…</div></div></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="settings">
+            <div class="section-toolbar"><div><span class="panel-kicker">Platform</span><h2>Payment & platform settings</h2><p>These merchant details are shown to sellers on Seller Pass.</p></div></div>
+            <div class="admin-panel admin-settings-card"><form id="settingsForm"><label>MTN MoMo merchant code<input type="text" id="settingsMtnCode" maxlength="40"></label><label>MTN MoMo name<input type="text" id="settingsMtnName" maxlength="60"></label><label>Airtel Money merchant code<input type="text" id="settingsAirtelCode" maxlength="40"></label><label>Airtel Money name<input type="text" id="settingsAirtelName" maxlength="60"></label><button type="submit" class="btn btn-primary" id="settingsSaveBtn"><i class="fas fa-floppy-disk"></i> Save settings</button></form></div>
+            <div class="section-toolbar admin-subhead"><div><span class="panel-kicker">Checkout</span><h2>Payment methods</h2><p>What buyers can choose at checkout. Turn a method off, or limit it by currency and country, without a release.</p></div><button class="btn btn-primary" id="addPaymentMethod"><i class="fas fa-plus"></i> Add method</button></div>
+            <div class="admin-panel"><div id="paymentMethodsList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading payment methods…</div></div></div>
+        </section>
+
+        <section class="admin-section" data-admin-section="audit">
+            <div class="section-toolbar"><div><span class="panel-kicker">Traceability</span><h2>Admin audit log</h2><p>See sensitive administration actions such as user edits, password-reset requests, payment decisions and role changes.</p></div><button class="btn btn-outline" id="refreshAudit"><i class="fas fa-rotate"></i> Refresh</button></div>
+            <div class="admin-panel"><div id="auditList"><div class="admin-loading"><i class="fas fa-spinner fa-spin"></i> Loading audit log…</div></div></div>
+        </section>
+    </main>
+    </div>
+
+    <div id="adminModalRoot"></div>
+    <footer class="footer"><div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div><p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p><a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a></footer>
+
+    <script src="js/api.js"></script><script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script><script src="js/admin.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

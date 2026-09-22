@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Branded error pages (errors/404.html, 401.html, 403.html, 500.html).
+   Modern minimal treatment: one centered stage, oversized gradient code,
+   one line of copy, two actions, one legal line. No walls of text.
+   ========================================================================== */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(640px 420px at 50% -8%, rgba(1, 176, 117, 0.14), transparent 70%),
+        radial-gradient(900px 500px at 85% 110%, rgba(46, 221, 162, 0.08), transparent 65%),
+        var(--paper, #F7FAF8);
+}
+
+.error-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+    gap: 0.4rem;
+}
+
+.error-lockup { margin-bottom: var(--spacing-xl); }
+.error-lockup img { height: 40px; width: auto; }
+
+.error-code {
+    font-family: var(--font-display);
+    font-size: clamp(5.5rem, 18vw, 9.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin: 0;
+    background: linear-gradient(135deg, var(--primary) 20%, #013A27 110%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--primary);
+}
+
+.error-stage h1 {
+    font-size: clamp(1.35rem, 4vw, 1.9rem);
+    color: var(--ink);
+    margin: var(--spacing-sm) 0 0;
+    letter-spacing: -0.02em;
+}
+
+.error-sub {
+    color: var(--gray-500, #667470);
+    font-size: 0.98rem;
+    max-width: 44ch;
+    margin: 0 0 var(--spacing-xl);
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.error-hint {
+    margin-top: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--gray-400, #98a6a0);
+}
+
+.error-legal {
+    text-align: center;
+    padding: var(--spacing-lg);
+    font-size: 0.82rem;
+    color: var(--gray-400, #98a6a0);
+}
+
+.error-legal a { color: var(--gray-500, #667470); font-weight: 600; }
+.error-legal a:hover { color: var(--primary); }
+.error-legal .sep { margin: 0 0.45rem; color: var(--gray-300, #c4cfca); }
+
+@media (max-width: 480px) {
+    .error-actions { width: 100%; flex-direction: column; }
+    .error-actions .btn { width: 100%; }
+    .error-stage { padding-top: var(--spacing-xl); }
+}

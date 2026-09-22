@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Marketplace - NextaStore</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/marketplace.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+    <div class="marketplace-container">
+        <!-- Header -->
+        <header class="marketplace-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                </div>
+                <div class="header-center">
+                    <div class="search-bar marketplace-search" id="marketplaceSearchBar">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="marketplaceSearch" placeholder="Search stores, products..." autocomplete="off">
+                        <div class="search-preview-dropdown" id="searchPreviewDropdown"></div>
+                    </div>
+                </div>
+                <div class="header-right marketplace-header-actions"><div class="account-nav-slot" data-account-nav></div><a href="cart.html" class="cart-btn" aria-label="Go to cart"><i class="fas fa-cart-shopping"></i><span class="cart-count">0</span></a></div>
+            </div>
+        </header>
+
+        <!-- Hero -->
+        <section class="marketplace-hero">
+            <div class="hero-content">
+                <h1>Shop the stores your neighbours already trust</h1>
+                <p>NextaStore brings together clothing makers, home cooks, electronics dealers, and craftspeople from across Uganda — each running their own shop and shipping straight to your door.</p>
+                <div class="hero-actions">
+                    <a href="#stores" class="btn btn-primary btn-lg">Browse stores</a>
+                    <a href="signup.html" class="btn btn-outline btn-lg">Start selling</a>
+                </div>
+            </div>
+            <div class="hero-stats" id="heroStats">
+                <div class="stat-item">
+                    <span class="stat-label">Active stores</span>
+                    <span class="stat-value">500+</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Products listed</span>
+                    <span class="stat-value">10K+</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Customer support</span>
+                    <span class="stat-value">24/7</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <section class="marketplace-categories">
+            <div class="container">
+                <h2>Shop by category</h2>
+                <div class="category-grid" id="categoryGrid">
+                    <div class="category-card" data-category="clothing">
+                        <div class="category-icon"><i class="fas fa-shirt"></i></div>
+                        <h3>Clothing</h3>
+                        <p>Traditional & modern fashion</p>
+                    </div>
+                    <div class="category-card" data-category="accessories">
+                        <div class="category-icon"><i class="fas fa-gem"></i></div>
+                        <h3>Accessories</h3>
+                        <p>Jewelry, bags & more</p>
+                    </div>
+                    <div class="category-card" data-category="food">
+                        <div class="category-icon"><i class="fas fa-mug-saucer"></i></div>
+                        <h3>Food & Drinks</h3>
+                        <p>Local delicacies & beverages</p>
+                    </div>
+                    <div class="category-card" data-category="home">
+                        <div class="category-icon"><i class="fas fa-home"></i></div>
+                        <h3>Home & Living</h3>
+                        <p>Furniture & decor</p>
+                    </div>
+                    <div class="category-card" data-category="electronics">
+                        <div class="category-icon"><i class="fas fa-laptop"></i></div>
+                        <h3>Electronics</h3>
+                        <p>Gadgets & accessories</p>
+                    </div>
+                    <div class="category-card" data-category="crafts">
+                        <div class="category-icon"><i class="fas fa-palette"></i></div>
+                        <h3>Arts & Crafts</h3>
+                        <p>Handmade treasures</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Stores -->
+        <section class="marketplace-stores" id="stores">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Featured stores</h2>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="clothing">Clothing</button>
+                        <button class="filter-tab" data-filter="food">Food</button>
+                        <button class="filter-tab" data-filter="crafts">Crafts</button>
+                    </div>
+                </div>
+                <!-- Loading State -->
+                <div class="loading-state active" id="storesLoadingState">
+                    <div class="stores-grid">
+                        <div class="store-card">
+                            <div class="store-banner">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="store-info">
+                                <div class="skeleton skeleton-avatar"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                            </div>
+                        </div>
+                        <div class="store-card">
+                            <div class="store-banner">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="store-info">
+                                <div class="skeleton skeleton-avatar"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                            </div>
+                        </div>
+                        <div class="store-card">
+                            <div class="store-banner">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="store-info">
+                                <div class="skeleton skeleton-avatar"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                            </div>
+                        </div>
+                        <div class="store-card">
+                            <div class="store-banner">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="store-info">
+                                <div class="skeleton skeleton-avatar"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual Content -->
+                <div class="loading-content hidden" id="storesContent">
+                    <div class="stores-grid" id="storesGrid">
+                        <!-- Stores will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Products -->
+        <section class="marketplace-products">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Trending products</h2>
+                    <a href="#" class="btn-link" id="viewAllTrendingBtn">View all</a>
+                </div>
+                <!-- Loading State -->
+                <div class="loading-state active" id="productsLoadingState">
+                    <div class="products-grid">
+                        <div class="product-card">
+                            <div class="product-image">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="product-info">
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-image">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="product-info">
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-image">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="product-info">
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-image">
+                                <div class="skeleton skeleton-image"></div>
+                            </div>
+                            <div class="product-info">
+                                <div class="skeleton skeleton-text-sm"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual Content -->
+                <div class="loading-content hidden" id="productsContent">
+                    <div class="products-grid" id="trendingProducts">
+                        <!-- Products will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seller CTA -->
+        <section class="marketplace-cta">
+            <div class="cta-content">
+                <div class="cta-copy">
+                    <h2>Have something to sell?</h2>
+                    <p>Set up a shop in a few minutes — list products, take orders, and get paid without needing a website of your own.</p>
+                    <a href="signup.html" class="btn btn-primary btn-lg">Start selling</a>
+                </div>
+                <div class="cta-features">
+                    <div class="cta-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>No setup fees</span>
+                    </div>
+                    <div class="cta-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Live in minutes</span>
+                    </div>
+                    <div class="cta-feature">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Payments handled for you</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="marketplace-footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                        <p>Uganda's marketplace for local businesses</p>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Quick Links</h4>
+                        <ul>
+                            <li><a href="index.html">Home</a></li>
+                            <li><a href="marketplace.html">Marketplace</a></li>
+                            <li><a href="stores.html">All Stores</a></li>
+                            <li><a href="signup.html">Start Selling</a></li>
+                            <li><a href="login.html" data-hide-when-authed>Login</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="safety.html">Trust &amp; Safety</a></li>
+                            <li><a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Help Center</a></li>
+                            <li><a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Contact Us</a></li>
+                            <li><a href="signup.html">Seller Guide</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Connect</h4>
+                        <div class="social-links">
+                            <a href="https://facebook.com/nextastore" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                            <a href="https://twitter.com/nextastore" target="_blank" rel="noopener" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="https://instagram.com/nextastore" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>&copy; 2026 NextaStore. Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script src="js/marketplace.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

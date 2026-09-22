@@ -1,0 +1,272 @@
+/* ==========================================================================
+   Auth pages — login, signup, forgot password
+   ========================================================================== */
+
+.auth-container {
+    min-height: calc(100vh - 48px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.auth-side {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(226, 154, 46, 0.25), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.08), transparent 40%),
+        linear-gradient(160deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+    color: white;
+    padding: var(--spacing-3xl) var(--spacing-2xl);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-side::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(circle at 30% 40%, black, transparent 70%);
+    pointer-events: none;
+}
+
+.auth-side-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-side-content { position: relative; z-index: 1; max-width: 420px; }
+
+.auth-side-content h2 {
+    color: white;
+    font-size: 2.1rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.auth-side-content p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.0625rem;
+}
+
+.auth-side-points { list-style: none; margin-top: var(--spacing-xl); }
+
+.auth-side-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: var(--spacing-md);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.9375rem;
+}
+
+.auth-side-points i {
+    margin-top: 0.2em;
+    color: var(--primary);
+}
+
+.auth-side-quote {
+    position: relative;
+    z-index: 1;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.auth-form-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl);
+    background: var(--paper);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+}
+
+@media (max-width: 960px) {
+    .auth-container { grid-template-columns: 1fr; }
+    .auth-side { display: none; }
+    .auth-form-side { padding: var(--spacing-xl) var(--spacing-md); min-height: 100vh; }
+
+    /* The branded side panel is gone at this width, so the form needs its
+       own defined surface to sit on — otherwise it's just text floating on
+       the bare page background, which is the "off"/unfinished look on
+       mobile. Desktop (above 960px) intentionally stays full-bleed,
+       two-panel, no card frame — see the reference screenshot. */
+    .auth-card {
+        background: #fff;
+        border: 1px solid var(--gray-200, #e5e9e7);
+        border-radius: 18px;
+        box-shadow: var(--shadow-md, 0 4px 18px rgba(16, 24, 22, 0.06));
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+}
+
+@media (max-width: 600px) {
+    /* One horizontal gutter, not three stacked ones: css/mobile.css already
+       gives .auth-container its own side padding (loads last, wins), so
+       .auth-form-side only needs vertical breathing room here — stacking
+       another side padding on top of it is what was shrinking the card
+       down and making the page feel "not full" on phones. */
+    .auth-form-side { padding: var(--spacing-lg) 0; }
+    .auth-card { padding: var(--spacing-lg) var(--spacing-md); border-radius: 16px; box-shadow: none; }
+}
+
+.auth-header { margin-bottom: var(--spacing-xl); }
+
+.auth-logo {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: var(--spacing-xl);
+}
+
+.auth-logo i { color: var(--primary-dark); }
+
+.auth-header h1 { font-size: 1.75rem; margin-bottom: var(--spacing-xs); }
+.auth-header p { color: var(--gray-600); margin-bottom: 0; }
+/* Why the person is back at the login page (session expired, sessions ended...). */
+.auth-notice { background: var(--warning-bg); color: var(--warning); border-radius: var(--radius-md, 8px); padding: 0.75rem 1rem; margin: 0 0 var(--spacing-lg, 1.25rem); font-size: 0.9rem; line-height: 1.4; }
+.auth-notice[hidden] { display: none; }
+
+.password-input-wrapper { position: relative; }
+
+.password-toggle {
+    position: absolute;
+    right: var(--spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    padding: var(--spacing-sm);
+}
+
+.password-toggle:hover { color: var(--secondary); }
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    margin: var(--spacing-xl) 0;
+    color: var(--gray-500);
+    font-size: 0.8125rem;
+}
+
+.auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
+}
+
+.auth-divider span { padding: 0 var(--spacing-md); }
+
+
+
+.auth-footer { margin-top: var(--spacing-xl); text-align: center; }
+.auth-footer p { margin-bottom: 0; color: var(--gray-600); font-size: 0.9375rem; }
+.auth-footer p a {
+    font-weight: 700;
+    color: var(--primary-dark);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.auth-footer p a:hover { color: var(--primary); }
+
+.powered-by { margin-top: var(--spacing-md); font-size: 0.75rem; color: var(--gray-500); }
+.powered-by a { color: var(--primary-dark); font-weight: 600; }
+
+.forgot-link { margin-left: auto; font-size: 0.875rem; font-weight: 500; }
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+/* Account-type picker on signup — two selectable cards, radio-driven so it
+   degrades to plain accessible inputs with no JS beyond the checked-state
+   styling below. */
+.account-type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.account-type-option {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.account-type-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.account-type-option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: var(--spacing-md);
+    border: 2px solid var(--border-color, #e2e2e2);
+    border-radius: var(--radius-md, 10px);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.account-type-option-card i {
+    font-size: 1.1rem;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 2px;
+}
+
+.account-type-option-card strong {
+    font-size: 0.95rem;
+}
+
+.account-type-option-card span {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.account-type-option input:checked + .account-type-option-card {
+    border-color: var(--primary-color, #00B074);
+    background-color: rgba(0, 176, 116, 0.06);
+}
+
+.account-type-option input:checked + .account-type-option-card i {
+    color: var(--primary-color, #00B074);
+}
+
+@media (max-width: 480px) {
+    .account-type-toggle { grid-template-columns: 1fr; }
+    .auth-header h1 { font-size: 1.5rem; }
+    .auth-header p { font-size: 0.9rem; }
+    .auth-card { border-radius: 16px; }
+    .auth-logo img, .auth-side-brand img { height: 32px; }
+}
+
+.auth-logo, .auth-side-brand { font-family: var(--font-body) !important; }
+.auth-logo img, .auth-side-brand img { height: 40px; width: auto; }

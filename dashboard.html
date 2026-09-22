@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B3B2B">
+    <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
+    <title>Dashboard - NextaStore</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/image-crop.css">
+    <link rel="stylesheet" href="css/store-form.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/map-picker.css">
+    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body data-auth-required data-seller-required>
+    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
+        <div class="skeleton skeleton-text-lg"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text-sm"></div>
+    </div>
+    <div class="store-accent-bar" id="storeAccentBar"></div>
+    <div class="dashboard-container" id="dashboardContainer">
+        <aside class="sidebar" id="dashboardSidebar" aria-label="Dashboard navigation">
+            <div class="sidebar-header">
+                <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="overview"><i class="fas fa-house"></i> Overview</a>
+                <a href="#" class="nav-item" data-section="products"><i class="fas fa-box"></i> Products</a>
+                <a href="#" class="nav-item" data-section="orders"><i class="fas fa-cart-shopping"></i> Orders</a>
+                <a href="#" class="nav-item" data-section="analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+                <a href="messages.html" class="nav-item"><i class="fas fa-message"></i> Messages<span class="unread-badge hidden" data-unread-badge></span></a>
+                <a href="subscription.html" class="nav-item"><i class="fas fa-shield-heart"></i> Subscription<span class="unread-badge hidden" id="subNavBadge"></span></a>
+                <a href="#" class="nav-item" data-section="settings"><i class="fas fa-gear"></i> Settings</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar-circle" data-user-avatar>U</div>
+                    <div>
+                        <p class="user-name" data-user-name>User</p>
+                        <button class="logout-btn" onclick="dashboardManager.logout()"><i class="fas fa-arrow-right-from-bracket"></i> Logout</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-controls="dashboardSidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
+                    <h2>Dashboard</h2>
+                </div>
+                <div class="top-bar-right">
+                    <div class="search-bar" id="globalSearchBar">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="globalSearchInput" placeholder="Search dashboard...">
+                    </div>
+                    <div class="account-nav-slot" data-account-nav></div>
+                </div>
+                <!-- Global Search Results -->
+                <div class="search-results-dropdown" id="searchResults" style="display: none;">
+                    <div class="search-results-header">
+                        <span>Search Results</span>
+                        <button class="search-results-close" type="button" onclick="dashboardManager.closeSearchResults()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="search-results-content" id="searchResultsContent">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- Storefront View with Management -->
+                <section class="dashboard-section" id="overviewSection">
+                    <!-- Draft notice — a hard fact (store.isPublished is
+                         false), not a dismissible suggestion. Shown to a
+                         seller who reaches the dashboard before finishing
+                         onboarding, e.g. via a direct/bookmarked URL. -->
+                    <div class="draft-notice-banner" id="draftNoticeBanner" style="display:none;">
+                        <i class="fas fa-circle-info"></i>
+                        <div>
+                            <strong>Your store is still a draft.</strong>
+                            <span>It isn't visible to customers yet. Finish onboarding to launch it.</span>
+                        </div>
+                        <a href="onboarding.html" class="btn btn-primary btn-sm"><i class="fas fa-rocket"></i> Finish &amp; launch</a>
+                    </div>
+
+                    <!-- Setup nudge — shown only while the store still looks like
+                         the untouched signup default (see renderSetupNudge() in
+                         dashboard.js). Links into the same onboarding wizard and
+                         the same PUT /store save path as everything else here,
+                         so nothing about "finishing setup" is a separate system. -->
+                    <div class="welcome-banner" id="setupNudgeBanner" style="display:none;">
+                        <div>
+                            <h1>Finish setting up your store</h1>
+                            <p id="setupNudgeText">Add a logo, description and payment details so shoppers know who they're buying from.</p>
+                        </div>
+                        <div style="display:flex; gap: var(--spacing-md); align-items:center;">
+                            <button type="button" class="dismiss-nudge-btn" id="dismissSetupNudge">Dismiss</button>
+                            <a href="onboarding.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Continue setup</a>
+                        </div>
+                    </div>
+
+                    <!-- Trial/subscription nudge — see renderSubscriptionNudge()
+                         in dashboard.js. Hidden unless the trial is ending soon
+                         or has already lapsed. -->
+                    <div class="welcome-banner welcome-banner--warn" id="subscriptionNudgeBanner" style="display:none;">
+                        <div>
+                            <h1>Your free trial ends soon</h1>
+                            <p></p>
+                        </div>
+                        <div style="display:flex; gap: var(--spacing-md); align-items:center;">
+                            <a href="subscription.html" class="btn btn-primary"><i class="fas fa-shield-heart"></i> Manage subscription</a>
+                        </div>
+                    </div>
+
+                    <!-- Store Banner & Branding -->
+                    <div class="store-branding-section">
+                        <div class="store-banner" id="storeBannerPreview">
+                            <div class="banner-overlay">
+                                <div class="store-branding-controls">
+                                    <input type="file" id="bannerUploadInput" accept="image/*" hidden>
+                                    <button class="btn btn-sm btn-light" onclick="document.getElementById('bannerUploadInput').click()">
+                                        <i class="fas fa-camera"></i> Change Banner
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="store-header">
+                            <div class="store-logo-wrapper">
+                                <div class="store-logo" id="storeLogoPreview">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <input type="file" id="logoUploadInput" accept="image/*" hidden>
+                                <button class="btn btn-sm btn-light logo-edit-btn" onclick="document.getElementById('logoUploadInput').click()">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                            <div class="store-info">
+                                <div class="store-name-row">
+                                    <h1 class="store-name" id="storeDisplayName">My Store</h1>
+                                    <button class="btn btn-sm btn-outline" onclick="dashboardManager.navigateToSettings('store')"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <p class="store-description" id="storeDescriptionDisplay">Tell customers what makes your store special.</p>
+                                <p class="store-location" id="storeLocationDisplay">
+                                    <i class="fas fa-map-marker-alt"></i> <span id="locationText">Add your location</span>
+                                    <button class="btn-link" onclick="dashboardManager.openMapPickerFromOverview()"><i class="fas fa-edit"></i> Edit</button>
+                                </p>
+                                <div class="store-contact-info" id="storeContactDisplay">
+                                    <span class="contact-item"><i class="fas fa-envelope"></i> <span id="storeContactEmailDisplay">Not set</span></span>
+                                    <span class="contact-item"><i class="fas fa-phone"></i> <span id="contactPhone">Not set</span></span>
+                                </div>
+                                <div class="store-payments" id="storePaymentsDisplay"></div>
+                                <div class="store-badges-display seller-badges-dashboard">
+                                    <span id="storeBadges" class="store-badge-row" aria-label="Seller badges"></span>
+                                    <span class="rating-count" id="storeFollowers">0 followers</span>
+                                </div>
+                            </div>
+                            <div class="store-stats-mini">
+                                <div class="mini-stat">
+                                    <span class="mini-stat-value" id="miniProducts">0</span>
+                                    <span class="mini-stat-label">Products</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <span class="mini-stat-value" id="miniOrders">0</span>
+                                    <span class="mini-stat-label">Orders</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <span class="mini-stat-value" id="miniRevenue">UGX 0</span>
+                                    <span class="mini-stat-label">Revenue</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-bar">
+                        <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                        <button class="btn btn-outline" onclick="dashboardManager.switchToOrders()"><i class="fas fa-box"></i> View Orders</button>
+                        <button class="btn btn-outline" onclick="dashboardManager.switchToAnalytics()"><i class="fas fa-chart-line"></i> Analytics</button>
+                        <div class="spacer"></div>
+                        <div class="search-bar"><i class="fas fa-magnifying-glass"></i><input type="text" id="productSearch" placeholder="Search products..."></div>
+                        <button class="btn btn-outline" onclick="dashboardManager.showShareModal()"><i class="fas fa-share-nodes"></i> Share Store</button>
+                    </div>
+
+                    <!-- Products Grid (Storefront View) -->
+                    <div class="storefront-section">
+                        <div class="section-header">
+                            <h2>Your Products</h2>
+                            <div class="filter-controls">
+                                <select class="form-select form-select-sm" id="quickCategoryFilter">
+                                    <option value="">All Categories</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="accessories">Accessories</option>
+                                    <option value="food">Food</option>
+                                    <option value="home">Home & Living</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="crafts">Arts & Crafts</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="storefrontProducts" class="storefront-grid"></div>
+                    </div>
+
+                    <!-- Recent Activity (Compact) -->
+                    <div class="activity-section">
+                        <div class="activity-grid">
+                            <div class="activity-card">
+                                <div class="activity-header">
+                                    <h3>Recent Orders</h3>
+                                    <a href="#" class="btn-link" onclick="dashboardManager.switchToOrders()">View All</a>
+                                </div>
+                                <div id="recentOrdersCompact"></div>
+                            </div>
+                            <div class="activity-card">
+                                <div class="activity-header">
+                                    <h3>Quick Stats</h3>
+                                </div>
+                                <div id="quickStats"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Share Modal -->
+                <div class="modal-overlay" id="shareModal" style="display:none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Share Your Store</h3>
+                            <button class="modal-close" onclick="dashboardManager.hideShareModal()"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Your Store URL</label>
+                                <div class="share-url-wrapper">
+                                    <input type="text" class="form-input" id="storeUrlModal" readonly value="https://nextastore.ug/your-store">
+                                    <button type="button" class="btn btn-outline" id="copyStoreUrlModalBtn" onclick="dashboardManager.copyStoreUrlModal()">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="share-buttons">
+                                <button type="button" class="btn btn-outline" onclick="dashboardManager.shareOnWhatsApp()">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="dashboardManager.shareOnFacebook()">
+                                    <i class="fab fa-facebook"></i> Facebook
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="dashboardManager.shareOnTwitter()">
+                                    <i class="fab fa-twitter"></i> Twitter
+                                </button>
+                            </div>
+                            <div class="qr-code-section">
+                                <div class="qr-code-placeholder">
+                                    <i class="fas fa-qrcode"></i>
+                                    <p>QR Code Preview</p>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="dashboardManager.downloadQRCode()">
+                                    <i class="fas fa-download"></i> Download QR Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products -->
+                <section class="dashboard-section" id="productsSection" style="display:none;">
+                    <div class="products-header">
+                        <h2>Product Management</h2>
+                        <div class="products-header-actions">
+                            <button type="button" class="btn btn-outline" id="toggleSelectModeBtn"><i class="fas fa-square-check"></i> Select</button>
+                            <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                        </div>
+                    </div>
+                    <div class="products-toolbar">
+                        <div class="search-bar"><i class="fas fa-magnifying-glass"></i><input type="text" id="productSearchFull" placeholder="Search products..."></div>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="accessories">Accessories</option>
+                            <option value="food">Food</option>
+                            <option value="home">Home & Living</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="crafts">Arts & Crafts</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <select class="form-select" id="productSortFull">
+                            <option value="newest">Newest first</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="price-asc">Price (low to high)</option>
+                            <option value="price-desc">Price (high to low)</option>
+                            <option value="stock-asc">Stock (low to high)</option>
+                        </select>
+                    </div>
+
+                    <!-- Bulk actions: hidden until "Select" is toggled on. Built to
+                         loop individual PUT/DELETE calls per product (see
+                         DashboardManager.bulkApplyCategory / bulkDeleteSelected) since
+                         there's no bulk endpoint on the backend. -->
+                    <div class="bulk-actions-bar" id="bulkActionsBar" hidden>
+                        <label class="bulk-select-all">
+                            <input type="checkbox" id="bulkSelectAll">
+                            <span id="bulkSelectedCount">0 selected</span>
+                        </label>
+                        <div class="bulk-actions-bar-controls">
+                            <select class="form-select" id="bulkCategorySelect">
+                                <option value="">Move to category…</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="food">Food</option>
+                                <option value="home">Home & Living</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="crafts">Arts & Crafts</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <button type="button" class="btn btn-outline btn-sm" id="bulkApplyCategoryBtn" disabled>Apply</button>
+                            <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteBtn" disabled><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                    </div>
+
+                    <p class="products-count" id="productsCount"></p>
+                    <div id="productsList"></div>
+                </section>
+
+                <!-- Orders -->
+                <section class="dashboard-section" id="ordersSection" style="display:none;">
+                    <h2>Order Management</h2>
+                    <div class="orders-toolbar">
+                        <select class="form-select" id="orderStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div id="ordersList"></div>
+                </section>
+
+                <!-- Analytics -->
+                <section class="dashboard-section" id="analyticsSection" style="display:none;">
+                    <div class="analytics-header">
+                        <h2>Analytics Overview</h2>
+                        <div class="analytics-controls">
+                            <select class="form-select" id="analyticsPeriod">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon tone-primary"><i class="fas fa-sack-dollar"></i></div>
+                            <div class="kpi-content">
+                                <p class="kpi-label">Total Revenue</p>
+                                <p class="kpi-value" id="kpiRevenue">UGX 0</p>
+                                <p class="kpi-change" id="kpiRevenueChange">No data</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon tone-secondary"><i class="fas fa-shopping-cart"></i></div>
+                            <div class="kpi-content">
+                                <p class="kpi-label">Total Orders</p>
+                                <p class="kpi-value" id="kpiOrders">0</p>
+                                <p class="kpi-change" id="kpiOrdersChange">No data</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon tone-coral"><i class="fas fa-users"></i></div>
+                            <div class="kpi-content">
+                                <p class="kpi-label">Customers</p>
+                                <p class="kpi-value" id="kpiCustomers">0</p>
+                                <p class="kpi-change" id="kpiCustomersChange">No data</p>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon tone-primary"><i class="fas fa-chart-line"></i></div>
+                            <div class="kpi-content">
+                                <p class="kpi-label">Avg. Order Value</p>
+                                <p class="kpi-value" id="kpiAvgOrder">UGX 0</p>
+                                <p class="kpi-change" id="kpiAvgOrderChange">No data</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="analytics-grid">
+                        <div class="card analytics-card-full">
+                            <div class="card-header">
+                                <h3>Revenue Trend</h3>
+                            </div>
+                            <canvas id="revenueChart" height="300"></canvas>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3>Revenue by Category</h3></div>
+                            <canvas id="categoryChart" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Products -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Top Performing Products</h3>
+                            <a href="#" class="btn-link" onclick="dashboardManager.switchToProducts()">View All Products</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Sold</th>
+                                        <th>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topProductsTable">
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="empty-state" style="padding: var(--spacing-lg);">
+                                                <p style="margin-bottom:0;">No products yet</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings -->
+                <section class="dashboard-section" id="settingsSection" style="display:none;">
+                    <div class="settings-container">
+                        <div class="settings-sidebar">
+                            <nav class="settings-nav">
+                                <a href="#" class="settings-nav-item active" data-settings-section="store">
+                                    <i class="fas fa-store"></i> Store
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-section="account">
+                                    <i class="fas fa-user"></i> Account
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-section="notifications">
+                                    <i class="fas fa-bell"></i> Notifications
+                                </a>
+                            </nav>
+                        </div>
+                        <div class="settings-main">
+                            <!-- Store Settings -->
+                            <div class="settings-section-content active" id="settings-store">
+                                <div class="settings-section-header">
+                                    <h2>Store Settings</h2>
+                                    <p class="settings-section-desc">Everything about how your store looks, where it is, and how shoppers pay you</p>
+                                </div>
+                                <nav class="store-settings-jump" aria-label="Jump to a store settings section">
+                                    <a href="#ss-basics" data-jump="ss-basics">Basics</a>
+                                    <a href="#ss-location" data-jump="ss-location">Location</a>
+                                    <a href="#ss-branding" data-jump="ss-branding">Branding</a>
+                                    <a href="#ss-payments" data-jump="ss-payments">Payments</a>
+                                    <a href="#ss-seo" data-jump="ss-seo">Search &amp; sharing</a>
+                                </nav>
+                                <form id="storeSettingsForm" class="settings-form">
+                                    <div class="settings-form-section" id="ss-basics">
+                                        <h3>Basic Information</h3>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label class="form-label" for="storeName">Store Name</label>
+                                                <input type="text" class="form-input" id="storeName" placeholder="My Awesome Store">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label" for="storeSlug">Store URL</label>
+                                                <div class="share-url-wrapper">
+                                                    <input type="text" class="form-input" id="storeSlug" placeholder="my-store" autocapitalize="none" autocomplete="off" spellcheck="false">
+                                                    <button type="button" class="btn btn-outline" id="copyStoreLinkBtn"><i class="fas fa-copy"></i> Copy link</button>
+                                                </div>
+                                                <p class="form-hint" id="storeLinkHint">Changing this breaks any links you have already shared.</p>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="storeDescription">Store Description</label>
+                                            <textarea class="form-textarea" id="storeDescription" placeholder="Describe your store..." rows="3"></textarea>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label class="form-label" for="contactEmail">Contact Email</label>
+                                                <input type="email" class="form-input" id="contactEmail" placeholder="store@example.com">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label" for="phoneNumber">Phone Number</label>
+                                                <input type="tel" class="form-input" id="phoneNumber" placeholder="+256 700 000000">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-form-section" id="ss-location">
+                                        <h3>Location &amp; Directions</h3>
+                                        <div class="form-group">
+                                            <label class="form-label" for="storeDistrict">District</label>
+                                            <select class="form-select" id="storeDistrict">
+                                                    <option value="">Select District</option>
+                                                    <option value="kampala">Kampala</option>
+                                                    <option value="wakiso">Wakiso</option>
+                                                    <option value="mukono">Mukono</option>
+                                                    <option value="jinja">Jinja</option>
+                                                    <option value="mbale">Mbale</option>
+                                                    <option value="gulu">Gulu</option>
+                                                    <option value="arua">Arua</option>
+                                                    <option value="mbarara">Mbarara</option>
+                                                    <option value="entebbe">Entebbe</option>
+                                                    <option value="kira">Kira</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Location on Map</label>
+                                            <div class="map-pin-section">
+                                                <div class="map-pin-preview" id="storeMapPinPreview">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <span id="storeMapPinText">No exact location selected</span>
+                                                </div>
+                                                <div class="map-pin-actions">
+                                                    <button type="button" class="btn btn-outline" id="storePickOnMapBtn"><i class="fas fa-map"></i> Select on Map</button>
+                                                    <button type="button" class="btn btn-outline" id="storeClearMapPinBtn" style="display:none;"><i class="fas fa-times"></i> Clear</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="storeAddress">Business Address</label>
+                                            <textarea class="form-textarea" id="storeAddress" placeholder="123 Kampala Road, Kampala, Uganda" rows="2"></textarea>
+                                            <p class="form-hint">Auto-filled once you pick a spot on the map — feel free to edit it.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="storeDetailedDirections">Detailed Directions</label>
+                                            <textarea class="form-textarea" id="storeDetailedDirections" placeholder="E.g., Located opposite Shoprite, next to the bank building, 2nd floor" rows="3"></textarea>
+                                            <p class="form-hint">Help customers find your store with specific landmarks and directions.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-form-section" id="ss-branding">
+                                        <h3>Branding</h3>
+                                        <p class="form-hint" style="margin-top:-8px;margin-bottom:16px;">
+                                            The logo and banner here are the ones shown on your public store page, your dashboard, and everywhere else your store appears.
+                                        </p>
+                                        <div class="form-group">
+                                            <label class="form-label">Store Logo</label>
+                                            <div class="logo-upload" id="logoUpload" role="button" tabindex="0" aria-label="Upload store logo">
+                                                <i class="fas fa-cloud-arrow-up"></i>
+                                                <p>Upload a square logo</p>
+                                            </div>
+                                            <input type="file" id="logoInput" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                                            <input type="hidden" id="logoDataUrl">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Banner Preview</label>
+                                            <div class="store-banner" id="appearanceBannerPreview" style="height:120px;border-radius:8px;margin-bottom:12px;"></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" id="ssPresetLabel">Color Presets</label>
+                                            <div class="color-schemes" id="ssColorSchemes" role="radiogroup" aria-labelledby="ssPresetLabel">
+                                                <div class="color-scheme" data-theme="default" data-color="#00B074" role="radio" tabindex="0" aria-checked="false"><div class="color-preview" style="background:#00B074;"></div><span>Brand Green</span></div>
+                                                <div class="color-scheme" data-theme="ocean" data-color="#2C6E9E" role="radio" tabindex="0" aria-checked="false"><div class="color-preview" style="background:#2C6E9E;"></div><span>Ocean</span></div>
+                                                <div class="color-scheme" data-theme="forest" data-color="#0B3B2B" role="radio" tabindex="0" aria-checked="false"><div class="color-preview" style="background:#0B3B2B;"></div><span>Forest</span></div>
+                                                <div class="color-scheme" data-theme="sunset" data-color="#E1583F" role="radio" tabindex="0" aria-checked="false"><div class="color-preview" style="background:#E1583F;"></div><span>Sunset</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label class="form-label" for="bannerColor">Banner Color</label>
+                                                <div class="color-picker-wrapper">
+                                                    <input type="color" class="form-input color-input" id="bannerColor" value="#00B074">
+                                                    <span class="color-value" id="bannerColorValue">#00B074</span>
+                                                </div>
+                                                <p class="form-hint">Used whenever no banner image is set. #00B074 is the NextaStore default.</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Banner Image</label>
+                                                <input type="file" id="appearanceBannerUploadInput" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('appearanceBannerUploadInput').click()">
+                                                    <i class="fas fa-upload"></i> Upload image
+                                                </button>
+                                                <p class="form-hint">Overrides the banner color above when set. Max 5MB.</p>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <button type="button" class="btn btn-sm btn-light" id="resetBannerBtn">
+                                                <i class="fas fa-undo"></i> Reset banner to default
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="bannerImageDataUrl" name="bannerImageDataUrl">
+                                    </div>
+
+                                    <div class="settings-form-section" id="ss-payments">
+                                        <h3>Payment Methods</h3>
+                                        <p class="form-hint" style="margin-top:-8px;margin-bottom:16px;">
+                                            These are the methods you tell shoppers you accept. NextaStore does not process or store payment credentials here.
+                                        </p>
+                                        <div class="payment-methods" id="storePaymentMethods" aria-live="polite">
+                                            <p class="form-hint">Loading payment methods…</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-form-section" id="ss-seo">
+                                        <h3>Search &amp; Sharing</h3>
+                                        <p class="form-hint" style="margin-top:-8px;margin-bottom:16px;">
+                                            Your store has its own public page that Google and link previews (WhatsApp, Facebook) can read. We've filled the title and description below in from your store details — edit them to help your store rank and stand out.
+                                        </p>
+                                        <div class="form-group">
+                                            <label class="form-checkbox">
+                                                <input type="checkbox" id="seoIndexable" checked>
+                                                <span>Show my store in Google and other search engines</span>
+                                            </label>
+                                            <p class="form-hint">Turn this off to keep your store reachable by link only. Search engines can take days or weeks to pick up changes.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-label-row">
+                                                <label class="form-label" for="seoTitle">Search title <small class="form-hint" id="seoTitleCount"></small></label>
+                                                <button type="button" class="btn-link seo-reset-btn" id="seoTitleReset" hidden>Reset to auto</button>
+                                            </div>
+                                            <input type="text" class="form-input" id="seoTitle" maxlength="70" placeholder="e.g. Amina's Crafts – handmade baskets in Kampala">
+                                            <p class="form-hint seo-auto-hint" id="seoTitleAutoHint">Auto-filled from your store name and area — edit anytime.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-label-row">
+                                                <label class="form-label" for="seoDescription">Search description <small class="form-hint" id="seoDescCount"></small></label>
+                                                <button type="button" class="btn-link seo-reset-btn" id="seoDescriptionReset" hidden>Reset to auto</button>
+                                            </div>
+                                            <textarea class="form-textarea" id="seoDescription" rows="2" maxlength="160" placeholder="One or two sentences on what you sell and where."></textarea>
+                                            <p class="form-hint seo-auto-hint" id="seoDescAutoHint">Auto-filled from your store description — edit anytime.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">How it may look on Google</label>
+                                            <div class="serp-preview" id="serpPreview" aria-live="polite">
+                                                <div class="serp-url" id="serpUrl"></div>
+                                                <div class="serp-title" id="serpTitle"></div>
+                                                <div class="serp-desc" id="serpDesc"></div>
+                                            </div>
+                                            <p class="form-hint">A preview only — Google decides what it actually shows.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-form-actions settings-form-actions--sticky">
+                                        <button type="button" class="btn btn-outline" id="viewPublicStoreBtn"><i class="fas fa-eye"></i> View store</button>
+                                        <button type="submit" class="btn btn-primary" id="storeSettingsSaveBtn">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Account Settings -->
+                            <div class="settings-section-content" id="settings-account">
+                                <div class="settings-section-header">
+                                    <h2>Account Settings</h2>
+                                    <p class="settings-section-desc">Manage your personal account details</p>
+                                </div>
+                                <form id="accountSettingsForm" class="settings-form">
+                                    <div class="settings-form-section">
+                                        <h3>Profile Information</h3>
+                                        <div class="form-group">
+                                            <label class="form-label">Full Name</label>
+                                            <input type="text" class="form-input" id="accountName" placeholder="Your Name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Email Address</label>
+                                            <input type="email" class="form-input" id="accountEmail" placeholder="you@example.com" readonly>
+                                            <p class="form-hint">Contact support to change your email address</p>
+                                        </div>
+                                    </div>
+                                    <div class="settings-form-section">
+                                        <h3>Change Password</h3>
+                                        <div class="form-group">
+                                            <label class="form-label">Current Password</label>
+                                            <input type="password" class="form-input" id="currentPassword" placeholder="Required to change your password" autocomplete="current-password">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">New Password</label>
+                                            <input type="password" class="form-input" id="newPassword" placeholder="Leave blank to keep current" autocomplete="new-password">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Confirm Password</label>
+                                            <input type="password" class="form-input" id="confirmPassword" placeholder="Re-enter new password" autocomplete="new-password">
+                                        </div>
+                                    </div>
+                                    <div class="settings-form-actions">
+                                        <button type="submit" class="btn btn-primary">Update Account</button>
+                                    </div>
+                                </form>
+                                <div class="settings-form-section" id="logoutAllSection">
+                                    <h3>Sessions</h3>
+                                    <p class="form-hint">Sign this account out everywhere it's currently logged in — other browsers, other devices, the installed app — including any session you don't recognize.</p>
+                                    <button type="button" class="btn btn-sm btn-secondary" id="logoutAllBtn">
+                                        <i class="fas fa-right-from-bracket"></i> Log out of all devices
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Notification Settings -->
+                            <div class="settings-section-content" id="settings-notifications">
+                                <div class="settings-section-header">
+                                    <h2>Notification Preferences</h2>
+                                    <p class="settings-section-desc">Choose how you want to be notified</p>
+                                </div>
+                                <div class="settings-form-section" id="pushNotificationsSection">
+                                    <h3>Push Notifications</h3>
+                                    <div class="settings-toggle-group">
+                                        <div class="settings-toggle-item">
+                                            <label class="form-checkbox">
+                                                <input type="checkbox" id="pushToggle" disabled>
+                                                <span class="toggle-label">Notify this device</span>
+                                            </label>
+                                            <p class="toggle-desc" id="pushToggleDesc">Checking this browser&rsquo;s notification support&hellip;</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline btn-sm" id="pushTestBtn" disabled>Send a test</button>
+                                </div>
+                                <form id="notificationsForm" class="settings-form">
+                                    <div class="settings-form-section">
+                                        <h3>Order Notifications</h3>
+                                        <div class="settings-toggle-group">
+                                            <div class="settings-toggle-item">
+                                                <label class="form-checkbox">
+                                                    <input type="checkbox" id="notifyNewOrder" checked>
+                                                    <span class="toggle-label">Email on new orders</span>
+                                                </label>
+                                                <p class="toggle-desc">Receive an email when a customer places a new order</p>
+                                            </div>
+                                            <div class="settings-toggle-item">
+                                                <label class="form-checkbox">
+                                                    <input type="checkbox" id="notifyOrderStatus" checked>
+                                                    <span class="toggle-label">Email on status changes</span>
+                                                </label>
+                                                <p class="toggle-desc">Get notified when order status is updated</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-form-section">
+                                        <h3>Reports</h3>
+                                        <div class="settings-toggle-group">
+                                            <div class="settings-toggle-item">
+                                                <label class="form-checkbox">
+                                                    <input type="checkbox" id="notifyWeekly" checked>
+                                                    <span class="toggle-label">Weekly sales summary</span>
+                                                </label>
+                                                <p class="toggle-desc">Receive a weekly summary of your store performance</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-form-actions">
+                                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="index.html#features">Features</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="signup.html" data-hide-when-authed>Create account</a>
+            <a href="marketplace.html">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+    </footer>
+        </main>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/store-banner.js"></script>
+    <script src="js/image-crop.js"></script>
+    <script src="js/map-picker.js"></script>
+    <script src="js/map-preview.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+</body>
+</html>

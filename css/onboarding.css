@@ -1,0 +1,932 @@
+/* NextaStore — onboarding wizard
+ * -----------------------------------------------------------------------
+ * Everything step-specific lives here; the actual form controls inside
+ * each step reuse the same classes as store-form.css (.logo-upload,
+ * .color-schemes, .payment-method, .form-*) so a value set here looks and
+ * behaves identically once it shows up in Store Builder / Settings later
+ * — same fields, same widgets, same save call.
+ *
+ * Layout scale: one gutter variable (--ob-gutter) drives the top bar, the
+ * page container and the (sticky, on phones) action bar, so those three
+ * always share an edge. Everything is sized to hold together from 280px
+ * (folded Galaxy Fold) upward — see the breakpoints at the bottom.
+ * -----------------------------------------------------------------------
+ */
+
+.onboarding-page {
+    background: var(--paper);
+    min-height: 100vh;
+    min-height: 100dvh;
+    --ob-gutter: var(--spacing-lg);
+    --ob-card-pad: var(--spacing-2xl);
+}
+
+/* ---- Top bar ------------------------------------------------------------
+ * Three items on one row (brand, skip link, account menu). The brand is the
+ * only thing allowed to shrink; the skip link and account menu never wrap
+ * onto the brand, which is what used to make them collide on phones. */
+.onboarding-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: 0.85rem var(--ob-gutter);
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    min-width: 0;
+}
+
+.onboarding-topbar .logo {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+.onboarding-topbar .logo img { height: 34px; width: auto; max-width: 100%; }
+
+.onboarding-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.onboarding-topbar-skip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--border-radius-full);
+    color: var(--gray-600);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    min-height: 36px;
+    transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.onboarding-topbar-skip:hover,
+.onboarding-topbar-skip:focus-visible {
+    color: var(--secondary);
+    border-color: var(--secondary);
+    background: var(--secondary-light);
+}
+.onboarding-topbar-skip i { font-size: 0.75rem; }
+
+.onboarding-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--spacing-2xl) var(--ob-gutter) var(--spacing-3xl);
+    min-width: 0;
+}
+
+/* ---- Step indicator ---- */
+.onboarding-progress { margin-bottom: var(--spacing-2xl); }
+
+.onboarding-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2px;
+}
+
+.onboarding-step {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    color: var(--gray-400);
+}
+
+/* The connector runs from the right edge of this circle to the left edge of
+ * the next one. Anchoring both ends (left AND right) rather than setting a
+ * calc() width means it stays correct at every column width instead of
+ * drifting/overshooting on narrow screens. */
+.onboarding-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: calc(50% + 24px);
+    right: calc(-50% + 24px);
+    height: 2px;
+    border-radius: 2px;
+    background: var(--gray-200);
+    z-index: 0;
+}
+
+.onboarding-step.completed:not(:last-child)::after { background: var(--secondary); }
+
+.onboarding-step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    margin-bottom: var(--spacing-sm);
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+
+/* The tick only replaces the number once a step is behind you. */
+.onboarding-step-circle i { display: none; font-size: 0.8rem; }
+.onboarding-step.completed .onboarding-step-circle i { display: block; }
+.onboarding-step.completed .onboarding-step-num { display: none; }
+
+.onboarding-step.active .onboarding-step-circle {
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: var(--secondary-light);
+    box-shadow: 0 0 0 4px var(--secondary-light);
+}
+.onboarding-step.completed .onboarding-step-circle { border-color: var(--secondary); background: var(--secondary); color: white; }
+.onboarding-step.active { color: var(--ink); font-weight: 600; }
+.onboarding-step.completed { color: var(--secondary); }
+
+.onboarding-step-label {
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    max-width: 104px;
+    /* Two lines' worth, so a wrapping label ("Review & Launch") doesn't make
+     * its column taller than the other three and knock the row out of line. */
+    min-height: 2.5em;
+}
+
+.onboarding-step-summary {
+    display: none;
+    margin: var(--spacing-md) 0 0;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+.onboarding-step-summary strong { color: var(--ink); font-weight: 600; }
+
+/* ---- Step card ---- */
+.onboarding-card {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-100);
+    padding: var(--ob-card-pad);
+    min-width: 0;
+}
+
+.onboarding-step-panel { display: none; min-width: 0; }
+.onboarding-step-panel.active { display: block; }
+
+.onboarding-step-header { margin-bottom: var(--spacing-xl); }
+.onboarding-step-header h2 {
+    margin-bottom: var(--spacing-xs);
+    font-size: clamp(1.25rem, 1.05rem + 1.1vw, 1.6rem);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    overflow-wrap: break-word;
+}
+.onboarding-step-header p { color: var(--gray-600); margin-bottom: 0; font-size: 0.9375rem; }
+
+/* ---- Form bits shared across steps ---- */
+.form-required { color: var(--danger); font-weight: 700; }
+.form-optional {
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    border-radius: var(--border-radius-full);
+    padding: 0.1rem 0.5rem;
+    margin-left: 0.35rem;
+    text-transform: lowercase;
+    letter-spacing: 0;
+}
+
+.ob-field-footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    /* nowrap: the counter is short and must stay on the hint's first line —
+       letting it wrap dropped it onto a third line with a dead gap above. */
+    flex-wrap: nowrap;
+}
+.ob-field-footer .form-hint { flex: 1 1 auto; min-width: 0; margin-top: var(--spacing-xs); }
+.ob-char-count { white-space: nowrap; font-size: 0.75rem; color: var(--gray-400); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.ob-char-count.is-near { color: var(--warning); }
+
+/* Slug field: the site prefix sits inside the control so the value reads as
+ * the tail of a real URL rather than a bare, context-free word. */
+.ob-slug-field {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    background: white;
+    overflow: hidden;
+    min-width: 0;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.ob-slug-field:focus-within { border-color: var(--secondary); box-shadow: 0 0 0 3px var(--secondary-light); }
+.ob-slug-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 0.15rem 0 1rem;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-right: 1px solid var(--gray-100);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    max-width: 48%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 1 auto;
+}
+.ob-slug-field .form-input {
+    border: 0;
+    border-radius: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+}
+.ob-slug-field .form-input:focus { box-shadow: none; border-color: transparent; }
+
+.form-error:empty { min-height: 0; margin-top: 0; }
+
+.onboarding-page .map-pin-actions .btn { flex: 1 1 auto; min-width: 0; justify-content: center; }
+
+.onboarding-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--spacing-lg); }
+
+/* ---- Step 2: branding ---- */
+.ob-brand-preview {
+    position: relative;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--spacing-xl);
+    background: white;
+}
+.ob-brand-preview-banner {
+    height: 84px;
+    background: var(--store-accent, #00B074);
+    background-size: cover;
+    background-position: center;
+}
+.ob-brand-preview-body {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-lg) var(--spacing-md);
+    margin-top: -24px;
+    min-width: 0;
+}
+.ob-brand-preview-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--border-radius-md);
+    background: var(--primary-light);
+    border: 3px solid white;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--primary-dark);
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.ob-brand-preview-name {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 0.9375rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-top: 22px;
+}
+.ob-brand-preview-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--gray-700);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--border-radius-full);
+}
+
+.ob-upload-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--spacing-lg);
+    align-items: start;
+}
+.ob-upload-col { min-width: 0; margin-bottom: var(--spacing-lg); }
+.ob-upload-col--logo { text-align: center; }
+.ob-upload-col--logo .form-label { text-align: left; }
+.ob-upload-hint { font-size: 0.75rem; }
+
+/* store-form.css gives .banner-upload a 3rem pad, which is taller than the
+ * logo control next to it and makes the pair look unbalanced. Pin it to the
+ * banner's real 3:1 shape instead. */
+.ob-upload-row .banner-upload {
+    padding: var(--spacing-md);
+    aspect-ratio: 3 / 1;
+    min-height: 128px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-options h4 { color: var(--gray-700); }
+.color-schemes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.color-scheme { min-width: 0; text-align: center; }
+.color-scheme span { overflow-wrap: anywhere; }
+
+/* ---- Step 3: payments ---- */
+.ob-pay-list { gap: var(--spacing-md); }
+
+.ob-pay-option {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    background: white;
+    cursor: pointer;
+    min-width: 0;
+    transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.ob-pay-option:hover { border-color: var(--gray-300); }
+.ob-pay-option:focus-within { border-color: var(--secondary); box-shadow: 0 0 0 3px var(--secondary-light); }
+.ob-pay-option.is-on,
+.ob-pay-option:has(.ob-pay-input:checked) { border-color: var(--secondary); background: var(--secondary-light); }
+
+.ob-pay-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+.ob-pay-icon--mtn { background: #FFF1CC; color: #8A6300; }
+.ob-pay-icon--airtel { background: #FBE4E3; color: #A5322D; }
+.ob-pay-icon--card { background: var(--info-bg); color: var(--info); }
+
+.ob-pay-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1 1 auto; }
+.ob-pay-name { font-weight: 600; color: var(--ink); font-size: 0.9375rem; line-height: 1.3; overflow-wrap: anywhere; }
+.ob-pay-desc { font-size: 0.78rem; color: var(--gray-500); line-height: 1.35; }
+
+/* The native box is kept in the DOM (it is what the change handler and the
+ * label's `for` target still drive) but drawn by .ob-pay-check instead. */
+.ob-pay-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.ob-pay-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    border: 1.5px solid var(--gray-300);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.ob-pay-option.is-on .ob-pay-check,
+.ob-pay-option:has(.ob-pay-input:checked) .ob-pay-check {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: white;
+}
+
+.ob-pay-note {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-lg) 0 0;
+    padding: var(--spacing-md);
+    background: var(--gray-50);
+    border-radius: var(--border-radius-md);
+    color: var(--gray-600);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+.ob-pay-note i { color: var(--gray-400); margin-top: 0.15rem; flex-shrink: 0; }
+
+/* ---- Step 4: review ---- */
+.onboarding-draft-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    background: var(--warning-bg);
+    border: 1px solid #F0D59B;
+    color: #7A5A00;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin-bottom: var(--spacing-lg);
+}
+.onboarding-draft-notice i { color: #B8860B; margin-top: 0.15rem; flex-shrink: 0; }
+
+/* The storefront preview reproduces store-detail.html's hero: a banner, a
+ * logo tile that overlaps it, then the identity block. Sizes are scaled down
+ * but the stacking order and overlap are the same, so what a seller signs off
+ * on here is what their shoppers get. */
+.ob-storefront-preview {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--spacing-xl);
+    background: white;
+    box-shadow: var(--shadow-sm);
+    min-width: 0;
+}
+
+.ob-preview-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 0.7rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+    min-width: 0;
+}
+.ob-preview-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-300); flex-shrink: 0; }
+.ob-preview-urlchip {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 6px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-full);
+    padding: 0.15rem 0.6rem;
+    font-size: 0.6875rem;
+    color: var(--gray-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ob-storefront-preview .preview-banner-strip {
+    position: relative;
+    height: 104px;
+    background: var(--store-accent, #00B074);
+    background-size: cover;
+    background-position: center;
+}
+/* Same scrim the real storefront banner uses, so a busy photo doesn't fight
+ * the card that overlaps it. */
+.ob-storefront-preview .preview-banner-strip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(28,37,33,0) 55%, rgba(28,37,33,0.28) 100%);
+    pointer-events: none;
+}
+.ob-preview-draft-chip {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--gray-700);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    border-radius: var(--border-radius-full);
+    box-shadow: var(--shadow-sm);
+    max-width: calc(100% - 20px);
+}
+.ob-preview-draft-chip i { font-size: 0.65rem; }
+
+.onboarding-review-preview-body {
+    padding: 0 var(--spacing-lg) var(--spacing-md);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    margin-top: -28px;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.onboarding-review-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--border-radius-md);
+    background: var(--primary-light);
+    border: 3px solid white;
+    box-shadow: 0 8px 18px rgba(11, 59, 43, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* min-width:0 is what stops a long store name from pushing this column wider
+ * than the card and spilling its text over the border. */
+.ob-preview-identity { min-width: 0; flex: 1 1 auto; padding-top: 32px; }
+.ob-preview-identity h3 {
+    margin: 0 0 0.2rem;
+    font-size: 1.0625rem;
+    line-height: 1.25;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+}
+.ob-preview-identity p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    /* Shoppers see a trimmed blurb in the hero too — keep the preview honest
+     * about that rather than showing the whole description. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ob-preview-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.9rem;
+    margin-top: var(--spacing-sm);
+    min-width: 0;
+}
+.ob-preview-meta:empty { display: none; }
+.ob-preview-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.ob-preview-meta-item i { color: var(--gray-400); font-size: 0.7rem; flex-shrink: 0; }
+
+.ob-preview-pay { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: var(--spacing-sm); }
+.ob-preview-pay:empty { display: none; }
+.ob-preview-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    background: var(--gray-100);
+    border-radius: var(--border-radius-full);
+    padding: 0.2rem 0.6rem;
+    white-space: nowrap;
+}
+.ob-preview-chip i { font-size: 0.65rem; color: var(--gray-500); }
+.ob-preview-chip--muted { color: var(--gray-500); background: transparent; border: 1px dashed var(--gray-300); }
+
+/* Inert stand-ins for the storefront's real buttons — they show the seller
+ * what shoppers get, and are aria-hidden so assistive tech doesn't announce
+ * them as things to press. */
+.ob-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+.ob-preview-fakebtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--border-radius-md);
+    border: 1.5px solid var(--gray-200);
+    color: var(--gray-500);
+    background: var(--gray-50);
+    white-space: nowrap;
+}
+.ob-preview-fakebtn i { font-size: 0.7rem; }
+.ob-preview-fakebtn--primary {
+    background: var(--store-accent, #00B074);
+    border-color: transparent;
+    color: white;
+    opacity: 0.9;
+}
+.ob-preview-fakebtn--primary i { color: inherit; }
+
+.ob-review-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-500);
+    margin: 0 0 var(--spacing-md);
+}
+
+.onboarding-review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: 0;
+}
+
+.onboarding-review-item {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    min-width: 0;
+}
+.onboarding-review-item .label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+.onboarding-review-item .label i { font-size: 0.7rem; color: var(--gray-400); }
+.onboarding-review-item .value {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.onboarding-review-item .value.is-empty { color: var(--gray-400); font-weight: 500; font-style: italic; }
+
+.onboarding-review-item--url { grid-column: 1 / -1; }
+.ob-review-url-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.onboarding-review-link {
+    color: var(--secondary);
+    text-decoration: none;
+    flex: 1 1 200px;
+    min-width: 0;
+    font-size: 0.8125rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.onboarding-review-link:hover { text-decoration: underline; }
+.ob-copy-btn { flex: 0 0 auto; min-height: 36px; padding: 0.4rem 0.8rem; }
+
+.onboarding-success-icon { font-size: 2.5rem; color: var(--success); margin-bottom: var(--spacing-md); }
+
+/* ---- Action bar --------------------------------------------------------
+ * Desktop: Back on the left, Skip + Next grouped on the right. */
+.onboarding-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-2xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--gray-100);
+    min-width: 0;
+}
+.onboarding-actions .ob-action-skip { margin-left: auto; }
+.onboarding-actions .btn { min-width: 0; }
+.ob-action-next { flex: 0 0 auto; }
+
+.onboarding-skip-link {
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0.5rem 0.25rem;
+    white-space: nowrap;
+}
+.onboarding-skip-link:hover { color: var(--ink); }
+
+
+/* ==========================================================================
+   Desktop layout refinement
+   --------------------------------------------------------------------------
+   Keep the onboarding card comfortably wide on large screens. The branding
+   uploader previously inherited a content-sized minimum from the shared
+   store-form styles, which could push the banner outside the card.
+   ========================================================================== */
+@media (min-width: 769px) {
+    .onboarding-container {
+        max-width: 960px;
+    }
+
+    .onboarding-card {
+        width: 100%;
+    }
+
+    .ob-upload-row {
+        grid-template-columns: minmax(128px, 180px) minmax(0, 1fr);
+        gap: clamp(20px, 3vw, 32px);
+    }
+
+    .ob-upload-col {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .ob-upload-row .banner-upload {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .ob-upload-hint {
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Prevent shared uploader rules from creating intrinsic-width overflow at
+   every viewport size. */
+.ob-upload-row .banner-upload {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.ob-upload-col {
+    min-width: 0;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* Tablet and below: tighter card, tighter gutter. */
+@media (max-width: 768px) {
+    .onboarding-page { --ob-gutter: 14px; --ob-card-pad: var(--spacing-lg); }
+    .onboarding-container { padding-top: var(--spacing-xl); }
+    .onboarding-topbar { padding: 0.7rem var(--ob-gutter); }
+    .ob-upload-row { gap: var(--spacing-md); }
+}
+
+/* Phones: the four step labels stop fitting side by side, so they collapse
+   into one summary line under the circles; the action bar sticks to the
+   bottom of the viewport so Next is always in thumb reach. */
+@media (max-width: 600px) {
+    .onboarding-progress { margin-bottom: var(--spacing-xl); }
+    .onboarding-steps { padding: 0 6px; }
+    .onboarding-step-label { display: none; }
+    .onboarding-step-summary { display: block; }
+    .onboarding-step:not(:last-child)::after { left: calc(50% + 22px); right: calc(-50% + 22px); }
+
+    .onboarding-step-header { margin-bottom: var(--spacing-lg); }
+    .onboarding-step-header p { font-size: 0.875rem; }
+
+    /* 16px keeps iOS Safari from zooming the page on focus. */
+    .onboarding-card .form-input,
+    .onboarding-card .form-select,
+    .onboarding-card .form-textarea { font-size: 16px; }
+    .onboarding-card .form-textarea { min-height: 128px; }
+    .ob-slug-prefix { max-width: 38%; }
+
+    .onboarding-form-row { grid-template-columns: 1fr; gap: 0; }
+
+    .ob-upload-row { grid-template-columns: 1fr; }
+    .ob-upload-col--logo { text-align: left; }
+    .ob-upload-row .logo-upload { margin: 0; width: 112px; height: 112px; }
+    .ob-upload-row .banner-upload { min-height: 0; padding: var(--spacing-sm); }
+    .ob-upload-row .banner-upload p { font-size: 0.8125rem; }
+
+    .color-schemes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-sm); }
+    .color-scheme { padding: var(--spacing-sm); font-size: 0.75rem; }
+    .color-preview { width: 28px; height: 28px; }
+
+    .onboarding-page .map-pin-preview { padding: var(--spacing-md); }
+    .onboarding-page .map-pin-actions { gap: var(--spacing-sm); }
+
+    .ob-storefront-preview .preview-banner-strip { height: 88px; }
+    .onboarding-review-preview-body { padding: 0 var(--spacing-md) var(--spacing-md); }
+    .ob-preview-actions { padding: 0 var(--spacing-md) var(--spacing-md); }
+    .onboarding-review-grid { grid-template-columns: 1fr; }
+
+    .onboarding-container { padding-bottom: 0; }
+    .onboarding-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: "back next" "skip skip";
+        gap: var(--spacing-sm) var(--spacing-md);
+        margin: var(--spacing-xl) calc(var(--ob-gutter) * -1) 0;
+        padding: var(--spacing-md) var(--ob-gutter) calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(6px);
+        border-top: 1px solid var(--gray-200);
+    }
+    .onboarding-actions .ob-action-back { grid-area: back; }
+    .onboarding-actions .ob-action-next { grid-area: next; width: 100%; }
+    .onboarding-actions .ob-action-skip { grid-area: skip; margin-left: 0; justify-self: center; font-size: 0.8125rem; }
+    /* Back is only visibility:hidden on step 1 (so the row never jumps); at
+       this width that leaves a dead column, so collapse it instead. */
+    .onboarding-actions:has(.ob-action-back[style*="hidden"]) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "next" "skip"; }
+    .onboarding-actions:has(.ob-action-back[style*="hidden"]) .ob-action-back { display: none; }
+}
+
+/* Small phones (iPhone SE / older Androids). */
+@media (max-width: 400px) {
+    .onboarding-page { --ob-gutter: 12px; --ob-card-pad: var(--spacing-md); }
+    .onboarding-topbar-skip { padding: 0.5rem 0.6rem; }
+    .onboarding-topbar-skip-rest { display: none; }
+    .ob-slug-prefix { display: none; }
+    .onboarding-topbar .logo img { height: 30px; }
+
+    .onboarding-step-circle { width: 32px; height: 32px; font-size: 0.8125rem; }
+    .onboarding-step:not(:last-child)::after { top: 15px; left: calc(50% + 20px); right: calc(-50% + 20px); }
+
+    .ob-pay-option { padding: 0.7rem; gap: 0.6rem; }
+    .ob-pay-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+    .ob-pay-name { font-size: 0.875rem; }
+    .ob-pay-desc { font-size: 0.7rem; }
+
+    .onboarding-review-logo { width: 56px; height: 56px; font-size: 1.25rem; }
+    .ob-preview-identity { padding-top: 30px; }
+    .onboarding-review-preview-body { gap: 0.6rem; }
+    .ob-review-url-row { flex-direction: column; align-items: stretch; }
+    .ob-review-url-row .onboarding-review-link { flex: 0 0 auto; }
+    .ob-copy-btn { width: 100%; justify-content: center; }
+}
+
+/* Folded Galaxy Fold and similar ~280px screens: the action row can no
+   longer hold Back and Next side by side without one of them overflowing. */
+@media (max-width: 310px) {
+    .onboarding-page { --ob-gutter: 10px; }
+    .onboarding-card { border-radius: var(--border-radius-md); }
+    .onboarding-topbar-skip span:not(.onboarding-topbar-skip-rest) { display: none; }
+    .onboarding-topbar-skip { padding: 0.5rem; }
+
+    .onboarding-step-circle { width: 28px; height: 28px; font-size: 0.75rem; margin-bottom: 0; }
+    .onboarding-step:not(:last-child)::after { top: 13px; left: calc(50% + 18px); right: calc(-50% + 18px); }
+
+    .onboarding-actions { grid-template-columns: minmax(0, 1fr); grid-template-areas: "next" "back" "skip"; }
+    .onboarding-actions .ob-action-back { width: 100%; }
+    .ob-preview-actions { display: none; }
+    .ob-pay-desc { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .onboarding-step-circle,
+    .ob-pay-option,
+    .ob-pay-check,
+    .onboarding-topbar-skip { transition: none; }
+}

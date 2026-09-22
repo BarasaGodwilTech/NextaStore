@@ -1,0 +1,306 @@
+/* ==========================================================================
+   Product Form Page (add-product / edit-product)
+   ========================================================================== */
+
+.pf-page { min-height: 100vh; background: var(--paper); }
+
+.pf-header {
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--spacing-md) var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Same wrap behaviour as .messages-topbar and the other page headers:
+       if back link + account controls ever don't fit on one row, the account
+       controls drop to their own line (kept right-aligned) instead of
+       squeezing the back link onto two lines or overflowing the viewport. */
+    flex-wrap: wrap;
+    gap: var(--spacing-sm) var(--spacing-md);
+    position: sticky;
+    top: 0;
+    z-index: 200;
+}
+
+.pf-header .back-btn { white-space: nowrap; flex-shrink: 0; }
+
+.pf-header-actions { display: flex; align-items: center; gap: var(--spacing-md); margin-left: auto; }
+
+/* Quick-save button in the header: lets a seller save without hunting for
+   the button at the bottom of a long form — a second, always-visible path
+   to the same action as #saveBtn (see JS: both call handleSubmit). Hidden
+   on narrow screens where the sticky bottom action bar (below) is the
+   primary, thumb-reachable save location instead of duplicating it. */
+.pf-header-save { white-space: nowrap; }
+
+/* Transient "Draft saved" indicator (item: draft mode) — sits next to the
+   header save button, fades in after an autosave and fades back out a
+   couple seconds later rather than staying on screen as clutter. */
+.pf-draft-status {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.pf-draft-status.is-visible { opacity: 1; }
+@media (max-width: 640px) {
+    .pf-draft-status { display: none; }
+}
+
+.pf-content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: var(--spacing-2xl) var(--spacing-xl) 4rem;
+}
+
+.pf-content h1 { margin-bottom: var(--spacing-xs); }
+.pf-content > p.text-muted { margin-bottom: var(--spacing-lg); }
+
+/* ---- Error summary banner ----
+   Persistent (unlike the auto-dismissing toast) so a seller who submits an
+   incomplete form has time to read exactly what's missing and jump to it. */
+.pf-error-summary {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: var(--danger-bg);
+    border: 1px solid #F3C9C9;
+    color: var(--danger);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    animation: alert-in 0.2s ease;
+}
+.pf-error-summary[hidden] { display: none; }
+.pf-error-summary i { margin-top: 0.2rem; flex-shrink: 0; }
+.pf-error-summary strong { display: block; font-size: 0.9375rem; }
+.pf-error-summary ul { margin: 0.35rem 0 0; padding-left: 1.1rem; font-size: 0.875rem; }
+.pf-error-summary li { margin-bottom: 0.15rem; }
+.pf-error-summary a { color: inherit; text-decoration: underline; font-weight: 600; cursor: pointer; }
+
+.required-mark { color: var(--danger); }
+
+/* Field footer: pairs an inline error / hint on the left with a counter or
+   live preview on the right, on one row, so extra guidance doesn't add
+   vertical rhythm to every field. */
+.form-field-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--spacing-sm); }
+.form-field-footer .form-error, .form-field-footer .form-hint { flex: 1; }
+.char-counter { font-size: 0.75rem; color: var(--gray-400); white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
+.char-counter.is-near-limit { color: var(--warning); }
+.char-counter.is-at-limit { color: var(--danger); font-weight: 600; }
+.form-live-preview { font-size: 0.8125rem; color: var(--gray-500); white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
+
+/* Momentary shake on a field that just failed validation, drawing the eye
+   without relying on color alone. Skipped for anyone who asked for less
+   motion. */
+@keyframes pf-field-shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+}
+.pf-shake { animation: pf-field-shake 0.4s ease; }
+@media (prefers-reduced-motion: reduce) { .pf-shake { animation: none; } }
+
+#photosCard.has-error .image-gallery { outline: 1.5px solid var(--danger); outline-offset: 6px; border-radius: var(--border-radius-md); }
+#imageGalleryError { min-height: 1.1em; }
+
+.pf-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--spacing-xl);
+    align-items: start;
+}
+
+/* ---- Save / Delete bar: sits under the form, after the details ---- */
+.pf-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--gray-200);
+}
+.pf-actions #saveBtn { margin-left: auto; }
+
+.pf-main, .pf-side { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+
+.pf-side .card { margin-bottom: 0; }
+
+/* ---- Image gallery ---- */
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.gallery-tile, .gallery-add-tile {
+    aspect-ratio: 1 / 1;
+    border-radius: var(--border-radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.gallery-tile {
+    border: 1px solid var(--gray-200);
+}
+
+.gallery-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.gallery-tile .cover-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(20, 20, 20, 0.75);
+    color: white;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.gallery-tile .remove-image {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20, 20, 20, 0.75);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+.gallery-tile .remove-image:hover { background: var(--coral); }
+
+.gallery-add-tile {
+    border: 1.5px dashed var(--gray-300);
+    background: var(--gray-50);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.gallery-add-tile:hover { border-color: var(--secondary); background: var(--secondary-light); color: var(--secondary); }
+.gallery-add-tile i { font-size: 1.5rem; }
+.gallery-add-tile span { font-size: 0.8125rem; font-weight: 500; }
+
+@media (max-width: 860px) {
+    .pf-layout { grid-template-columns: 1fr; }
+    .pf-content { padding: var(--spacing-xl) var(--spacing-md) 3rem; }
+}
+
+@media (max-width: 560px) {
+    .pf-header { padding: var(--spacing-md); gap: var(--spacing-sm); }
+    .pf-header-actions { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: var(--spacing-sm); }
+    /* The header's quick-save duplicates the sticky bottom bar's Save
+       button on phones, where thumb reach favors the bottom of the
+       screen — keep only one visible action per role at this size. */
+    .pf-header-save { display: none; }
+
+    /* Save / Delete become a bar pinned to the bottom of the viewport
+       (not just the end of the form) so they're reachable without
+       scrolling through Photos > Basic Info > Pricing > Inventory first —
+       the "strategic button location" a long form needs on a phone.
+       Content padding-bottom below keeps the last card from being hidden
+       behind it. */
+    .pf-actions {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 250;
+        background: white;
+        border-top: 1px solid var(--gray-200);
+        box-shadow: 0 -4px 16px rgba(11,59,43,.08);
+        padding: var(--spacing-sm) var(--spacing-md);
+        padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0px));
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+    }
+    .pf-actions .btn { width: 100%; min-height: 48px; }
+    .pf-actions #saveBtn { margin-left: 0; }
+    .pf-content { padding-bottom: 6.5rem; }
+    .image-gallery { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+}
+
+/* ---- Avatar / cover uploader (Account Settings) ---- */
+.avatar-cover-uploader { position: relative; margin-bottom: var(--spacing-xl); }
+
+.cover-upload {
+    height: 160px;
+    border-radius: var(--border-radius-lg);
+    border: 1.5px dashed var(--gray-300);
+    background: var(--gray-50) center/cover no-repeat;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-500);
+    transition: border-color 0.2s ease;
+}
+.cover-upload:hover { border-color: var(--secondary); }
+.cover-upload .cover-hint { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.8125rem; font-weight: 500; }
+.cover-upload.has-image .cover-hint { opacity: 0; transition: opacity 0.15s ease; }
+.cover-upload.has-image:hover .cover-hint {
+    opacity: 1;
+    background: rgba(20,20,20,0.45);
+    color: white;
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+}
+
+.avatar-upload {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 1.5px var(--gray-200);
+    background: var(--secondary) center/cover no-repeat;
+    position: absolute;
+    left: var(--spacing-xl);
+    bottom: -32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 700;
+    overflow: hidden;
+}
+.avatar-upload .avatar-edit-badge {
+    position: absolute;
+    inset: 0;
+    background: rgba(20,20,20,0.45);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.avatar-upload:hover .avatar-edit-badge { opacity: 1; }
+
+.avatar-cover-uploader-spacer { height: 40px; }
+
+@media (max-width: 560px) {
+    .cover-upload { height: 120px; }
+    .avatar-upload { width: 76px; height: 76px; left: var(--spacing-lg); bottom: -26px; font-size: 1.375rem; }
+}
