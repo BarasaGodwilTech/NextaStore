@@ -4,7 +4,6 @@ class ProductDetailManager {
         this.store = null;
         this.quantity = 1;
         this.isFavorite = false;
-        this.userRating = 0;
         this.referrer = document.referrer;
         this.init();
     }
@@ -44,9 +43,9 @@ class ProductDetailManager {
         btn.classList.toggle('is-active', this.isFavorite);
     }
 
-    /** Re-fires a favorite toggle or review-modal open that got interrupted
-     *  by a login redirect (see app.requireLogin), so the shopper doesn't
-     *  have to remember to click it again after logging in. */
+    /** Re-fires a favorite toggle or a "message seller" open that got
+     *  interrupted by a login redirect (see app.requireLogin), so the
+     *  shopper doesn't have to remember to click it again after logging in. */
     resumePendingAction() {
         const favorite = app.consumePendingAction('favorite-product');
         if (favorite && this.product && favorite.productId === this.product.id) {
@@ -133,23 +132,6 @@ class ProductDetailManager {
             btn.addEventListener('click', () => {
                 const tabId = btn.dataset.tab;
                 this.switchTab(tabId);
-            });
-        });
-
-        // Write review button
-        document.getElementById('writeReviewBtn')?.addEventListener('click', () => this.openReviewModal());
-
-        // Review form
-        document.getElementById('reviewForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.submitReview();
-        });
-
-        // Rating input
-        document.querySelectorAll('#ratingInput i').forEach(star => {
-            star.addEventListener('click', () => {
-                this.userRating = parseInt(star.dataset.rating);
-                this.updateRatingInput();
             });
         });
 
@@ -267,11 +249,16 @@ class ProductDetailManager {
         if (this.referrer) {
             const url = new URL(this.referrer);
             
-            // If coming from store detail page, go back to that store
-            if (url.pathname.includes('store-detail.html')) {
-                const storeId = url.searchParams.get('store');
-                if (storeId) {
-                    backLink.href = `store-detail.html?store=${storeId}`;
+            // If coming from a store page, go back to that store. A store lives
+            // at /<slug> (a single path segment with no file extension); the
+            // old store-detail.html?store=<slug> form is still understood.
+            if (url.origin === window.location.origin) {
+                const pathKey = url.pathname.replace(/^\/|\/$/g, '');
+                const storeKey = url.pathname.includes('store-detail.html')
+                    ? url.searchParams.get('store')
+                    : (/^[A-Za-z0-9-]+$/.test(pathKey) ? pathKey : '');
+                if (storeKey) {
+                    backLink.href = app.storeLinkFor(storeKey);
                     backText.textContent = 'Back to Store';
                     return;
                 }
@@ -456,112 +443,6 @@ class ProductDetailManager {
         }
     }
 
-    renderStars(containerId, rating) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-        let html = '';
-
-        for (let i = 0; i < 5; i++) {
-            if (i < fullStars) {
-                html += '<i class="fas fa-star"></i>';
-            } else if (i === fullStars && hasHalfStar) {
-                html += '<i class="fas fa-star-half-alt"></i>';
-            } else {
-                html += '<i class="far fa-star"></i>';
-            }
-        }
-
-        container.innerHTML = html;
-    }
-
-    ratingStarsHtml(rating) {
-        const value = Math.max(0, Math.min(5, Number(rating) || 0));
-        const fullStars = Math.floor(value);
-        const hasHalfStar = value % 1 >= 0.5;
-        return Array.from({ length: 5 }, (_, index) => {
-            if (index < fullStars) return '<i class="fas fa-star" aria-hidden="true"></i>';
-            if (index === fullStars && hasHalfStar) return '<i class="fas fa-star-half-alt" aria-hidden="true"></i>';
-            return '<i class="far fa-star" aria-hidden="true"></i>';
-        }).join('');
-    }
-
-    renderRatingBreakdown() {
-        const container = document.getElementById('ratingBreakdown');
-        if (!container) return;
-
-        // Simulated rating distribution
-        const distribution = [
-            { stars: 5, count: Math.floor((this.product?.reviews || 0) * 0.6) },
-            { stars: 4, count: Math.floor((this.product?.reviews || 0) * 0.25) },
-            { stars: 3, count: Math.floor((this.product?.reviews || 0) * 0.1) },
-            { stars: 2, count: Math.floor((this.product?.reviews || 0) * 0.04) },
-            { stars: 1, count: Math.floor((this.product?.reviews || 0) * 0.01) }
-        ];
-
-        const total = distribution.reduce((sum, item) => sum + item.count, 0) || 1;
-
-        container.innerHTML = distribution.map(item => {
-            const percentage = (item.count / total) * 100;
-            return `
-                <div class="rating-bar">
-                    <span class="rating-bar-label">${item.stars} <i class="fas fa-star" aria-hidden="true"></i></span>
-                    <div class="rating-bar-track">
-                        <div class="rating-bar-fill" style="width: ${percentage}%"></div>
-                    </div>
-                    <span class="rating-bar-count">${item.count}</span>
-                </div>
-            `;
-        }).join('');
-    }
-
-    renderReviews() {
-        const container = document.getElementById('reviewsList');
-        if (!container) return;
-
-        // Simulated reviews
-        const reviews = [
-            {
-                author: 'Sarah K.',
-                rating: 5,
-                date: '2 days ago',
-                text: 'Amazing quality! Exactly as described and arrived quickly.'
-            },
-            {
-                author: 'John M.',
-                rating: 4,
-                date: '1 week ago',
-                text: 'Good product for the price. Would recommend to others.'
-            }
-        ];
-
-        if (reviews.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"><i class="fas fa-comment"></i></div>
-                    <h3>No reviews yet</h3>
-                    <p>Be the first to review this product!</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = reviews.map(review => `
-            <div class="review-item">
-                <div class="review-header">
-                    <span class="review-author">${review.author}</span>
-                    <span class="review-date">${review.date}</span>
-                </div>
-                <div class="review-rating">
-                    ${this.ratingStarsHtml(review.rating)}
-                </div>
-                <p class="review-text">${review.text}</p>
-            </div>
-        `).join('');
-    }
-
     updateQuantityDisplay() {
         const input = document.getElementById('quantityInput');
         if (input) {
@@ -651,98 +532,9 @@ class ProductDetailManager {
         app.openMessageSellerModal({ store: this.store, product: this.product });
     }
 
-    openReviewModal() {
-        if (!app.requireLogin('Log in to write a review.', { type: 'write-review', productId: this.product?.id })) return;
-        document.getElementById('reviewModal').classList.add('open');
-    }
 
-    updateRatingInput() {
-        document.querySelectorAll('#ratingInput i').forEach(star => {
-            const starRating = parseInt(star.dataset.rating);
-            star.classList.toggle('fas', starRating <= this.userRating);
-            star.classList.toggle('far', starRating > this.userRating);
-            star.classList.toggle('active', starRating <= this.userRating);
-        });
-    }
 
-    async submitReview() {
-        const text = document.getElementById('reviewText').value.trim();
 
-        if (!text || !this.userRating) {
-            app.showAlert('Please write a review and select a rating', 'error');
-            return;
-        }
-
-        const btn = document.querySelector('#reviewForm button[type="submit"]');
-        const originalHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-        try {
-            const response = await app.apiRequest('/reviews', {
-                method: 'POST',
-                body: JSON.stringify({ productId: this.product.id, rating: this.userRating, body: text })
-            });
-
-            this.product.rating = response.data.rating;
-            this.product.reviews = response.data.reviews;
-            this.updateRatingDisplays();
-
-            app.showAlert('Review submitted \u2014 thank you!', 'success');
-            document.getElementById('reviewModal').classList.remove('open');
-            document.getElementById('reviewForm').reset();
-            this.userRating = 0;
-            this.updateRatingInput();
-            await this.loadReviews();
-        } catch (error) {
-            app.showAlert(error.message || 'Could not submit your review', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
-    }
-
-    /** Re-renders the star/count summaries in both places they appear (the
-     *  header rating and the Reviews tab) after a review changes them —
-     *  pulled out of updateProductInfo() since submitReview() needs to
-     *  refresh just this piece without re-rendering the whole page. */
-    updateRatingDisplays() {
-        const rating = this.product.rating || 0;
-        document.getElementById('ratingValue').textContent = rating > 0 ? rating.toFixed(1) : 'No ratings yet';
-        document.getElementById('reviewCount').textContent = `(${this.product.reviews || 0} reviews)`;
-        this.renderStars('ratingStars', rating);
-        document.getElementById('averageRating').textContent = rating.toFixed(1);
-        document.getElementById('totalReviews').textContent = `Based on ${this.product.reviews || 0} reviews`;
-        this.renderStars('reviewsRatingStars', rating);
-    }
-
-    async loadReviews() {
-        const container = document.getElementById('reviewsList');
-        try {
-            const response = await app.apiRequest(`/reviews?productId=${this.product.id}&limit=20`);
-            if (!response.data.length) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No reviews yet</h3>
-                        <p>Be the first to review this product!</p>
-                    </div>
-                `;
-                return;
-            }
-            container.innerHTML = response.data.map(r => `
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">${app.escapeHtml(r.buyerName)}</span>
-                        <span class="review-date">${app.formatDate(r.createdAt)}</span>
-                    </div>
-                    <div class="review-rating">${this.ratingStarsHtml(r.rating)}</div>
-                    <p class="review-text">${app.escapeHtml(r.body)}</p>
-                </div>
-            `).join('');
-        } catch (error) {
-            container.innerHTML = `<div class="empty-state"><h3>Couldn't load reviews</h3><p>${error.message}</p></div>`;
-        }
-    }
 
     async loadRelatedProducts() {
         if (!this.store) return; // nothing to relate to if we don't know which store this product belongs to

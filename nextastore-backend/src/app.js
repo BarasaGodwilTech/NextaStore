@@ -38,7 +38,6 @@ const dashboardRoutes = require('./routes/dashboard');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payments');
-const reviewRoutes = require('./routes/reviews');
 const favoriteRoutes = require('./routes/favorites');
 const adminRoutes = require('./routes/admin');
 const subscriptionRoutes = require('./routes/subscription');
@@ -123,7 +122,7 @@ const publicCatalogLimiter = rateLimit({
 app.use(['/api/products/public', '/api/products/deals', '/api/store/public', '/api/store/search'], publicCatalogLimiter);
 
 // Baseline ceiling for every other /api route (dashboard, orders, messages,
-// notifications, reviews, favorites, admin, subscription) — none of these
+// notifications, favorites, admin, subscription) — none of these
 // had any rate limiting before, so a single runaway client (a buggy retry
 // loop, a scraper, or a compromised account) could otherwise consume
 // unlimited backend/DB capacity and degrade the service for every other
@@ -149,18 +148,21 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/presence', presenceRoutes);
 
-// Search-engine surface: /s/<slug> store pages, /sitemap.xml, /robots.txt.
-// Crawlers hit these unauthenticated, so they get the same per-IP ceiling as
-// the public catalog. In production a reverse proxy must forward these paths
-// to this server (see README "Search engine visibility").
+// Public storefront surface: /<store-slug> (the store's own address), the old
+// /s/<slug> redirect, /sitemap.xml and /robots.txt. Crawlers and shoppers hit
+// these unauthenticated, so they get the same per-IP ceiling as the public
+// catalog. In production a reverse proxy must send every path that is not a
+// real static file to this server (see README "Store links").
 app.use(['/s', '/sitemap.xml', '/robots.txt'], publicCatalogLimiter);
+app.use((req, res, next) => (req.method === 'GET' && /^\/[A-Za-z0-9-]+\/?$/.test(req.path))
+    ? publicCatalogLimiter(req, res, next)
+    : next());
 app.use(seoRoutes);
 
 app.use(notFound);

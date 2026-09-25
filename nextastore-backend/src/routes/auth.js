@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
 const prisma = require('../prisma');
-const { slugify, apiError } = require('../utils');
-const { publicUser } = require('../helpers');
+const { storeSlugFrom, apiError } = require('../utils');
+const { publicUser, starterStoreData } = require('../helpers');
 const { issueToken, redeemToken } = require('../verification');
 const { sendMail } = require('../mailer');
 const { requireAuth, signSessionToken } = require('../middleware');
@@ -83,31 +83,20 @@ function signToken(user, rememberMe = false) {
 }
 
 async function uniqueSlug(base) {
-    let slug = slugify(base);
+    let slug = storeSlugFrom(base);
     let attempt = 0;
     // Slugs are user-facing and rare to collide, but a launch-day rush of
     // similarly-named stores ("John's Store") is exactly when this would
     // fail silently without a real check.
     while (await prisma.store.findUnique({ where: { slug } })) {
         attempt += 1;
-        slug = `${slugify(base)}-${attempt + 1}`;
+        slug = `${storeSlugFrom(base)}-${attempt + 1}`;
     }
     return slug;
 }
 
-// The starter-store payload is identical whether it's created at signup
-// (accountType: 'seller') or later via POST /user/become-seller — one
-// definition, so the two paths can never drift apart.
-function starterStoreData(name, email, slug) {
-    return {
-        slug,
-        name: `${name}'s Store`,
-        description: 'Tell customers what makes your store special.',
-        contactEmail: email
-        // bannerColor deliberately omitted — every new store gets the
-        // schema default (#00B074) automatically, from this one place.
-    };
-}
+// starterStoreData now lives in helpers.js (shared with POST
+// /user/become-seller — see the comment there for why).
 
 router.post('/signup', authLimiter, validateBody(signupSchema), async (req, res, next) => {
     try {

@@ -86,6 +86,7 @@ async function main() {
       store: { create: {
         slug: 'second-test-store', name: 'Second Test Store',
         description: 'Integration test store', contactEmail: 'second-seller@example.com',
+        payments: { mtnMomo: true, airtelMoney: true, card: false },
         district: 'Central', address: '10 Test Street', detailedDirections: 'Next to the test market', mapCoordinates: '0.3136,32.5811'
       } }
     },

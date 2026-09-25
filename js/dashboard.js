@@ -115,11 +115,11 @@ class DashboardManager {
 
     /** Placeholder for the storefront branding header (logo, name,
      *  description, location) that otherwise shows literal fallback text
-     *  ("My Store", "Tell customers what makes your store special.") until
-     *  loadStoreBranding()'s request resolves. Every element this touches
-     *  is fully overwritten either way once that request settles — see the
-     *  now-explicit else branches added there — so nothing here can get
-     *  stuck showing a permanent shimmer. */
+     *  ("My Store", "No description yet") until loadStoreBranding()'s
+     *  request resolves. Every element this touches is fully overwritten
+     *  either way once that request settles — see the now-explicit else
+     *  branches added there — so nothing here can get stuck showing a
+     *  permanent shimmer. */
     showBrandingSkeleton() {
         const logo = document.getElementById('storeLogoPreview');
         if (logo) { logo.style.backgroundImage = ''; logo.innerHTML = '<div class="skeleton skeleton-avatar" style="width:100%;height:100%;border-radius:inherit;"></div>'; }
@@ -140,13 +140,16 @@ class DashboardManager {
         this.setupShareModal();
         this.setupGlobalSearch();
 
-        // One-shot success message coming from the onboarding wizard's
-        // final "Launch Store" step — sessionStorage so a page refresh
-        // doesn't show it again.
-        if (sessionStorage.getItem('nextastore_just_launched') === '1') {
-            sessionStorage.removeItem('nextastore_just_launched');
-            app.showAlert('Your store is live! Here\u2019s your dashboard.', 'success');
-        }
+        // One-shot flag coming from the onboarding wizard's final "Launch
+        // Store" step — sessionStorage so a page refresh doesn't re-trigger
+        // it. Consumed by renderLiveBanner() (called from loadStoreBranding,
+        // every time Overview loads) rather than a toast here: a toast can
+        // come and go during the redirect from onboarding before the seller
+        // is even looking at the screen, which is exactly the "not visible
+        // enough" complaint that prompted this banner.
+        this.justLaunched = sessionStorage.getItem('nextastore_just_launched') === '1';
+        if (this.justLaunched) sessionStorage.removeItem('nextastore_just_launched');
+        this.liveBannerDismissed = false;
 
         const initialSection = window.location.hash.replace('#', '');
         if (initialSection && document.getElementById(`${initialSection}Section`)) {
@@ -333,6 +336,7 @@ class DashboardManager {
             const response = await app.apiRequest('/store');
             const store = response.data;
             this.currentStore = store; // shared source of truth — used by settings preview, reset-to-default, etc.
+            this.renderLiveBanner(store);
             this.renderDraftNotice(store);
             this.renderSetupNudge(store);
             this.renderSubscriptionNudge(store);
@@ -368,8 +372,11 @@ class DashboardManager {
             const storeName = store.name || `${app.user?.name || 'User'}'s Store`;
             document.getElementById('storeDisplayName').textContent = storeName;
 
-            // Load store description
-            const description = store.description || 'Tell customers what makes your store special.';
+            // Load store description — an empty one means setup was never
+            // finished (Step 1 now requires this field), not that the
+            // seller wrote nothing; say so plainly rather than showing
+            // instructional copy as if it were the seller's own words.
+            const description = store.description || 'No description yet — add one so shoppers know what you sell.';
             document.getElementById('storeDescriptionDisplay').textContent = description;
 
             // Load location from API
@@ -437,6 +444,44 @@ class DashboardManager {
      *  the dismissible setup nudge below, this is a hard fact about
      *  visibility, not a suggestion, so it always shows while true and has
      *  no dismiss control. */
+    /** The prominent, harder-to-miss counterpart to the one-shot toast: a
+     *  dismissible banner at the top of Overview, shown only right after
+     *  Launch (this.justLaunched, set once in init() from onboarding's
+     *  sessionStorage flag). Re-runs every time Overview reloads in this
+     *  session (switching sections and back), so dismissing it sets an
+     *  in-memory flag rather than relying on the one-shot sessionStorage
+     *  read alone — otherwise closing it would just have it reappear on
+     *  the next section switch. store.isPublished is checked too, purely
+     *  as a safety net: the flag should never be true otherwise, but a
+     *  launch that actually failed server-side (see the guard in
+     *  routes/store.js) must not show a "you're live" banner for a store
+     *  that isn't. */
+    renderLiveBanner(store) {
+        const banner = document.getElementById('storeLiveBanner');
+        if (!banner) return;
+        if (!this.justLaunched || this.liveBannerDismissed || !store.isPublished) {
+            banner.style.display = 'none';
+            return;
+        }
+        banner.style.display = 'flex';
+        const linkEl = document.getElementById('storeLiveBannerLink');
+        if (linkEl) linkEl.textContent = app.storeAddress(store.slug, store.publicUrl).display;
+
+        const dismissBtn = document.getElementById('dismissLiveBanner');
+        if (dismissBtn && !dismissBtn.dataset.bound) {
+            dismissBtn.dataset.bound = '1';
+            dismissBtn.addEventListener('click', () => {
+                this.liveBannerDismissed = true;
+                banner.style.display = 'none';
+            });
+        }
+        const shareBtn = document.getElementById('shareLiveBannerBtn');
+        if (shareBtn && !shareBtn.dataset.bound) {
+            shareBtn.dataset.bound = '1';
+            shareBtn.addEventListener('click', () => this.showShareModal());
+        }
+    }
+
     renderDraftNotice(store) {
         const banner = document.getElementById('draftNoticeBanner');
         if (!banner) return;
@@ -447,6 +492,10 @@ class DashboardManager {
         const banner = document.getElementById('setupNudgeBanner');
         if (!banner) return;
 
+        // Old accounts (seeded before descriptions were required in
+        // onboarding) may still carry the literal instructional copy that
+        // used to ship as the default — treat that the same as empty so the
+        // nudge still catches them.
         const DEFAULT_DESCRIPTION = 'Tell customers what makes your store special.';
         const looksUnfinished = !store.logo && !store.banner &&
             (!store.description || store.description === DEFAULT_DESCRIPTION);
@@ -947,7 +996,35 @@ class DashboardManager {
             app.showAlert('Order status updated', 'success');
         } catch (error) {
             app.showAlert(error.message, 'error');
-            this.renderOrdersList(); // revert the dropdown to the real status
+        } finally {
+            this.renderOrdersList(); // repaint: badge + the next step's action button(s)
+        }
+    }
+
+    // The seller isn't running a manual fulfillment tracker — buyer and
+    // seller agree, then the seller handles the rest off-platform — so
+    // instead of a free-jump status <select>, each order shows only the
+    // one or two actions that actually make sense from where it is now.
+    // 'shipped' is left reachable only for orders that already reached it
+    // before this simplification; nothing routes a new order through it.
+    sellerOrderActions(status) {
+        switch (status) {
+            case 'pending':
+                return [
+                    { targetStatus: 'processing', label: 'Confirm', className: 'btn-primary' },
+                    { targetStatus: 'cancelled', label: 'Cancel', className: 'btn-outline' }
+                ];
+            case 'processing':
+                return [
+                    { targetStatus: 'delivered', label: 'Mark completed', className: 'btn-primary' },
+                    { targetStatus: 'cancelled', label: 'Cancel', className: 'btn-outline' }
+                ];
+            case 'shipped':
+                return [
+                    { targetStatus: 'delivered', label: 'Mark completed', className: 'btn-primary' }
+                ];
+            default:
+                return [];
         }
     }
 
@@ -963,7 +1040,6 @@ class DashboardManager {
             `;
             return;
         }
-        const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
         container.innerHTML = `
             <div class="card">
                 <div class="table-responsive">
@@ -979,9 +1055,10 @@ class DashboardManager {
                                     <td data-label="Total">${app.formatCurrency(o.total)}</td>
                                     <td data-label="Fulfillment"><div class="td-value"><span class="order-fulfillment-pill">${o.fulfillmentMethod==='pickup'?'Pick up / visit':'Delivery'}</span>${o.fulfillmentMethod==='pickup'?`<div class="pickup-inline-location"><span>${app.escapeHtml([o.store?.district,o.store?.address].filter(Boolean).join(' · ')||'Saved store location')}</span>${o.store?.mapCoordinates?`<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.store.mapCoordinates)}">Map</a>`:''}</div>`:''}</div></td>
                                     <td data-label="Status">
-                                        <select class="form-select order-status-select" data-order-id="${o.id}">
-                                            ${statuses.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
-                                        </select>
+                                        <div class="order-status-cell">
+                                            <span class="badge badge-${o.status}">${o.status}</span>
+                                            ${this.sellerOrderActions(o.status).map(a => `<button type="button" class="btn btn-sm ${a.className}" data-order-action="${a.targetStatus}" data-order-id="${o.id}">${a.label}</button>`).join('')}
+                                        </div>
                                     </td>
                                     <td data-label="Date">${app.formatDate(o.createdAt)}</td>
                                     <td><button class="btn btn-outline btn-sm" data-view-seller-order="${o.id}">View</button></td>
@@ -994,8 +1071,12 @@ class DashboardManager {
             </div>
         `;
         container.querySelectorAll('[data-view-seller-order]').forEach(btn => btn.addEventListener('click', () => this.showSellerOrder(btn.dataset.viewSellerOrder)));
-        container.querySelectorAll('.order-status-select').forEach(select => {
-            select.addEventListener('change', () => this.updateOrderStatus(select.dataset.orderId, select.value));
+        container.querySelectorAll('[data-order-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetStatus = btn.dataset.orderAction;
+                if (targetStatus === 'cancelled' && !window.confirm('Cancel this order? This cannot be undone.')) return;
+                this.updateOrderStatus(btn.dataset.orderId, targetStatus);
+            });
         });
         container.querySelectorAll('[data-orders-page]').forEach(btn => {
             btn.addEventListener('click', () => this.loadOrders(Number(btn.dataset.ordersPage)));
@@ -1341,9 +1422,15 @@ class DashboardManager {
             document.getElementById('storeName').value = store.name || '';
             document.getElementById('storeSlug').value = store.slug || '';
             document.getElementById('storeSlug').dataset.original = store.slug || '';
+            this.renderStoreUrlPrefix();
             document.getElementById('storeDescription').value = store.description || '';
             document.getElementById('contactEmail').value = store.contactEmail || app.user?.email || '';
             document.getElementById('phoneNumber').value = store.phoneNumber || '';
+            // store.phonePublic is undefined for any store saved before this
+            // field existed — treat that the same as "checked" (matches
+            // onboarding's default) rather than reading undefined as false
+            // and silently flipping an existing seller's number to private.
+            document.getElementById('phonePublic').checked = store.phonePublic !== false;
 
             // Location & directions (formerly the separate Store Profile page)
             document.getElementById('storeDistrict').value = store.district || '';
@@ -1538,15 +1625,39 @@ class DashboardManager {
         this.markActiveColorPreset();
     }
 
-    /** The shareable public address of a store. The backend supplies it
-     *  (`publicUrl`, the /s/<slug> page search engines and WhatsApp read);
-     *  for a slug the owner is still typing, swap only the last segment. */
+    /** The shareable public address of a store, for "Copy link" and the
+     *  WhatsApp/Facebook/Twitter share buttons. Routed through the same
+     *  `app.storeAddress()` helper onboarding uses (see its doc comment in
+     *  js/main.js) so Settings can never show a different address than what
+     *  onboarding showed or what the post-launch banner links to. This
+     *  used to read `store.publicUrl` directly, which in local dev is the
+     *  *backend's* own address (http://localhost:4000/...) — that's what
+     *  was showing up here as "localhost:4000/<slug>" instead of the
+     *  branded nextastores.com link. storeAddress() already knows to treat
+     *  a local/LAN/tunnel publicUrl as dev plumbing and fall back to the
+     *  brand host instead. */
     publicStoreUrl(slug) {
+        return app.storeAddress(slug, this.currentStore?.publicUrl).shareUrl
+            || app.storeAddress(slug, this.currentStore?.publicUrl).display;
+    }
+
+    /** What "View store" opens: the store's own address (/<slug>) on this site.
+     *  Same page shoppers get from a shared link - there is no separate
+     *  crawler/preview copy - and a draft store still opens for its owner. */
+    viewableStoreUrl(slug) {
         const clean = encodeURIComponent(slug || '');
-        const known = this.currentStore?.publicUrl;
-        if (known) return known.replace(/\/s\/[^/]*$/, `/s/${clean}`);
-        const base = window.location.origin + window.location.pathname.replace('dashboard.html', '');
-        return `${base}store-detail.html?store=${clean}`;
+        return `${window.location.origin}/${clean}`;
+    }
+
+    /** Fills in the "nextastores.com/" prefix shown before the editable
+     *  slug in Store Basics. Same `app.storeAddress()` call onboarding
+     *  makes for its own prefix (js/onboarding.js renderSlugPrefix), so
+     *  local dev shows the branded host here too instead of the backend's
+     *  own localhost:4000 address. */
+    renderStoreUrlPrefix() {
+        const el = document.getElementById('storeUrlPrefix');
+        if (!el) return;
+        el.textContent = app.storeAddress('', this.currentStore?.publicUrl).prefix;
     }
 
     /** Trims to `n` chars at a rough word boundary — same rule the server
@@ -1777,6 +1888,7 @@ class DashboardManager {
                     description: document.getElementById('storeDescription').value.trim(),
                     contactEmail: document.getElementById('contactEmail').value.trim(),
                     phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                    phonePublic: document.getElementById('phonePublic').checked,
                     district: document.getElementById('storeDistrict').value,
                     address: document.getElementById('storeAddress').value.trim(),
                     detailedDirections: document.getElementById('storeDetailedDirections').value.trim(),
@@ -1895,7 +2007,11 @@ class DashboardManager {
         });
         document.getElementById('viewPublicStoreBtn')?.addEventListener('click', () => {
             const slug = slugInput.dataset.original || this.currentStore?.slug;
-            if (slug) window.open(this.publicStoreUrl(slug), '_blank', 'noopener');
+            if (slug) window.open(this.viewableStoreUrl(slug), '_blank', 'noopener');
+        });
+        document.getElementById('viewStoreLinkBtn')?.addEventListener('click', () => {
+            const slug = slugInput.dataset.original || this.currentStore?.slug;
+            if (slug) window.open(this.viewableStoreUrl(slug), '_blank', 'noopener');
         });
 
         // A real keystroke in either field (as opposed to this code writing

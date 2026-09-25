@@ -1,272 +1,388 @@
 /* ==========================================================================
-   Auth pages — login, signup, forgot password
+   Auth pages — login, signup, forgot password (verify-email reuses the card)
+   ---------------------------------------------------------------------------
+   One idea carries the whole page: a market-stall awning. NextaStore is the
+   digital version of a stall on a Kampala street, so the brand panel opens
+   with a scalloped green-and-white awning and shows what a real storefront
+   looks like (a product grid priced in UGX, paid by Mobile Money) instead of
+   a stock illustration. On phones the panel is gone and the same awning
+   shrinks to a strip above the form, so the brand survives at every width.
+
+   Layout
+     >= 961px   two columns: brand panel (sticky, full height) | form
+     <= 960px   single column: awning strip, back link, form card
+   Everything sizes from 320px up; inputs are 16px on phones (no iOS zoom).
    ========================================================================== */
 
 .auth-container {
-    min-height: calc(100vh - 48px);
+    --auth-ink: #0B3B2B;
+    --auth-ink-deep: #062A1F;
+    --auth-radius: 14px;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-.auth-side {
-    background:
-        radial-gradient(circle at 15% 20%, rgba(226, 154, 46, 0.25), transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.08), transparent 40%),
-        linear-gradient(160deg, var(--secondary) 0%, var(--secondary-dark) 100%);
-    color: white;
-    padding: var(--spacing-3xl) var(--spacing-2xl);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-}
-
-.auth-side::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
-    background-size: 34px 34px;
-    mask-image: radial-gradient(circle at 30% 40%, black, transparent 70%);
-    pointer-events: none;
-}
-
-.auth-side-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    position: relative;
-    z-index: 1;
-}
-
-.auth-side-content { position: relative; z-index: 1; max-width: 420px; }
-
-.auth-side-content h2 {
-    color: white;
-    font-size: 2.1rem;
-    margin-bottom: var(--spacing-md);
-}
-
-.auth-side-content p {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 1.0625rem;
-}
-
-.auth-side-points { list-style: none; margin-top: var(--spacing-xl); }
-
-.auth-side-points li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: var(--spacing-md);
-    color: rgba(255, 255, 255, 0.92);
-    font-size: 0.9375rem;
-}
-
-.auth-side-points i {
-    margin-top: 0.2em;
-    color: var(--primary);
-}
-
-.auth-side-quote {
-    position: relative;
-    z-index: 1;
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.65);
-}
-
-.auth-form-side {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-2xl);
+    grid-template-columns: minmax(400px, 5fr) 6fr;
     background: var(--paper);
 }
 
-.auth-card {
-    width: 100%;
-    max-width: 420px;
+/* ---- Awning ---------------------------------------------------------------
+ * A tiling SVG: each stripe is 36px wide and ends in a semicircle, so a run
+ * of them reads as a fabric awning at any width. Stripes alternate the brand
+ * green with paper white. The drop-shadow sits under the scallops only. */
+.auth-awning {
+    --awning-w: 72px;
+    height: 58px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='58' viewBox='0 0 72 58'%3E%3Cpath d='M0 0h36v40a18 18 0 0 1-36 0z' fill='%2301B075'/%3E%3Cpath d='M36 0h36v40a18 18 0 0 1-36 0z' fill='%23F7FAF8'/%3E%3C/svg%3E") repeat-x left top / var(--awning-w) 58px;
+    filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.22));
+    flex: 0 0 auto;
+}
+.auth-awning--mobile { display: none; }
+
+/* ---- Brand panel ---------------------------------------------------------- */
+.auth-side {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(60% 40% at 85% 95%, rgba(255, 176, 56, 0.16), transparent 70%),
+        linear-gradient(170deg, var(--auth-ink) 0%, var(--auth-ink-deep) 100%);
+    color: #fff;
+    overflow: hidden;
 }
 
-@media (max-width: 960px) {
-    .auth-container { grid-template-columns: 1fr; }
-    .auth-side { display: none; }
-    .auth-form-side { padding: var(--spacing-xl) var(--spacing-md); min-height: 100vh; }
+.auth-side-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 3vh, 2rem);
+    padding: clamp(1.25rem, 3.5vh, 2.25rem) clamp(1.75rem, 4vw, 3.5rem) clamp(1.25rem, 3vh, 2rem);
+}
 
-    /* The branded side panel is gone at this width, so the form needs its
-       own defined surface to sit on — otherwise it's just text floating on
-       the bare page background, which is the "off"/unfinished look on
-       mobile. Desktop (above 960px) intentionally stays full-bleed,
-       two-panel, no card frame — see the reference screenshot. */
+.auth-side-brand { align-self: flex-start; }
+.auth-side-brand img { height: 36px; width: auto; }
+
+.auth-side-content { max-width: 27rem; }
+.auth-side-content h2 {
+    color: #fff;
+    font-size: clamp(1.7rem, 2.6vw, 2.35rem);
+    line-height: 1.15;
+    margin-bottom: 0.85rem;
+}
+.auth-side-content p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.auth-side-points { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+.auth-side-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.9rem;
+}
+.auth-side-points i { margin-top: 0.22em; color: var(--brand-green-light); }
+
+.auth-side-quote {
+    margin-top: auto;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 27rem;
+}
+
+/* ---- Storefront showcase (decorative; aria-hidden in the markup) ---------- */
+.auth-showcase {
+    position: relative;
+    max-width: 27rem;
+    margin-top: 0.25rem;
+}
+.showcase-card {
+    background: #fff;
+    color: var(--ink);
+    border-radius: 18px;
+    padding: 1rem;
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+}
+.showcase-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.85rem; }
+.showcase-logo {
+    width: 40px; height: 40px; flex: 0 0 40px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    color: var(--auth-ink);
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 1.05rem;
+}
+.showcase-head strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+.showcase-head small { color: var(--gray-500); font-size: 0.75rem; }
+.showcase-live {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.72rem; font-weight: 700;
+}
+.showcase-live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--store-green); }
+
+.showcase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+.showcase-tile { min-width: 0; }
+.showcase-tile b { display: block; font-size: 0.75rem; margin-top: 0.4rem; line-height: 1.25; }
+.showcase-tile small { display: block; font-size: 0.72rem; color: var(--primary-dark); font-weight: 700; }
+.tile-art {
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 1.35rem;
+}
+.tile-art--green { background: #D9F3E8; color: var(--brand-green-dark); }
+.tile-art--gold  { background: #FFEBC7; color: #A96B00; }
+.tile-art--coral { background: #FBDCD9; color: var(--coral-dark); }
+
+.showcase-pay {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    margin-top: 0.85rem; padding-top: 0.75rem;
+    border-top: 1px solid var(--gray-100);
+}
+.showcase-pay span {
+    font-size: 0.72rem; font-weight: 700; color: var(--gray-700);
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    padding: 0.2rem 0.55rem; border-radius: 999px;
+}
+
+/* The one moment of motion on the page: an order arrives. Plays once. */
+.showcase-toast {
+    position: absolute;
+    right: -0.75rem;
+    bottom: -1.1rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.85rem 0.6rem 0.65rem;
+    background: var(--auth-ink);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+    animation: showcase-toast-in 0.55s 0.9s cubic-bezier(.2, .9, .3, 1.2) backwards;
+}
+.showcase-toast > i {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--store-green); color: #fff;
+    display: grid; place-items: center; font-size: 0.9rem;
+}
+.showcase-toast b { display: block; font-size: 0.8rem; color: #fff; line-height: 1.2; }
+.showcase-toast small { color: rgba(255, 255, 255, 0.72); font-size: 0.72rem; }
+@keyframes showcase-toast-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Short desktop windows: the copy matters more than the picture. */
+@media (max-height: 800px) { .auth-showcase { display: none; } }
+@media (max-height: 640px) { .auth-side-points { display: none; } }
+
+/* ---- Form side ------------------------------------------------------------- */
+.auth-form-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--paper);
+}
+.auth-form-main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1.5rem, 4vh, 3rem) clamp(1rem, 4vw, 3rem);
+    min-width: 0;
+}
+.auth-back {
+    align-self: flex-start;
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto 1rem;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: var(--gray-600);
+    font-size: 0.875rem; font-weight: 600;
+    text-decoration: none;
+    min-height: 44px;
+}
+.auth-back:hover, .auth-back:focus-visible { color: var(--primary-dark); }
+
+.auth-card { width: 100%; max-width: 30rem; }
+.auth-header { margin-bottom: 1.5rem; }
+.auth-logo { display: none; } /* the awning strip + panel carry the brand; kept in markup for no-CSS fallback */
+.auth-header h1 { font-size: clamp(1.5rem, 2.2vw, 1.85rem); line-height: 1.2; margin-bottom: 0.35rem; }
+.auth-header p { color: var(--gray-600); margin: 0; font-size: 0.95rem; }
+
+.auth-notice {
+    background: var(--warning-bg); color: var(--warning);
+    border-radius: 10px; padding: 0.75rem 1rem; margin: 0 0 1.25rem;
+    font-size: 0.9rem; line-height: 1.4;
+}
+.auth-notice[hidden] { display: none; }
+
+/* Controls: taller, softer, with a clear brand-green focus ring. */
+.auth-card .form-group { margin-bottom: 1.1rem; }
+/* main.css reserves a line under every field for its error, which stacked
+   into a large gap between fields; here the space only opens when an error
+   actually has text. */
+.auth-card .form-error { min-height: 0; }
+.auth-card .form-error:empty { display: none; }
+.auth-card .form-label { color: var(--gray-800); margin-bottom: 0.4rem; }
+.auth-card .form-input {
+    min-height: 48px;
+    padding: 0.7rem 0.95rem;
+    border-radius: var(--auth-radius);
+    border-color: var(--gray-200);
+    background: #fff;
+}
+.auth-card .form-input:hover { border-color: var(--gray-300); }
+.auth-card .form-input:focus {
+    border-color: var(--store-green);
+    box-shadow: 0 0 0 4px rgba(1, 176, 117, 0.16);
+}
+.auth-card .form-input.input-error { box-shadow: 0 0 0 4px rgba(198, 63, 63, 0.10); }
+.auth-card .btn-lg { min-height: 50px; border-radius: var(--auth-radius); font-size: 1rem; }
+.auth-card .form-checkbox { align-items: flex-start; line-height: 1.45; }
+.auth-card .form-checkbox input[type="checkbox"] { margin-top: 0.15rem; flex: 0 0 auto; accent-color: var(--store-green); }
+.auth-card .form-checkbox a { color: var(--primary-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+.password-input-wrapper { position: relative; }
+.password-input-wrapper .form-input { padding-right: 3rem; }
+.password-toggle {
+    position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-500); border-radius: 10px;
+}
+.password-toggle:hover { color: var(--auth-ink); }
+.password-toggle:focus-visible { outline: 2px solid var(--store-green); outline-offset: -2px; }
+
+/* Password strength: four segments, filled by js in signup.html. */
+.pw-meter { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; }
+.pw-meter-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; flex: 1; }
+.pw-meter-bars i { height: 4px; border-radius: 4px; background: var(--gray-200); transition: background-color .2s ease; }
+.pw-meter[data-level="1"] .pw-meter-bars i:nth-child(-n+1) { background: var(--danger); }
+.pw-meter[data-level="2"] .pw-meter-bars i:nth-child(-n+2) { background: var(--accent-gold); }
+.pw-meter[data-level="3"] .pw-meter-bars i:nth-child(-n+3) { background: var(--store-green); }
+.pw-meter[data-level="4"] .pw-meter-bars i:nth-child(-n+4) { background: var(--brand-green-dark); }
+.pw-meter-label { font-size: 0.75rem; color: var(--gray-600); min-width: 4.5rem; text-align: right; }
+
+.checkbox-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.forgot-link { margin-left: auto; font-size: 0.875rem; font-weight: 700; color: var(--primary-dark); }
+
+/* Account type: two selectable cards (radio-driven, works without JS). */
+.account-type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.account-type-option { position: relative; display: block; cursor: pointer; }
+.account-type-option input { position: absolute; opacity: 0; pointer-events: none; }
+.account-type-option-card {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    grid-template-areas: "icon title" "icon copy";
+    column-gap: 0.7rem;
+    align-items: center;
+    height: 100%;
+    padding: 0.8rem 0.85rem;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--auth-radius);
+    transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.account-type-option-card i {
+    grid-area: icon;
+    width: 40px; height: 40px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: var(--gray-100); color: var(--gray-600);
+    font-size: 1rem;
+    transition: background-color .15s ease, color .15s ease;
+}
+.account-type-option-card strong { grid-area: title; font-size: 0.95rem; line-height: 1.2; }
+.account-type-option-card span { grid-area: copy; font-size: 0.75rem; color: var(--gray-500); line-height: 1.3; }
+.account-type-option:hover .account-type-option-card { border-color: var(--gray-300); }
+.account-type-option input:focus-visible + .account-type-option-card { box-shadow: 0 0 0 4px rgba(1, 176, 117, 0.22); }
+.account-type-option input:checked + .account-type-option-card {
+    border-color: var(--store-green);
+    background: var(--primary-light);
+}
+.account-type-option input:checked + .account-type-option-card i { background: var(--store-green); color: #fff; }
+
+.auth-footer { margin-top: 1.5rem; text-align: center; }
+.auth-footer p { margin: 0; color: var(--gray-600); font-size: 0.9375rem; }
+.auth-footer p a { font-weight: 700; color: var(--primary-dark); text-decoration: underline; text-underline-offset: 2px; }
+.auth-footer p a:hover { color: var(--primary); }
+.powered-by { margin-top: 0.9rem !important; font-size: 0.75rem !important; color: var(--gray-500) !important; }
+.powered-by a { color: var(--primary-dark); font-weight: 700; }
+
+.auth-divider { display: flex; align-items: center; margin: 1.5rem 0; color: var(--gray-500); font-size: 0.8125rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+.auth-divider span { padding: 0 1rem; }
+
+/* ---- Wide desktop (>=1600px) ----------------------------------------------
+ * Below this the 5fr/6fr split already balances (see the 1536px reference
+ * screenshot). Past it the form column keeps growing with the window while
+ * the card stays a fixed, readable width, so the extra space just became a
+ * bare gutter on each side of the form - the page read as unfinished rather
+ * than spacious. Two changes, nothing structural:
+ *   1. Cap how wide the form column gets and hand the freed space to the
+ *      brand panel instead - a dark, illustrated panel can carry extra
+ *      width; an empty margin around a form can't.
+ *   2. Let the card and its heading grow a little with it, so the panel
+ *      and the form still feel like one deliberate composition at 1920px+
+ *      instead of a fixed island in a bigger frame. */
+@media (min-width: 1600px) {
+    .auth-container { grid-template-columns: minmax(400px, 1fr) minmax(480px, 40rem); }
+    .auth-card { max-width: 32rem; }
+    .auth-back { max-width: 32rem; } /* stays aligned with the card above it */
+    .auth-header h1 { font-size: 2rem; }
+    .auth-side-content, .auth-side-quote { max-width: 30rem; }
+    .auth-side-content h2 { font-size: 2.55rem; }
+}
+
+/* ---- Tablet & phone: one column ------------------------------------------- */
+@media (max-width: 960px) {
+    /* css/mobile.css pads .auth-container on phones (with !important); the
+       awning strip has to run edge to edge, so the padding moves to
+       .auth-form-main instead. Matching that !important with a more
+       specific selector is the only way to win. */
+    body[data-auth-page] .auth-container { padding: 0 !important; grid-template-columns: 1fr; }
+    .auth-side { display: none; }
+    .auth-awning--mobile { display: block; --awning-w: 48px; height: 39px; background-size: var(--awning-w) 39px; margin-bottom: 0.25rem; }
+    .auth-form-main { justify-content: flex-start; padding: 1rem 1rem 2rem; }
+    .auth-logo { display: inline-flex; margin-bottom: 1rem; }
+    .auth-logo img { height: 34px; width: auto; }
     .auth-card {
         background: #fff;
-        border: 1px solid var(--gray-200, #e5e9e7);
-        border-radius: 18px;
-        box-shadow: var(--shadow-md, 0 4px 18px rgba(16, 24, 22, 0.06));
-        padding: var(--spacing-xl) var(--spacing-lg);
+        border: 1px solid var(--gray-200);
+        border-radius: 20px;
+        box-shadow: var(--shadow-md);
+        padding: 1.5rem 1.25rem;
     }
 }
 
-@media (max-width: 600px) {
-    /* One horizontal gutter, not three stacked ones: css/mobile.css already
-       gives .auth-container its own side padding (loads last, wins), so
-       .auth-form-side only needs vertical breathing room here — stacking
-       another side padding on top of it is what was shrinking the card
-       down and making the page feel "not full" on phones. */
-    .auth-form-side { padding: var(--spacing-lg) 0; }
-    .auth-card { padding: var(--spacing-lg) var(--spacing-md); border-radius: 16px; box-shadow: none; }
-}
-
-.auth-header { margin-bottom: var(--spacing-xl); }
-
-.auth-logo {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--ink);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: var(--spacing-xl);
-}
-
-.auth-logo i { color: var(--primary-dark); }
-
-.auth-header h1 { font-size: 1.75rem; margin-bottom: var(--spacing-xs); }
-.auth-header p { color: var(--gray-600); margin-bottom: 0; }
-/* Why the person is back at the login page (session expired, sessions ended...). */
-.auth-notice { background: var(--warning-bg); color: var(--warning); border-radius: var(--radius-md, 8px); padding: 0.75rem 1rem; margin: 0 0 var(--spacing-lg, 1.25rem); font-size: 0.9rem; line-height: 1.4; }
-.auth-notice[hidden] { display: none; }
-
-.password-input-wrapper { position: relative; }
-
-.password-toggle {
-    position: absolute;
-    right: var(--spacing-md);
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--gray-400);
-    padding: var(--spacing-sm);
-}
-
-.password-toggle:hover { color: var(--secondary); }
-
-.auth-divider {
-    display: flex;
-    align-items: center;
-    margin: var(--spacing-xl) 0;
-    color: var(--gray-500);
-    font-size: 0.8125rem;
-}
-
-.auth-divider::before, .auth-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--gray-200);
-}
-
-.auth-divider span { padding: 0 var(--spacing-md); }
-
-
-
-.auth-footer { margin-top: var(--spacing-xl); text-align: center; }
-.auth-footer p { margin-bottom: 0; color: var(--gray-600); font-size: 0.9375rem; }
-.auth-footer p a {
-    font-weight: 700;
-    color: var(--primary-dark);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-.auth-footer p a:hover { color: var(--primary); }
-
-.powered-by { margin-top: var(--spacing-md); font-size: 0.75rem; color: var(--gray-500); }
-.powered-by a { color: var(--primary-dark); font-weight: 600; }
-
-.forgot-link { margin-left: auto; font-size: 0.875rem; font-weight: 500; }
-
-.checkbox-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-}
-
-/* Account-type picker on signup — two selectable cards, radio-driven so it
-   degrades to plain accessible inputs with no JS beyond the checked-state
-   styling below. */
-.account-type-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-}
-
-.account-type-option {
-    position: relative;
-    display: block;
-    cursor: pointer;
-}
-
-.account-type-option input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.account-type-option-card {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: var(--spacing-md);
-    border: 2px solid var(--border-color, #e2e2e2);
-    border-radius: var(--radius-md, 10px);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.account-type-option-card i {
-    font-size: 1.1rem;
-    color: var(--text-secondary, #6b7280);
-    margin-bottom: 2px;
-}
-
-.account-type-option-card strong {
-    font-size: 0.95rem;
-}
-
-.account-type-option-card span {
-    font-size: 0.8rem;
-    color: var(--text-secondary, #6b7280);
-}
-
-.account-type-option input:checked + .account-type-option-card {
-    border-color: var(--primary-color, #00B074);
-    background-color: rgba(0, 176, 116, 0.06);
-}
-
-.account-type-option input:checked + .account-type-option-card i {
-    color: var(--primary-color, #00B074);
-}
-
 @media (max-width: 480px) {
-    .account-type-toggle { grid-template-columns: 1fr; }
-    .auth-header h1 { font-size: 1.5rem; }
-    .auth-header p { font-size: 0.9rem; }
-    .auth-card { border-radius: 16px; }
-    .auth-logo img, .auth-side-brand img { height: 32px; }
+    .auth-awning--mobile { --awning-w: 40px; height: 32px; background-size: var(--awning-w) 32px; }
+    .auth-form-main { padding: 0.75rem 0.75rem 1.5rem; }
+    .auth-card { padding: 1.25rem 1rem; border-radius: 18px; box-shadow: none; }
+    /* Two compact cards side by side instead of two stacked full-width rows:
+       saves ~90px of a screen that already has to hold seven fields. */
+    .account-type-option-card {
+        grid-template-columns: 1fr;
+        grid-template-areas: "icon" "title" "copy";
+        row-gap: 0.15rem;
+        align-content: start;
+        padding: 0.75rem;
+    }
+    .account-type-option-card i { width: 34px; height: 34px; border-radius: 10px; margin-bottom: 0.3rem; }
+    .auth-card .form-input { font-size: 16px; } /* iOS zooms into anything smaller */
 }
 
-.auth-logo, .auth-side-brand { font-family: var(--font-body) !important; }
-.auth-logo img, .auth-side-brand img { height: 40px; width: auto; }
+@media (prefers-reduced-motion: reduce) {
+    .showcase-toast { animation: none; }
+    .auth-container * { transition: none !important; }
+}

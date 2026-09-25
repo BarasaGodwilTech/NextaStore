@@ -5,8 +5,12 @@
 */
 
 *,*::before,*::after{box-sizing:border-box}
-html{overflow-x:hidden;-webkit-text-size-adjust:100%}
-body{min-width:0;max-width:100%;overflow-x:hidden}
+/* clip, not hidden — see the comment on the same rule in main.css: hidden
+   turns body into its own scroll container and breaks every sticky element
+   on the site. This file loads last, so it would otherwise re-introduce the
+   bug main.css just fixed. */
+html{overflow-x:clip;-webkit-text-size-adjust:100%}
+body{min-width:0;max-width:100%;overflow-x:clip}
 img,svg,video,canvas{max-width:100%}
 button,input,select,textarea{max-width:100%}
 

@@ -9,14 +9,17 @@
     <title>Store — NextaStore</title>
     <meta name="robots" content="noindex">
     <script>
-        // Redirect to the new store-detail page with preserved query parameters
+        // Old link (store.html?store=<slug>): send it to the store's own
+        // address, /<slug>. An id (not a slug) goes to the storefront page,
+        // which swaps in the slug address once it has loaded the store.
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const storeId = urlParams.get('store');
-            const redirectUrl = storeId 
-                ? `store-detail.html?store=${encodeURIComponent(storeId)}` 
-                : 'store-detail.html';
-            window.location.href = redirectUrl;
+            const isSlug = storeId && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storeId);
+            const redirectUrl = !storeId
+                ? 'store-detail.html'
+                : (isSlug ? `/${storeId}` : `store-detail.html?store=${encodeURIComponent(storeId)}`);
+            window.location.replace(redirectUrl);
         })();
     </script>
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">

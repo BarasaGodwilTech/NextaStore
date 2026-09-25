@@ -110,6 +110,47 @@ check('Subscription amount is enforced server-side', /expectedAmount\s*=\s*SUBSC
 check('Subscription page has exact-total UX', /exact total/i.test(subscriptionHtml) && /syncAmount/.test(subscription));
 check('Global seller badges render from live store state', /renderSellerBadges/.test(mainJs) && /apiRequest\('\/store'\)/.test(mainJs));
 check('Seller ratings are retired from the public store model', (() => { const m = schema.match(/model Store \{[\s\S]*?(?=\nmodel |\nenum )/); return !!m && !/\brating\s+Float\b/.test(m[0]) && !/storesRating/.test(read('stores.html')) && !/store\.rating/.test(read('js/store-detail.js')); })());
+check('Product ratings/reviews are fully retired (model, route, schema, UI) — orders happen directly between buyer and seller, so a star rating is not a verifiable trust signal',
+  (() => {
+    const productDetailJs = read('js/product-detail.js');
+    const productDetailHtml = read('product-detail.html');
+    return !/model Review \{/.test(schema)
+      && !/\brating\s+Float\b/.test(schema) && !/\breviews\s+Int\b/.test(schema)
+      && !fs.existsSync(path.join(backend, 'src/routes/reviews.js'))
+      && !/reviewRoutes/.test(app) && !/\/api\/reviews/.test(app)
+      && !/reviewSchema/.test(validation)
+      && !/writeReviewBtn|reviewModal|submitReview|renderRatingBreakdown/.test(productDetailJs)
+      && !/reviewModal|ratingInput|writeReviewBtn/.test(productDetailHtml);
+  })());
+check('Public "completed orders" trust counts are retired — NextaStore only connects buyer and seller, so it cannot vouch that an order was actually fulfilled',
+  (() => {
+    const storeRoute = read('nextastore-backend/src/routes/store.js');
+    const storesJs = read('js/stores.js');
+    const storeDetailJs = read('js/store-detail.js');
+    return !/completedOrderCount/.test(storeRoute)
+      && !/completedOrderCount/.test(storesJs)
+      && !/completedOrderCount/.test(storeDetailJs);
+  })());
+check('Seller order actions are simplified to Confirm / Mark completed / Cancel instead of a free-jump status select, and the backend no longer routes new orders through "shipped"',
+  (() => {
+    return !/order-status-select/.test(dashboard)
+      && /sellerOrderActions/.test(dashboard)
+      && /data-order-action/.test(dashboard)
+      && /processing:\s*\[\s*'delivered',\s*'cancelled'\s*\]/.test(orderRoutes);
+  })());
+check('Buyer self-service order cancellation exists: grace-period + reason-picker endpoint, anti-abuse limit, seller notification, and frontend UI',
+  (() => {
+    const migration = read('nextastore-backend/prisma/migrations/20260922120000_buyer_order_cancellation/migration.sql');
+    return /cancelledAt\s+DateTime\?/.test(schema) && /cancelReason\s+String\?/.test(schema)
+      && /cancelDetails\s+String\?/.test(schema) && /cancelInitiator\s+String\?/.test(schema)
+      && /ADD COLUMN "cancelledAt"/.test(migration)
+      && /orderCancelSchema/.test(validation)
+      && /router\.post\('\/:id\/cancel'/.test(orderRoutes)
+      && /CANCEL_GRACE_PERIOD_MS/.test(orderRoutes) && /CANCEL_ABUSE_LIMIT/.test(orderRoutes)
+      && /type:\s*'order_cancelled'/.test(orderRoutes)
+      && /canSelfCancel/.test(orders) && /openCancelModal/.test(orders)
+      && /orders\/\$\{encodeURIComponent\(o\.id\)\}\/cancel/.test(orders);
+  })());
 
 check('Integration test covers Seller Pass approval flow', /subscription\/payments/.test(integration) && /admin\/subscription-payments/.test(integration) && /isPaid/.test(integration));
 
@@ -156,6 +197,13 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 7; })());
   check('Push notification badge asset exists and is referenced by the service worker',
     fs.existsSync(path.join(root, 'assets/brand/png/badge/badge-96.png')) && /badge\/badge-96\.png/.test(sw));
+  check('Push notifications use a distinct badge per type, all present on disk, with a fallback for unknown types', (() => {
+    const types = ['new_message', 'new_order', 'low_stock', 'order_cancelled', 'new_product', 'subscription'];
+    const allReferenced = types.every(t => new RegExp(`${t}:\\s*'\\/assets\\/brand\\/png\\/badge\\/${t}\\.png'`).test(sw));
+    const allOnDisk = types.every(t => fs.existsSync(path.join(root, `assets/brand/png/badge/${t}.png`)));
+    const hasFallback = /pushBadgeFor/.test(sw) && /PUSH_BADGES_BY_TYPE\[type\]\s*\|\|\s*PUSH_BADGE/.test(sw);
+    return allReferenced && allOnDisk && hasFallback;
+  })());
   check('POST /api/push/test requires a signed-in user', /router\.post\(['"]\/test['"],\s*requireAuth/.test(pushRoute));
   check('logout-everywhere also removes the person\'s push devices',
     /removeAllSubscriptionsForUser\(req\.user\.id\)/.test(routeBody(authRoute, "router.post('/logout-all'")));
@@ -448,6 +496,168 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('The push-release cache-version tests derive their expected cache names from CACHE_VERSION dynamically, not hardcoded v6/v7',
     !/nextastore-cache-v6/.test(pushSwTest) && /currentVersionNum/.test(pushSwTest) &&
     !/nextastore-cache-v6/.test(pushSwBrowserTest) && /CURRENT_CACHE_VERSION_NUM/.test(pushSwBrowserTest));
+}
+
+// --- Onboarding payment step renders from the payment-method catalog ---
+{
+  const onboardingJs = read('js/onboarding.js');
+  const onboardingHtml = read('onboarding.html');
+
+  check('onboarding.html no longer hardcodes the three MTN/Airtel/card checkboxes',
+    !/id="obPayMtn"/.test(onboardingHtml) && !/id="obPayAirtel"/.test(onboardingHtml) && !/id="obPayCard"/.test(onboardingHtml) &&
+    /id="obPayList"/.test(onboardingHtml));
+  check('Onboarding fetches the platform payment-method catalog and renders step 3 from it',
+    /loadPaymentMethods\(\)\s*\{/.test(onboardingJs) && /apiRequest\('\/payments\/methods'\)/.test(onboardingJs) &&
+    /renderPaymentOptions\(\)\s*\{/.test(onboardingJs) && /this\.paymentMethods\.map\(/.test(onboardingJs));
+  check('Onboarding init() fetches the store and the payment catalog together rather than one blocking the other',
+    /Promise\.all\(\[this\.loadExistingStore\(\), this\.loadPaymentMethods\(\), this\.loadProductCount\(\)\]\)/.test(onboardingJs));
+  check('An unrecognized payment-method code still renders (falls back to the neutral .ob-pay-icon style, no missing asset/crash)',
+    /OB_PAY_BRAND_ICON_CLASS\[m\.code\]\s*\|\|\s*''/.test(onboardingJs));
+  check('Review step\u2019s payment chips are built from the fetched catalog, not a hardcoded MTN/Airtel/card list',
+    /this\.paymentMethods\s*\n?\s*\.filter\(m => !!this\.store\.payments\?\.\[m\.code\]\)/.test(onboardingJs) &&
+    !/this\.store\.payments\.mtnMomo && \{ label: 'MTN MoMo'/.test(onboardingJs));
+}
+
+// --- WIP 16 batch 4: auth page redesign, push account name, store-live notification ---
+{
+  const authCss = read('css/auth.css');
+  const pages = ['login.html', 'signup.html', 'forgot-password.html'].map(f => [f, read(f)]);
+  check('Login, signup and forgot-password share the awning brand panel and a mobile awning strip',
+    pages.every(([, h]) => /class="auth-awning"/.test(h) && /auth-awning auth-awning--mobile/.test(h) && /class="auth-form-main"/.test(h)));
+  check('The redesigned auth pages dropped the old breadcrumb bar',
+    pages.every(([, h]) => !/page-breadcrumb/.test(h)));
+  check('auth.css keeps inputs at 16px on phones (no iOS zoom) and respects reduced motion',
+    /font-size: 16px/.test(authCss) && /prefers-reduced-motion: reduce/.test(authCss));
+  check('Signup still carries the terms checkbox as required, and Get Started ?type=seller still preselects Sell',
+    /id="agreeTerms" required/.test(read('signup.html')) && /get\('type'\) === 'seller'/.test(read('signup.html')));
+  check('Signup submit-button label cache is reset when the account type changes',
+    /delete btn\.dataset\.originalText/.test(read('signup.html')));
+
+  const pushSrc = read('nextastore-backend/src/push.js');
+  const sw = read('service-worker.js');
+  check('Push payload carries the recipient account name, looked up in its own never-throws step',
+    /accountLabelFor\(userId\)/.test(pushSrc) && /JSON\.stringify\(\{ type, title, body, link, account \}\)/.test(pushSrc) && /catch \(err\) \{\s*return '';/.test(pushSrc));
+  check('Service worker prints "Account: <name>" under the message and caps it',
+    /Account: \$\{account\}/.test(sw) && /PUSH_ACCOUNT_MAX/.test(sw));
+
+  const schema = read('nextastore-backend/prisma/schema.prisma');
+  const storeRoute = read('nextastore-backend/src/routes/store.js');
+  check('store_live notification: enum value + migration exist',
+    /new_product\s+store_live\s*\}/.test(schema) &&
+    /ADD VALUE IF NOT EXISTS 'store_live'/.test(read('nextastore-backend/prisma/migrations/20260924090000_store_live_notification/migration.sql')));
+  check('PUT /store notifies the owner only on the draft -> live transition',
+    /data\.isPublished === true && !store\.isPublished/.test(storeRoute) && /type: 'store_live'/.test(storeRoute));
+  check('Bell maps store_live to an icon', /store_live: 'fa-store'/.test(read('js/main.js')));
+}
+
+// --- WIP 16 batch 6: product-form <-> onboarding return flow, server-side launch guard ---
+{
+  const productFormJs = read('js/product-form.js');
+  const storeRoute = read('nextastore-backend/src/routes/store.js');
+
+  check('Product form reads ?from=onboarding and routes its return trip to the review step, not the dashboard',
+    /this\.fromOnboarding = this\.params\.get\('from'\) === 'onboarding'/.test(productFormJs) &&
+    /this\.returnTo = this\.fromOnboarding \? 'onboarding\.html\?step=4' : 'dashboard\.html#products'/.test(productFormJs));
+  check('Product form relabels its back link/breadcrumb when arriving from onboarding (no dead-end "Back to Products")',
+    /Back to store setup/.test(productFormJs) && /Store setup<\/a>/.test(productFormJs));
+  check('The save/delete redirects and the unsaved-changes guard all read the dynamic this.returnTo, not a hardcoded dashboard link',
+    (productFormJs.match(/window\.location\.href = this\.returnTo/g) || []).length >= 3);
+
+  check('PUT /store re-checks the product count server-side before allowing the draft -> live transition',
+    /data\.isPublished === true && !store\.isPublished\) \{\s*\n\s*const productCount = await prisma\.product\.count\(\{ where: \{ storeId: store\.id, deletedAt: null \} \}\)/.test(storeRoute) &&
+    /if \(productCount === 0\) \{\s*\n\s*throw apiError\('Add at least one product before you launch your store\.', 400\)/.test(storeRoute));
+  check('The new server-side guard runs before the store update, not after (an already-live store is never re-checked)',
+    storeRoute.indexOf('productCount === 0') > 0 &&
+    storeRoute.indexOf('productCount === 0') < storeRoute.indexOf('const updated = await prisma.store.update'));
+
+  const dashboardJs = read('js/dashboard.js');
+  const dashboardHtml = read('dashboard.html');
+  const sw = read('service-worker.js');
+
+  check('Settings\u2019 store-link helpers route through app.storeAddress() instead of reading store.publicUrl directly',
+    /publicStoreUrl\(slug\)\s*\{\s*\n\s*return app\.storeAddress\(slug, this\.currentStore\?\.publicUrl\)/.test(dashboardJs) &&
+    /renderStoreUrlPrefix\(\)\s*\{[\s\S]{0,200}app\.storeAddress\('', this\.currentStore\?\.publicUrl\)\.prefix/.test(dashboardJs) &&
+    !/known\.replace\(\/\\\/s\\\/\[\^\/\]\*\$\//.test(dashboardJs));
+  check('viewableStoreUrl (the actual "View store" link) was left alone \u2014 it was already correct',
+    /viewableStoreUrl\(slug\)\s*\{\s*\n\s*const clean = encodeURIComponent/.test(dashboardJs));
+
+  check('Dashboard has a dismissible "you\u2019re live" banner, distinct from the draft-notice and setup-nudge banners',
+    /id="storeLiveBanner"/.test(dashboardHtml) && /id="storeLiveBannerLink"/.test(dashboardHtml) &&
+    /id="dismissLiveBanner"/.test(dashboardHtml) && /id="shareLiveBannerBtn"/.test(dashboardHtml));
+  check('renderLiveBanner() is keyed off the one-shot launch flag (not sessionStorage read a second time) and checks store.isPublished as a safety net',
+    /renderLiveBanner\(store\)\s*\{/.test(dashboardJs) &&
+    /if \(!this\.justLaunched \|\| this\.liveBannerDismissed \|\| !store\.isPublished\)/.test(dashboardJs) &&
+    /this\.justLaunched = sessionStorage\.getItem\('nextastore_just_launched'\) === '1'/.test(dashboardJs));
+  check('The old one-shot toast on launch was removed in favor of the banner (no longer easy to miss during the redirect)',
+    !/Your store is live! Here.s your dashboard\./.test(dashboardJs));
+  check('loadStoreBranding() renders the live banner alongside the other store-state banners',
+    /this\.renderLiveBanner\(store\);\s*\n\s*this\.renderDraftNotice\(store\);/.test(dashboardJs));
+
+  check('Service-worker cache was bumped again for this batch\u2019s changed dashboard/product-form files',
+    (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 14; })());
+}
+
+// --- WIP 16 batch 8: real ToS/Privacy pages, map modal small-phone fixes ---
+{
+  const terms = read('terms.html');
+  const privacy = read('privacy.html');
+  const signup = read('signup.html');
+  const picker = read('js/map-picker.js');
+  const pickerCss = read('css/map-picker.css');
+  const sw = read('service-worker.js');
+
+  check('terms.html and privacy.html exist, are titled, and cross-link to each other',
+    /<title>Terms of Service - NextaStore<\/title>/.test(terms) && /<title>Privacy Policy - NextaStore<\/title>/.test(privacy) &&
+    /href="privacy\.html"/.test(terms) && /href="terms\.html"/.test(privacy));
+  check('Signup links go to the real pages in a new tab (no more "#"), and the agree checkbox is still required',
+    /href="terms\.html" target="_blank" rel="noopener">Terms of Service/.test(signup) &&
+    /href="privacy\.html" target="_blank" rel="noopener">Privacy Policy/.test(signup) &&
+    /id="agreeTerms" required/.test(signup) && !/<a href="#">(Terms of Service|Privacy Policy)/.test(signup));
+  check('Legal pages state the real product model: no payment processing/escrow, and phone shown only if the seller chooses',
+    /does not process your payment/.test(terms) && /only if the seller chooses to show it/.test(privacy) && /only if you choose to show it/.test(terms));
+  check('Legal pages use nextastores.com as the canonical host',
+    /rel="canonical" href="https:\/\/nextastores\.com\/terms\.html"/.test(terms) && /rel="canonical" href="https:\/\/nextastores\.com\/privacy\.html"/.test(privacy));
+  check('Footer/marketplace expose Terms and Privacy; sitemap lists both pages',
+    ['index.html', 'dashboard.html', 'store-detail.html', 'marketplace.html'].every(f => /terms\.html/.test(read(f)) && /privacy\.html/.test(read(f))) &&
+    /'\/terms\.html', '\/privacy\.html'/.test(read('nextastore-backend/src/seo.js')));
+
+  check('Map modal close / dismiss / remove-pin buttons use inline SVG (do not depend on the icon-font CDN)',
+    /ICON_X/.test(picker) && /ICON_TRASH/.test(picker) &&
+    !/mpCloseBtn"[^>]*><i class/.test(picker) && !/mpRemovePinBtn"[^>]*><i class/.test(picker));
+  check('Map modal keeps a dropped/dragged pin out from under the floating summary card (panInside)',
+    /function keepPinInView\(\)/.test(picker) && /panInside\(/.test(picker) && (picker.match(/keepPinInView\(\);/g) || []).length >= 2);
+  check('Map modal selects: short region names, only cities get a suffix, District gets the wider column',
+    /<option value="central">Central<\/option>/.test(picker) && !/' \(District\)'/.test(picker) &&
+    /\.filter-group:last-child \{ flex: 1\.2 1 0; \}/.test(pickerCss));
+  check('Map guidance banner leaves the zoom buttons uncovered; short-height (landscape) rules exist',
+    /right: 4rem;/.test(pickerCss) && /right: 3\.75rem;/.test(pickerCss) && /@media \(max-height: 480px\)/.test(pickerCss));
+  check('Service-worker cache bumped for this batch',
+    (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 15; })());
+}
+
+// --- WIP 22 (batch 12): fix the Step-1 flash on the way back to Step 4 ---
+{
+  const onboardingJs = read('js/onboarding.js');
+  const onboardingHtml = read('onboarding.html');
+  const onboardingCss = read('css/onboarding.css');
+  const sw = read('service-worker.js');
+
+  check('Onboarding hides the wizard behind a loading state until the real starting step is known',
+    /id="obMain"/.test(onboardingHtml) && /class="ob-main ob-main--loading"/.test(onboardingHtml) &&
+    /class="ob-main-loading"/.test(onboardingHtml));
+  check('The loading state actually hides the static "Step 1 active" markup, not just an overlay on top of it',
+    /\.ob-main--loading \.onboarding-progress,\s*\n\s*\.ob-main--loading \.onboarding-card,\s*\n\s*\.ob-main--loading \.onboarding-actions \{ display: none; \}/.test(onboardingCss));
+  check('The wizard is only revealed once this.step has been resolved from ?step=, right before the one and only renderStep() call in init()',
+    (() => {
+      const initBody = onboardingJs.slice(onboardingJs.indexOf('async init()'), onboardingJs.indexOf('/** Whether a step'));
+      const wantedIdx = initBody.indexOf('const wanted =');
+      const revealIdx = initBody.indexOf("classList.remove('ob-main--loading')");
+      const renderIdx = initBody.indexOf('this.renderStep();');
+      return wantedIdx > 0 && revealIdx > wantedIdx && renderIdx > revealIdx &&
+        (initBody.match(/this\.renderStep\(\);/g) || []).length === 1;
+    })());
+  check('Service-worker cache bumped for this batch',
+    (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 18; })());
 }
 
 let failed = 0;

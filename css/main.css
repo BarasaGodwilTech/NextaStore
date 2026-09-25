@@ -229,6 +229,17 @@ a:hover { color: var(--primary-dark); }
     background: var(--secondary-light);
 }
 
+/* Lowest-emphasis button: dismissing a nudge, "no thanks" — same click
+ * target size as a real button (so it's not a fiddly tap on mobile) but
+ * reads as declining rather than as an equal, competing choice. */
+.btn-text {
+    background: transparent;
+    border-color: transparent;
+    color: var(--gray-600);
+    padding: 0.5rem 0.75rem;
+}
+.btn-text:hover:not(:disabled) { color: var(--gray-900); background: var(--gray-100); }
+
 .btn-danger { background: var(--danger); border-color: var(--danger); color: white; }
 
 /* Small inline text link used for "View all" style affordances next to a
@@ -735,7 +746,7 @@ hr.rule {
 button, a, input, select, textarea { scroll-margin: 5rem; }
 .btn, button, [role="button"] { min-height: 44px; }
 input, select, textarea { font-size: 16px; }
-@media (max-width:414px){ body{overflow-x:hidden}.navbar{padding-left:1rem;padding-right:1rem}.navbar-menu{gap:.5rem}.account-nav-slot{margin-left:auto}.search-bar{min-width:0}.search-bar input{min-width:0}.site-dialog{max-height:calc(100vh - 2rem);overflow:auto} }
+@media (max-width:414px){ body{overflow-x:clip}.navbar{padding-left:1rem;padding-right:1rem}.navbar-menu{gap:.5rem}.account-nav-slot{margin-left:auto}.search-bar{min-width:0}.search-bar input{min-width:0}.site-dialog{max-height:calc(100vh - 2rem);overflow:auto} }
 
 /* Lightweight first-paint skeleton used on every round-3 target page. */
 .page-init-skeleton{position:fixed;inset:0;background:var(--paper,#fff);z-index:4500;padding:max(5rem,12vh) min(8vw,5rem);display:grid;align-content:start;gap:1rem;pointer-events:none}.page-init-skeleton .skeleton-text-lg{width:min(420px,72vw);height:2rem}.page-init-skeleton .skeleton-text{width:min(620px,84vw)}.page-init-skeleton .skeleton-text-sm{width:min(320px,60vw)}.page-init-skeleton.is-hidden{opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s ease}
@@ -764,6 +775,7 @@ input, select, textarea { font-size: 16px; }
 .footer a.brand-link { color: var(--primary); font-weight: 600; }
 .footer .footer-safety-link { display: inline-block; margin-top: var(--spacing-sm); color: rgba(255, 255, 255, 0.65); font-size: 0.85rem; font-weight: 600; transition: color 0.15s ease; }
 .footer .footer-safety-link:hover { color: white; }
+.footer .footer-safety-link + .footer-safety-link { margin-left: var(--spacing-md); }
 
 /* ---- Local brand typography ---- */
 @font-face{font-family:Poppins;src:url('../assets/brand/fonts/Poppins-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
@@ -896,8 +908,16 @@ input, select, textarea { font-size: 16px; }
 .form-input,.form-select,.form-textarea,input:not([type]),select,textarea{font-family:var(--font-body)}
 .card,.panel,.empty-state,.loading-state{border-radius:var(--border-radius-lg)}
 
-/* Common responsive guardrail: prevent page-level components from overflowing. */
-html,body{max-width:100%;overflow-x:hidden}
+/* Common responsive guardrail: prevent page-level components from overflowing.
+   `clip`, not `hidden`: `overflow-x:hidden` forces the UA to auto-compute
+   overflow-y too, which turns body into its own scroll container. Every
+   `position:sticky` element sticks to its nearest scrolling ancestor, so once
+   body becomes that container instead of the viewport, sticky sidebars/topbars
+   (auth panel, dashboard nav, checkout summary, admin nav, sticky topbars...)
+   stop moving with the page — they just sit at their normal position, since
+   body's own box is exactly as tall as its content. `clip` blocks the same
+   horizontal overflow without creating that scroll container. */
+html,body{max-width:100%;overflow-x:clip}
 
 /* Shared "Verified seller" badge (paid subscription badge — see
    subscription.html / routes/admin.js). Defined once here so every page

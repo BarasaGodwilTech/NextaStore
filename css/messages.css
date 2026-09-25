@@ -943,6 +943,12 @@ a.thread-header-identity:focus-visible { outline: 2px solid var(--store-green); 
 .attach-confirm-preview { pointer-events: auto; }
 .attach-confirm-preview .message-product-card,
 .attach-confirm-preview .message-location-card { cursor: default; }
+/* This preview modal isn't the narrow, shrink-to-fit chat bubble the fixed
+   260px width above exists for (see the comment on `.message-location-
+   card`) — it's a plain grid cell that already has a real, definite width
+   to lay out against, so the card is free to use the full space here
+   instead of sitting narrower than the panel around it. */
+.attach-confirm-preview .message-location-card { width: 100%; }
 .attach-confirm-preview .message-product-card:hover,
 .attach-confirm-preview .message-location-card:hover { transform: none; box-shadow: 0 2px 8px rgba(11, 59, 43, 0.05); }
 .attach-confirm-caption-label { font-size: 0.78rem; font-weight: 600; color: var(--gray-500); }
@@ -1084,7 +1090,23 @@ a.thread-header-identity:focus-visible { outline: 2px solid var(--store-green); 
 .message-card-go { color: var(--gray-300); font-size: 0.75rem; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--gray-50); display: grid; place-items: center; transition: background 0.15s ease, color 0.15s ease; }
 .message-product-card:hover .message-card-go { background: var(--store-green); color: #fff; }
 
-.message-location-card { flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; }
+/* ROOT CAUSE FIX for the garbled/collapsed map card seen in chat: this
+   card sits inside `.thread-message`, a flex item with `align-self:
+   flex-start/flex-end` (see above) — meaning `.thread-message` sizes
+   itself to fit its content ("shrink-to-fit"), same as `.message-product-
+   card` does successfully. But every visual piece of the map (the tile
+   mosaic, the expand badge, the label scrim) is `position: absolute`,
+   which takes it OUT of normal flow entirely. With no normal-flow content
+   left for the browser to measure, `.message-location-media`'s own
+   intrinsic width computes to ~0 — and because it (and this card) were
+   sized as `width: 100%` of that shrink-to-fit ancestor, the whole chain
+   collapsed to a sliver a few pixels wide, squeezing the pin/badge/label
+   into overlapping, letter-wrapped debris exactly like the screenshot
+   that reported this. Giving the card its own fixed width breaks that
+   circular dependency: it no longer needs `.thread-message` to already
+   have a size before it can have one. `max-width: 100%` keeps it from
+   overflowing a narrow phone screen. */
+.message-location-card { flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; width: 260px; max-width: 100%; }
 /* The visual "frame" for the map — sized, clipped and vignetted here.
    `.message-location-preview` inside it is left as a plain, unstyled slot
    (just position/size) because NextaStoreMapPreview.render() replaces its
@@ -1138,7 +1160,17 @@ a.thread-header-identity:focus-visible { outline: 2px solid var(--store-green); 
 }
 .message-location-text { min-width: 0; display: grid; gap: 0.05rem; color: #fff; }
 .message-location-text strong { font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
-.message-location-text span { font-size: 0.68rem; color: rgba(255, 255, 255, 0.85); }
+/* `.thread-message` (an ancestor) sets `overflow-wrap: anywhere` so long
+   URLs/words in plain-text chat messages don't overflow the bubble — and
+   because overflow-wrap inherits, this hint line inherited it too with
+   nothing to override it. Combined with the width collapse above, that's
+   what let the browser break "Tap to view full map" one character per
+   line instead of just truncating it. Belt-and-suspenders: even now that
+   the card has a real width, this keeps it a single clipped line the same
+   way the `strong` label above it already is. */
+.message-location-text span { font-size: 0.68rem; color: rgba(255, 255, 255, 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+
+
 
 /* Optimistic bubble shown the instant something is sent, before the server
    confirms it — same idiom as the existing "Sending…" text receipt. */
@@ -1246,6 +1278,8 @@ a.thread-header-identity:focus-visible { outline: 2px solid var(--store-green); 
 .order-detail-panel > .modal-close { position: absolute; right: 1rem; top: 1rem; border: 0; background: var(--gray-100); border-radius: 50%; width: 34px; height: 34px; font-size: 1.2rem; }
 .order-detail-head { display: flex; justify-content: space-between; align-items: start; padding-right: 2.5rem; }
 .order-detail-head h2 { margin: 0.3rem 0 1.2rem; }
+.order-cancel-note { display: flex; gap: 0.5rem; align-items: flex-start; background: var(--gray-50); border-radius: 10px; padding: 0.75rem 0.9rem; margin: 0.8rem 0; font-size: 0.85rem; color: var(--gray-600); }
+.order-cancel-note i { color: var(--gray-400); margin-top: 0.15rem; }
 .order-detail-store { display: flex; gap: 0.7rem; align-items: center; border-top: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100); padding: 1rem 0; }
 .order-detail-store small { display: block; color: var(--gray-500); margin-top: 0.2rem; }
 .detail-items { margin: 1rem 0; }

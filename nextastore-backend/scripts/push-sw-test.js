@@ -118,8 +118,8 @@ function clickEvent(data) {
         const n = w.state.shown[0];
         check('push: shows exactly one notification for one push', w.state.shown.length === 1);
         check('push: title and body come from the payload', n.title === 'New message from Amina' && n.options.body === 'Is the phone still available?');
-        check('push: uses the brand icon and the monochrome badge',
-            n.options.icon === '/assets/brand/png/icon/icon-192.png' && n.options.badge === '/assets/brand/png/badge/badge-96.png');
+        check('push: uses the brand icon and this type\'s own monochrome badge',
+            n.options.icon === '/assets/brand/png/icon/icon-192.png' && n.options.badge === '/assets/brand/png/badge/new_message.png');
         check('push: relative server link becomes a root-relative app path', n.options.data.url === '/messages.html?conversation=c1');
         check('push: message notification is tagged per conversation and renotifies',
             n.options.tag === 'ns-msg-c1' && n.options.renotify === true);
@@ -154,6 +154,26 @@ function clickEvent(data) {
         check('push: root-relative link is accepted as-is', w.state.shown[0].options.data.url === '/subscription.html');
         await w.fire('push', pushEvent({ type: 'x', title: 't', link: `${ORIGIN}/orders.html?order=9` }));
         check('push: absolute same-origin link is reduced to a path', w.state.shown[1].options.data.url === '/orders.html?order=9');
+    }
+
+    // Badge differentiation: each known type gets its own status-bar glyph, so
+    // a person can tell a message from an order-cancellation without opening
+    // the tray; anything else falls back to the plain brand badge.
+    {
+        const w = createWorker();
+        const knownTypes = ['new_message', 'new_order', 'low_stock', 'order_cancelled', 'new_product', 'subscription'];
+        for (const type of knownTypes) await w.fire('push', pushEvent({ type, title: 't', link: '/' }));
+        const badges = w.state.shown.map((s) => s.options.badge);
+        check('push: every known type gets its own badge asset',
+            badges.every((b, i) => b === `/assets/brand/png/badge/${knownTypes[i]}.png`), badges.join(','));
+        check('push: all known-type badges are distinct from each other', new Set(badges).size === knownTypes.length, badges.join(','));
+
+        await w.fire('push', pushEvent({ type: 'general', title: 't', link: '/' }));
+        await w.fire('push', pushEvent({ type: 'test', title: 't', link: '/' }));
+        await w.fire('push', pushEvent({ type: 'some_future_type', title: 't', link: '/' }));
+        const fallbackBadges = w.state.shown.slice(-3).map((s) => s.options.badge);
+        check('push: general/test/unrecognized types all fall back to the plain brand badge',
+            fallbackBadges.every((b) => b === '/assets/brand/png/badge/badge-96.png'), fallbackBadges.join(','));
     }
 
     // Robustness: a push must ALWAYS end in a visible notification.
@@ -193,6 +213,25 @@ function clickEvent(data) {
         check('push: title and body are length-capped', s.title.length === 120 && s.options.body.length === 300);
         await w.fire('push', pushEvent({ title: '  padded  ', body: '  x  ' }));
         check('push: surrounding whitespace is trimmed', w.state.shown[1].title === 'padded' && w.state.shown[1].options.body === 'x');
+    }
+
+    // Whose account is this for? One device can hold several people's accounts.
+    {
+        const w = createWorker();
+        await w.fire('push', pushEvent({ type: 'new_order', title: 'New order', body: 'Order #7 from Peter', link: 'dashboard.html#orders', account: 'Amina Nakato' }));
+        check('push: recipient account name is printed on its own last line under the message',
+            w.state.shown[0].options.body === 'Order #7 from Peter\nAccount: Amina Nakato' && w.state.shown[0].title === 'New order');
+        await w.fire('push', pushEvent({ title: 'Store update', account: 'Amina Nakato' }));
+        check('push: an account with no message body still shows a clean account line',
+            w.state.shown[1].options.body === 'Account: Amina Nakato');
+        await w.fire('push', pushEvent({ title: 'Old server', body: 'No account field', link: '' }));
+        check('push: a payload without `account` (older server, or lookup failed) renders exactly as before',
+            w.state.shown[2].options.body === 'No account field');
+        await w.fire('push', pushEvent({ title: 'Odd', body: 'x', account: { not: 'a string' } }));
+        check('push: a non-string account is ignored rather than printed as [object Object]', w.state.shown[3].options.body === 'x');
+        await w.fire('push', pushEvent({ title: 'Long', body: 'B'.repeat(2000), account: 'A'.repeat(200) }));
+        check('push: account name is length-capped independently of the body cap',
+            w.state.shown[4].options.body === `${'B'.repeat(300)}\nAccount: ${'A'.repeat(40)}`);
     }
 
     // Links: nothing that leaves the site or isn't a normal app page may be opened.
@@ -353,8 +392,13 @@ function clickEvent(data) {
 
     // ----------------------------------------------------------- static facts --
     check('service worker never touches window/document/localStorage (it has no page)', !/\b(localStorage|sessionStorage|document\.|window\.)/.test(SW_SOURCE.replace(/\/\/.*$/gm, '')));
-    check('badge asset referenced by the worker exists', fs.existsSync(path.join(root, 'assets/brand/png/badge/badge-96.png')));
+    check('default badge asset referenced by the worker exists', fs.existsSync(path.join(root, 'assets/brand/png/badge/badge-96.png')));
     check('icon asset referenced by the worker exists', fs.existsSync(path.join(root, 'assets/brand/png/icon/icon-192.png')));
+    {
+        const perTypeBadges = ['new_message', 'new_order', 'low_stock', 'order_cancelled', 'new_product', 'subscription'];
+        const missing = perTypeBadges.filter((t) => !fs.existsSync(path.join(root, `assets/brand/png/badge/${t}.png`)));
+        check('every per-type badge asset referenced by PUSH_BADGES_BY_TYPE exists on disk', missing.length === 0, missing.join(','));
+    }
 
     let failed = 0;
     for (const r of results) {

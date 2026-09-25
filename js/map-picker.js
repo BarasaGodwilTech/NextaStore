@@ -1,19 +1,9 @@
 /**
  * NextaStore — shared Leaflet pin-drop location picker
  * ---------------------------------------------------------------------------
- * Item 2: the onboarding wizard's location step only had a plain district
- * `<select>`, while dashboard.js's Settings page already had a full
- * Leaflet map picker (region/district filters, curated per-district
- * suggestions, click-to-drop-a-pin). This module is that same picker,
- * pulled out into a standalone, callback-based API so onboarding.js can use
- * it too, without either page depending on the other's code.
- *
- * dashboard.js's Settings picker is left exactly as it already was — it's
- * working, load-bearing code, and swapping it over to call through this
- * module as well would be a much bigger, riskier refactor for no user-
- * facing benefit. This does mean the region/district/suggestion data below
- * is duplicated rather than shared; that's a conscious, documented
- * trade-off (see item 4's dedup goal) in favor of not touching working code.
+ * Used by onboarding.html and dashboard.js's Settings > Store location for
+ * choosing a store's location: a required district/city, plus an optional
+ * precise pin for the shop itself.
  *
  * Usage:
  *   NextaStoreMapPicker.open({
@@ -22,15 +12,28 @@
  *     onSave: ({ lat, lng, district, placeName, suggestedAddress, suggestedDirections }) => { ... },
  *     onCancel: () => { ... } // optional
  *   });
+ * lat/lng are null in the result when only a district/city was chosen and no
+ * pin was dropped — that's a valid save, not an error (see the Save button
+ * handler in open() below).
  *
- * Map redesign (pre-deploy pass): once a pin is dropped/dragged, this
- * reverse-geocodes it via Nominatim (OSM — no new API key needed) so
- * callers get a human-readable place name instead of just raw lat/lng, and
- * a best-effort suggestedAddress/suggestedDirections to auto-draft those
- * fields with (callers should still let the seller edit them freely). The
- * marker itself switches to a small precision-crosshair style after
- * placement, and is draggable, so it stops obscuring the exact spot and
- * can be nudged without re-clicking the map.
+ * Mobile rebuild: the modal used to give the map roughly half the screen
+ * on a phone, with the other half a scrolling sidebar of region/district
+ * filters plus a list of canned per-district "suggested locations" the
+ * person had to scroll through to use — a second scroll area nested inside
+ * an already-small modal, and a list of guesses (a generic "Town Center" /
+ * "Main Market Area" per district) rather than anything genuinely tied to
+ * the seller's own shop. Both are gone. The map is now the modal: region
+ * and district/city sit in a single compact bar above it, everything else
+ * (a short one-time guidance banner, and the selected-location summary
+ * once something is chosen) floats over the map itself rather than
+ * competing with it for vertical space, and the same layout is used at
+ * every width instead of a separate mobile-only arrangement.
+ *
+ * Reverse-geocodes a dropped/dragged pin via Nominatim (OSM — no new API
+ * key needed) so callers get a human-readable place name instead of just
+ * raw lat/lng, plus a best-effort suggestedAddress/suggestedDirections to
+ * auto-draft those fields (callers should still let the seller edit them
+ * freely).
  * ---------------------------------------------------------------------------
  */
 (function (global) {
@@ -70,29 +73,6 @@
         western: { cities: ['mbarara', 'fortportal', 'hoima', 'kabale', 'kasese'], districts: ['bushenyi', 'ntungamo', 'rukungiri', 'isingiro', 'kiruhura', 'ibanda', 'kamwenge', 'kyenjojo', 'kyegegwa', 'mitooma', 'rubirizi', 'buhweju', 'sheema'] }
     };
 
-    const CITY_SUGGESTIONS = {
-        kampala: [{ name: 'Central Business District', landmark: 'City Center' }, { name: 'Nakasero Market Area', landmark: 'Nakasero Market' }, { name: 'Industrial Area', landmark: 'Industrial Area' }],
-        jinja: [{ name: 'Jinja Town Center', landmark: 'Main Street' }, { name: 'Source of the Nile', landmark: 'Nile River' }],
-        mbale: [{ name: 'Mbale Town Center', landmark: 'Main Street' }, { name: 'Mbale Market', landmark: 'Main Market' }],
-        mbarara: [{ name: 'Mbarara Town Center', landmark: 'High Street' }, { name: 'Mbarara Market', landmark: 'Main Market' }],
-        gulu: [{ name: 'Gulu Town Center', landmark: 'Main Street' }, { name: 'Gulu Market', landmark: 'Main Market' }],
-        arua: [{ name: 'Arua Town Center', landmark: 'Main Street' }, { name: 'Arua Market', landmark: 'Main Market' }],
-        entebbe: [{ name: 'Entebbe Town Center', landmark: 'Main Street' }, { name: 'Airport Area', landmark: 'Airport' }],
-        soroti: [{ name: 'Soroti Town Center', landmark: 'Main Street' }, { name: 'Soroti Rock Area', landmark: 'Soroti Rock' }],
-        lira: [{ name: 'Lira Town Center', landmark: 'Main Street' }, { name: 'Lira Market', landmark: 'Main Market' }],
-        fortportal: [{ name: 'Fort Portal Town Center', landmark: 'Main Street' }, { name: 'Tourist Center Area', landmark: 'Tourist Area' }],
-        hoima: [{ name: 'Hoima Town Center', landmark: 'Main Street' }, { name: 'Hoima Market', landmark: 'Main Market' }],
-        masaka: [{ name: 'Masaka Town Center', landmark: 'Main Street' }, { name: 'Masaka Market', landmark: 'Main Market' }],
-        kabale: [{ name: 'Kabale Town Center', landmark: 'Main Street' }, { name: 'Lake Bunyonyi Area', landmark: 'Lake Bunyonyi' }],
-        kasese: [{ name: 'Kasese Town Center', landmark: 'Main Street' }, { name: 'Rwenzori View Area', landmark: 'Mountain View' }]
-    };
-
-    const DISTRICT_SUGGESTIONS = [
-        { name: 'Town Center', landmark: 'Administrative Center' },
-        { name: 'Main Market Area', landmark: 'Main Market' },
-        { name: 'Trading Center', landmark: 'Business Area' }
-    ];
-
     function regionForDistrict(district) {
         for (const [region, data] of Object.entries(REGIONS)) {
             if (data.cities.includes(district) || data.districts.includes(district)) return region;
@@ -105,27 +85,40 @@
         return [...data.cities, ...data.districts];
     }
 
-    function label(district) {
-        return district.charAt(0).toUpperCase() + district.slice(1);
+    /** Great-circle distance in km — plenty accurate at Uganda's scale for
+     *  picking "which of our ~64 districts is this GPS fix closest to". */
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    function suggestionsFor(district) {
-        const isCity = CITIES.includes(district);
-        const list = isCity ? (CITY_SUGGESTIONS[district] || CITY_SUGGESTIONS.kampala) : DISTRICT_SUGGESTIONS;
-        const typeLabel = isCity ? 'City' : 'District';
-        return list.map((s, i) => `
-            <div class="location-item" data-suggestion-index="${i}">
-                <div class="location-item-radio">
-                    <input type="radio" name="mapPickerLocationSelect" id="mp_loc_${i}">
-                    <label for="mp_loc_${i}"></label>
-                </div>
-                <div class="location-item-details">
-                    <div class="location-item-name">${s.name}</div>
-                    <div class="location-item-address">${label(district)} ${typeLabel}</div>
-                    <div class="location-item-meta"><span class="location-item-landmark"><i class="fas fa-location-dot"></i> Close to: ${s.landmark}</span></div>
-                </div>
-            </div>
-        `).join('');
+    /** Closest district/city centre (as the crow flies) to a raw GPS fix —
+     *  used to pre-select the region/district dropdowns after "Use my
+     *  location", since the browser only gives us coordinates. */
+    function nearestDistrict(lat, lng) {
+        let best = null, bestDist = Infinity;
+        for (const [key, [dlat, dlng]] of Object.entries(districtCoordinates)) {
+            const d = haversineKm(lat, lng, dlat, dlng);
+            if (d < bestDist) { bestDist = d; best = key; }
+        }
+        return best || 'kampala';
+    }
+
+    // Keys are single lowercase words; a few need a space to read correctly.
+    const DISPLAY_NAMES = { fortportal: 'Fort Portal' };
+
+    function label(district) {
+        if (!district) return '';
+        return DISPLAY_NAMES[district] || district.charAt(0).toUpperCase() + district.slice(1);
+    }
+
+    /** 'City' or 'District' — lets callers say which one was chosen. */
+    function kind(district) {
+        return CITIES.includes(district) ? 'City' : 'District';
     }
 
     function popupHTML(district, lat, lng, placeName) {
@@ -147,18 +140,26 @@
     }
 
     // A tall pin obscures the exact spot it's marking, which makes it hard
-    // to nudge a pin to a precise storefront location. Once dropped, the
-    // marker switches to this small precision-crosshair style so the
-    // seller can see and adjust exactly where it sits — and it's
-    // draggable, so nudging doesn't require re-clicking the map.
+    // to nudge a pin to a precise storefront location. The marker is a
+    // compact ring-and-dot instead, draggable so nudging doesn't require
+    // re-clicking the map. iconSize is deliberately bigger than the visible
+    // ring (see .marker-crosshair's own smaller width in CSS) so the actual
+    // drag target meets the ~44px touch-target guideline on phones without
+    // the marker itself looking oversized.
     const precisionIcon = () => L.divIcon({
         className: 'custom-map-marker custom-map-marker--precision',
-        html: '<div class="marker-crosshair"><span></span><span></span></div>',
-        iconSize: [26, 26],
-        iconAnchor: [13, 13]
+        html: '<div class="marker-crosshair"><span class="marker-crosshair-pulse"></span><span class="marker-crosshair-ring"></span><span class="marker-crosshair-dot"></span></div>',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
     });
 
-    let state = null; // { map, marker, district, onSave, onCancel, overlay }
+    // Inline SVG so the modal's own controls (close / dismiss / remove pin)
+    // never depend on the Font Awesome CDN loading — on a weak connection an
+    // icon-font failure would otherwise leave these buttons blank.
+    const ICON_X = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
+    const ICON_TRASH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8h5.8l.6-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+
+    let state = null; // { map, marker, district, onSave, onCancel, overlay, guidanceDismissed }
 
     // Reverse-geocode via Nominatim (OpenStreetMap) — the app already uses
     // OSM tiles via Leaflet, so this needs no new API key/dependency.
@@ -184,18 +185,47 @@
         }
     }
 
+    /** Shows/hides the one-line "tap the map" banner: visible only while
+     *  there's no pin yet and the person hasn't already dismissed it this
+     *  time the modal is open (switching district clears the pin, so the
+     *  banner correctly reappears then — but not after an explicit
+     *  dismissal, which would otherwise feel like it "came back"). */
+    function updateGuidance() {
+        const el = document.getElementById('mpGuidance');
+        if (!el) return;
+        el.style.display = (!state.marker && !state.guidanceDismissed) ? 'flex' : 'none';
+    }
+
+    /** The summary card floats over the bottom of the map, so a pin dropped
+     *  (or dragged) into that strip would sit hidden underneath it. Nudge
+     *  the map just enough to bring the pin back into the clear area. */
+    function keepPinInView() {
+        if (!state?.map || !state.marker || typeof state.map.panInside !== 'function') return;
+        const card = document.getElementById('mpLocationCard');
+        const cardH = card && card.style.display !== 'none' ? card.offsetHeight + 24 : 24;
+        try {
+            state.map.panInside(state.marker.getLatLng(), { paddingTopLeft: [24, 24], paddingBottomRight: [24, cardH + 22], animate: true });
+        } catch (err) { /* cosmetic only */ }
+    }
+
     function placeMarker(latlng, district) {
         if (state.marker) state.map.removeLayer(state.marker);
         state.marker = L.marker(latlng, { icon: precisionIcon(), draggable: true }).addTo(state.map);
         const lat = (latlng.lat ?? latlng[0]).toFixed(6);
         const lng = (latlng.lng ?? latlng[1]).toFixed(6);
-        document.getElementById('mpInfoDistrict').textContent = label(district);
+        setLocateStatus('');
+        updateGuidance();
+
+        const card = document.getElementById('mpLocationCard');
+        const placeEl = document.getElementById('mpInfoPlace');
+        const metaEl = document.getElementById('mpInfoMeta');
+        if (card) card.style.display = 'flex';
+        if (placeEl) placeEl.textContent = 'Looking up address\u2026';
         // Raw coordinates stay visible immediately as fine print; the
         // headline upgrades to a human-readable place name once the
         // reverse-geocode call resolves.
-        document.getElementById('mpInfoCoords').textContent = `${lat}, ${lng}`;
-        document.getElementById('mpInfoPlace').textContent = 'Looking up address\u2026';
-        document.getElementById('mpSelectedLocationInfo').style.display = 'block';
+        if (metaEl) metaEl.textContent = `${label(district)} · ${lat}, ${lng}`;
+        keepPinInView();
         state.marker.bindPopup(popupHTML(district, lat, lng), { className: 'custom-map-popup', maxWidth: 280 });
         state.geocode = null;
 
@@ -203,29 +233,116 @@
             reverseGeocode(currentLat, currentLng).then(result => {
                 if (!state || state.marker?.getLatLng()?.lat?.toFixed(6) !== currentLat) return;
                 state.geocode = result;
-                const placeEl = document.getElementById('mpInfoPlace');
-                if (placeEl) placeEl.textContent = result?.placeName || 'Address unavailable — coordinates still saved';
+                const pe = document.getElementById('mpInfoPlace');
+                if (pe) pe.textContent = result?.placeName || 'Address unavailable — coordinates still saved';
                 if (state.marker) state.marker.setPopupContent(popupHTML(district, currentLat, currentLng, result?.placeName));
             });
         };
         runGeocode(lat, lng);
 
+        state.marker.on('dragstart', () => {
+            document.getElementById('mpMapContainer')?.classList.add('is-dragging-pin');
+        });
         state.marker.on('dragend', () => {
+            document.getElementById('mpMapContainer')?.classList.remove('is-dragging-pin');
             const p = state.marker.getLatLng();
             const nLat = p.lat.toFixed(6);
             const nLng = p.lng.toFixed(6);
-            document.getElementById('mpInfoCoords').textContent = `${nLat}, ${nLng}`;
-            document.getElementById('mpInfoPlace').textContent = 'Looking up address\u2026';
+            const me = document.getElementById('mpInfoMeta');
+            const pe = document.getElementById('mpInfoPlace');
+            if (me) me.textContent = `${label(state.district)} · ${nLat}, ${nLng}`;
+            if (pe) pe.textContent = 'Looking up address\u2026';
+            keepPinInView();
             runGeocode(nLat, nLng);
         });
 
         return { lat, lng };
     }
 
+    /** Shows/hides the small status line used for "Use my location" feedback
+     *  (locating\u2026 / permission denied / etc). Hides the one-time
+     *  guidance banner while it's up so the two never compete for the same
+     *  corner of the map, and restores the guidance's normal visibility
+     *  once the status is cleared. */
+    function setLocateStatus(message, isError) {
+        const el = document.getElementById('mpLocateStatus');
+        if (!el) return;
+        if (!message) {
+            el.style.display = 'none';
+            el.textContent = '';
+            updateGuidance();
+            return;
+        }
+        const guidance = document.getElementById('mpGuidance');
+        if (guidance) guidance.style.display = 'none';
+        el.textContent = message;
+        el.classList.toggle('is-error', !!isError);
+        el.style.display = 'flex';
+    }
+
+    function setLocateButtonBusy(link, busy) {
+        if (!link) return;
+        link.classList.toggle('is-loading', busy);
+        link.setAttribute('aria-busy', busy ? 'true' : 'false');
+        link.innerHTML = busy ? '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>' : '<i class="fas fa-location-crosshairs" aria-hidden="true"></i>';
+    }
+
+    /** "Use my location": asks the browser for a GPS/network fix, picks the
+     *  nearest district/city so the region + district selects stay in sync,
+     *  then drops the precision pin on the seller's *actual* coordinates
+     *  (not the district centre) so this is at least as accurate as
+     *  tapping the map by hand — usually more so. */
+    function useMyLocation(link) {
+        if (!state) return;
+        if (!navigator.geolocation) {
+            setLocateStatus('Your browser doesn\u2019t support finding your location. Tap the map to place a pin instead.', true);
+            return;
+        }
+        setLocateButtonBusy(link, true);
+        setLocateStatus('Finding your location\u2026', false);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                if (!state) return; // modal closed while we were waiting
+                setLocateButtonBusy(link, false);
+                setLocateStatus('');
+                const { latitude: lat, longitude: lng } = pos.coords;
+                const district = nearestDistrict(lat, lng);
+                state.district = district;
+                const region = regionForDistrict(district);
+                const regionSelect = document.getElementById('mpRegionSelect');
+                if (regionSelect) regionSelect.value = region;
+                rebuildDistrictOptions(region, district);
+                state.map.setView([lat, lng], 16);
+                placeMarker({ lat, lng }, district);
+            },
+            (err) => {
+                if (!state) return;
+                setLocateButtonBusy(link, false);
+                let message = 'Couldn\u2019t get your location. You can still tap the map to place a pin.';
+                if (err.code === err.PERMISSION_DENIED) {
+                    message = 'Location access was denied. Allow it in your browser settings, or tap the map to place a pin instead.';
+                } else if (err.code === err.TIMEOUT) {
+                    message = 'Finding your location took too long. Try again, or tap the map to place a pin.';
+                }
+                setLocateStatus(message, true);
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+        );
+    }
+
+    function removePin() {
+        if (!state) return;
+        if (state.marker) { state.map.removeLayer(state.marker); state.marker = null; }
+        state.geocode = null;
+        const card = document.getElementById('mpLocationCard');
+        if (card) card.style.display = 'none';
+        updateGuidance();
+    }
+
     function rebuildDistrictOptions(region, selected) {
         const select = document.getElementById('mpDistrictSelect');
         select.innerHTML = districtsInRegion(region).map(d => `
-            <option value="${d}" ${d === selected ? 'selected' : ''}>${label(d)}${CITIES.includes(d) ? ' (City)' : ' (District)'}</option>
+            <option value="${d}" ${d === selected ? 'selected' : ''}>${label(d)}${CITIES.includes(d) ? ' (City)' : ''}</option>
         `).join('');
     }
 
@@ -234,22 +351,7 @@
         const center = districtCoordinates[district];
         if (!center) return;
         state.map.setView(center, 13);
-        if (state.marker) { state.map.removeLayer(state.marker); state.marker = null; }
-        document.getElementById('mpSelectedLocationInfo').style.display = 'none';
-        document.getElementById('locationListMP').innerHTML = suggestionsFor(district);
-        wireSuggestionClicks();
-    }
-
-    function wireSuggestionClicks() {
-        document.querySelectorAll('#locationListMP [data-suggestion-index]').forEach(el => {
-            el.addEventListener('click', () => {
-                document.querySelectorAll('input[name="mapPickerLocationSelect"]').forEach((r, i) => {
-                    r.checked = String(i) === el.dataset.suggestionIndex;
-                });
-                const center = districtCoordinates[state.district];
-                if (center) placeMarker({ lat: center[0], lng: center[1] }, state.district);
-            });
-        });
+        removePin();
     }
 
     function close(cancelled) {
@@ -274,62 +376,61 @@
             <div class="map-modal-content" role="dialog" aria-modal="true" aria-labelledby="mapPickerTitle">
                 <div class="map-modal-header">
                     <h3 id="mapPickerTitle">Select Your Store Location</h3>
-                    <button type="button" class="map-modal-close" id="mpCloseBtn" aria-label="Close map picker"><i class="fas fa-times"></i></button>
+                    <button type="button" class="map-modal-close" id="mpCloseBtn" aria-label="Close map picker">${ICON_X}</button>
                 </div>
-                <div class="map-modal-body">
-                    <div class="map-modal-sidebar">
-                        <div class="location-filters">
-                            <div class="filter-group">
-                                <label class="filter-label">Region</label>
-                                <select class="filter-select" id="mpRegionSelect">
-                                    <option value="central">Central Region</option>
-                                    <option value="eastern">Eastern Region</option>
-                                    <option value="northern">Northern Region</option>
-                                    <option value="western">Western Region</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="filter-label">District/City</label>
-                                <select class="filter-select" id="mpDistrictSelect"></select>
-                            </div>
-                        </div>
-                        <div class="location-suggestions">
-                            <h4 class="suggestions-title">Suggested Locations</h4>
-                            <div class="location-list" id="locationListMP"></div>
-                        </div>
-                        <div class="selected-location-info" id="mpSelectedLocationInfo" style="display:${hasExisting ? 'block' : 'none'}">
-                            <div class="location-info-card">
-                                <div class="location-info-header"><i class="fas fa-map-marker-alt"></i><h4>Selected Location</h4></div>
-                                <div class="location-info-body">
-                                    <div class="info-row info-row--place"><span class="info-value info-value--place" id="mpInfoPlace">${hasExisting ? 'Looking up address\u2026' : ''}</span></div>
-                                    <div class="info-row"><span class="info-label">District:</span><span class="info-value" id="mpInfoDistrict">${label(district)}</span></div>
-                                    <div class="info-row"><span class="info-label">Coordinates:</span><span class="info-value info-value--muted" id="mpInfoCoords" title="Exact coordinates">${hasExisting ? initialCoordinates : 'Not selected'}</span></div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="map-modal-filters">
+                    <div class="filter-group">
+                        <label class="filter-label" for="mpRegionSelect">Region</label>
+                        <select class="filter-select" id="mpRegionSelect">
+                            <option value="central">Central</option>
+                            <option value="eastern">Eastern</option>
+                            <option value="northern">Northern</option>
+                            <option value="western">Western</option>
+                        </select>
                     </div>
-                    <div class="map-modal-map-section">
-                        <div id="mpMapContainer" class="custom-map-container"></div>
-                        <div class="map-action-bar">
-                            <button type="button" class="btn btn-secondary" id="mpCancelBtn"><i class="fas fa-times"></i> Cancel</button>
-                            <button type="button" class="btn btn-primary" id="mpSaveBtn"><i class="fas fa-check"></i> Save Location</button>
-                        </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="mpDistrictSelect">District / City</label>
+                        <select class="filter-select" id="mpDistrictSelect"></select>
                     </div>
+                </div>
+                <div class="map-modal-map-section">
+                    <div id="mpMapContainer" class="custom-map-container"></div>
+                    <div class="map-guidance" id="mpGuidance" style="display:none;">
+                        <i class="fas fa-hand-pointer" aria-hidden="true"></i>
+                        <span>Tap the map to mark your exact shop (optional). Drag the pin to adjust.</span>
+                        <button type="button" class="map-guidance-dismiss" id="mpGuidanceDismiss" aria-label="Dismiss tip">${ICON_X}</button>
+                    </div>
+                    <div class="map-locate-status" id="mpLocateStatus" role="status" style="display:none;"></div>
+                    <div class="map-location-card" id="mpLocationCard" style="display:${hasExisting ? 'flex' : 'none'}">
+                        <div class="map-location-card-icon"><i class="fas fa-map-marker-alt" aria-hidden="true"></i></div>
+                        <div class="map-location-card-text">
+                            <div class="map-location-card-place" id="mpInfoPlace">${hasExisting ? 'Looking up address\u2026' : ''}</div>
+                            <div class="map-location-card-meta" id="mpInfoMeta">${hasExisting ? `${label(district)} · ${initialCoordinates}` : ''}</div>
+                        </div>
+                        <button type="button" class="map-location-card-remove" id="mpRemovePinBtn" aria-label="Remove pin">${ICON_TRASH}</button>
+                    </div>
+                </div>
+                <div class="map-action-bar">
+                    <button type="button" class="btn btn-secondary" id="mpCancelBtn"><i class="fas fa-times"></i> Cancel</button>
+                    <button type="button" class="btn btn-primary" id="mpSaveBtn"><i class="fas fa-check"></i> Save Location</button>
                 </div>
             </div>
         `;
         document.body.appendChild(overlay);
 
-        state = { map: null, marker: null, district, onSave, onCancel, overlay };
+        state = { map: null, marker: null, district, onSave, onCancel, overlay, guidanceDismissed: false };
         document.body.classList.add('map-picker-open');
 
         document.getElementById('mpRegionSelect').value = region;
         rebuildDistrictOptions(region, district);
-        document.getElementById('locationListMP').innerHTML = suggestionsFor(district);
-        wireSuggestionClicks();
 
         document.getElementById('mpCloseBtn').addEventListener('click', () => close(true));
         document.getElementById('mpCancelBtn').addEventListener('click', () => close(true));
+        document.getElementById('mpRemovePinBtn').addEventListener('click', () => removePin());
+        document.getElementById('mpGuidanceDismiss').addEventListener('click', () => {
+            state.guidanceDismissed = true;
+            updateGuidance();
+        });
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(true); });
         overlay.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -348,18 +449,19 @@
         document.getElementById('mpDistrictSelect').addEventListener('change', (e) => switchDistrict(e.target.value));
 
         document.getElementById('mpSaveBtn').addEventListener('click', () => {
-            if (!state.marker) {
-                global.app?.showAlert('Please click on the map to select a location', 'error');
-                return;
-            }
-            const latlng = state.marker.getLatLng();
+            // A dropped pin is optional (it just refines the district-level
+            // location for nearby shoppers) — the district/city choice on
+            // its own is enough to save. Only a marker adds lat/lng and the
+            // reverse-geocoded extras to the result.
+            const marker = state.marker;
+            const latlng = marker ? marker.getLatLng() : null;
             const result = {
-                lat: latlng.lat.toFixed(6),
-                lng: latlng.lng.toFixed(6),
+                lat: latlng ? latlng.lat.toFixed(6) : null,
+                lng: latlng ? latlng.lng.toFixed(6) : null,
                 district: state.district,
-                placeName: state.geocode?.placeName || null,
-                suggestedAddress: state.geocode?.suggestedAddress || null,
-                suggestedDirections: state.geocode?.suggestedDirections || null
+                placeName: latlng ? (state.geocode?.placeName || null) : null,
+                suggestedAddress: latlng ? (state.geocode?.suggestedAddress || null) : null,
+                suggestedDirections: latlng ? (state.geocode?.suggestedDirections || null) : null
             };
             const savedCallback = state.onSave;
             close(false);
@@ -378,10 +480,24 @@
             }).addTo(state.map);
             L.control.zoom({ position: 'topright' }).addTo(state.map);
 
-            state.map.on('click', (e) => {
-                document.querySelectorAll('input[name="mapPickerLocationSelect"]').forEach(r => { r.checked = false; });
-                placeMarker(e.latlng, state.district);
+            const LocateControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function () {
+                    const container = L.DomUtil.create('div', 'leaflet-bar mp-locate-control');
+                    const link = L.DomUtil.create('a', 'mp-locate-btn', container);
+                    link.href = '#';
+                    link.title = 'Use my current location';
+                    link.setAttribute('role', 'button');
+                    link.setAttribute('aria-label', 'Use my current location');
+                    link.innerHTML = '<i class="fas fa-location-crosshairs" aria-hidden="true"></i>';
+                    L.DomEvent.disableClickPropagation(container);
+                    L.DomEvent.on(link, 'click', (e) => { L.DomEvent.stop(e); useMyLocation(link); });
+                    return container;
+                }
             });
+            new LocateControl().addTo(state.map);
+
+            state.map.on('click', (e) => placeMarker(e.latlng, state.district));
 
             requestAnimationFrame(() => state?.map?.invalidateSize());
 
@@ -390,9 +506,11 @@
                 if (Number.isFinite(lat) && Number.isFinite(lng)) {
                     placeMarker({ lat, lng }, district);
                 }
+            } else {
+                updateGuidance();
             }
         }, 100);
     }
 
-    global.NextaStoreMapPicker = { open, close: () => close(true), districtCoordinates };
+    global.NextaStoreMapPicker = { open, close: () => close(true), districtCoordinates, label, kind };
 })(window);

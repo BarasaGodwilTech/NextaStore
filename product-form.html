@@ -44,7 +44,7 @@
         </div>
 
         <header class="pf-header">
-            <a href="#" class="back-btn" id="backLink"><i class="fas fa-arrow-left"></i> Back to Products</a>
+            <a href="#" class="back-btn" id="backLink"><i class="fas fa-arrow-left"></i> <span class="back-btn-text-full">Back to Products</span><span class="back-btn-text-short">Back</span></a>
             <div class="pf-header-actions">
                 <span class="pf-draft-status" id="draftStatus" aria-live="polite"></span>
                 <button type="button" class="btn btn-outline btn-sm pf-header-save" id="saveBtnTop"><i class="fas fa-check"></i> Save</button>
@@ -98,8 +98,9 @@
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label" for="productCategory">Category</label>
-                            <select class="form-select" id="productCategory">
+                            <label class="form-label" for="productCategory">Category <span class="required-mark" title="Required">*</span></label>
+                            <select class="form-select" id="productCategory" required aria-describedby="productCategoryError">
+                                <option value="" disabled selected>Select a category</option>
                                 <option value="clothing">Clothing</option>
                                 <option value="accessories">Accessories</option>
                                 <option value="food">Food</option>
@@ -108,6 +109,9 @@
                                 <option value="crafts">Arts &amp; Crafts</option>
                                 <option value="other">Other</option>
                             </select>
+                            <div class="form-field-footer">
+                                <div class="form-error" id="productCategoryError"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -163,6 +167,8 @@
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
         <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="terms.html" class="footer-safety-link">Terms</a>
+        <a href="privacy.html" class="footer-safety-link">Privacy</a>
     </footer>
 
 

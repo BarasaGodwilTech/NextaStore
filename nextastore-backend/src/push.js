@@ -22,10 +22,30 @@ if (config.pushEnabled) {
 // message from Sam" long after the conversation moved on; a day is plenty.
 const PUSH_TTL_SECONDS = 24 * 60 * 60;
 
+// A phone or laptop can be signed in to more than one NextaStore account (a
+// family tablet, a seller who also shops), and a push lands in the OS tray
+// without any sign of whose account it belongs to. The recipient's name
+// rides along so the service worker can print it under the message.
+const ACCOUNT_NAME_MAX = 32;
+
+/** The name to show as "Account: ...", or '' if it can't be looked up.
+ *  Deliberately its own never-throws step: a failed lookup means the push
+ *  goes out without the account line, not that it doesn't go out. */
+async function accountLabelFor(userId) {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+        const name = typeof user?.name === 'string' ? user.name.replace(/\s+/g, ' ').trim() : '';
+        return name.length > ACCOUNT_NAME_MAX ? `${name.slice(0, ACCOUNT_NAME_MAX - 1).trimEnd()}\u2026` : name;
+    } catch (err) {
+        return '';
+    }
+}
+
 /** Sends one notification's worth of payload to every device the user has
  *  ever subscribed push on (phone + laptop both get it -- see the
  *  PushSubscription model comment). `data` becomes the JSON body the
- *  service worker's `push` handler receives; keep it small, this rides in
+ *  service worker's `push` handler receives ({ type, title, body, link,
+ *  account } -- `account` is the recipient's name, see accountLabelFor); keep it small, this rides in
  *  the push itself and most push services cap payload size around 4KB.
  *
  *  Resolves to { devices, sent, failed, removed } and never throws, so the
@@ -40,7 +60,8 @@ async function sendPushToUser(userId, { type = 'general', title, body = '', link
         result.devices = subscriptions.length;
         if (!subscriptions.length) return result;
 
-        const payload = JSON.stringify({ type, title, body, link });
+        const account = await accountLabelFor(userId);
+        const payload = JSON.stringify({ type, title, body, link, account });
         await Promise.all(subscriptions.map(async (sub) => {
             try {
                 await webpush.sendNotification({

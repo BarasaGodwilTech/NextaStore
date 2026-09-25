@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../prisma');
-const { apiError, saveImageIfDataUrl, slugify, deleteImageIfReplaced } = require('../utils');
-const { publicUser } = require('../helpers');
+const { apiError, saveImageIfDataUrl, storeSlugFrom, deleteImageIfReplaced } = require('../utils');
+const { publicUser, starterStoreData } = require('../helpers');
 const { removeAllSubscriptionsForUser } = require('../push');
 const presence = require('../presence');
 const { requireAuth, signSessionToken } = require('../middleware');
@@ -24,11 +24,11 @@ router.post('/become-seller', requireAuth, async (req, res, next) => {
             throw apiError('This account is already a seller account.');
         }
 
-        let slug = slugify(`${req.user.name}-store`);
+        let slug = storeSlugFrom(`${req.user.name}-store`);
         let attempt = 0;
         while (await prisma.store.findUnique({ where: { slug } })) {
             attempt += 1;
-            slug = `${slugify(`${req.user.name}-store`)}-${attempt + 1}`;
+            slug = `${storeSlugFrom(`${req.user.name}-store`)}-${attempt + 1}`;
         }
 
         const [user] = await prisma.$transaction([
@@ -36,10 +36,7 @@ router.post('/become-seller', requireAuth, async (req, res, next) => {
             prisma.store.create({
                 data: {
                     ownerId: req.user.id,
-                    slug,
-                    name: `${req.user.name}'s Store`,
-                    description: 'Tell customers what makes your store special.',
-                    contactEmail: req.user.email
+                    ...starterStoreData(req.user.name, req.user.email, slug)
                 }
             })
         ]);

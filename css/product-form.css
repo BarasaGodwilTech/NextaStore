@@ -23,6 +23,11 @@
 }
 
 .pf-header .back-btn { white-space: nowrap; flex-shrink: 0; }
+/* Full label by default; the short "Back" swaps in once the header gets
+   too narrow to fit it alongside the notification bell and account menu
+   (see the max-width:560px block below) — an icon-only back button with
+   no label at all reads as unlabelled, so this keeps a word on every size. */
+.pf-header .back-btn-text-short { display: none; }
 
 .pf-header-actions { display: flex; align-items: center; gap: var(--spacing-md); margin-left: auto; }
 
@@ -202,8 +207,15 @@
 }
 
 @media (max-width: 560px) {
-    .pf-header { padding: var(--spacing-md); gap: var(--spacing-sm); }
-    .pf-header-actions { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: var(--spacing-sm); }
+    /* Below this width "Back to Products" no longer leaves room for the
+       notification bell and account menu on the same row, so it stays a
+       single row and shortens the label instead of wrapping to a second
+       line — the bell and account controls are things people reach for
+       on every page and shouldn't disappear below a fold of their own. */
+    .pf-header { padding: var(--spacing-md); gap: var(--spacing-sm); flex-wrap: nowrap; }
+    .pf-header .back-btn-text-full { display: none; }
+    .pf-header .back-btn-text-short { display: inline; }
+    .pf-header-actions { flex-wrap: nowrap; width: auto; justify-content: flex-end; gap: var(--spacing-sm); }
     /* The header's quick-save duplicates the sticky bottom bar's Save
        button on phones, where thumb reach favors the bottom of the
        screen — keep only one visible action per role at this size. */

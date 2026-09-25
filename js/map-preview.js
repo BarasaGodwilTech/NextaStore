@@ -18,7 +18,10 @@
  *     lat, lng,                 // required
  *     zoom: 15,                 // optional, default 15
  *     width: 300, height: 160,  // optional, defaults shown
- *     mapsUrl: 'https://www.google.com/maps/search/?api=1&query=...' // optional
+ *     mapsUrl: 'https://www.google.com/maps/search/?api=1&query=...', // optional
+ *     area: false,              // optional: draw a soft area circle instead of a pin
+ *                               // (used when only a city/district is known)
+ *     areaLabel: ''             // optional: small chip over the map
  *   });
  * ---------------------------------------------------------------------------
  */
@@ -34,7 +37,7 @@
         return n * TILE_SIZE * (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2;
     }
 
-    function render(container, { lat, lng, zoom = 15, width = 300, height = 160, mapsUrl } = {}) {
+    function render(container, { lat, lng, zoom = 15, width = 300, height = 160, mapsUrl, area = false, areaLabel = '' } = {}) {
         if (!container || typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) return;
 
         const n = Math.pow(2, zoom);
@@ -69,7 +72,10 @@
         container.innerHTML = `
             <div class="map-preview-frame" style="width:${width}px;height:${height}px;">
                 ${tiles.join('')}
-                <div class="map-preview-marker" style="left:${pinLeft}px;top:${pinTop}px;"><i class="fas fa-map-marker-alt"></i></div>
+                ${area
+                    ? `<div class="map-preview-area" style="left:${pinLeft}px;top:${pinTop}px;"></div>`
+                    : `<div class="map-preview-marker" style="left:${pinLeft}px;top:${pinTop}px;"><i class="fas fa-map-marker-alt"></i></div>`}
+                ${areaLabel ? `<span class="map-preview-label">${String(areaLabel).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))}</span>` : ''}
                 <span class="map-preview-attribution">© OpenStreetMap</span>
                 ${mapsUrl ? `<a class="map-preview-overlay-link" href="${mapsUrl}" target="_blank" rel="noopener" aria-label="Open in Google Maps"></a>` : ''}
             </div>

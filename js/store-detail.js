@@ -235,10 +235,34 @@ class StoreDetailManager {
         overlay?.addEventListener('click', toggleSidebar);
     }
 
+    /** Which store this page is for. A store's own address is /<slug>
+     *  (nextastores.com/<slug>), so the slug is the path. The older
+     *  store-detail.html?store=<slug-or-id> form is still understood, and
+     *  is rewritten to the clean address once the store has loaded. */
+    storeKeyFromLocation() {
+        const fromQuery = new URLSearchParams(window.location.search).get('store');
+        if (fromQuery) return fromQuery;
+        const seg = window.location.pathname.replace(/^\/+|\/+$/g, '');
+        return /^[A-Za-z0-9-]+$/.test(seg) && seg !== 'store-detail' ? decodeURIComponent(seg) : '';
+    }
+
+    /** Old-style URL in the address bar (store-detail.html?store=...): show the
+     *  store's clean address instead, so what people copy from the bar is the
+     *  same link the seller shares. Other query params and the hash are kept. */
+    useCleanAddress() {
+        try {
+            if (!this.store?.slug) return;
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('store')) return;
+            params.delete('store');
+            const rest = params.toString();
+            window.history.replaceState(null, '', `/${encodeURIComponent(this.store.slug)}${rest ? `?${rest}` : ''}${window.location.hash}`);
+        } catch (e) { /* purely cosmetic */ }
+    }
+
     async loadStoreData() {
         try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const storeSlug = urlParams.get('store');
+            const storeSlug = this.storeKeyFromLocation();
 
             // The backend resolves the store from a `?store=<slug>` query
             // string on /store/public (see resolveContextStore in the API) —
@@ -254,6 +278,7 @@ class StoreDetailManager {
             const response = await app.apiRequest(endpoint);
 
             this.store = response.data; document.documentElement.style.setProperty("--store-accent", this.store.bannerColor || this.store.accentColor || this.store.primaryColor || "#01B075");
+            this.useCleanAddress();
             this.renderStoreInfo();
             this.loadSellerPresence();
         } catch (error) {
@@ -326,10 +351,9 @@ class StoreDetailManager {
 
         document.title = `${this.store.name} - NextaStore`;
 
-        // The canonical, search-engine-facing address of this store is the
-        // server-rendered /s/<slug> page (see nextastore-backend/src/seo.js).
-        // Pointing this JavaScript view at it keeps the two from competing
-        // as duplicates in search results.
+        // The canonical address of this store is nextastores.com/<slug>. The API
+        // already writes it into the page it serves there; this covers the old
+        // store-detail.html?store=... form so the two never compete as duplicates.
         if (this.store.publicUrl) {
             let canonical = document.querySelector('link[rel="canonical"]');
             if (!canonical) {
@@ -397,10 +421,14 @@ class StoreDetailManager {
         }
 
         // "About this store" card — only claims the backend actually
-        // supports (verified flag, completed orders, location). The old
-        // static "response time / shipping" rows were placeholders with no
-        // data behind them and leaked seller-only marketing into the buyer
-        // view.
+        // supports (verified flag, product count, location). Completed-order
+        // counts used to appear here too, but NextaStore only connects buyer
+        // and seller (fulfillment happens off-platform between them), so it
+        // can't vouch for whether an order was really completed — not a
+        // verifiable trust signal, same reasoning that retired star ratings.
+        // The old static "response time / shipping" rows were placeholders
+        // with no data behind them and leaked seller-only marketing into the
+        // buyer view.
         const infoCard = document.getElementById('storeInfoCard');
         if (infoCard) {
             const infoRows = [];
@@ -408,9 +436,16 @@ class StoreDetailManager {
                 this.store.badges.slice(0, 3).forEach(b => infoRows.push(`<div class="info-row"><i class="fas ${app.escapeHtml(b.icon || 'fa-award')}"></i><span>${app.escapeHtml(b.label)}</span></div>`));
             }
             infoRows.push(`<div class="info-row"><i class="fas fa-box"></i><span>${this.store.productCount || 0} products listed</span></div>`);
-            infoRows.push(`<div class="info-row"><i class="fas fa-circle-check"></i><span>${this.store.completedOrderCount || 0} completed orders</span></div>`);
             if (location.length) {
                 infoRows.push(`<div class="info-row"><i class="fas fa-location-dot"></i><span>${app.escapeHtml(location.join(', '))}</span></div>`);
+            }
+            // The backend only ever includes phoneNumber in this payload
+            // when the seller has opted to show it (Store.phonePublic) —
+            // see serializePublicStore in nextastore-backend/src/helpers.js
+            // — so presence here already means "safe to show".
+            if (this.store.phoneNumber) {
+                const tel = this.store.phoneNumber.replace(/[^\d+]/g, '');
+                infoRows.push(`<div class="info-row"><i class="fas fa-phone"></i><span><a href="tel:${app.escapeHtml(tel)}">${app.escapeHtml(this.store.phoneNumber)}</a></span></div>`);
             }
             infoCard.innerHTML = infoRows.join('');
         }
@@ -493,8 +528,7 @@ class StoreDetailManager {
 
     async loadProducts(page = 1, append = false) {
         try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const storeKey = urlParams.get('store') || this.store?.slug || this.store?.id;
+            const storeKey = this.storeKeyFromLocation() || this.store?.slug || this.store?.id;
             if (!storeKey) throw new Error('Store not specified.');
 
             const params = new URLSearchParams({
@@ -673,9 +707,8 @@ class StoreDetailManager {
     }
 
     viewProductDetail(productId) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const storeId = urlParams.get('store');
-        window.location.href = `product-detail.html?id=${productId}${storeId ? `&store=${storeId}` : ''}`;
+        const storeKey = this.store?.slug || this.storeKeyFromLocation();
+        window.location.href = `product-detail.html?id=${productId}${storeKey ? `&store=${encodeURIComponent(storeKey)}` : ''}`;
     }
 
     async toggleFollow() {

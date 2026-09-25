@@ -149,7 +149,7 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         check('a push shows a notification with the payload title and body', n && n.title === 'New message from Amina' && n.body === 'Is the phone still available?', JSON.stringify(all));
         check('the notification carries the resolved app link and type', n && n.data && n.data.url === '/messages.html?conversation=c1' && n.data.type === 'new_message');
         check('the notification is tagged per conversation and set to renotify', n && n.tag === 'ns-msg-c1' && n.renotify === true);
-        check('icon and badge are absolute same-origin URLs', n && n.icon === `${origin}/assets/brand/png/icon/icon-192.png` && n.badge === `${origin}/assets/brand/png/badge/badge-96.png`);
+        check('icon and badge are absolute same-origin URLs', n && n.icon === `${origin}/assets/brand/png/icon/icon-192.png` && n.badge === `${origin}/assets/brand/png/badge/new_message.png`);
 
         const assetInfo = await page.evaluate(async ({ icon, badge }) => {
             const out = {};
@@ -180,6 +180,35 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         await push({ type: 'new_order', title: 'New order', body: 'Order #1', link: 'dashboard.html#orders' });
         all = await pushAndWait({ type: 'new_order', title: 'New order', body: 'Order #2', link: 'dashboard.html#orders' }, (a) => a.length === 2);
         check('two orders (same link) stack instead of replacing each other', !!all && all.length === 2 && all.every((x) => x.tag === '' && x.data.url === '/dashboard.html#orders'), JSON.stringify(all));
+        check('an order notification uses its own badge, distinct from the message badge',
+            all && all[0].badge === `${origin}/assets/brand/png/badge/new_order.png`, JSON.stringify(all));
+
+        console.log('Badge differentiation across every known type, in a real engine');
+        await clearNotifications();
+        const perTypeBadges = ['new_message', 'new_order', 'low_stock', 'order_cancelled', 'new_product', 'subscription'];
+        const seenBadges = [];
+        for (const type of perTypeBadges) {
+            await clearNotifications();
+            const shown = await pushAndWait({ type, title: 't', body: 'b', link: '/' }, (a) => a.length === 1);
+            seenBadges.push(shown && shown[0] && shown[0].badge);
+        }
+        check('every known type resolves to its own real, distinct badge URL',
+            seenBadges.every((b, i) => b === `${origin}/assets/brand/png/badge/${perTypeBadges[i]}.png`)
+                && new Set(seenBadges).size === perTypeBadges.length,
+            JSON.stringify(seenBadges));
+        const perTypeAssetInfo = await page.evaluate(async (urls) => {
+            const out = {};
+            for (const u of urls) { const r = await fetch(u); out[u] = { ok: r.ok, type: r.headers.get('content-type') }; }
+            return out;
+        }, seenBadges);
+        check('every per-type badge URL really serves a PNG image',
+            seenBadges.every((u) => perTypeAssetInfo[u] && perTypeAssetInfo[u].ok && perTypeAssetInfo[u].type === 'image/png'),
+            JSON.stringify(perTypeAssetInfo));
+
+        await clearNotifications();
+        all = await pushAndWait({ type: 'some_unrecognized_type', title: 't', body: 'b', link: '/' }, (a) => a.length === 1);
+        check('an unrecognized type falls back to the plain brand badge',
+            all && all[0].badge === `${origin}/assets/brand/png/badge/badge-96.png`, JSON.stringify(all));
 
         console.log('Bad input still yields a visible notification');
         await clearNotifications();

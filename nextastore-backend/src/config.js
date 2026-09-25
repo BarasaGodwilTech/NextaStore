@@ -184,12 +184,20 @@ module.exports = {
     // to build links that go into emails (password reset, email
     // verification), which need an absolute URL the recipient can click.
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
-    // Public origin that search engines and link previews see: the host of
-    // /s/<slug>, /sitemap.xml and /robots.txt. In production this is the same
-    // domain as the frontend (a reverse proxy forwards those three paths to
-    // this API — see README "Search engine visibility"). In development it
-    // defaults to this server so /s/<slug> can be opened directly.
-    siteUrl: (process.env.SITE_URL || (env === 'production' ? process.env.FRONTEND_URL : `http://localhost:${Number(process.env.PORT) || 4000}`) || '').replace(/\/$/, ''),
+    // Folder that holds the static site (store-detail.html and friends). A store's
+    // public address, nextastores.com/<slug>, is answered by this API with the real
+    // store-detail.html page plus that store's own title/preview tags (see
+    // routes/seo.js), so the API needs to read that one file. Defaults to the
+    // folder above nextastore-backend/ (how this project is laid out); when the
+    // site is deployed somewhere else the API falls back to downloading the file
+    // from FRONTEND_URL instead.
+    frontendDir: process.env.FRONTEND_DIR || require('path').resolve(__dirname, '..', '..'),
+    // Public origin that search engines and link previews see: the host of a
+    // store's address (nextastores.com/<slug>), /sitemap.xml and /robots.txt. In
+    // production this is the same domain as the frontend (a reverse proxy sends
+    // anything that is not a real file to this API - see README "Store links").
+    // In development it defaults to the site itself (FRONTEND_URL), which forwards /<slug> here.
+    siteUrl: (process.env.SITE_URL || process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, ''),
     r2,
     r2Enabled,
     vapid,

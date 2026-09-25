@@ -26,104 +26,120 @@
         <div class="skeleton skeleton-text"></div>
         <div class="skeleton skeleton-text-sm"></div>
     </div>
-    <!-- Breadcrumb -->
-    <div class="page-breadcrumb">
-        <div class="breadcrumb-container">
-            <div class="breadcrumb">
-                <a href="index.html">Home</a>
-                <span class="separator">/</span>
-                <span class="breadcrumb-current">Create account</span>
-            </div>
-        </div>
-    </div>
-
     <div class="auth-container">
         <aside class="auth-side">
-            <a href="index.html" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
-            <div class="auth-side-content">
-                <h2 id="authSideHeading">Start selling today.</h2>
-                <p id="authSideCopy">Create your account and we'll set up a starter store for you — branding, store settings, and payment options ready to customize.</p>
-                <ul class="auth-side-points">
-                    <li><i class="fas fa-circle-check"></i> Free to start, no card required</li>
-                    <li><i class="fas fa-circle-check"></i> Launch in under 10 minutes</li>
-                    <li><i class="fas fa-circle-check"></i> Built for Mobile Money from day one</li>
-                </ul>
+            <div class="auth-awning" aria-hidden="true"></div>
+            <div class="auth-side-inner">
+                <a href="index.html" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
+                <div class="auth-side-content">
+                    <h2 id="authSideHeading">Start selling today.</h2>
+                    <p id="authSideCopy">Create your account and we'll set up a starter store for you &mdash; branding, store settings, and payment options ready to customize.</p>
+                    <ul class="auth-side-points">
+                        <li><i class="fas fa-circle-check"></i> Free to start, no card required</li>
+                        <li><i class="fas fa-circle-check"></i> Launch in under 10 minutes</li>
+                        <li><i class="fas fa-circle-check"></i> Built for Mobile Money from day one</li>
+                    </ul>
+                </div>
+            <div class="auth-showcase" aria-hidden="true">
+                    <div class="showcase-card">
+                        <div class="showcase-head">
+                            <span class="showcase-logo">A</span>
+                            <div><strong>Amina's Crafts</strong><small><i class="fas fa-location-dot"></i> Kampala</small></div>
+                            <span class="showcase-live">Open</span>
+                        </div>
+                        <div class="showcase-grid">
+                            <div class="showcase-tile"><div class="tile-art tile-art--green"><i class="fas fa-basket-shopping"></i></div><b>Woven basket</b><small>UGX 45,000</small></div>
+                            <div class="showcase-tile"><div class="tile-art tile-art--gold"><i class="fas fa-bag-shopping"></i></div><b>Bark cloth bag</b><small>UGX 85,000</small></div>
+                            <div class="showcase-tile"><div class="tile-art tile-art--coral"><i class="fas fa-mug-hot"></i></div><b>Kawa coffee 500g</b><small>UGX 18,000</small></div>
+                        </div>
+                        <div class="showcase-pay"><span>MTN MoMo</span><span>Airtel Money</span></div>
+                    </div>
+                    <div class="showcase-toast"><i class="fas fa-bag-shopping"></i><div><b>New order</b><small>UGX 90,000 &middot; Airtel Money</small></div></div>
+                </div>
+                <p class="auth-side-quote">Join local entrepreneurs already selling on NextaStore.</p>
             </div>
-            <p class="auth-side-quote">Join local entrepreneurs already selling on NextaStore.</p>
         </aside>
 
         <div class="auth-form-side">
-            <div class="auth-card">
-                <div class="auth-header">
-                    <a href="index.html" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
-                    <h1>Create your account</h1>
-                    <p>Start building your online store today.</p>
-                </div>
+            <div class="auth-awning auth-awning--mobile" aria-hidden="true"></div>
+            <div class="auth-form-main">
+                <a href="index.html" class="auth-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to home</a>
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <a href="index.html" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                        <h1 id="authHeadline">Create your account</h1>
+                        <p id="authSubline">Start building your online store today.</p>
+                    </div>
 
-                <form id="signupForm" data-validate novalidate>
-                    <div class="form-group">
-                        <label class="form-label">I want to&hellip;</label>
-                        <div class="account-type-toggle" role="radiogroup" aria-label="Account type">
-                            <label class="account-type-option">
-                                <input type="radio" name="accountType" id="accountTypeBuyer" value="buyer" checked>
-                                <span class="account-type-option-card">
-                                    <i class="fas fa-bag-shopping"></i>
-                                    <strong>Shop</strong>
-                                    <span>Browse and buy from sellers</span>
-                                </span>
-                            </label>
-                            <label class="account-type-option">
-                                <input type="radio" name="accountType" id="accountTypeSeller" value="seller">
-                                <span class="account-type-option-card">
-                                    <i class="fas fa-store"></i>
-                                    <strong>Sell</strong>
-                                    <span>Set up your own store</span>
-                                </span>
-                            </label>
+                    <form id="signupForm" data-validate novalidate>
+                        <div class="form-group">
+                            <span class="form-label" id="accountTypeLabel">I want to&hellip;</span>
+                            <div class="account-type-toggle" role="radiogroup" aria-labelledby="accountTypeLabel">
+                                <label class="account-type-option">
+                                    <input type="radio" name="accountType" id="accountTypeBuyer" value="buyer" checked>
+                                    <span class="account-type-option-card">
+                                        <i class="fas fa-bag-shopping"></i>
+                                        <strong>Shop</strong>
+                                        <span>Browse and buy from sellers</span>
+                                    </span>
+                                </label>
+                                <label class="account-type-option">
+                                    <input type="radio" name="accountType" id="accountTypeSeller" value="seller">
+                                    <span class="account-type-option-card">
+                                        <i class="fas fa-store"></i>
+                                        <strong>Sell</strong>
+                                        <span>Set up your own store</span>
+                                    </span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" id="name" class="form-input" placeholder="Jane Doe" autocomplete="name" required>
-                        <div class="form-error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" required>
-                        <div class="form-error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="password" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" required>
-                            <button type="button" class="password-toggle" onclick="togglePassword('password')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        <div class="form-group">
+                            <label for="name" class="form-label">Full name</label>
+                            <input type="text" id="name" class="form-input" placeholder="Amina Nakato" autocomplete="name" required>
+                            <div class="form-error"></div>
                         </div>
-                        <div class="form-error"></div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="confirmPassword" class="form-label">Confirm Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your password" autocomplete="new-password" required>
-                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" inputmode="email" required>
+                            <div class="form-error"></div>
                         </div>
-                        <div class="form-error"></div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="password" class="form-input" placeholder="At least 8 characters" autocomplete="new-password" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                            </div>
+                            <div class="pw-meter" id="pwMeter" data-level="0" aria-live="polite">
+                                <div class="pw-meter-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                                <span class="pw-meter-label" id="pwMeterLabel"></span>
+                            </div>
+                            <div class="form-error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword" class="form-label">Confirm password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your password" autocomplete="new-password" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                            </div>
+                            <div class="form-error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-checkbox"><input type="checkbox" id="agreeTerms" required> <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span></label>
+                            <div class="form-error"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="signupSubmitBtn"><i class="fas fa-user-plus"></i> Create account</button>
+                    </form>
+
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="login.html">Sign in</a></p>
+                        <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-checkbox"><input type="checkbox" id="agreeTerms" required> <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span></label>
-                        <div class="form-error"></div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block btn-lg" id="signupSubmitBtn"><i class="fas fa-user-plus"></i> Create Account</button>
-                </form>
-
-                <div class="auth-footer">
-                    <p>Already have an account? <a href="login.html">Sign in</a></p>
-                    <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
                 </div>
             </div>
         </div>
@@ -139,13 +155,17 @@
         const ACCOUNT_TYPE_COPY = {
             buyer: {
                 heading: 'Start shopping today.',
-                copy: 'Create your account to browse stores, save favorites, and check out — no store setup required.',
-                submit: '<i class="fas fa-user-plus"></i> Create Account'
+                copy: 'Create your account to browse stores, save favorites, and check out \u2014 no store setup required.',
+                title: 'Create your account',
+                sub: 'Shop from local sellers, save favorites and message stores directly.',
+                submit: '<i class="fas fa-user-plus"></i> Create account'
             },
             seller: {
                 heading: 'Start selling today.',
                 copy: 'Create your account and we\u2019ll set up a starter store for you \u2014 branding, settings, and payment options ready to customize.',
-                submit: '<i class="fas fa-user-plus"></i> Create Seller Account'
+                title: 'Create your seller account',
+                sub: 'Set up your store in about 10 minutes. Free to start, no card required.',
+                submit: '<i class="fas fa-store"></i> Create seller account'
             }
         };
 
@@ -154,13 +174,50 @@
             const config = ACCOUNT_TYPE_COPY[selected];
             document.getElementById('authSideHeading').textContent = config.heading;
             document.getElementById('authSideCopy').textContent = config.copy;
-            document.getElementById('signupSubmitBtn').innerHTML = config.submit;
+            document.getElementById('authHeadline').textContent = config.title;
+            document.getElementById('authSubline').textContent = config.sub;
+            const btn = document.getElementById('signupSubmitBtn');
+            btn.innerHTML = config.submit;
+            // AuthManager.setLoading() restores the button from this cached
+            // copy after a failed attempt; drop it so the restored label
+            // matches whichever account type is selected *now*.
+            delete btn.dataset.originalText;
         }
 
         document.querySelectorAll('input[name="accountType"]').forEach(input => {
             input.addEventListener('change', applyAccountTypeCopy);
         });
+
+        // index.html's "Get Started" buttons link here with ?type=seller \u2014
+        // they're pitching the store-building product, so land on that tab
+        // already selected instead of making the person switch it
+        // themselves. Anyone can still pick "Shop" instead; nothing else
+        // about the form depends on how they arrived.
+        if (new URLSearchParams(window.location.search).get('type') === 'seller') {
+            document.getElementById('accountTypeSeller').checked = true;
+        }
         applyAccountTypeCopy();
+
+        // Password strength: a hint, not a gate \u2014 the only hard rule is the
+        // 8-character minimum auth.js already enforces.
+        (function () {
+            const input = document.getElementById('password');
+            const meter = document.getElementById('pwMeter');
+            const label = document.getElementById('pwMeterLabel');
+            const LABELS = ['', 'Too weak', 'Fair', 'Good', 'Strong'];
+            input.addEventListener('input', () => {
+                const v = input.value;
+                let level = 0;
+                if (v.length) {
+                    level = 1;
+                    if (v.length >= 8) level = 2;
+                    if (v.length >= 8 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v)) level = 3;
+                    if (v.length >= 12 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v) && /[^A-Za-z0-9]/.test(v)) level = 4;
+                }
+                meter.dataset.level = String(level);
+                label.textContent = LABELS[level];
+            });
+        })();
 
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);

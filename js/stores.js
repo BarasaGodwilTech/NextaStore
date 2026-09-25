@@ -74,7 +74,7 @@ class StoresDirectory {
             <div class="directory-info">
                 <div class="directory-title"><h2>${app.escapeHtml(s.name)}</h2><span class="directory-badges">${app.renderSellerBadges(s)}</span></div>
                 <p>${app.escapeHtml(s.description || 'Local seller on NextaStore')}</p>
-                <div class="directory-meta"><span><i class="fas fa-box"></i> ${(s.productCount || 0).toLocaleString()} products</span><span><i class="fas fa-circle-check"></i> ${(s.completedOrderCount || 0).toLocaleString()} completed</span><span><i class="fas fa-location-dot"></i> ${app.escapeHtml(s.district || 'Uganda')}</span></div>
+                <div class="directory-meta"><span><i class="fas fa-box"></i> ${(s.productCount || 0).toLocaleString()} products</span><span><i class="fas fa-location-dot"></i> ${app.escapeHtml(s.district || 'Uganda')}</span></div>
             </div>
         </a>`).join('') + (this.pagination?.page < this.pagination?.pages
             ? '<button type="button" class="btn btn-outline btn-block" id="storesLoadMore">Load more stores</button>' : '');

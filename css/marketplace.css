@@ -574,15 +574,6 @@
     text-decoration: line-through;
 }
 
-.product-rating {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 0.8rem;
-    color: var(--gray-500);
-}
-.product-rating i { color: var(--primary-dark); }
-
 /* ---- Seller CTA ---- */
 .marketplace-cta {
     background: var(--ink);

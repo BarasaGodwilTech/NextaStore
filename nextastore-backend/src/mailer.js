@@ -31,7 +31,7 @@ async function sendMail({ to, subject, text, html }) {
         return { delivered: false };
     }
     await t.sendMail({
-        from: process.env.SMTP_FROM || 'NextaStore <no-reply@nextastore.ug>',
+        from: process.env.SMTP_FROM || 'NextaStore <no-reply@nextastores.com>',
         to,
         subject,
         text,

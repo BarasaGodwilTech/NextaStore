@@ -15,7 +15,10 @@
 const AUTH_PAGES = ['login.html', 'signup.html', 'forgot-password.html', 'verify-email.html'];
 const SELLER_ONLY_PAGES = ['dashboard.html', 'product-form.html', 'onboarding.html', 'subscription.html'];
 const ADMIN_ONLY_PAGES = ['admin.html'];
-const REDIRECT_PATTERN = /^[A-Za-z0-9_-]+\.html(?:[?#][^\s\\]*)?$/;
+// Two shapes: a page in the site root (`cart.html?x=1`) or a store's own
+// address, which is a bare slug (`amina-crafts`, opened as /amina-crafts).
+// Neither can carry a scheme, host or path separator.
+const REDIRECT_PATTERN = /^[A-Za-z0-9_-]+(?:\.html)?(?:[?#][^\s\\]*)?$/;
 
 // Why the person was sent to the login page (main.js sets ?reason=).
 const SESSION_END_MESSAGES = {
@@ -32,7 +35,11 @@ function homeFor(user) {
 /** Returns the page to open after login, or null if `raw` must be ignored. */
 function safeRedirect(raw, user, reason) {
     if (!raw || !user || !REDIRECT_PATTERN.test(raw)) return null;
-    const page = raw.split(/[?#]/)[0].toLowerCase();
+    const name = raw.split(/[?#]/)[0].toLowerCase();
+    const isPage = name.endsWith('.html');
+    // A bare name is treated as the page of that name for the role checks
+    // below, so `redirect=admin` is held to the same rules as `admin.html`.
+    const page = isPage ? name : `${name}.html`;
     if (AUTH_PAGES.includes(page)) return null;
     if (ADMIN_ONLY_PAGES.includes(page) && user.role !== 'admin') return null;
     if (SELLER_ONLY_PAGES.includes(page) && user.role !== 'seller') return null;
@@ -40,7 +47,8 @@ function safeRedirect(raw, user, reason) {
         const ended = SessionData.readEnded();
         if (!ended || !ended.userId || ended.userId !== user.id) return null;
     }
-    return raw;
+    // A store address is opened from the site root, whichever page login is on.
+    return isPage ? raw : `/${raw}`;
 }
 
 class AuthManager {
@@ -92,6 +100,7 @@ class AuthManager {
 
     async handleLogin(e) {
         e.preventDefault();
+        if (!app.validateForm(e.target)) return;
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         // This checkbox existed in login.html but nothing ever read it, so
@@ -153,6 +162,24 @@ class AuthManager {
 
     async handleSignup(e) {
         e.preventDefault();
+        const form = e.target;
+
+        // Belt-and-braces: the document-level `data-validate` listener in
+        // main.js also runs validateForm() on this same submit event, but it
+        // fires on the BUBBLE phase — after this handler. Left unchecked
+        // here, this handler was reaching the API call before that later
+        // check ever ran, so an unticked "I agree to the Terms of Service
+        // and Privacy Policy" box (or any other empty required field) never
+        // actually blocked account creation; the error message appeared at
+        // the same moment the account was already being created. Running
+        // the same validator here first closes that gap for every required
+        // field on this form, not just the terms checkbox.
+        if (!app.validateForm(form)) {
+            const firstInvalid = form.querySelector('.input-error');
+            firstInvalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            return;
+        }
+
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;

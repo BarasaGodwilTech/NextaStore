@@ -22,11 +22,14 @@ const results = [];
 function check(name, ok, detail = '') { results.push({ name, ok: !!ok, detail }); }
 
 // ---- stubs -------------------------------------------------------------------
-const db = { subs: [], failNext: null };
+const db = { subs: [], failNext: null, users: { u1: { name: 'Amina Nakato' }, u2: { name: 'Peter Okello' } }, userLookupFails: false };
 let nextId = 1;
 const addSub = (userId, endpoint) => { const s = { id: `s${nextId++}`, userId, endpoint, p256dh: `p-${endpoint}`, auth: `a-${endpoint}` }; db.subs.push(s); return s; };
 
 const fakePrisma = {
+    user: {
+        findUnique: async ({ where }) => { if (db.userLookupFails) throw new Error('user lookup down'); return db.users[where.id] || null; }
+    },
     pushSubscription: {
         findMany: async ({ where }) => { if (db.failNext) throw db.failNext; return db.subs.filter((s) => s.userId === where.userId).map((s) => ({ ...s })); },
         delete: async ({ where }) => { const i = db.subs.findIndex((s) => s.id === where.id); if (i < 0) throw new Error('not found'); db.subs.splice(i, 1); },
@@ -97,7 +100,7 @@ async function call(routeKey, { userId, body = {} } = {}) {
 }
 
 function reset() {
-    db.subs = []; db.failNext = null; pushed.length = 0; pushBehaviour = () => undefined; fakeConfig.pushEnabled = true;
+    db.subs = []; db.failNext = null; db.userLookupFails = false; pushed.length = 0; pushBehaviour = () => undefined; fakeConfig.pushEnabled = true;
 }
 const httpError = (statusCode) => Object.assign(new Error(`push service said ${statusCode}`), { statusCode });
 
@@ -113,10 +116,24 @@ const httpError = (statusCode) => Object.assign(new Error(`push service said ${s
     check('sends to every device the person has, and only theirs',
         r.devices === 2 && r.sent === 2 && pushed.map((p) => p.endpoint).sort().join() === 'https://push.example/a,https://push.example/b');
     check('reports { devices, sent, failed, removed }', r.failed === 0 && r.removed === 0);
-    check('payload is exactly { type, title, body, link }',
-        JSON.stringify(Object.keys(pushed[0].payload)) === JSON.stringify(['type', 'title', 'body', 'link']) && pushed[0].payload.link === 'dashboard.html#orders');
+    check('payload is exactly { type, title, body, link, account }',
+        JSON.stringify(Object.keys(pushed[0].payload)) === JSON.stringify(['type', 'title', 'body', 'link', 'account']) && pushed[0].payload.link === 'dashboard.html#orders');
+    check('payload names the account it is for, so a shared device can tell whose push it is',
+        pushed.every((p) => p.payload.account === 'Amina Nakato'));
     check('each send carries that device\'s own keys', pushed.every((p) => p.keys.p256dh === `p-${p.endpoint}` && p.keys.auth === `a-${p.endpoint}`));
     check('messages expire after a day instead of web-push\'s 4-week default', PUSH_TTL_SECONDS === 86400 && pushed.every((p) => p.options && p.options.TTL === 86400));
+
+    reset();
+    db.userLookupFails = true; addSub('u1', 'https://push.example/a');
+    r = await sendPushToUser('u1', { title: 'Hi' });
+    check('a failed name lookup still sends the push (just without an account name)',
+        r.sent === 1 && pushed[0].payload.account === '');
+    db.userLookupFails = false;
+    reset(); db.users.u1 = { name: '  Nakato   Grace Namukasa Kizza-Mugerwa Jr  ' }; addSub('u1', 'https://push.example/a');
+    await sendPushToUser('u1', { title: 'Hi' });
+    check('a long name is whitespace-collapsed and capped so it cannot crowd out the message',
+        pushed[0].payload.account.length <= 32 && pushed[0].payload.account.startsWith('Nakato Grace Namukasa') && pushed[0].payload.account.endsWith('\u2026'), pushed[0].payload.account);
+    db.users.u1 = { name: 'Amina Nakato' };
 
     reset();
     addSub('u1', 'https://push.example/gone'); addSub('u1', 'https://push.example/moved'); addSub('u1', 'https://push.example/flaky'); addSub('u1', 'https://push.example/ok');

@@ -23,10 +23,10 @@ if ((process.env.NODE_ENV || 'development') === 'production') {
 const prisma = new PrismaClient();
 
 const DEMO_PRODUCT_TEMPLATES = [
-    { name: 'Kanzu Traditional Wear', price: 45000, originalPrice: 60000, category: 'clothing', rating: 4.5, reviews: 42, sold: 128, stock: 20, icon: 'fa-vest', description: 'Authentic Ugandan Kanzu made from soft, breathable cotton — tailored for ceremonies and everyday elegance.' },
-    { name: 'Handmade Beaded Necklace', price: 12000, originalPrice: null, category: 'accessories', rating: 5, reviews: 28, sold: 89, stock: 15, icon: 'fa-gem', description: 'Beaded by hand in small batches, each necklace carries traditional patterns unique to the maker.' },
-    { name: 'Organic Coffee Beans (1kg)', price: 18000, originalPrice: 22000, category: 'food', rating: 4.8, reviews: 156, sold: 342, stock: 50, icon: 'fa-mug-saucer', description: 'Single-origin, sun-dried arabica beans from the slopes of Mount Elgon. Roasted to order.' },
-    { name: 'African Print Dress', price: 55000, originalPrice: 70000, category: 'clothing', rating: 4.3, reviews: 67, sold: 195, stock: 10, icon: 'fa-shirt', description: 'A bold Ankara-print dress cut from quality cotton, finished with a hand-sewn hem.' }
+    { name: 'Kanzu Traditional Wear', price: 45000, originalPrice: 60000, category: 'clothing', sold: 128, stock: 20, icon: 'fa-vest', description: 'Authentic Ugandan Kanzu made from soft, breathable cotton — tailored for ceremonies and everyday elegance.' },
+    { name: 'Handmade Beaded Necklace', price: 12000, originalPrice: null, category: 'accessories', sold: 89, stock: 15, icon: 'fa-gem', description: 'Beaded by hand in small batches, each necklace carries traditional patterns unique to the maker.' },
+    { name: 'Organic Coffee Beans (1kg)', price: 18000, originalPrice: 22000, category: 'food', sold: 342, stock: 50, icon: 'fa-mug-saucer', description: 'Single-origin, sun-dried arabica beans from the slopes of Mount Elgon. Roasted to order.' },
+    { name: 'African Print Dress', price: 55000, originalPrice: 70000, category: 'clothing', sold: 195, stock: 10, icon: 'fa-shirt', description: 'A bold Ankara-print dress cut from quality cotton, finished with a hand-sewn hem.' }
 ];
 
 // One demo login per starter admin role (created by the default_admin_roles
@@ -79,6 +79,9 @@ async function main() {
                     name: "Amina's Crafts & Coffee",
                     description: 'Handmade fashion, beadwork and single-origin coffee from Kampala, made by local artisans.',
                     contactEmail: 'amina@example.com',
+                    // New stores start with no payment method on; the demo store
+                    // accepts Mobile Money so the demo orders/checkout work.
+                    payments: { mtnMomo: true, airtelMoney: true, card: false },
                     followers: 1240
                     // bannerColor omitted so it picks up the schema default (#00B074) —
                     // Amina's Store is the reference store for that color, so it should

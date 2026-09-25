@@ -690,7 +690,7 @@ class NextaStoreApp {
     }
 
     /** Gate for buyer actions that require login (saving/wishlisting,
-     *  messaging a seller, leaving a review, viewing order history —
+     *  messaging a seller, viewing order history —
      *  checkout is handled separately). Redirects to login with a
      *  `?redirect=` back to the current page (so login.html/auth.js can
      *  return the shopper here afterward) and returns false; returns true
@@ -985,6 +985,10 @@ class NextaStoreApp {
         const notificationClose = () => { notificationWrap?.classList.remove('open'); notificationTrigger?.setAttribute('aria-expanded','false'); };
         notificationTrigger?.addEventListener('click', async (e) => {
             e.preventDefault(); e.stopPropagation();
+            // Only one of the account menu / notification preview should ever
+            // be open at once — opening this one closes the other first,
+            // rather than letting both stack up on top of each other.
+            accountClose();
             const open = notificationWrap.classList.toggle('open');
             notificationTrigger.setAttribute('aria-expanded', String(open));
             if (open) {
@@ -1074,18 +1078,21 @@ class NextaStoreApp {
         ['touchmove', 'touchcancel'].forEach(type => notificationList?.addEventListener(type, () => clearTimeout(bellTouchTimer), { passive: true }));
 
         const trigger = containerEl.querySelector('[data-account-trigger]');
-        const close = () => { menu?.classList.remove('open'); trigger?.setAttribute('aria-expanded', 'false'); };
+        const accountClose = () => { menu?.classList.remove('open'); trigger?.setAttribute('aria-expanded', 'false'); };
         trigger?.addEventListener('click', (e) => {
             e.stopPropagation();
+            // Same pairing as the bell above: opening the account menu
+            // closes the notification preview first so only one shows.
+            notificationClose();
             const open = menu.classList.toggle('open');
             trigger.setAttribute('aria-expanded', String(open));
         });
         trigger?.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') close();
-            if (e.key === 'ArrowDown') { e.preventDefault(); menu.classList.add('open'); trigger.setAttribute('aria-expanded','true'); containerEl.querySelector('.account-menu-item')?.focus(); }
+            if (e.key === 'Escape') accountClose();
+            if (e.key === 'ArrowDown') { e.preventDefault(); notificationClose(); menu.classList.add('open'); trigger.setAttribute('aria-expanded','true'); containerEl.querySelector('.account-menu-item')?.focus(); }
         });
-        containerEl.querySelector('[data-account-dropdown]')?.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); trigger?.focus(); } });
-        document.addEventListener('click', (e) => { if (menu && !menu.contains(e.target)) close(); if (notificationWrap && !notificationWrap.contains(e.target)) notificationClose(); }, { once: false });
+        containerEl.querySelector('[data-account-dropdown]')?.addEventListener('keydown', (e) => { if (e.key === 'Escape') { accountClose(); trigger?.focus(); } });
+        document.addEventListener('click', (e) => { if (menu && !menu.contains(e.target)) accountClose(); if (notificationWrap && !notificationWrap.contains(e.target)) notificationClose(); }, { once: false });
         containerEl.querySelector('[data-account-action="logout"]')?.addEventListener('click', () => this.logout());
         containerEl.querySelector('[data-account-action="seller"]')?.addEventListener('click', async () => {
             try {
@@ -1098,7 +1105,7 @@ class NextaStoreApp {
         containerEl.querySelector('[data-account-action="verify"]')?.addEventListener('click', async () => {
             try { await this.apiRequest('/auth/send-verification', { method: 'POST' }); this.showAlert('Check your inbox for a verification link.', 'success'); }
             catch (err) { this.showAlert(err.message, 'error'); }
-            close();
+            accountClose();
         });
         this.refreshUnreadBadges();
     }
@@ -1109,7 +1116,7 @@ class NextaStoreApp {
        notification the server already creates for every conversation).
        Messages live in Messages; the bell just points at them. */
     notificationIcon(type) {
-        return { new_order: 'fa-bag-shopping', new_message: 'fa-message', low_stock: 'fa-box-open', subscription: 'fa-credit-card', new_product: 'fa-tags' }[type] || 'fa-bell';
+        return { new_order: 'fa-bag-shopping', new_message: 'fa-message', low_stock: 'fa-box-open', subscription: 'fa-credit-card', new_product: 'fa-tags', store_live: 'fa-store' }[type] || 'fa-bell';
     }
 
     /* Notification links come from the API, but they end up in an href — so
@@ -1753,19 +1760,75 @@ class NextaStoreApp {
 
     /**
      * The one place an internal link to a store's storefront gets built.
-     * Every page used to construct `store-detail.html?store=...` on its
-     * own, and several of them (marketplace store cards, product-detail's
-     * store name/back-link/"Visit Store" button, the homepage's featured
-     * stores) used `store.id` instead of `store.slug` — functionally fine
-     * (the backend's GET /store/public/:idOrSlug accepts either), but
-     * inconsistent, and slug is the nicer, shareable URL. Standardized here
-     * so every caller gets the same link shape; falls back to `id` only if
-     * a store genuinely has no slug yet.
+     * Every store has one address: /<slug> (nextastores.com/<slug> in
+     * production). Marketplace cards, product pages, messages, the dashboard
+     * and a link a seller shares all use it, so a store never has two
+     * different URLs depending on how you got there. It is served by the API
+     * (see nextastore-backend/src/routes/seo.js), which sends the real
+     * store-detail.html page. Falls back to `?store=<id>` only if a store
+     * genuinely has no slug yet.
      */
     storeLink(store) {
         if (!store) return 'marketplace.html';
-        const key = store.slug || store.id;
-        return key ? `store-detail.html?store=${encodeURIComponent(key)}` : 'marketplace.html';
+        if (store.slug) return `/${encodeURIComponent(store.slug)}`;
+        return store.id ? `store-detail.html?store=${encodeURIComponent(store.id)}` : 'marketplace.html';
+    }
+
+    /** Same as storeLink() for callers that only have the slug (or id) string. */
+    storeLinkFor(slugOrId) {
+        const key = String(slugOrId || '').trim();
+        if (!key) return 'marketplace.html';
+        // Slugs are lowercase letters, digits and hyphens. Anything else is an id
+        // (or unknown), which the storefront page also accepts as ?store=.
+        return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)
+            ? `/${key}`
+            : `store-detail.html?store=${encodeURIComponent(key)}`;
+    }
+
+    /**
+     * How a store's public address is shown to a person, and which real URL
+     * each action should use. One helper so onboarding, Settings and the
+     * post-launch banner can never disagree about what the link looks like.
+     *
+     * - `display`  what people read: host + slug, no scheme and no path in
+     *              between (nextastores.com/amina-crafts). The host comes from
+     *              the backend's `publicUrl` (SITE_URL), so when the platform
+     *              moves to nextastore.ug this follows it with no frontend
+     *              change. Local addresses (localhost, LAN IPs, tunnels) are
+     *              never shown as the brand address - those are dev plumbing,
+     *              not something a seller should see or think is their link.
+     * - `shareUrl` what Copy / WhatsApp put on the clipboard: the backend's
+     *              real public URL when it supplied one (works in every
+     *              environment), else the branded address.
+     * - `openUrl`  where "Preview / View store" goes: the same /<slug> page
+     *              everyone else gets, on whatever host this page is on. A
+     *              draft store still opens for its owner (the page asks the
+     *              API, which knows who is looking).
+     */
+    storeAddress(slug, publicUrl) {
+        const BRAND_HOST = 'nextastores.com';
+        const clean = String(slug || '').trim();
+        let host = BRAND_HOST;
+        try {
+            if (publicUrl) {
+                const u = new URL(publicUrl);
+                const local = /^(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/.test(u.hostname)
+                    || /\.(local|ngrok-free\.dev|ngrok-free\.app|ngrok\.io|trycloudflare\.com)$/.test(u.hostname);
+                if (!local) host = u.host;
+            }
+        } catch { /* malformed publicUrl: keep the brand host */ }
+        const path = clean ? `/${encodeURIComponent(clean)}` : '/';
+        let shareUrl = `https://${host}${path}`;
+        try {
+            if (publicUrl && clean) shareUrl = new URL(publicUrl).origin + path;
+        } catch { /* keep the branded address */ }
+        return {
+            host,
+            prefix: `${host}/`,
+            display: clean ? `${host}${path}` : '',
+            shareUrl: clean ? shareUrl : '',
+            openUrl: clean ? path : ''
+        };
     }
 
     /**

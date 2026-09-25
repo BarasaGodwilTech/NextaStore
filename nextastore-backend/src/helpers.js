@@ -207,9 +207,10 @@ function isStoreCurrentlyActive(store) {
     return trialOk || paidOk;
 }
 
-/** The shareable, search-engine-visible address of a store (see routes/seo.js). */
+/** The shareable, search-engine-visible address of a store: <site>/<slug>
+ *  (see routes/seo.js). */
 function storePublicUrl(slug) {
-    return slug ? `${config.siteUrl}/s/${encodeURIComponent(slug)}` : null;
+    return slug ? `${config.siteUrl}/${encodeURIComponent(slug)}` : null;
 }
 
 function serializeStore(s, context = {}) {
@@ -242,6 +243,9 @@ function serializePublicStore(s, context = {}) {
         district: s.district,
         detailedDirections: s.detailedDirections,
         mapCoordinates: s.mapCoordinates,
+        // Only ever included when the seller has opted in — never send an
+        // unpublished phone number to shoppers just because it's set.
+        ...(s.phonePublic && s.phoneNumber ? { phoneNumber: s.phoneNumber } : {}),
         payments: s.payments,
         publicUrl: storePublicUrl(s.slug),
         followers: s.followers,
@@ -435,6 +439,35 @@ async function getPlatformSettings() {
     return prisma.platformSettings.upsert({ where: { id: 'singleton' }, update: {}, create: { id: 'singleton' } });
 }
 
+/** The starter-store payload for a brand-new seller — identical whether
+ *  it's created at signup (accountType: 'seller') or later via POST
+ *  /user/become-seller, both of which call this instead of keeping their
+ *  own copy, so the two paths can never drift apart.
+ *
+ *  description is deliberately '' (the schema's own default), not seeded
+ *  copy. It used to default to instructional text written *at* the seller
+ *  ("Tell customers what makes your store special.") — but nothing stopped
+ *  that from going live untouched as if it were the seller's own words.
+ *  Onboarding now requires a real description before Step 1 completes, so
+ *  a live store always has one; an empty one just means setup was skipped,
+ *  which the dashboard nudges the seller to finish (see DEFAULT_DESCRIPTION
+ *  handling in dashboard.js) rather than quietly shipping placeholder text
+ *  to shoppers. */
+function starterStoreData(name, email, slug) {
+    return {
+        slug,
+        name: `${name}'s Store`,
+        description: '',
+        // No payment method is pre-selected: the seller chooses in onboarding
+        // step 3 (or Settings). Passed explicitly, not only via the schema
+        // default, so it holds even before the migration has been applied.
+        payments: {},
+        contactEmail: email
+        // bannerColor deliberately omitted — every new store gets the
+        // schema default (#00B074) automatically, from this one place.
+    };
+}
+
 module.exports = {
     getStoreForUser,
     resolveContextStore,
@@ -453,6 +486,7 @@ module.exports = {
     isStoreCurrentlyActive,
     getPlatformSettings,
     getActivePaymentMethods,
+    starterStoreData,
     SUBSCRIPTION_PRICE_UGX,
     TRIAL_DAYS
 };

@@ -5,7 +5,7 @@ const { apiError } = require('../utils');
 const { generateOrderCode } = require('../orderCode');
 const { getStoreForUser, resolveContextStore, serializeOrder, createNotification, getActivePaymentMethods } = require('../helpers');
 const { requireAuth, requireSeller } = require('../middleware');
-const { validateBody, publicOrderSchema, batchOrderSchema, orderStatusSchema, orderReportSchema } = require('../validation');
+const { validateBody, publicOrderSchema, batchOrderSchema, orderStatusSchema, orderReportSchema, orderCancelSchema } = require('../validation');
 
 const router = express.Router();
 
@@ -276,9 +276,15 @@ router.put('/:id/status', requireAuth, requireSeller, validateBody(orderStatusSc
         });
         if (!order) throw apiError('Order not found.', 404);
 
+        // Buyer and seller agree, then the seller handles fulfillment
+        // off-platform — this isn't a manual shipment tracker, so the seller
+        // only ever needs to Confirm, Mark completed, or Cancel. 'shipped'
+        // is kept reachable from 'shipped' itself (-> delivered) purely so
+        // any order that already reached it before this simplification can
+        // still be closed out; nothing routes a new order through it.
         const transitions = {
             pending: ['processing', 'cancelled'],
-            processing: ['shipped', 'cancelled'],
+            processing: ['delivered', 'cancelled'],
             shipped: ['delivered'],
             delivered: [],
             cancelled: []
@@ -315,6 +321,93 @@ router.put('/:id/status', requireAuth, requireSeller, validateBody(orderStatusSc
                 title: `Order ${order.id} is ${updated.status}`,
                 body: `Your order from ${store.name} has been updated.`,
                 link: `orders.html?order=${encodeURIComponent(order.id)}`
+            });
+        }
+
+        res.json({ data: serializeOrder(updated) });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Buyer self-service cancellation. Separate from PUT /:id/status above,
+// which is the seller's own path to 'cancelled' (e.g. out of stock) and
+// isn't grace-period- or rate-limited — a seller can cancel anytime, a
+// buyer only gets a short window right after placing the order, has to
+// give a reason, and can't cycle place-then-cancel indefinitely.
+const CANCEL_GRACE_PERIOD_MS = 30 * 60 * 1000; // 30 minutes from checkout
+const CANCEL_ABUSE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // rolling 30 days
+const CANCEL_ABUSE_LIMIT = 3; // buyer-initiated cancellations allowed per window
+const CANCEL_REASON_LABELS = {
+    changed_mind: 'Changed their mind',
+    wrong_item: 'Ordered the wrong item/size/quantity by mistake',
+    duplicate_order: 'Accidentally placed a duplicate order',
+    found_elsewhere: 'Found it cheaper or faster elsewhere',
+    other: 'Other'
+};
+
+router.post('/:id/cancel', requireAuth, validateBody(orderCancelSchema), async (req, res, next) => {
+    try {
+        const order = await prisma.order.findFirst({
+            where: { id: req.params.id, buyerId: req.user.id, deletedAt: null },
+            include: { items: true, store: { select: { id: true, ownerId: true, name: true } } }
+        });
+        if (!order) throw apiError('Order not found.', 404);
+
+        if (order.status === 'cancelled') throw apiError('This order is already cancelled.', 409);
+        if (!['pending', 'processing'].includes(order.status)) {
+            throw apiError('This order has already moved past the point it can be cancelled here — message the seller instead.', 409);
+        }
+        const ageMs = Date.now() - new Date(order.createdAt).getTime();
+        if (ageMs > CANCEL_GRACE_PERIOD_MS) {
+            throw apiError(`Orders can only be cancelled within ${Math.round(CANCEL_GRACE_PERIOD_MS / 60000)} minutes of placing them. Message the seller if you still need to cancel this one.`, 409);
+        }
+
+        // Only a buyer-initiated cancel (this endpoint) ever counts toward
+        // the buyer's own limit — a seller cancelling an order (e.g. out of
+        // stock) never eats into it.
+        const recentCancels = await prisma.order.count({
+            where: {
+                buyerId: req.user.id,
+                cancelInitiator: 'buyer',
+                cancelledAt: { gte: new Date(Date.now() - CANCEL_ABUSE_WINDOW_MS) }
+            }
+        });
+        if (recentCancels >= CANCEL_ABUSE_LIMIT) {
+            throw apiError(`You've reached the limit of ${CANCEL_ABUSE_LIMIT} self-cancelled orders in the last 30 days. Please message the seller directly to cancel this one.`, 429);
+        }
+
+        const updated = await prisma.$transaction(async tx => {
+            // Same stock-return logic as a seller-initiated cancel (see
+            // PUT /:id/status above) — checkout already reserved/decremented
+            // stock, so a cancellation must give it back.
+            for (const item of order.items) {
+                if (!item.productId) continue;
+                await tx.product.updateMany({
+                    where: { id: item.productId, storeId: order.storeId, deletedAt: null },
+                    data: { stock: { increment: item.quantity }, sold: { decrement: item.quantity } }
+                });
+            }
+            return tx.order.update({
+                where: { id: order.id },
+                data: {
+                    status: 'cancelled',
+                    cancelledAt: new Date(),
+                    cancelReason: req.body.reason,
+                    cancelDetails: req.body.details,
+                    cancelInitiator: 'buyer'
+                },
+                include: { items: true }
+            });
+        });
+
+        if (order.store?.ownerId) {
+            await createNotification({
+                userId: order.store.ownerId,
+                type: 'order_cancelled',
+                title: `Order ${order.id} was cancelled by the buyer`,
+                body: `${CANCEL_REASON_LABELS[req.body.reason] || req.body.reason} — "${req.body.details}"`,
+                link: 'dashboard.html#orders'
             });
         }
 

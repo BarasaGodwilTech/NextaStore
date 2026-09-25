@@ -41,7 +41,7 @@ const fakePrisma = {
     },
     product: {
         create: async ({ data }) => {
-            const row = { rating: 0, reviews: 0, sold: 0, createdAt: new Date(), updatedAt: new Date(), deletedAt: null, ...data };
+            const row = { sold: 0, createdAt: new Date(), updatedAt: new Date(), deletedAt: null, ...data };
             db.products.push(row);
             return row;
         }

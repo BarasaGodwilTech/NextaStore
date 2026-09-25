@@ -35,19 +35,25 @@ separated here:
 - **Dynamic payment methods, checkout side** — `GET /api/payments/methods`, admin CRUD, and
   checkout's own fetch of the catalog were never run against a live database.
   *(AUDIT_CHANGELOG.md)*
+- **WIP 11's three pieces (completed-orders removal, seller order-action simplification,
+  buyer cancellation)** — code-reviewed and `qa:static`-clean (145/145), but nothing in this
+  round ever ran against a real Postgres database (the new `buyer_order_cancellation`
+  migration included) or a real browser: the seller's Confirm/Mark completed/Cancel buttons
+  and the buyer's cancel-reason modal were never clicked through. *(WIP_LOG.md, WIP 11)*
+- **WIP 12's push badge differentiation** — the fast in-VM suite (`push-sw-test.js`, no
+  browser needed) passes 52/52 against the real service worker. Its real-Chromium twin
+  (`push-sw-browser-test.js`) was updated with matching checks but not run — same Playwright
+  caveat as everything else on this list — and no real Android device has seen the six new
+  badges actually render in its status bar. *(WIP_LOG.md, WIP 12)*
+- **WIP 13's dynamic payment methods in onboarding** — `js/store-builder.js` (named in the old
+  audit) turned out not to exist anymore; the actual hardcoding was in `onboarding.js`/
+  `onboarding.html`, now wired to `/payments/methods`. `dashboard.js`'s payment rendering was
+  already dynamic and needed no change. Code-reviewed and `qa:static`-clean (151/151), but
+  never clicked through: an admin adding/removing a method in `/admin` and reloading
+  onboarding to confirm step 3 and the review-step chips pick it up is unverified against a
+  live database and a real browser. *(WIP_LOG.md, WIP 13)*
 
 ## Not actually built yet
-
-- **Push notification redesign (Prompt 5, half done)** — `service-worker.js` still uses one
-  `PUSH_ICON` / `PUSH_BADGE` constant for every notification type; nothing differentiates icon
-  or badge by type. The *title* formatting for messages is already sender-name-first ("New
-  message from X", built in `notifyNewMessage`), which covers part of the ask, but the
-  icon/badge differentiation itself was never built.
-- **Seller-side payment settings still hardcoded** — `js/store-builder.js`'s payment-method
-  checkboxes and `dashboard.js`'s payment-badge summary (~line 387–390) both still hardcode
-  MTN/Airtel/card by array position instead of rendering from `/payments/methods`, so an admin
-  adding/removing a payment method from the catalog won't show up in either place without a
-  frontend redeploy. *(AUDIT_CHANGELOG.md — flagged there as "not started")*
 - **Notifications dropdown caps at 10** — the server returns 30, but the dropdown only shows
   the newest 10; nothing beyond that is visible except via "Mark all as read". No full
   notifications *page* exists, though the original spec allowed for one.
@@ -79,3 +85,19 @@ separated here:
   40+ minutes will find themselves signed out on return; that's the intended behavior, not a
   defect. `IDLE_LIMIT_MS` in `startIdleTimer` (`js/main.js`) is the one constant to change if
   you want it longer. *(AUTH_AUDIT_CHANGELOG_ROUND8.md)*
+
+## From WIP 16 batch 4 (added 2026-09-24)
+- **Needs a live environment** — migration `20260924090000_store_live_notification` never run against
+  Postgres; the "Account: <name>" push line never seen on a real device; auth pages never seen with
+  icons loaded or in Safari/Firefox.
+- Everything else this batch flagged as "not built yet" was picked up in batches 5–6 below — see
+  those instead of this line.
+
+## From WIP 16 batches 5–9 (updated 2026-09-24)
+- **Not built yet:** nothing from the original login/signup/onboarding ask. Real Terms of Service / Privacy Policy pages
+  now exist (batch 8) — they still need legal review and a real support email (see `WIP_LOG.md`, batch 8).
+- **Needs a live environment:** batches 5-7's onboarding, launch-guard, Settings-link and "you're live" work was clicked
+  through end to end in real Chromium in batch 9, but against a stubbed API — never against real Postgres or the real
+  backend routes. Batch 8 checked the map modal's layout in real Chromium at 320-1440px, but with a layout-only stand-in for
+  Leaflet (no network in the sandbox): real tiles, real pin dragging/pinch-zoom, Leaflet's own `panInside`, iOS Safari
+  and a real device are still unverified.

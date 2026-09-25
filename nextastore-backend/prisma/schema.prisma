@@ -126,7 +126,6 @@ model User {
   notifications        Notification[]
   pushSubscriptions    PushSubscription[]
   ordersAsBuyer        Order[]        @relation("BuyerOrders")
-  reviews              Review[]
   orderReports         OrderReport[]
   verificationTokens   VerificationToken[]
   createdAdminRoles    AdminRole[] @relation("AdminRoleCreator")
@@ -198,6 +197,12 @@ model Store {
   description  String    @default("")
   contactEmail String    @default("")
   phoneNumber  String    @default("")
+  // Whether phoneNumber is shown to shoppers on the public store page.
+  // Always visible to the owner (serializeStore) and to NextaStore itself
+  // for account follow-up — this only gates serializePublicStore. Defaults
+  // to false so a store created outside onboarding (or before this column
+  // existed) doesn't start out exposing a number nobody chose to publish.
+  phonePublic  Boolean   @default(false)
   address      String    @default("")
   theme        String    @default("default")
   layout       String    @default("grid")
@@ -214,7 +219,11 @@ model Store {
   mapCoordinates     String @default("")
   // Kept as JSON (not flattened columns) so the existing frontend's
   // `store.payments.mtnMomo` / `store.seo.title` shape needs zero changes.
-  payments     Json      @default("{\"mtnMomo\": true, \"airtelMoney\": true, \"card\": false}")
+  // Starts EMPTY: a new store accepts no payment method until its seller turns
+  // one on (onboarding step 3 / Settings). It used to start with MTN MoMo and
+  // Airtel Money already on, which marked payments "done" and advertised
+  // methods to shoppers that the seller never chose.
+  payments     Json      @default("{}")
   seo          Json      @default("{\"title\": \"\", \"description\": \"\", \"keywords\": \"\", \"analyticsId\": \"\"}")
   followers    Int       @default(0)
   createdAt    DateTime  @default(now())
@@ -327,8 +336,6 @@ model Product {
   thumbnails    Json      @default("[]")
   icon          String    @default("fa-box")
   stock         Int       @default(0)
-  rating        Float     @default(0)
-  reviews       Int       @default(0)
   sold          Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -336,7 +343,6 @@ model Product {
 
   orderItems OrderItem[]
   conversations Conversation[]
-  reviewEntries Review[]
   favoritedBy ProductFavorite[]
 
   @@index([storeId])
@@ -379,6 +385,14 @@ model Order {
   paymentStatus PaymentStatus @default(unpaid)
   flaggedAt DateTime?
   flagReason String?
+  // Buyer-initiated cancellation (POST /orders/:id/cancel), distinct from a
+  // seller moving an order to 'cancelled' via PUT /:id/status — kept apart
+  // so the reason shown to the seller, and the anti-abuse count, only ever
+  // reflect cancellations the *buyer* chose to make.
+  cancelledAt    DateTime?
+  cancelReason   String?
+  cancelDetails  String?
+  cancelInitiator String?
   total         Decimal     @db.Decimal(12, 2)
   status        OrderStatus @default(pending)
   createdAt     DateTime    @default(now())
@@ -392,6 +406,7 @@ model Order {
   @@index([storeId, customerPhone])
   @@index([storeId, createdAt])
   @@index([buyerId])
+  @@index([buyerId, cancelInitiator, cancelledAt])
 }
 
 model OrderReport {
@@ -506,6 +521,7 @@ enum NotificationType {
   low_stock
   subscription
   new_product
+  store_live
 }
 
 model Notification {
@@ -550,26 +566,6 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
-}
-
-// Product reviews (item 14). One review per buyer per product — enforced
-// with @@unique rather than in application code, so a race between two
-// simultaneous submits can't both land. Product.rating/Product.reviews stay
-// as plain columns (not computed on every read) and are recalculated
-// whenever a review is created — see POST /reviews — so reading a product
-// never needs an extra aggregate query.
-model Review {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  buyerId   String
-  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  rating    Int
-  body      String   @default("")
-  createdAt DateTime @default(now())
-
-  @@unique([productId, buyerId])
-  @@index([productId])
 }
 
 // A seller's self-reported mobile money payment toward their subscription.

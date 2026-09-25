@@ -86,6 +86,22 @@
             <div class="dashboard-content">
                 <!-- Storefront View with Management -->
                 <section class="dashboard-section" id="overviewSection">
+                    <!-- "You're live" banner — one-shot, shown only right after
+                         Launch (see renderLiveBanner() in dashboard.js, keyed off
+                         the sessionStorage flag onboarding's launch() sets). Never
+                         reappears after a page refresh; dismissible for the rest
+                         of this session either way. -->
+                    <div class="welcome-banner welcome-banner--live" id="storeLiveBanner" style="display:none;">
+                        <div>
+                            <h1><i class="fas fa-circle-check" aria-hidden="true"></i> You're live!</h1>
+                            <p>Your store is open to shoppers at <strong id="storeLiveBannerLink"></strong>. Share your link to get your first visitors.</p>
+                        </div>
+                        <div style="display:flex; gap: var(--spacing-md); align-items:center;">
+                            <button type="button" class="dismiss-nudge-btn" id="dismissLiveBanner">Dismiss</button>
+                            <button type="button" class="btn btn-primary" id="shareLiveBannerBtn"><i class="fas fa-share-nodes" aria-hidden="true"></i> Share your store</button>
+                        </div>
+                    </div>
+
                     <!-- Draft notice — a hard fact (store.isPublished is
                          false), not a dismissible suggestion. Shown to a
                          seller who reaches the dashboard before finishing
@@ -155,7 +171,7 @@
                                     <h1 class="store-name" id="storeDisplayName">My Store</h1>
                                     <button class="btn btn-sm btn-outline" onclick="dashboardManager.navigateToSettings('store')"><i class="fas fa-pen"></i></button>
                                 </div>
-                                <p class="store-description" id="storeDescriptionDisplay">Tell customers what makes your store special.</p>
+                                <p class="store-description" id="storeDescriptionDisplay">No description yet — add one so shoppers know what you sell.</p>
                                 <p class="store-location" id="storeLocationDisplay">
                                     <i class="fas fa-map-marker-alt"></i> <span id="locationText">Add your location</span>
                                     <button class="btn-link" onclick="dashboardManager.openMapPickerFromOverview()"><i class="fas fa-edit"></i> Edit</button>
@@ -248,7 +264,7 @@
                             <div class="form-group">
                                 <label class="form-label">Your Store URL</label>
                                 <div class="share-url-wrapper">
-                                    <input type="text" class="form-input" id="storeUrlModal" readonly value="https://nextastore.ug/your-store">
+                                    <input type="text" class="form-input" id="storeUrlModal" readonly value="https://nextastores.com/your-store">
                                     <button type="button" class="btn btn-outline" id="copyStoreUrlModalBtn" onclick="dashboardManager.copyStoreUrlModal()">
                                         <i class="fas fa-copy"></i> Copy
                                     </button>
@@ -486,10 +502,14 @@
                                                 <input type="text" class="form-input" id="storeName" placeholder="My Awesome Store">
                                             </div>
                                             <div class="form-group">
-                                                <label class="form-label" for="storeSlug">Store URL</label>
-                                                <div class="share-url-wrapper">
-                                                    <input type="text" class="form-input" id="storeSlug" placeholder="my-store" autocapitalize="none" autocomplete="off" spellcheck="false">
-                                                    <button type="button" class="btn btn-outline" id="copyStoreLinkBtn"><i class="fas fa-copy"></i> Copy link</button>
+                                                <label class="form-label" for="storeSlug">Store link</label>
+                                                <div class="store-url-field">
+                                                    <span class="store-url-prefix" id="storeUrlPrefix" aria-hidden="true">nextastores.com/</span>
+                                                    <input type="text" class="form-input" id="storeSlug" placeholder="my-store" autocapitalize="none" autocomplete="off" spellcheck="false" aria-describedby="storeLinkHint">
+                                                </div>
+                                                <div class="store-url-actions">
+                                                    <button type="button" class="btn btn-outline btn-sm" id="viewStoreLinkBtn"><i class="fas fa-arrow-up-right-from-square"></i> <span>View store</span></button>
+                                                    <button type="button" class="btn btn-outline btn-sm" id="copyStoreLinkBtn"><i class="fas fa-copy"></i> <span>Copy link</span></button>
                                                 </div>
                                                 <p class="form-hint" id="storeLinkHint">Changing this breaks any links you have already shared.</p>
                                             </div>
@@ -506,6 +526,10 @@
                                             <div class="form-group">
                                                 <label class="form-label" for="phoneNumber">Phone Number</label>
                                                 <input type="tel" class="form-input" id="phoneNumber" placeholder="+256 700 000000">
+                                                <label class="ob-toggle-row" for="phonePublic">
+                                                    <input type="checkbox" id="phonePublic">
+                                                    <span>Show this number on my public store page</span>
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
@@ -782,6 +806,8 @@
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
         <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="terms.html" class="footer-safety-link">Terms</a>
+        <a href="privacy.html" class="footer-safety-link">Privacy</a>
     </footer>
         </main>
 

@@ -34,10 +34,10 @@
     }
 
     const DEMO_PRODUCT_TEMPLATES = [
-        { name: 'Kanzu Traditional Wear', price: 45000, originalPrice: 60000, category: 'clothing', rating: 4.5, reviews: 42, sold: 128, icon: 'fa-vest', description: 'Authentic Ugandan Kanzu made from soft, breathable cotton — tailored for ceremonies and everyday elegance.' },
-        { name: 'Handmade Beaded Necklace', price: 12000, originalPrice: null, category: 'accessories', rating: 5, reviews: 28, sold: 89, icon: 'fa-gem', description: 'Beaded by hand in small batches, each necklace carries traditional patterns unique to the maker.' },
-        { name: 'Organic Coffee Beans (1kg)', price: 18000, originalPrice: 22000, category: 'food', rating: 4.8, reviews: 156, sold: 342, icon: 'fa-mug-saucer', description: 'Single-origin, sun-dried arabica beans from the slopes of Mount Elgon. Roasted to order.' },
-        { name: 'African Print Dress', price: 55000, originalPrice: 70000, category: 'clothing', rating: 4.3, reviews: 67, sold: 195, icon: 'fa-shirt', description: 'A bold Ankara-print dress cut from quality cotton, finished with a hand-sewn hem.' }
+        { name: 'Kanzu Traditional Wear', price: 45000, originalPrice: 60000, category: 'clothing', sold: 128, icon: 'fa-vest', description: 'Authentic Ugandan Kanzu made from soft, breathable cotton — tailored for ceremonies and everyday elegance.' },
+        { name: 'Handmade Beaded Necklace', price: 12000, originalPrice: null, category: 'accessories', sold: 89, icon: 'fa-gem', description: 'Beaded by hand in small batches, each necklace carries traditional patterns unique to the maker.' },
+        { name: 'Organic Coffee Beans (1kg)', price: 18000, originalPrice: 22000, category: 'food', sold: 342, icon: 'fa-mug-saucer', description: 'Single-origin, sun-dried arabica beans from the slopes of Mount Elgon. Roasted to order.' },
+        { name: 'African Print Dress', price: 55000, originalPrice: 70000, category: 'clothing', sold: 195, icon: 'fa-shirt', description: 'A bold Ankara-print dress cut from quality cotton, finished with a hand-sewn hem.' }
     ];
 
     function seedDatabase() {
@@ -52,7 +52,7 @@
                 name: "Amina's Crafts & Coffee", description: 'Handmade fashion, beadwork and single-origin coffee from Kampala, made by local artisans.',
                 theme: 'default', layout: 'grid',
                 logo: null, banner: null,
-                payments: { mtnMomo: true, airtelMoney: true, card: false },
+                payments: { mtnMomo: true, airtelMoney: true, card: false }, // demo store only: real new stores start empty
                 seo: { title: '', description: '', keywords: '', analyticsId: '' },
                 followers: 1240,
                 district: 'kampala',
@@ -87,9 +87,9 @@
 
         // A couple of extra products on other stores so the homepage deals feed has variety.
         const extras = [
-            { id: 'prod_extra_1', storeId: 'store_ufh', name: 'Embroidered Gomesi', price: 120000, originalPrice: 150000, category: 'clothing', rating: 4.6, reviews: 51, sold: 74, icon: 'fa-shirt', description: 'A ceremonial Gomesi with hand embroidery along the neckline and sash.' },
-            { id: 'prod_extra_2', storeId: 'store_cu', name: 'Woven Sisal Basket', price: 32000, originalPrice: null, category: 'home', rating: 4.9, reviews: 33, sold: 61, icon: 'fa-basket-shopping', description: 'A durable, hand-woven sisal basket — great for storage or as a statement piece.' },
-            { id: 'prod_extra_3', storeId: 'store_mcc', name: 'Robusta Coffee (500g)', price: 11000, originalPrice: 14000, category: 'food', rating: 4.7, reviews: 98, sold: 210, icon: 'fa-mug-saucer', description: 'Bold, full-bodied robusta beans grown in the highlands around Mount Rwenzori.' }
+            { id: 'prod_extra_1', storeId: 'store_ufh', name: 'Embroidered Gomesi', price: 120000, originalPrice: 150000, category: 'clothing', sold: 74, icon: 'fa-shirt', description: 'A ceremonial Gomesi with hand embroidery along the neckline and sash.' },
+            { id: 'prod_extra_2', storeId: 'store_cu', name: 'Woven Sisal Basket', price: 32000, originalPrice: null, category: 'home', sold: 61, icon: 'fa-basket-shopping', description: 'A durable, hand-woven sisal basket — great for storage or as a statement piece.' },
+            { id: 'prod_extra_3', storeId: 'store_mcc', name: 'Robusta Coffee (500g)', price: 11000, originalPrice: 14000, category: 'food', sold: 210, icon: 'fa-mug-saucer', description: 'Bold, full-bodied robusta beans grown in the highlands around Mount Rwenzori.' }
         ];
         extras.forEach(p => { products[p.id] = { ...p, image: null, createdAt: now }; });
 
@@ -296,7 +296,7 @@
 
             const store = {
                 id: uid('store'), ownerId: user.id, slug: slugify(`${name}-store`),
-                name: `${name}'s Store`, description: 'Tell customers what makes your store special.',
+                name: `${name}'s Store`, description: '',
                 theme: 'default', layout: 'grid', logo: null, banner: null,
                 payments: { mtnMomo: true, airtelMoney: true, card: false },
                 seo: { title: '', description: '', keywords: '', analyticsId: '' },
@@ -354,7 +354,7 @@
             user.role = 'seller';
             const store = {
                 id: uid('store'), ownerId: user.id, slug: slugify(`${user.name}-store`),
-                name: `${user.name}'s Store`, description: 'Tell customers what makes your store special.',
+                name: `${user.name}'s Store`, description: '',
                 theme: 'default', layout: 'grid', logo: null, banner: null,
                 payments: { mtnMomo: true, airtelMoney: true, card: false },
                 seo: { title: '', description: '', keywords: '', analyticsId: '' },
@@ -658,7 +658,7 @@
                 image: images[0] || payload.image || null,
                 icon: payload.icon || 'fa-box',
                 stock: payload.stock !== undefined ? Number(payload.stock) : 0,
-                rating: 0, reviews: 0, sold: 0,
+                sold: 0,
                 createdAt: Date.now()
             };
             this.db.products[id] = product;

@@ -176,43 +176,45 @@ if your frontend and API live on different origins, in which case add
 `<meta name="nextastore-api-base" content="https://your-api.example.com/api">`
 to each HTML page's `<head>` instead of editing the JS file.
 
-## Search engine visibility (Google, WhatsApp previews)
+## Store links (nextastores.com/<slug>) and link previews
 
-The storefront pages (`store-detail.html`) are a JavaScript shell, so on their
-own every store shares one generic title and link previews are blank. The API
-therefore serves a real, server-rendered page per store:
+A store's public address is `nextastores.com/<slug>` - no `/s/`, and no second
+"crawler" page. The API answers that path with the **real** `store-detail.html`
+(the normal, fully styled storefront) and rewrites only its `<head>` per store:
+unique title, description, canonical URL, Open Graph/Twitter tags and schema.org
+JSON-LD. That is what makes WhatsApp/Facebook previews and Google work, since the
+page itself is a JavaScript shell.
 
 | Path | What it is |
 | --- | --- |
-| `/s/<store-slug>` | Store landing page: unique title/description, canonical URL, Open Graph + Twitter tags, schema.org `Store` + `Product` JSON-LD, crawlable product links, "Shop this store" button into the app |
+| `/<store-slug>` | The storefront. Live stores get their own tags; drafts and lapsed stores get generic tags + `noindex` (the owner can still preview - the page asks the API); an unknown slug gets the same page with a real 404 status |
+| `/s/<store-slug>` | Old links: 301 to `/<store-slug>` |
 | `/sitemap.xml` | Every published, currently-active store that hasn't opted out (max 50,000 URLs; cached 1h) |
 | `/robots.txt` | Allows the public site, blocks private pages, points at the sitemap |
 
-Only published stores inside their trial/paid window are served (anything else
-returns a real 404, so Google drops it). A seller can opt out under Settings >
-Store > Search & sharing (`seo.indexable = false` renders `noindex` and removes
-the store from the sitemap).
+Slugs share the site root with pages and folders, so `login`, `cart`, `admin`,
+`api`, `css`... are reserved (`src/slugs.js`). `npm run test:seo` fails if a new
+top-level page or folder is added without being listed there.
 
-**Required infrastructure step.** These paths must be reachable on the *public
-site's own domain*, not just the API host. With a reverse proxy in front of
-both (nginx shown; Cloudflare/Caddy/Railway equivalents work the same way):
+**Required infrastructure step.** Real files must win, and everything else must
+reach the API. `http-server ... -P` in `start-local.bat` already behaves this way.
+In production, with a reverse proxy in front of both:
 
 ```nginx
-location ~ ^/(s/|sitemap\.xml$|robots\.txt$) { proxy_pass http://api_upstream; }
 location /api/ { proxy_pass http://api_upstream; }
-# everything else -> the static frontend
+location / { try_files $uri $uri/ @api; }      # static file first ...
+location @api { proxy_pass http://api_upstream; } # ... otherwise the API
 ```
 
-Then set `SITE_URL` (and `FRONTEND_URL`) to that domain. Without the proxy rule
-the canonical/share links would point at 404s.
+The API reads `store-detail.html` from `FRONTEND_DIR` (default: the folder above
+`nextastore-backend/`), or downloads it from `FRONTEND_URL` if that folder isn't
+there. Then set `SITE_URL` (and `FRONTEND_URL`) to the public domain.
 
 After deploying: submit `https://<your-domain>/sitemap.xml` in Google Search
-Console (Sitemaps) and use URL Inspection on one `/s/<slug>` page to confirm it
-renders. Indexing is not instant — for a new domain expect days to weeks, and
-Google decides what to index and how it ranks; nothing here can guarantee a
-position.
+Console and use URL Inspection on one `/<slug>` page. Indexing is not instant.
 
-Tests: `npm run test:seo` (renderer, escaping, JSON-LD, sitemap; no DB needed).
+Tests: `npm run test:seo` (head rewriting, escaping, JSON-LD, sitemap, reserved
+words; no DB needed).
 
 ## Web Push (mobile notifications)
 

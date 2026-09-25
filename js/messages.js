@@ -1000,7 +1000,7 @@ class MessagesManager {
             // an order reference), so — unlike renderThread — there's no
             // redundant-store-name case to guard against.
             const storeKey = store.slug || store.id;
-            document.getElementById('threadHeader').innerHTML = `<a class="thread-header-identity" href="store-detail.html?store=${encodeURIComponent(storeKey)}" aria-label="Open ${app.escapeHtml(store.name)}'s store">${avatar}<div><strong>${app.escapeHtml(store.name)}</strong><span>${productId ? 'About a product' : 'New conversation'}${this.newMessageContext.orderId ? ` · Order #${app.escapeHtml(this.newMessageContext.orderId)}` : ''}</span>${presenceLabel}</div></a>`;
+            document.getElementById('threadHeader').innerHTML = `<a class="thread-header-identity" href="${app.storeLinkFor(storeKey)}" aria-label="Open ${app.escapeHtml(store.name)}'s store">${avatar}<div><strong>${app.escapeHtml(store.name)}</strong><span>${productId ? 'About a product' : 'New conversation'}${this.newMessageContext.orderId ? ` · Order #${app.escapeHtml(this.newMessageContext.orderId)}` : ''}</span>${presenceLabel}</div></a>`;
             if (window.NextaPresence && presenceKey) {
                 window.NextaPresence.setWatch([...this.conversations.map(c => `conversation:${c.id}`), presenceKey]);
                 // Note: this still needs its own network round trip — the
@@ -1690,7 +1690,7 @@ class MessagesManager {
         // plain, non-clickable heading.
         if (buyerView && store.id) {
             const storeKey = store.slug || store.id;
-            header.innerHTML = `<a class="thread-header-identity" href="store-detail.html?store=${encodeURIComponent(storeKey)}" aria-label="Open ${name}'s store">${inner}</a>`;
+            header.innerHTML = `<a class="thread-header-identity" href="${app.storeLinkFor(storeKey)}" aria-label="Open ${name}'s store">${inner}</a>`;
         } else {
             header.innerHTML = `<div class="thread-header-identity">${inner}</div>`;
         }

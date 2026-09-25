@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const config = require('./config');
+const { slugify, RESERVED_SLUGS, isReservedSlug, storeSlugFrom } = require('./slugs');
 
 // All image storage goes through R2. Fails fast at first use rather than at
 // boot, so routes that never touch images still work even if R2 isn't set up
@@ -22,15 +23,6 @@ function getS3Client() {
         });
     }
     return s3Client;
-}
-
-function slugify(text) {
-    return (text || 'my-store')
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '') || 'my-store';
 }
 
 /** A thrown error carrying an HTTP status, understood by the error-handling middleware. */
@@ -218,6 +210,9 @@ async function saveImagePairsIfDataUrls(images, thumbnails, folder = 'uploads') 
 
 module.exports = {
     slugify,
+    RESERVED_SLUGS,
+    isReservedSlug,
+    storeSlugFrom,
     apiError,
     saveImageIfDataUrl,
     saveImageArrayIfDataUrls,

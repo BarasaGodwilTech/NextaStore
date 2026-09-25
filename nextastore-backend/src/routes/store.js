@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
-const { apiError, saveImageIfDataUrl, slugify, deleteImageIfReplaced } = require('../utils');
-const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, isStoreCurrentlyActive, maybeNotifySubscriptionReminder } = require('../helpers');
+const { apiError, saveImageIfDataUrl, slugify, isReservedSlug, deleteImageIfReplaced } = require('../utils');
+const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, isStoreCurrentlyActive, maybeNotifySubscriptionReminder, createNotification } = require('../helpers');
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, updateStoreSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
@@ -144,7 +144,7 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
         }
 
         const ids = stores.map(s => s.id);
-        const [counts, categoryRows, completedRows] = await Promise.all([
+        const [counts, categoryRows] = await Promise.all([
             prisma.product.groupBy({
                 by: ['storeId'],
                 where: { storeId: { in: ids }, deletedAt: null },
@@ -154,16 +154,10 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
                 by: ['storeId', 'category'],
                 where: { storeId: { in: ids }, deletedAt: null },
                 _count: { _all: true }
-            }),
-            prisma.order.groupBy({
-                by: ['storeId'],
-                where: { storeId: { in: ids }, status: 'delivered', deletedAt: null },
-                _count: { _all: true }
             })
         ]);
 
         const countByStore = new Map(counts.map(c => [c.storeId, c._count._all]));
-        const completedByStore = new Map(completedRows.map(c => [c.storeId, c._count._all]));
         const categoriesByStore = new Map();
         categoryRows.forEach(row => {
             if (!categoriesByStore.has(row.storeId)) categoriesByStore.set(row.storeId, []);
@@ -174,7 +168,6 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
             data: stores.map(store => ({
                 ...serializePublicStore(store, { productCount: countByStore.get(store.id) || 0 }),
                 productCount: countByStore.get(store.id) || 0,
-                completedOrderCount: completedByStore.get(store.id) || 0,
                 categories: categoriesByStore.get(store.id) || []
             })),
             pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 }
@@ -256,12 +249,11 @@ router.get('/public/:idOrSlug', optionalAuth, async (req, res, next) => {
         if ((!store.isPublished || !isStoreCurrentlyActive(store)) && req.user?.id !== store.ownerId) {
             throw apiError('This store is not currently active.', 404);
         }
-        const [productCount, completedOrderCount, categoryRows] = await Promise.all([
+        const [productCount, categoryRows] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.order.count({ where: { storeId: store.id, status: 'delivered', deletedAt: null } }),
             prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })
         ]);
-        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, completedOrderCount, categories: categoryRows.map(row => row.category) } });
+        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, categories: categoryRows.map(row => row.category) } });
     } catch (err) {
         next(err);
     }
@@ -274,12 +266,11 @@ router.get('/public', optionalAuth, async (req, res, next) => {
         if ((!store.isPublished || !isStoreCurrentlyActive(store)) && req.user?.id !== store.ownerId) {
             throw apiError('This store is not currently active.', 404);
         }
-        const [productCount, completedOrderCount, categoryRows] = await Promise.all([
+        const [productCount, categoryRows] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.order.count({ where: { storeId: store.id, status: 'delivered', deletedAt: null } }),
             prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })
         ]);
-        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, completedOrderCount, categories: categoryRows.map(row => row.category) } });
+        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, categories: categoryRows.map(row => row.category) } });
     } catch (err) {
         next(err);
     }
@@ -328,12 +319,43 @@ router.put('/', requireAuth, requireSeller, validateBody(updateStoreSchema), asy
 
         if (data.slug !== undefined) {
             const newSlug = slugify(data.slug);
+            // The link is a bare top-level path (nextastores.com/<slug>), so a
+            // few words are taken by the site itself: login, cart, admin, ...
+            if (newSlug !== store.slug && isReservedSlug(newSlug)) throw apiError('That store link is reserved. Please choose another one.');
             const clash = await prisma.store.findFirst({ where: { slug: newSlug, NOT: { id: store.id } } });
             if (clash) throw apiError('That store URL is already taken.');
             data.slug = newSlug;
         }
 
+        // Onboarding's UI already blocks Launch with zero products, but
+        // that's just a disabled button — an old tab left open on step 4,
+        // or a direct API call, could still send isPublished:true straight
+        // through. Re-check server-side so a store can never actually go
+        // live with an empty shelf, no matter how the request got here.
+        if (data.isPublished === true && !store.isPublished) {
+            const productCount = await prisma.product.count({ where: { storeId: store.id, deletedAt: null } });
+            if (productCount === 0) {
+                throw apiError('Add at least one product before you launch your store.', 400);
+            }
+        }
+
         const updated = await prisma.store.update({ where: { id: store.id }, data });
+
+        // Draft -> live. Onboarding's Launch button is the only caller that
+        // sends isPublished, so this fires once, at the moment the seller
+        // goes public. It lands in the bell and (if they've allowed push) on
+        // their phone, so the confirmation survives closing the tab right
+        // after launching. createNotification never throws, and is not
+        // awaited: launching must not wait on or fail because of it.
+        if (data.isPublished === true && !store.isPublished) {
+            createNotification({
+                userId: store.ownerId,
+                type: 'store_live',
+                title: 'Your store is live',
+                body: `${updated.name} is now open to shoppers. Share your store link to get your first visitors.`,
+                link: 'dashboard.html'
+            });
+        }
         res.json({ data: serializeStore(updated) });
     } catch (err) {
         next(err);

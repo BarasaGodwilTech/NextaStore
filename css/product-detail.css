@@ -150,32 +150,6 @@
     word-break: break-word;
 }
 
-.product-rating-summary {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-    flex-wrap: wrap;
-}
-
-.rating-stars {
-    color: var(--primary-dark);
-    display: inline-flex;
-    gap: 2px;
-    font-size: 0.9375rem;
-}
-
-.rating-value {
-    font-weight: 700;
-    color: var(--ink);
-    font-size: 0.9375rem;
-}
-
-.review-count {
-    color: var(--gray-500);
-    font-size: 0.875rem;
-}
-
 .product-price-section {
     display: flex;
     align-items: center;
@@ -489,126 +463,6 @@
     line-height: 1.7;
 }
 
-/* ---- Reviews ---- */
-.reviews-summary {
-    display: flex;
-    gap: var(--spacing-2xl);
-    flex-wrap: wrap;
-    padding-bottom: var(--spacing-xl);
-    margin-bottom: var(--spacing-xl);
-    border-bottom: 1px solid var(--gray-100);
-}
-
-.reviews-average {
-    text-align: center;
-    flex-shrink: 0;
-    min-width: 140px;
-}
-
-.average-rating {
-    font-size: 2.75rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1;
-    margin-bottom: var(--spacing-sm);
-}
-
-.reviews-average .rating-stars {
-    justify-content: center;
-    font-size: 1.125rem;
-    margin-bottom: var(--spacing-sm);
-}
-
-.total-reviews {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
-}
-
-.rating-breakdown {
-    flex: 1;
-    min-width: 220px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--spacing-xs);
-}
-
-.rating-bar {
-    display: grid;
-    grid-template-columns: 40px 1fr 32px;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-size: 0.8125rem;
-    color: var(--gray-600);
-}
-
-.rating-bar-track {
-    height: 8px;
-    background: var(--gray-100);
-    border-radius: var(--border-radius-full);
-    overflow: hidden;
-}
-
-.rating-bar-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: var(--border-radius-full);
-}
-
-.rating-bar-count {
-    text-align: right;
-}
-
-.reviews-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-xl);
-}
-
-.review-item {
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--gray-100);
-}
-
-.review-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.review-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-xs);
-}
-
-.review-author {
-    font-weight: 600;
-    color: var(--ink);
-    font-size: 0.9375rem;
-}
-
-.review-date {
-    font-size: 0.8125rem;
-    color: var(--gray-400);
-    flex-shrink: 0;
-}
-
-.review-rating {
-    color: var(--primary-dark);
-    letter-spacing: 2px;
-    margin-bottom: var(--spacing-xs);
-    font-size: 0.9375rem;
-}
-
-.review-text {
-    color: var(--gray-600);
-    font-size: 0.9375rem;
-    line-height: 1.6;
-}
-
 .empty-state {
     text-align: center;
     padding: var(--spacing-3xl) var(--spacing-md);
@@ -859,23 +713,6 @@
     font-size: 1.25rem;
 }
 
-/* Review rating input (stars) */
-.rating-input {
-    display: flex;
-    gap: var(--spacing-sm);
-    font-size: 1.75rem;
-    color: var(--gray-300);
-}
-
-.rating-input i {
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.rating-input i.active {
-    color: var(--primary-dark);
-}
-
 /* ---- Loading States / Skeleton Screens ---- */
 .skeleton {
     background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
@@ -981,10 +818,6 @@
     margin-bottom: 0.5rem;
 }
 
-.rating-input i:hover {
-    transform: scale(1.15);
-}
-
 /* ---- Footer ---- */
 /* The product page now ends with the shared .site-footer-slim treatment
    defined in main.css. */
@@ -1061,17 +894,6 @@
         padding: var(--spacing-lg) var(--spacing-md);
     }
 
-    .reviews-summary {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: var(--spacing-lg);
-    }
-
-    .rating-breakdown {
-        width: 100%;
-    }
-
     .related-products-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: var(--spacing-md);
@@ -1141,15 +963,6 @@
 
     .tab-btn {
         padding: var(--spacing-sm) var(--spacing-md);
-    }
-
-    .reviews-average {
-        min-width: 0;
-        width: 100%;
-    }
-
-    .average-rating {
-        font-size: 2.25rem;
     }
 
     .related-products-grid {

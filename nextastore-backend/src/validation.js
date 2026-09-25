@@ -69,6 +69,13 @@ const updateStoreSchema = z.object({
     description: z.string().optional(),
     contactEmail: z.string().email().or(z.literal('')).optional(),
     phoneNumber: z.string().optional(),
+    // Plain z.boolean() (no default/coercion), matching isPublished below:
+    // omitted means "leave it as-is" (Prisma skips undefined fields on
+    // update), not "set it to false". A default() here would silently
+    // reset the seller's visibility choice on every save that doesn't
+    // happen to touch this checkbox — see routes/store.js's generic
+    // `data: { ...req.body }` update.
+    phonePublic: z.boolean().optional(),
     address: z.string().optional(),
     theme: z.string().optional(),
     layout: z.string().optional(),
@@ -168,6 +175,16 @@ const orderStatusSchema = z.object({
     status: z.enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
 });
 
+// Buyer-initiated cancellation (POST /orders/:id/cancel). `reason` is a
+// closed set of template reasons shown as a picker on the frontend
+// (js/orders.js keeps the matching label text); `details` is always
+// required alongside it, even for 'other', so the seller never gets a bare
+// reason code with no context for why their order was cancelled.
+const orderCancelSchema = z.object({
+    reason: z.enum(['changed_mind', 'wrong_item', 'duplicate_order', 'found_elsewhere', 'other']),
+    details: z.string().trim().min(5, 'Please add a few details for the seller.').max(500)
+});
+
 // A message is either plain text, or a rich attachment (a seller sharing
 // one of their own products, or either party sharing a location) with an
 // optional text caption riding alongside it. `body` alone being empty is
@@ -216,13 +233,6 @@ const resetPasswordSchema = z.object({
     token: z.string().min(1, 'is required'),
     newPassword: z.string().min(8, 'must be at least 8 characters')
 });
-
-const reviewSchema = z.object({
-    productId: z.string().min(1, 'is required'),
-    rating: z.number().int().min(1).max(5),
-    body: z.string().trim().max(2000).optional().default('')
-});
-
 
 const adminUserUpdateSchema = z.object({
     name: z.string().trim().min(1).optional(),
@@ -314,11 +324,11 @@ module.exports = {
     batchOrderSchema,
     orderStatusSchema,
     orderReportSchema,
+    orderCancelSchema,
     sendMessageSchema,
     replyMessageSchema,
     presenceStreamSchema,
     resetPasswordSchema,
-    reviewSchema,
     subscriptionPaymentSchema,
     platformSettingsSchema,
     paymentMethodCreateSchema,

@@ -16,7 +16,7 @@
 // mismatched old-file/new-file combo across separately-cached scripts is
 // exactly what produces a "<something> is not defined" error like the
 // TokenStorage one that motivated this comment.
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v20';
 const CACHE_NAME = `nextastore-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
@@ -133,13 +133,33 @@ self.addEventListener('fetch', (event) => {
 // routes the tap. This code runs while every NextaStore tab is closed, so it
 // must not depend on anything from the page (no localStorage, no `app`).
 
+// The large `icon` stays the NextaStore mark for every push — it's the
+// notification's brand identity, not a category signal, and Android mostly
+// doesn't show it at all (only the badge below appears in the status bar).
 const PUSH_ICON = '/assets/brand/png/icon/icon-192.png';
-// Android draws the badge from its alpha channel only, so this is a white
-// glyph on a transparent background, not the full-colour icon.
+// `badge` is what Android actually shows in the status bar, drawn from its
+// alpha channel only (a white glyph on a transparent background, never the
+// full-colour icon) — so this is the one place that's worth differentiating
+// by notification type, and the only one a person glances at before opening
+// the tray. `badge-96.png` (the plain "N" mark) is also the fallback for any
+// type not listed here (`general`, `test`, and anything added server-side
+// before its badge is).
 const PUSH_BADGE = '/assets/brand/png/badge/badge-96.png';
+const PUSH_BADGES_BY_TYPE = {
+  new_message: '/assets/brand/png/badge/new_message.png',
+  new_order: '/assets/brand/png/badge/new_order.png',
+  low_stock: '/assets/brand/png/badge/low_stock.png',
+  order_cancelled: '/assets/brand/png/badge/order_cancelled.png',
+  new_product: '/assets/brand/png/badge/new_product.png',
+  subscription: '/assets/brand/png/badge/subscription.png'
+};
+function pushBadgeFor(type) {
+  return PUSH_BADGES_BY_TYPE[type] || PUSH_BADGE;
+}
 const PUSH_DEFAULT_TITLE = 'NextaStore';
 const PUSH_TITLE_MAX = 120;
 const PUSH_BODY_MAX = 300;
+const PUSH_ACCOUNT_MAX = 40;
 
 /** Reads the push body without ever throwing. A push with no data, invalid
  *  JSON, or JSON that isn't an object still has to produce a notification —
@@ -210,11 +230,16 @@ self.addEventListener('push', (event) => {
 
   const isMessage = type === 'new_message';
   const title = pushText(payload.title, PUSH_TITLE_MAX) || PUSH_DEFAULT_TITLE;
-  const body = pushText(payload.body, PUSH_BODY_MAX);
+  // One device can hold several people's accounts, so the notification says
+  // whose it is: the recipient's name goes on its own last line under the
+  // message. Older payloads without `account` render exactly as before.
+  const account = pushText(payload.account, PUSH_ACCOUNT_MAX);
+  const message = pushText(payload.body, PUSH_BODY_MAX);
+  const body = account ? `${message}${message ? '\n' : ''}Account: ${account}` : message;
   const options = {
     body,
     icon: PUSH_ICON,
-    badge: PUSH_BADGE,
+    badge: pushBadgeFor(type),
     data: { url: link, type },
     ...(isMessage ? {
       actions: [{ action: 'reply', title: 'Reply' }]

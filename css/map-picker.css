@@ -35,6 +35,32 @@
     font-size: 0.9375rem;
 }
 
+/* Two-line variant (onboarding's location card): a primary line — the
+ * district/city, the required part — plus a smaller secondary line for
+ * pin/precision detail. Additive to the single-span layout above, which
+ * dashboard.js's Settings picker still uses as-is. */
+.map-pin-preview-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+.map-pin-preview-text > span:first-child {
+    color: var(--gray-800);
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+.map-pin-preview.has-location .map-pin-preview-text > span:first-child { color: var(--secondary-dark); }
+.map-pin-preview-sub {
+    color: var(--gray-500);
+    font-size: 0.8125rem;
+}
+
+.map-pin-preview.input-error {
+    border-color: var(--danger);
+    background: var(--danger-bg);
+}
+
 .map-pin-preview.has-location {
     background: var(--secondary-light);
     border-color: var(--secondary);
@@ -51,7 +77,15 @@
     flex-wrap: wrap;
 }
 
-/* ---- Custom Map Modal ---- */
+/* ---- Custom Map Modal ----
+ * Rebuilt so the map itself is the modal, at every width: a slim filter
+ * bar up top (Region + District/City), the map filling essentially all the
+ * remaining space, and the rest — a one-time "tap to place a pin" tip and
+ * the selected-location summary — floating over the map instead of
+ * competing with it for room. Previously a ~46% sidebar (filters + a
+ * scrolling list of canned per-district "suggested locations") pushed the
+ * map into the other half of an already-small modal on phones; that
+ * sidebar and its scroll-within-a-scroll are gone. */
 .map-modal-overlay {
     position: fixed;
     inset: 0;
@@ -61,15 +95,17 @@
     justify-content: center;
     z-index: 1000;
     padding: var(--spacing-lg);
+    overscroll-behavior: contain;
 }
 
 .map-modal-content {
     background: white;
     border-radius: var(--border-radius-xl);
-    max-width: 1200px;
+    max-width: 720px;
     width: 100%;
-    height: 80vh;
-    max-height: 700px;
+    height: 88vh;
+    max-height: 780px;
+    min-height: 0;
     overflow: hidden;
     box-shadow: var(--shadow-xl);
     display: flex;
@@ -80,7 +116,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg) var(--spacing-xl);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
     border-bottom: 1px solid var(--gray-200);
     background: white;
     flex-shrink: 0;
@@ -88,20 +125,22 @@
 
 .map-modal-header h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--ink);
+    min-width: 0;
 }
 
 .map-modal-close {
     background: none;
     border: none;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     cursor: pointer;
     color: var(--gray-600);
     padding: 0;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,42 +153,33 @@
     color: var(--coral);
 }
 
-.map-modal-body {
+/* ---- Filter bar (Region / District·City) ----
+ * A slim strip, not a sidebar — two native selects the person taps once
+ * each. Native selects open as the OS's own picker on a phone, so this
+ * never becomes a second in-modal scroll area the way the old suggestion
+ * list did. */
+.map-modal-filters {
     display: flex;
-    flex: 1;
-    overflow: hidden;
-    background: var(--gray-50);
-}
-
-.map-modal-sidebar {
-    width: 400px;
-    background: white;
-    border-right: 1px solid var(--gray-200);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    overflow: hidden;
-}
-
-.location-filters {
-    padding: var(--spacing-lg);
+    gap: var(--spacing-md);
+    padding: 0.75rem var(--spacing-lg);
     border-bottom: 1px solid var(--gray-200);
     background: var(--gray-50);
+    flex-shrink: 0;
 }
 
 .filter-group {
-    margin-bottom: var(--spacing-md);
+    flex: 1 1 0;
+    min-width: 0;
 }
-
-.filter-group:last-child {
-    margin-bottom: 0;
-}
+/* Region is a short word, District / City can be long — give it the room. */
+.filter-group:first-child { flex: 0.8 1 0; }
+.filter-group:last-child { flex: 1.2 1 0; }
 
 .filter-label {
     font-weight: 600;
     color: var(--gray-700);
-    font-size: 0.8125rem;
-    margin-bottom: var(--spacing-xs);
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
     display: block;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -157,7 +187,7 @@
 
 .filter-select {
     width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 0.55rem 0.7rem;
     border: 1px solid var(--gray-300);
     border-radius: var(--border-radius-md);
     font-size: 0.875rem;
@@ -168,211 +198,205 @@
 
 .filter-select:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(226, 154, 46, 0.1);
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px var(--secondary-light);
 }
 
-.location-suggestions {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0;
-}
-
-.suggestions-title {
-    padding: var(--spacing-md) var(--spacing-lg);
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--gray-600);
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.location-list {
-    padding: var(--spacing-md);
-}
-
-.location-item {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--border-radius-md);
-    margin-bottom: var(--spacing-sm);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: white;
-}
-
-.location-item:hover {
-    border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
-    background: var(--primary-light);
-}
-
-.location-item-radio {
-    flex-shrink: 0;
-    padding-top: var(--spacing-xs);
-}
-
-.location-item-radio input[type="radio"] {
-    display: none;
-}
-
-.location-item-radio label {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--gray-400);
-    border-radius: 50%;
-    display: inline-block;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.2s ease;
-}
-
-.location-item-radio input[type="radio"]:checked + label {
-    border-color: var(--primary);
-    background: var(--primary);
-}
-
-.location-item-radio input[type="radio"]:checked + label::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: 50%;
-}
-
-.location-item-details {
-    flex: 1;
-    min-width: 0;
-}
-
-.location-item-name {
-    font-weight: 600;
-    color: var(--ink);
-    font-size: 0.9375rem;
-    margin-bottom: var(--spacing-xs);
-}
-
-.location-item-address {
-    color: var(--gray-600);
-    font-size: 0.8125rem;
-    margin-bottom: var(--spacing-xs);
-}
-
-.location-item-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    font-size: 0.75rem;
-    color: var(--gray-500);
-}
-
-.location-item-landmark {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.selected-location-info {
-    padding: var(--spacing-lg);
-    border-top: 1px solid var(--gray-200);
-    background: var(--gray-50);
-    flex-shrink: 0;
-}
-
-.location-info-card {
-    background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-md);
-}
-
-.location-info-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-    color: var(--primary);
-}
-
-.location-info-header i {
-    font-size: 1rem;
-}
-
-.location-info-header h4 {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
-.location-info-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8125rem;
-}
-
-.info-label {
-    color: var(--gray-600);
-    font-weight: 500;
-}
-
-.info-value {
-    color: var(--ink);
-    font-weight: 600;
-    text-align: right;
-}
-
-/* The reverse-geocoded place name is the headline; raw coordinates (below,
- * via .info-value--muted) are fine print, not the first thing read. */
-.info-row--place {
-    justify-content: flex-start;
-}
-
-.info-value--place {
-    color: var(--ink);
-    font-weight: 700;
-    font-size: 0.9375rem;
-    text-align: left;
-}
-
-.info-value--muted {
-    color: var(--gray-500);
-    font-weight: 500;
-    font-size: 0.75rem;
-}
-
+/* ---- Map area: the map itself plus everything that floats over it ---- */
 .map-modal-map-section {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     background: var(--gray-100);
     position: relative;
     overflow: hidden;
+    min-height: 0;
+    min-width: 0;
 }
 
 .custom-map-container {
     flex: 1;
     width: 100%;
     height: 100%;
+    min-height: 0;
     border-radius: 0;
     background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
     position: relative;
+}
+
+.custom-map-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23f0f0f0" width="100" height="100"/><path d="M0 0h100v100H0z" fill="none" stroke="%23ddd" stroke-width="0.5"/></svg>');
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Grabbing the pin to fine-tune it shouldn't also drag the map underneath
+ * it — Leaflet already stops that at the interaction level, this is just
+ * a visual cue that the map itself is "held still" while dragging. */
+.custom-map-container.is-dragging-pin { cursor: grabbing; }
+
+/* One-time tip, shown only until a pin is placed (or dismissed). Sits
+ * pinned to the top of the map, not the sidebar, so it's the first thing
+ * seen without displacing any layout — the map is exactly the same size
+ * whether this is showing or not. */
+.map-guidance {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 4rem; /* leave the zoom buttons (top-right) uncovered */
+    z-index: 401; /* above Leaflet's own panes (max ~400) */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.75rem;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    font-size: 0.8125rem;
+    color: var(--gray-700);
+    line-height: 1.35;
+    animation: mp-float-in 0.2s ease;
+}
+.map-guidance i:first-child { color: var(--secondary); flex-shrink: 0; font-size: 0.9375rem; }
+.map-guidance span { flex: 1 1 auto; min-width: 0; }
+.map-guidance-dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 0.2rem;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-sm, 4px);
+}
+.map-guidance-dismiss:hover { background: var(--gray-100); color: var(--gray-700); }
+
+/* "Use my location" — a Leaflet control so it stacks under the zoom
+ * buttons automatically, styled to match .leaflet-control-zoom exactly
+ * (same size/shadow/radius/hover) instead of falling back to Leaflet's
+ * plain default .leaflet-bar look. */
+.mp-locate-control {
+    margin-top: 8px !important;
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+    border-radius: var(--border-radius-md) !important;
+    overflow: hidden;
+}
+.mp-locate-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.05rem;
+    color: var(--ink) !important;
+    background: white !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.mp-locate-btn:hover { background: var(--primary-light) !important; color: var(--primary) !important; }
+.mp-locate-btn.is-loading { color: var(--secondary); pointer-events: none; }
+
+/* Feedback for "Use my location" — same slot/style as .map-guidance
+ * (only one of the two is ever shown at a time) so a permission-denied or
+ * timeout message reads like part of the same guidance system rather than
+ * a separate alert. */
+.map-locate-status {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 4rem;
+    z-index: 401;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.75rem;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    font-size: 0.8125rem;
+    color: var(--gray-700);
+    line-height: 1.35;
+    animation: mp-float-in 0.2s ease;
+}
+.map-locate-status.is-error { color: var(--danger, #d64545); border-color: var(--danger, #d64545); }
+
+/* Selected-location summary, floating at the bottom of the map — replaces
+ * the old sidebar's "Selected Location" card. Sits just above the action
+ * bar rather than inside a separate scrolling panel. */
+.map-location-card {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 401;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0.8rem;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    animation: mp-float-in 0.2s ease;
+}
+.map-location-card-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--secondary-light);
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9375rem;
+}
+.map-location-card-text { flex: 1 1 auto; min-width: 0; }
+.map-location-card-place {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.map-location-card-meta {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.map-location-card-remove {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-sm, 4px);
+}
+.map-location-card-remove:hover { background: var(--danger-bg); color: var(--danger); }
+
+@keyframes mp-float-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .map-action-bar {
@@ -385,96 +409,64 @@
     flex-shrink: 0;
 }
 
-/* Custom Map Marker */
-.custom-map-marker {
-    position: relative;
-}
+.map-action-bar .btn { min-height: 44px; }
 
-.marker-pin {
-    width: 32px;
-    height: 32px;
-    border-radius: 50% 50% 50% 0;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    position: absolute;
-    transform: rotate(-45deg);
-    left: 50%;
-    top: 50%;
-    margin: -16px 0 0 -16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    border: 3px solid white;
-    animation: markerBounce 0.3s ease-out;
-}
-
-@keyframes markerBounce {
-    0% { transform: rotate(-45deg) scale(0); }
-    50% { transform: rotate(-45deg) scale(1.2); }
-    100% { transform: rotate(-45deg) scale(1); }
-}
-
-.marker-pin::after {
-    content: '';
-    width: 12px;
-    height: 12px;
-    margin: 10px 0 0 10px;
-    background: white;
-    position: absolute;
-    border-radius: 50%;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.marker-shadow {
-    width: 24px;
-    height: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    filter: blur(3px);
-}
-
-/* Small precision-crosshair marker, swapped in after a pin is dropped so
- * it no longer covers the exact spot it's marking — a small ring + center
- * dot instead of a tall pin, and draggable for fine nudging. */
-.custom-map-marker--precision {
-    animation: markerPop 0.15s ease-out;
-}
+/* ---- Pin marker ----
+ * A compact ring-and-dot rather than a tall teardrop, so it never covers
+ * the exact spot it marks — important once you're trying to nudge it onto
+ * a specific shopfront. iconSize in JS is 44x44 (a full touch target) even
+ * though the visible ring is much smaller, so it's easy to grab on a
+ * phone without looking oversized on the map. */
+.custom-map-marker { position: relative; }
 
 .marker-crosshair {
     position: absolute;
     left: 50%;
     top: 50%;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.marker-crosshair:active { cursor: grabbing; }
+
+.marker-crosshair-ring {
+    position: absolute;
     width: 26px;
     height: 26px;
-    margin: -13px 0 0 -13px;
-    cursor: grab;
+    border: 2.5px solid var(--accent-gold);
+    border-radius: 50%;
+    background: rgba(255, 176, 56, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.marker-crosshair span:first-child {
+.marker-crosshair-dot {
     position: absolute;
-    inset: 0;
-    border: 2px solid var(--primary);
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: rgba(226, 154, 46, 0.18);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.marker-crosshair span:last-child {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 6px;
-    height: 6px;
-    margin: -3px 0 0 -3px;
-    border-radius: 50%;
-    background: var(--primary-dark);
+    background: var(--accent-gold-dark, #B36A00);
     border: 1.5px solid white;
 }
 
-@keyframes markerPop {
-    0% { transform: scale(0.4); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+/* One-shot landing pulse, played once on drop — an expanding, fading ring
+ * that draws the eye to exactly where the pin landed, then gets out of the
+ * way rather than animating continuously. */
+.marker-crosshair-pulse {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-gold);
+    animation: mp-pin-pulse 0.7s ease-out;
+}
+
+@keyframes mp-pin-pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(2.4); opacity: 0; }
 }
 
 /* Enhanced Leaflet Styles */
@@ -541,16 +533,6 @@
     background: rgba(255, 255, 255, 0.9) !important;
     font-size: 0.7rem !important;
     padding: var(--spacing-xs) var(--spacing-sm) !important;
-}
-
-/* Map container loading-state background + subtle grid pattern */
-.custom-map-container::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23f0f0f0" width="100" height="100"/><path d="M0 0h100v100H0z" fill="none" stroke="%23ddd" stroke-width="0.5"/></svg>');
-    opacity: 0.3;
-    pointer-events: none;
 }
 
 /* Custom Map Popup Styling */
@@ -620,137 +602,137 @@
     margin: var(--spacing-sm) 0;
 }
 
-/* ---- Custom Map Modal Responsive ---- */
-@media (max-width: 1024px) {
-    .map-modal-content {
-        height: 90vh;
-        max-height: none;
-    }
-    
-    .map-modal-sidebar {
-        width: 350px;
-    }
-}
-
-@media (max-width: 768px) {
-    .map-modal-body {
-        flex-direction: column;
-    }
-    
-    .map-modal-sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--gray-200);
-        max-height: 300px;
-    }
-    
-    .map-modal-map-section {
-        min-height: 350px;
-    }
-    
-    .map-modal-header h3 {
-        font-size: 1.125rem;
-    }
-    
-    .custom-map-container {
-        min-height: 300px;
-    }
-    
-    .location-item {
-        padding: var(--spacing-sm);
-    }
-}
-
-@media (max-width: 480px) {
+/* ---- Responsive ----
+ * The layout itself (slim filter bar + dominant map + floating overlays)
+ * no longer changes shape at any width — there's no sidebar-vs-map split
+ * left to rebalance per breakpoint. What's left is comfort: a full-screen
+ * sheet instead of a centered dialog below ~640px, and smaller type/
+ * spacing/touch-target tuning down to the narrowest common phones, with
+ * safe-area insets so the bottom action bar clears a phone's home
+ * indicator. */
+@media (max-width: 640px) {
     .map-modal-overlay {
-        padding: var(--spacing-sm);
-    }
-    
-    .map-modal-content {
-        height: 95vh;
-        border-radius: var(--border-radius-lg);
-    }
-    
-    .map-modal-header {
-        padding: var(--spacing-md) var(--spacing-lg);
-    }
-    
-    .map-modal-header h3 {
-        font-size: 1rem;
-    }
-    
-    .map-modal-sidebar {
-        max-height: 250px;
-    }
-    
-    .location-filters {
-        padding: var(--spacing-md);
-    }
-    
-    .filter-group {
-        margin-bottom: var(--spacing-sm);
-    }
-    
-    .location-suggestions {
         padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
     }
-    
-    .suggestions-title {
-        padding: var(--spacing-sm) var(--spacing-md);
+
+    .map-modal-content {
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .map-modal-header {
+        padding: max(0.65rem, env(safe-area-inset-top)) 1rem 0.65rem;
+        min-height: 56px;
+    }
+
+    .map-modal-header h3 {
+        font-size: clamp(1rem, 3.8vw, 1.125rem);
+    }
+
+    .map-modal-filters {
+        padding: 0.6rem 0.75rem;
+        gap: 0.6rem;
+    }
+
+    .filter-select {
+        min-height: 44px;
+        font-size: 16px; /* prevents iOS Safari's auto-zoom-on-focus */
+    }
+
+    .map-guidance {
+        top: 0.5rem;
+        left: 0.5rem;
+        right: 3.75rem; /* clear of the 40px zoom buttons + their margin */
         font-size: 0.75rem;
+        padding: 0.55rem 0.6rem;
     }
-    
-    .location-list {
-        padding: var(--spacing-sm);
+
+    .map-location-card {
+        left: 0.5rem;
+        right: 0.5rem;
+        bottom: 0.5rem;
+        padding: 0.6rem 0.7rem;
     }
-    
-    .location-item {
-        padding: var(--spacing-sm);
-        margin-bottom: var(--spacing-xs);
-    }
-    
-    .location-item-name {
-        font-size: 0.875rem;
-    }
-    
-    .location-item-address {
-        font-size: 0.75rem;
-    }
-    
-    .selected-location-info {
-        padding: var(--spacing-md);
-    }
-    
+
     .map-action-bar {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: 0.65rem max(0.65rem, env(safe-area-inset-left))
+                 max(0.65rem, env(safe-area-inset-bottom))
+                 max(0.65rem, env(safe-area-inset-right));
+        gap: 0.6rem;
     }
-    
+
     .map-action-bar .btn {
-        padding: var(--spacing-sm) var(--spacing-md);
-        font-size: 0.875rem;
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 46px;
+        justify-content: center;
+        padding: 0.7rem 0.75rem;
+        white-space: nowrap;
     }
-    
-    .custom-map-container {
-        min-height: 250px;
+
+    .leaflet-control-zoom a {
+        width: 40px !important;
+        height: 40px !important;
+        line-height: 40px !important;
+    }
+
+    .leaflet-control-zoom { margin-top: 10px !important; margin-right: 10px !important; }
+    .mp-locate-control { margin-top: 10px !important; margin-right: 10px !important; }
+    .mp-locate-btn { width: 40px !important; height: 40px !important; font-size: 1.15rem; }
+    .map-locate-status {
+        top: 0.5rem;
+        left: 0.5rem;
+        right: 3.75rem;
+        font-size: 0.75rem;
+        padding: 0.55rem 0.6rem;
+    }
+    .leaflet-bottom.leaflet-right { max-width: 100%; }
+    .leaflet-control-attribution {
+        max-width: calc(100vw - 12px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
-/* Verified down to ~375px (the narrowest common phone viewport) — the
- * previous 480px breakpoint already covers layout, this just keeps the
- * action bar from overflowing on the smallest screens. */
-@media (max-width: 400px) {
-    .map-action-bar {
-        flex-wrap: wrap;
-    }
+/* Verified down to ~360px (the narrowest common phone viewport). */
+@media (max-width: 380px) {
+    .map-modal-header h3 { font-size: 0.9375rem; }
+    .filter-label { font-size: 0.7rem; }
+    .map-location-card-place, .map-location-card-meta { font-size: 0.8125rem; }
+    .map-action-bar .btn { font-size: 0.8125rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+}
 
-    .map-action-bar .btn {
-        flex: 1 1 auto;
-        justify-content: center;
-    }
+@media (max-height: 620px) and (max-width: 640px) {
+    /* Short phones (landscape, or an older small device): trim the
+       chrome further so the map — the part that actually needs the room —
+       keeps as much height as possible. */
+    .map-modal-header { min-height: 44px; padding-top: max(0.4rem, env(safe-area-inset-top)); padding-bottom: 0.4rem; }
+    .map-modal-filters { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+    .map-action-bar { padding-top: 0.5rem; }
+}
 
-    .info-value--place {
-        font-size: 0.875rem;
-    }
+/* Landscape phones / very short screens: the header, filters and buttons
+ * would otherwise eat over half the height. Labels move to screen-reader
+ * only (the selects keep their aria labels), the summary card drops its
+ * coordinates line, and the buttons shrink slightly — the map keeps the room. */
+@media (max-height: 480px) {
+    .filter-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+    .map-modal-header { min-height: 40px; padding-top: max(0.25rem, env(safe-area-inset-top)); padding-bottom: 0.25rem; }
+    .map-modal-header h3 { font-size: 0.9375rem; }
+    .map-modal-filters { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    .filter-select { min-height: 40px; padding-top: 0.3rem; padding-bottom: 0.3rem; }
+    .map-action-bar { padding-top: 0.4rem; padding-bottom: max(0.4rem, env(safe-area-inset-bottom)); }
+    .map-action-bar .btn { min-height: 40px; padding-top: 0.4rem; padding-bottom: 0.4rem; }
+    .map-guidance { padding: 0.35rem 0.5rem; font-size: 0.6875rem; }
+    .map-locate-status { padding: 0.35rem 0.5rem; font-size: 0.6875rem; }
+    .map-location-card { padding: 0.35rem 0.6rem; }
+    .map-location-card-meta { display: none; }
 }
 
 /* ---- Small static map preview (item 5) ----
@@ -797,295 +779,36 @@
     inset: 0;
 }
 
-
-/* ==========================================================================
-   Mobile-first modal refinement
-   --------------------------------------------------------------------------
-   The picker is a real viewport-level workspace on phones. The old 95vh
-   dialog combined a tall sidebar with the map and action bar, allowing the
-   bottom controls to fall below the visible viewport on small devices.
-   ========================================================================== */
-.map-modal-overlay {
-    overscroll-behavior: contain;
+/* City/district-only preview: no pin, just the general area softly shaded. */
+.map-preview-area {
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(1, 176, 117, 0.16);
+    border: 2px solid rgba(0, 133, 88, 0.75);
+    pointer-events: none;
+}
+.map-preview-label {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    max-width: calc(100% - 16px);
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--secondary-dark, #062A1F);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
 }
 
-.map-modal-content,
-.map-modal-body,
-.map-modal-sidebar,
-.map-modal-map-section,
-.custom-map-container {
-    min-height: 0;
-}
-
-.map-modal-map-section {
-    min-width: 0;
-}
-
-.map-action-bar .btn {
-    min-height: 44px;
-}
-
-@media (max-width: 768px) {
-    .map-modal-overlay {
-        padding: 0;
-        align-items: stretch;
-        justify-content: stretch;
-    }
-
-    .map-modal-content {
-        width: 100%;
-        max-width: none;
-        height: 100dvh;
-        max-height: none;
-        min-height: 0;
-        border-radius: 0;
-    }
-
-    .map-modal-header {
-        min-height: 60px;
-        padding: 0.75rem 1rem;
-    }
-
-    .map-modal-header h3 {
-        min-width: 0;
-        padding-right: 0.5rem;
-        font-size: clamp(1rem, 3.8vw, 1.125rem);
-        line-height: 1.25;
-    }
-
-    .map-modal-close {
-        flex: 0 0 40px;
-        width: 40px;
-        height: 40px;
-    }
-
-    .map-modal-body {
-        flex: 1 1 auto;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    /* Reserve enough space for selecting a suggestion, but always leave a
-       usable map and action bar visible. */
-    .map-modal-sidebar {
-        width: 100%;
-        flex: 0 0 46%;
-        height: 46%;
-        max-height: none;
-        min-height: 0;
-        border-right: 0;
-        border-bottom: 1px solid var(--gray-200);
-        overflow: hidden;
-    }
-
-    .location-filters {
-        flex: 0 0 auto;
-    }
-
-    .location-suggestions {
-        min-height: 0;
-        flex: 1 1 auto;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-    }
-
-    .selected-location-info {
-        max-height: 34%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .map-modal-map-section {
-        flex: 1 1 54%;
-        min-height: 0;
-        width: 100%;
-    }
-
-    .custom-map-container {
-        flex: 1 1 auto;
-        min-height: 0;
-        width: 100%;
-    }
-
-    .map-action-bar {
-        flex: 0 0 auto;
-        justify-content: stretch;
-        gap: 0.625rem;
-        padding: 0.75rem max(0.75rem, env(safe-area-inset-left))
-                 max(0.75rem, env(safe-area-inset-bottom))
-                 max(0.75rem, env(safe-area-inset-right));
-    }
-
-    .map-action-bar .btn {
-        flex: 1 1 0;
-        min-width: 0;
-        min-height: 46px;
-        justify-content: center;
-        padding: 0.7rem 0.75rem;
-        white-space: nowrap;
-    }
-
-    .leaflet-control-zoom a {
-        width: 40px !important;
-        height: 40px !important;
-        line-height: 40px !important;
-    }
-
-    .leaflet-control-zoom {
-        margin-top: 10px !important;
-        margin-right: 10px !important;
-    }
-
-    .leaflet-bottom.leaflet-right {
-        max-width: 100%;
-    }
-
-    .leaflet-control-attribution {
-        max-width: calc(100vw - 12px);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-@media (max-width: 480px) {
-    .map-modal-header {
-        min-height: 56px;
-        padding: 0.625rem 0.75rem;
-    }
-
-    .map-modal-header h3 {
-        font-size: 1rem;
-    }
-
-    .map-modal-sidebar {
-        flex-basis: 48%;
-        height: 48%;
-    }
-
-    .map-modal-map-section {
-        flex-basis: 52%;
-    }
-
-    .location-filters {
-        padding: 0.75rem;
-    }
-
-    .filter-group {
-        margin-bottom: 0.6rem;
-    }
-
-    .filter-label {
-        font-size: 0.75rem;
-        margin-bottom: 0.3rem;
-    }
-
-    .filter-select {
-        min-height: 44px;
-        padding: 0.55rem 0.75rem;
-        font-size: 16px;
-    }
-
-    .suggestions-title {
-        padding: 0.65rem 0.75rem;
-    }
-
-    .location-list {
-        padding: 0.65rem;
-    }
-
-    .location-item {
-        min-height: 56px;
-        gap: 0.6rem;
-        padding: 0.65rem;
-    }
-
-    .location-item-radio label {
-        width: 22px;
-        height: 22px;
-    }
-
-    .selected-location-info {
-        padding: 0.65rem;
-        max-height: 30%;
-    }
-
-    .location-info-card {
-        padding: 0.7rem;
-    }
-
-    .info-row {
-        gap: 0.5rem;
-        align-items: flex-start;
-    }
-
-    .info-value {
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .map-action-bar {
-        gap: 0.5rem;
-        padding-top: 0.6rem;
-    }
-
-    .map-action-bar .btn {
-        min-height: 44px;
-        font-size: 0.8125rem;
-    }
-
-    .map-action-bar .btn i {
-        margin-right: 0.25rem;
-    }
-}
-
-@media (max-width: 360px) {
-    .map-modal-sidebar {
-        flex-basis: 50%;
-        height: 50%;
-    }
-
-    .map-modal-map-section {
-        flex-basis: 50%;
-    }
-
-    .map-action-bar .btn {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-        font-size: 0.75rem;
-    }
-
-    .map-action-bar .btn i {
-        display: none;
-    }
-}
-
-@media (max-height: 620px) and (max-width: 768px) {
-    /* Short phones need more map area while retaining compact filters. */
-    .map-modal-sidebar {
-        flex-basis: 42%;
-        height: 42%;
-    }
-
-    .map-modal-map-section {
-        flex-basis: 58%;
-    }
-
-    .location-filters {
-        padding-top: 0.55rem;
-        padding-bottom: 0.55rem;
-    }
-
-    .filter-group {
-        margin-bottom: 0.45rem;
-    }
-
-    .selected-location-info {
-        max-height: 27%;
-    }
-}
 
 body.map-picker-open {
     overflow: hidden;

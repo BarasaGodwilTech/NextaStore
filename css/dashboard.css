@@ -364,20 +364,30 @@
     background-repeat: no-repeat;
 }
 
+/* The "Change Banner" control used to be invisible until the seller
+   happened to hover the banner — undiscoverable by definition on a phone,
+   which has no hover, and easy to miss on desktop too. It now sits on a
+   permanent bottom scrim (dark enough for the light button to read against
+   any banner image or color) and just deepens slightly on hover as a
+   secondary hint, rather than being the only thing that reveals it. */
 .banner-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.45) 100%);
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
     padding: var(--spacing-lg);
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    opacity: 1;
+    transition: background 0.2s ease;
 }
 
 .store-banner:hover .banner-overlay {
-    opacity: 1;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.store-branding-controls .btn-light {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .store-branding-controls {
@@ -512,17 +522,6 @@
     align-items: center;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-xs);
-}
-
-.rating-stars {
-    color: #FFD700;
-    font-size: 0.875rem;
-}
-
-.rating-value {
-    font-weight: 700;
-    color: var(--ink);
-    font-size: 0.875rem;
 }
 
 .rating-count {
@@ -857,6 +856,16 @@
 }
 .welcome-banner.welcome-banner--danger h1 { color: #7A1F1F; }
 .welcome-banner.welcome-banner--danger p { color: #8C3B3B; }
+
+/* "You're live" banner — the brand gradient like the base .welcome-banner
+   (this is a celebratory moment, not a warning), with a bright checkmark
+   accent on the heading so it reads as a milestone rather than another
+   nudge. See renderLiveBanner() in dashboard.js. */
+.welcome-banner.welcome-banner--live h1 i {
+    color: #7CE0B3;
+    margin-right: var(--spacing-xs);
+}
+.welcome-banner.welcome-banner--live strong { color: white; }
 
 .stats-grid {
     display: grid;
@@ -1208,6 +1217,14 @@
 .badge-shipped { background: var(--secondary-light); color: var(--secondary); }
 .badge-delivered { background: var(--success-light); color: var(--success); }
 .badge-cancelled { background: var(--gray-200); color: var(--gray-600); }
+
+/* Seller order-status actions: replaced the old any-status <select> with a
+   badge plus one or two next-step buttons (Confirm / Mark completed /
+   Cancel), matching the buyer-and-seller-agree-then-seller-handles-the-rest
+   model — the seller isn't manually tracking a fulfillment pipeline, so
+   there's no reason to expose every status as a free jump target. */
+.order-status-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; justify-content: flex-end; }
+.order-status-cell .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.75rem; }
 
 /* ---- Table Enhancements ---- */
 /* merged into the base .table-responsive / .table rules above */
@@ -1723,6 +1740,94 @@
     font-size: 0.875rem;
 }
 
+/* ---- Store Basics: store link field ----
+ * The domain sits inside the control as a fixed prefix so the editable
+ * slug reads as the tail of a real, shareable URL rather than a bare word
+ * floating with no context. Mirrors onboarding.css's .ob-slug-field so the
+ * same field looks and behaves the same the first time (onboarding) and
+ * every time after (here). */
+.store-url-field {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid var(--gray-300);
+    border-radius: var(--border-radius-md);
+    background: white;
+    overflow: hidden;
+    min-width: 0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.store-url-field:focus-within { border-color: var(--secondary); box-shadow: 0 0 0 3px var(--secondary-light); }
+.store-url-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 0.15rem 0 0.9rem;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-right: 1px solid var(--gray-200);
+    /* Same size as the editable part (.form-input, 15px; 16px on phones). */
+    font-size: 0.9375rem;
+    font-family: monospace;
+    white-space: nowrap;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 1 auto;
+}
+.store-url-field .form-input {
+    border: 0;
+    border-radius: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    font-family: monospace;
+}
+.store-url-field .form-input:focus { box-shadow: none; border-color: transparent; }
+@media (max-width: 768px) { .store-url-prefix { font-size: 16px; } }
+
+.store-url-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+.store-url-actions .btn { flex: 0 0 auto; }
+
+/* Phone-visibility toggle — same pattern as onboarding.css's .ob-toggle-row
+ * (duplicated rather than shared, matching this file's existing approach
+ * to css/map-picker.css above: dashboard.html doesn't pull in onboarding's
+ * stylesheet just for one shared row style). */
+.ob-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-top: var(--spacing-sm);
+    padding: 0.6rem 0.75rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    line-height: 1.4;
+}
+.ob-toggle-row:hover { border-color: var(--gray-300); }
+.ob-toggle-row input[type="checkbox"] {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--secondary);
+}
+
+@media (max-width: 480px) {
+    /* Not enough width for the address and the editable part side by side at
+       the SAME size, so stack them (as onboarding does) instead of shrinking
+       or truncating the prefix. */
+    .store-url-field { flex-direction: column; }
+    .store-url-prefix { max-width: 100%; border-right: 0; border-bottom: 1px solid var(--gray-200); padding: 0.45rem 0.9rem; }
+    .store-url-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+
 .share-buttons {
     display: flex;
     gap: var(--spacing-md);
@@ -1794,7 +1899,8 @@
     .table td:not([data-label])::before { display: none; }
     .table tbody tr td:last-child { border-bottom: 0; }
     .table td .td-value { flex: 1 1 auto; min-width: 0; text-align: right; }
-    .table td .order-status-select { width: auto; max-width: 60%; min-height: 44px; }
+    .table td .order-status-cell { justify-content: flex-end; }
+    .table td .order-status-cell .btn-sm { min-height: 44px; padding: 0 0.75rem; }
     .table td:not([data-label]) { justify-content: stretch; }
     .table td:not([data-label]) .btn { width: 100%; min-height: 44px; }
     .table td[colspan] { display: block; text-align: center; }
@@ -1838,12 +1944,13 @@
         width: 100%;
         justify-content: space-around;
     }
-    .quick-actions-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
+    .quick-actions-bar { flex-direction: column; align-items: stretch; }
     .quick-actions-bar .spacer { display: none; }
-    .quick-actions-bar .search-bar { max-width: none; }
+    /* The overview's own product search duplicated the one already in the
+       Products section, and cramped into this quick-actions row it was the
+       first thing to get squeezed out on a phone. Sellers can search from
+       Products instead, so this copy is dropped rather than resized. */
+    .quick-actions-bar .search-bar { display: none; }
     .storefront-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     
     /* Dashboard content padding on mobile */

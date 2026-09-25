@@ -433,9 +433,9 @@ class MarketplaceManager {
     }
 
     visitStore(slugOrId) {
-        // Navigate to store detail page using the store's slug (falls back
-        // to id for stores that somehow have none) — see app.storeLink().
-        window.location.href = `store-detail.html?store=${encodeURIComponent(slugOrId)}`;
+        // Navigate to the store's own address (/<slug>; falls back to the
+        // id for stores that somehow have no slug) — see app.storeLink().
+        window.location.href = app.storeLinkFor(slugOrId);
     }
 
     viewProduct(productId, storeKey) {

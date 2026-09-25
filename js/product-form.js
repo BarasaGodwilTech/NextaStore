@@ -6,7 +6,13 @@ class ProductFormPage {
     constructor() {
         this.params = new URLSearchParams(window.location.search);
         this.productId = this.params.get('id');
-        this.returnTo = 'dashboard.html#products';
+        // Arriving here from onboarding's "Add your first product" gate
+        // (step 4, zero products) means Products/Dashboard don't exist as
+        // a destination yet — the store isn't live. Send the seller back
+        // to the review step instead, where the launch gate re-checks the
+        // product count itself.
+        this.fromOnboarding = this.params.get('from') === 'onboarding';
+        this.returnTo = this.fromOnboarding ? 'onboarding.html?step=4' : 'dashboard.html#products';
         this.images = []; // [{ full, thumb }], [0] is the cover image
         this.isEditing = Boolean(this.productId);
         this.saving = false;
@@ -33,13 +39,24 @@ class ProductFormPage {
         // Update breadcrumb
         const breadcrumbContainer = document.querySelector('.breadcrumb');
         if (breadcrumbContainer) {
-            breadcrumbContainer.innerHTML = `
+            breadcrumbContainer.innerHTML = this.fromOnboarding ? `
+                <a href="onboarding.html?step=4">Store setup</a>
+                <span class="separator">/</span>
+                <span class="breadcrumb-current" id="productFormBreadcrumb">Add Product</span>
+            ` : `
                 <a href="dashboard.html">Dashboard</a>
                 <span class="separator">/</span>
                 <a href="dashboard.html" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
                 <span class="separator">/</span>
                 <span class="breadcrumb-current" id="productFormBreadcrumb">${this.isEditing ? 'Edit Product' : 'Add Product'}</span>
             `;
+        }
+
+        // The back button's own label ("Back to Products") is wrong here —
+        // there's no Products list to go back to until the store is live.
+        if (this.fromOnboarding) {
+            const full = document.querySelector('#backLink .back-btn-text-full');
+            if (full) full.textContent = 'Back to store setup';
         }
 
         if (this.isEditing) {
@@ -50,6 +67,10 @@ class ProductFormPage {
             document.getElementById('deleteBtn').style.display = '';
             await this.loadProduct();
         } else {
+            if (this.fromOnboarding) {
+                document.getElementById('formHeading').textContent = 'Add your first product';
+                document.getElementById('formSubheading').textContent = 'One product is enough to launch — you can add the rest anytime from your dashboard. You\u2019ll return to Review & Launch after saving.';
+            }
             await this.loadDraftIfAny();
         }
 
@@ -72,7 +93,7 @@ class ProductFormPage {
             const p = res.data;
             document.getElementById('productName').value = p.name || '';
             document.getElementById('productDescription').value = p.description || '';
-            document.getElementById('productCategory').value = p.category || 'other';
+            document.getElementById('productCategory').value = p.category || '';
             document.getElementById('productPrice').value = p.price ?? '';
             document.getElementById('productOriginalPrice').value = p.originalPrice ?? '';
             document.getElementById('productStock').value = p.stock ?? 0;
@@ -169,6 +190,9 @@ class ProductFormPage {
 
         stock?.addEventListener('blur', () => this.validateField('stock'));
         stock?.addEventListener('input', () => this.clearFieldErrorById('productStock', 'productStockError'));
+
+        const category = document.getElementById('productCategory');
+        category?.addEventListener('change', () => this.validateField('category'));
 
         description?.addEventListener('input', () => this.updateCounters());
 
@@ -346,6 +370,12 @@ class ProductFormPage {
             this.clearFieldErrorById('productStock', 'productStockError');
             return true;
         }
+        if (key === 'category') {
+            const field = document.getElementById('productCategory');
+            if (!field.value) return this.setFieldError('productCategory', 'productCategoryError', 'Choose a category so shoppers can find this listing while browsing.');
+            this.clearFieldErrorById('productCategory', 'productCategoryError');
+            return true;
+        }
         if (key === 'images') {
             if (!this.images.length) return this.setImageGalleryError('Add at least one photo — listings without a photo get far fewer views.');
             this.clearImageGalleryError();
@@ -500,6 +530,7 @@ class ProductFormPage {
             { key: 'price', label: 'Price', anchor: 'productPrice' },
             { key: 'originalPrice', label: 'Original price', anchor: 'productOriginalPrice' },
             { key: 'stock', label: 'Stock quantity', anchor: 'productStock' },
+            { key: 'category', label: 'Category', anchor: 'productCategory' },
             { key: 'images', label: 'Photos', anchor: 'photosCard' }
         ];
         const errors = [];

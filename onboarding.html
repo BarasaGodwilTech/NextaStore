@@ -43,6 +43,17 @@
     </header>
 
     <main class="onboarding-container">
+      <div class="ob-layout">
+        <div class="ob-main ob-main--loading" id="obMain">
+        <!-- Shown only until OnboardingWizard has decided the real starting
+             step (js/onboarding.js init()). Without this, the static markup
+             below (Step 1 marked "active") is what paints first on every
+             load, including a redirect back from "Add your first product"
+             with ?step=4 — so the page would flash Step 1 before jumping to
+             Step 4 once the store data finished loading. Hiding the steps
+             behind this spinner until the real step is known removes that
+             flash entirely. -->
+        <div class="ob-main-loading" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></div>
         <!-- Step indicator -->
         <div class="onboarding-progress">
             <div class="onboarding-steps" id="onboardingSteps" role="list" aria-label="Setup progress">
@@ -83,60 +94,64 @@
                         <p class="form-error" id="obStoreNameError"></p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="obStoreSlug">Store link</label>
+                        <label class="form-label" for="obStoreSlug">Store link <span class="form-required">*</span></label>
                         <div class="ob-slug-field">
-                            <span class="ob-slug-prefix" id="obSlugPrefix" aria-hidden="true">store/</span>
-                            <input type="text" class="form-input" id="obStoreSlug" placeholder="amina-crafts-coffee" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="url">
+                            <span class="ob-slug-prefix" id="obSlugPrefix" aria-hidden="true">nextastores.com/</span>
+                            <input type="text" class="form-input" id="obStoreSlug" placeholder="amina-crafts-coffee" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="url" maxlength="60" aria-describedby="obSlugHint">
                         </div>
-                        <p class="form-hint">This becomes your shareable store link. Keep it short; changing it later can break old links.</p>
+                        <p class="form-error" id="obStoreSlugError"></p>
+                        <p class="form-hint" id="obSlugHint">This is the link you'll share with shoppers. We suggest one from your store name until you edit it yourself. Keep it short &mdash; changing it after you've shared it breaks the old link.</p>
+                        <div class="ob-slug-nudge" id="obSlugNudge" hidden>
+                            <i class="fas fa-circle-info"></i>
+                            <p><span id="obSlugNudgeText"></span></p>
+                            <div class="ob-slug-nudge-actions">
+                                <button type="button" class="btn btn-sm btn-outline" id="obSlugNudgeUpdate">Update link to match</button>
+                                <button type="button" class="btn btn-sm btn-text" id="obSlugNudgeKeep">Keep my link</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="obStoreDesc">Store description</label>
-                        <textarea class="form-textarea" id="obStoreDesc" rows="4" maxlength="600" placeholder="What do you sell, and what makes it special?"></textarea>
+                        <label class="form-label" for="obStoreDesc">Store description <span class="form-required">*</span></label>
+                        <textarea class="form-textarea" id="obStoreDesc" rows="4" maxlength="600" placeholder="e.g. Handwoven baskets and home decor made by artisans in Katwe — ships anywhere in Kampala within 2 days." aria-describedby="obStoreDescHint"></textarea>
                         <div class="ob-field-footer">
-                            <p class="form-hint">A couple of sentences is enough — shoppers scan this quickly.</p>
+                            <p class="form-hint" id="obStoreDescHint">This is shown to shoppers on your store page, in your own words — a couple of honest sentences about what you sell is enough.</p>
                             <span class="ob-char-count" id="obDescCount" aria-live="polite">0 / 600</span>
                         </div>
-                    </div>
-                    <div class="onboarding-form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="obDistrict">District</label>
-                            <select class="form-select" id="obDistrict">
-                                <option value="">Select district</option>
-                                <option value="kampala">Kampala</option>
-                                <option value="wakiso">Wakiso</option>
-                                <option value="mukono">Mukono</option>
-                                <option value="jinja">Jinja</option>
-                                <option value="mbale">Mbale</option>
-                                <option value="gulu">Gulu</option>
-                                <option value="arua">Arua</option>
-                                <option value="mbarara">Mbarara</option>
-                                <option value="entebbe">Entebbe</option>
-                                <option value="kira">Kira</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="obPhone">Phone number</label>
-                            <input type="tel" class="form-input" id="obPhone" placeholder="07XX XXX XXX" autocomplete="tel" inputmode="tel">
-                        </div>
+                        <p class="form-error" id="obStoreDescError"></p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" id="obMapLabel">Exact location <span class="form-optional">optional</span></label>
-                        <div class="map-pin-section">
+                        <label class="form-label" for="obPhone">Phone number <span class="form-required">*</span></label>
+                        <input type="tel" class="form-input" id="obPhone" placeholder="07XX XXX XXX" autocomplete="tel" inputmode="tel" aria-describedby="obPhoneHint">
+                        <p class="form-error" id="obPhoneError"></p>
+                        <label class="ob-toggle-row" for="obPhonePublic">
+                            <input type="checkbox" id="obPhonePublic" checked>
+                            <span>Show this number on my store page so shoppers can call or WhatsApp me directly</span>
+                        </label>
+                        <p class="form-hint" id="obPhoneHint">We also use this to reach you about your NextaStore account. You can change whether it's shown any time in Settings.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" id="obMapLabel">Location (city or district) <span class="form-required">*</span></label>
+                        <div class="map-pin-section" id="obLocSection">
+                            <div class="ob-loc-map" id="obLocMap" hidden></div>
                             <div class="map-pin-preview" id="obMapPinPreview">
                                 <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
-                                <span id="obMapPinText">No exact location selected</span>
+                                <div class="map-pin-preview-text">
+                                    <span id="obMapPinText">No location set yet</span>
+                                    <span class="map-pin-preview-sub" id="obMapPinSub"></span>
+                                </div>
                             </div>
                             <div class="map-pin-actions">
                                 <button type="button" class="btn btn-outline" id="obPickOnMapBtn" aria-describedby="obMapLabel">
-                                    <i class="fas fa-map" aria-hidden="true"></i> <span>Pick on map</span>
+                                    <i class="fas fa-map" aria-hidden="true"></i> <span id="obPickOnMapBtnLabel">Choose location</span>
                                 </button>
                                 <button type="button" class="btn btn-outline" id="obClearMapPinBtn" style="display:none;">
-                                    <i class="fas fa-times" aria-hidden="true"></i> <span>Clear</span>
+                                    <i class="fas fa-times" aria-hidden="true"></i> <span>Remove exact pin</span>
                                 </button>
                             </div>
                         </div>
-                        <p class="form-hint">Dropping a pin is optional — it just helps nearby shoppers find you, and it fills in the district for you.</p>
+                        <p class="form-hint" id="obLocHint">Your city or district is required, so shoppers know where you're based. To also mark your exact shop, choose <strong>Change location</strong>, then tap the map to drop a pin and drag it into place &mdash; that part is optional and can be added any time.</p>
+                        <p class="form-error" id="obLocationError"></p>
+                        <input type="hidden" id="obDistrict" name="district">
                         <input type="hidden" id="obMapCoordinates" name="mapCoordinates">
                     </div>
                 </form>
@@ -208,34 +223,8 @@
                     <h2 id="obStep3Title">How will customers pay you?</h2>
                     <p>Turn on the payment methods you accept. These are the methods you tell shoppers you can accept; NextaStore does not process payment yet.</p>
                 </div>
-                <div class="payment-methods ob-pay-list">
-                    <label class="ob-pay-option" for="obPayMtn">
-                        <span class="ob-pay-icon ob-pay-icon--mtn"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
-                        <span class="ob-pay-text">
-                            <span class="ob-pay-name">Mobile Money (MTN)</span>
-                            <span class="ob-pay-desc">Shoppers send payment to your MTN MoMo number.</span>
-                        </span>
-                        <input type="checkbox" id="obPayMtn" class="ob-pay-input" checked>
-                        <span class="ob-pay-check" aria-hidden="true"><i class="fas fa-check"></i></span>
-                    </label>
-                    <label class="ob-pay-option" for="obPayAirtel">
-                        <span class="ob-pay-icon ob-pay-icon--airtel"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
-                        <span class="ob-pay-text">
-                            <span class="ob-pay-name">Mobile Money (Airtel)</span>
-                            <span class="ob-pay-desc">Shoppers send payment to your Airtel Money number.</span>
-                        </span>
-                        <input type="checkbox" id="obPayAirtel" class="ob-pay-input" checked>
-                        <span class="ob-pay-check" aria-hidden="true"><i class="fas fa-check"></i></span>
-                    </label>
-                    <label class="ob-pay-option" for="obPayCard">
-                        <span class="ob-pay-icon ob-pay-icon--card"><i class="fas fa-credit-card" aria-hidden="true"></i></span>
-                        <span class="ob-pay-text">
-                            <span class="ob-pay-name">Card payments</span>
-                            <span class="ob-pay-desc">Only turn this on if you can already take card payments yourself.</span>
-                        </span>
-                        <input type="checkbox" id="obPayCard" class="ob-pay-input">
-                        <span class="ob-pay-check" aria-hidden="true"><i class="fas fa-check"></i></span>
-                    </label>
+                <div class="payment-methods ob-pay-list" id="obPayList">
+                    <p class="form-hint">Loading payment methods…</p>
                 </div>
                 <p class="ob-pay-note" id="obPayNote">
                     <i class="fas fa-circle-info" aria-hidden="true"></i>
@@ -255,34 +244,13 @@
                     <span>This is a draft preview. Customers can't find or buy from your store until you launch it.</span>
                 </div>
 
-                <!-- Storefront preview. Mirrors the real store-detail.html hero
-                     (banner + overlapping logo card + meta row + actions) and is
-                     painted from the same store record through the same
-                     applyStoreBanner() helper, so nothing here is mocked up. -->
-                <div class="ob-storefront-preview" aria-label="Storefront preview">
-                    <div class="ob-preview-chrome" aria-hidden="true">
-                        <span class="ob-preview-dot"></span>
-                        <span class="ob-preview-dot"></span>
-                        <span class="ob-preview-dot"></span>
-                        <span class="ob-preview-urlchip" id="obPreviewUrlChip">your-store</span>
-                    </div>
-                    <div class="preview-banner-strip" id="obReviewBanner">
-                        <span class="ob-preview-draft-chip"><i class="fas fa-eye-slash" aria-hidden="true"></i> Draft</span>
-                    </div>
-                    <div class="onboarding-review-preview-body">
-                        <div class="onboarding-review-logo" id="obReviewLogo">S</div>
-                        <div class="ob-preview-identity">
-                            <h3 id="obReviewName">Your Store Name</h3>
-                            <p class="text-muted" id="obReviewDesc">Store description goes here</p>
-                            <div class="ob-preview-meta" id="obReviewMeta"></div>
-                            <div class="ob-preview-pay" id="obReviewPayChips"></div>
-                        </div>
-                    </div>
-                    <div class="ob-preview-actions" aria-hidden="true">
-                        <span class="ob-preview-fakebtn ob-preview-fakebtn--primary"><i class="fas fa-comment"></i> Message seller</span>
-                        <span class="ob-preview-fakebtn"><i class="fas fa-heart"></i> Follow</span>
-                    </div>
-                </div>
+                <!-- First product: a store with an empty shelf gives shoppers nothing to
+                     buy, so launching needs at least one. Filled by renderProductGate(). -->
+                <div class="ob-first-product" id="obFirstProduct" data-state="checking" aria-live="polite"></div>
+
+                <!-- Storefront preview (same markup the wide-screen rail uses). On
+                     wide screens the rail already shows it, so css hides this copy. -->
+                <div class="ob-inline-preview" data-sf-mount></div>
 
                 <h4 class="ob-review-heading">Store details</h4>
                 <div class="onboarding-review-grid">
@@ -304,6 +272,7 @@
                             <a class="value onboarding-review-link" id="obReviewUrl" href="#" target="_blank" rel="noopener">Not set</a>
                             <button type="button" class="btn btn-outline btn-sm ob-copy-btn" id="obCopyUrlBtn"><i class="fas fa-copy" aria-hidden="true"></i> <span>Copy</span></button>
                         </div>
+                        <p class="ob-review-url-note">Opens your private preview now. The link works for everyone once you launch.</p>
                     </div>
                 </div>
             </section>
@@ -314,12 +283,28 @@
             <button type="button" class="onboarding-skip-link ob-action-skip" id="obSkipStepBtn">Skip this step</button>
             <button type="button" class="btn btn-primary ob-action-next" id="obNextBtn">Next <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
         </div>
+        </div>
+
+        <!-- Live preview rail: only on wide screens (css/onboarding.css hides it
+             below 1100px, where step 2 and step 4 carry their own preview).
+             Painted by js/onboarding.js from the same store record the wizard
+             saves, so it is what the storefront will actually show. -->
+        <aside class="ob-rail" id="obRail" aria-label="Live store preview">
+            <div class="ob-rail-head">
+                <h3>Your store, as shoppers see it</h3>
+                <p>Updates as you fill things in.</p>
+            </div>
+            <div data-sf-mount></div>
+            <div class="ob-checklist" id="obChecklist" aria-label="Launch checklist"></div>
+        </aside>
+      </div>
     </main>
 
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/store-banner.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/map-preview.js"></script>
     <script src="js/map-picker.js"></script>
     <script src="js/image-crop.js"></script>
     <script src="js/onboarding.js"></script>
