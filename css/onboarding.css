@@ -293,7 +293,7 @@
     background: var(--gray-50);
     border-right: 1px solid var(--gray-100);
     /* Same face, size and weight as the editable part (.form-input), so
-       "nextastores.com/" and the store's own name read as one address. It
+       the current site host and the store's own name read as one address. It
        used to be 13px/500 next to a 15px input. */
     font-family: var(--font-body);
     font-size: 0.9375rem;

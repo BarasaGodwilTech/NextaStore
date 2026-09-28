@@ -19,7 +19,7 @@ class DashboardManager {
         // populateStoreSettings(), updateSerpPreview() and the save handler.
         this.seoTitleAuto = true;
         this.seoDescAuto = true;
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     // ---- Skeleton loading placeholders (item 1) ----
@@ -151,12 +151,71 @@ class DashboardManager {
         if (this.justLaunched) sessionStorage.removeItem('nextastore_just_launched');
         this.liveBannerDismissed = false;
 
+        // The accent bar, full banner, and live/draft/setup/subscription
+        // status banners are dashboard-wide chrome, not part of any one
+        // section — so they need to be painted with the real store record
+        // before *anything* is shown, regardless of which section a deep
+        // link (e.g. a bookmarked dashboard.html#settings, or a notification
+        // that opens straight to #orders) lands on. This used to live only
+        // inside loadOverview(), which meant landing directly on any other
+        // section left the platform-default green accent bar showing for
+        // the rest of the session instead of the seller's actual color.
+        await this.loadStoreChrome();
+
         const initialSection = window.location.hash.replace('#', '');
         if (initialSection && document.getElementById(`${initialSection}Section`)) {
-            this.switchSection(initialSection);
+            await this.switchSection(initialSection);
         } else {
             await this.loadOverview();
         }
+    }
+
+    /** Fetches the store record and paints everything that isn't specific
+     *  to one section: the accent bar + full banner (js/store-banner.js),
+     *  and the live/draft/setup/subscription nudge banners. Always awaited
+     *  by init() itself (see above) so this never races the reveal of the
+     *  page, and also called again from loadStoreBranding() so Overview
+     *  picks up anything changed in Settings without a full reload.
+     *  Returns the store record, or null if the fetch failed (accent bar
+     *  is left at its CSS default in that case — the honest fallback is
+     *  "un-styled", never a stale or wrong color). */
+    async loadStoreChrome() {
+        try {
+            const response = await app.apiRequest('/store');
+            const store = response.data;
+            this.currentStore = store; // shared source of truth — used by settings preview, reset-to-default, etc.
+            this.renderLiveBanner(store);
+            this.renderDraftNotice(store);
+            this.renderSetupNudge(store);
+            this.renderSubscriptionNudge(store);
+
+            // Unified banner: the store record (color + image) is the only
+            // source of truth, rendered through js/store-banner.js so this
+            // matches the storefront, settings preview, and dashboard chrome
+            // exactly.
+            window.NextaStoreBanner?.applyStoreBanner(store, {
+                full: document.getElementById('storeBannerPreview'),
+                accents: [document.getElementById('storeAccentBar')]
+            });
+            this.updateStatusBannersVisibility();
+            return store;
+        } catch (error) {
+            console.error('Error loading store chrome:', error);
+            return null;
+        }
+    }
+
+    /** Collapses #dashboardStatusBanners to zero height once every banner
+     *  inside it is hidden, so a healthy store with nothing to nudge about
+     *  doesn't leave an empty padded gap under the top bar. Called after
+     *  every render*Banner()/render*Notice()/render*Nudge() pass, and again
+     *  from each banner's own dismiss handler (dismissing the only visible
+     *  one should collapse the gap immediately, not wait for a reload). */
+    updateStatusBannersVisibility() {
+        const wrap = document.getElementById('dashboardStatusBanners');
+        if (!wrap) return;
+        const anyVisible = Array.from(wrap.children).some(el => el.style.display !== 'none');
+        wrap.style.display = anyVisible ? '' : 'none';
     }
 
     setupNavigation() {
@@ -194,7 +253,7 @@ class DashboardManager {
             document.getElementById('sidebarOverlay')?.classList.remove('active');
         }
 
-        this.loadSectionData(section);
+        return this.loadSectionData(section);
     }
 
     async loadSectionData(section) {
@@ -333,27 +392,14 @@ class DashboardManager {
 
     async loadStoreBranding() {
         try {
-            const response = await app.apiRequest('/store');
-            const store = response.data;
-            this.currentStore = store; // shared source of truth — used by settings preview, reset-to-default, etc.
-            this.renderLiveBanner(store);
-            this.renderDraftNotice(store);
-            this.renderSetupNudge(store);
-            this.renderSubscriptionNudge(store);
-
-            // Unified banner: the store record (color + image) is the only
-            // source of truth, rendered through js/store-banner.js so this
-            // matches the storefront, settings preview, and dashboard chrome
-            // exactly. This used to be shadowed by a separate
-            // `nextastore_appearance` blob in localStorage that the banner/
-            // logo upload buttons wrote to directly — that meant an upload
-            // never actually reached the database, never showed up on the
-            // real storefront, and silently diverged from what Settings
-            // displayed on a different device or after clearing storage.
-            window.NextaStoreBanner?.applyStoreBanner(store, {
-                full: document.getElementById('storeBannerPreview'),
-                accents: [document.getElementById('storeAccentBar')]
-            });
+            // Re-fetches and repaints the accent bar / banner / status
+            // banners too (not just the overview-specific fields below) —
+            // slightly redundant on the very first load (init() already
+            // called this once), but it's what keeps Overview showing the
+            // latest banner color/image right after a Settings save without
+            // a full page reload.
+            const store = await this.loadStoreChrome();
+            if (!store) throw new Error('Could not load store');
 
             // Load logo
             if (store.logo) {
@@ -473,6 +519,7 @@ class DashboardManager {
             dismissBtn.addEventListener('click', () => {
                 this.liveBannerDismissed = true;
                 banner.style.display = 'none';
+                this.updateStatusBannersVisibility();
             });
         }
         const shareBtn = document.getElementById('shareLiveBannerBtn');
@@ -511,6 +558,7 @@ class DashboardManager {
                 dismissBtn.addEventListener('click', () => {
                     sessionStorage.setItem(dismissedKey, '1');
                     banner.style.display = 'none';
+                    this.updateStatusBannersVisibility();
                 });
             }
         } else {
@@ -648,17 +696,6 @@ class DashboardManager {
         } catch (error) {
             app.showAlert(error.message || 'Could not update banner', 'error');
         }
-    }
-
-    navigateToSettings(section) {
-        this.switchSection('settings');
-        // After switching to settings, we might want to activate a specific tab
-        setTimeout(() => {
-            const tabElement = document.querySelector(`[data-settings-tab="${section}"]`);
-            if (tabElement) {
-                tabElement.click();
-            }
-        }, 100);
     }
 
     renderStats(stats) {

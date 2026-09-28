@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { apiError } = require('../utils');
-const { serializeProduct } = require('../helpers');
+const { serializeProduct, storefrontVisibleWhere } = require('../helpers');
 const { requireAuth, optionalAuth } = require('../middleware');
 
 const router = express.Router();
@@ -60,7 +60,14 @@ router.get('/:productId', optionalAuth, async (req, res, next) => {
 
 router.post('/:productId', requireAuth, async (req, res, next) => {
     try {
-        const product = await prisma.product.findFirst({ where: { id: req.params.productId, deletedAt: null }, select: { id: true } });
+        // Same visibility rule as browsing/search/product pages: a product
+        // whose store is in draft or past its trial with no payment can't
+        // be reached this way either, even by someone who already has the
+        // raw product id from before the store went inactive.
+        const product = await prisma.product.findFirst({
+            where: { id: req.params.productId, deletedAt: null, store: storefrontVisibleWhere() },
+            select: { id: true }
+        });
         if (!product) throw apiError('Product not found.', 404);
         await prisma.productFavorite.upsert({
             where: { userId_productId: { userId: req.user.id, productId: product.id } },

@@ -176,6 +176,17 @@ button,input,select,textarea{max-width:100%}
   .subscription-hero,.subscription-status-card,.subscription-goal-card,.subscription-panel{max-width:100%}
   .subscription-pay-number{min-width:0}
 
+  /* The goal card's CTA button (e.g. "Choose 6 months") has `white-space:
+     nowrap` and, as a flex child, a default `min-width:auto` — so it never
+     shrinks below its own text width. On a narrow phone that starved the
+     text column next to it down to just a couple of characters per line
+     ("First / badge / at 6 / months"). Wrapping the row and giving the
+     button the full second line fixes it without touching the JS-rendered
+     icon+text markup. */
+  .subscription-goal-card{flex-wrap:wrap}
+  .subscription-goal-card>div:nth-child(2){min-width:0}
+  .subscription-goal-card>.btn{flex:1 1 100%;width:100%;justify-content:center;margin-top:2px}
+
   /* Admin */
   .admin-shell,.admin-main{width:100%;min-width:0}
   .admin-welcome{align-items:flex-start}

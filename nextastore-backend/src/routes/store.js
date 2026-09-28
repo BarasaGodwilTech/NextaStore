@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { apiError, saveImageIfDataUrl, slugify, isReservedSlug, deleteImageIfReplaced } = require('../utils');
-const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, isStoreCurrentlyActive, maybeNotifySubscriptionReminder, createNotification } = require('../helpers');
+const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, assertStoreVisible, storefrontVisibleWhere, maybeNotifySubscriptionReminder, createNotification } = require('../helpers');
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, updateStoreSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
@@ -23,7 +23,12 @@ router.get('/follow/:storeId', optionalAuth, async (req, res, next) => {
 
 router.post('/follow/:storeId', requireAuth, async (req, res, next) => {
     try {
-        const store = await prisma.store.findFirst({ where: { id: req.params.storeId, deletedAt: null }, select: { id: true } });
+        // Same visibility rule as everywhere else a buyer can reach a store:
+        // no new engagement with one that's still in draft or has let its
+        // trial lapse without paying. An existing follow from before a store
+        // went inactive is left alone (see GET /follows above) — this only
+        // stops *new* follows.
+        const store = await prisma.store.findFirst({ where: { id: req.params.storeId, ...storefrontVisibleWhere() }, select: { id: true } });
         if (!store) throw apiError('Store not found.', 404);
         const result = await prisma.$transaction(async tx => {
             const existing = await tx.storeFollow.findUnique({ where: { userId_storeId: { userId: req.user.id, storeId: store.id } } });
@@ -106,27 +111,24 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
         const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
         const q = String(req.query.q || '').trim();
         const category = String(req.query.category || '').trim();
-        const now = new Date();
         const where = {
-            deletedAt: null,
-            // Draft stores (setup not yet launched) never appear on the
-            // public marketplace, regardless of trial/subscription status.
-            isPublished: true,
-            // Only stores currently within their trial or a paid period show
-            // up on the public marketplace. Uses AND (not spreading a second
-            // top-level OR) so this doesn't clobber the search OR above —
-            // two OR keys on the same object would silently overwrite one.
-            AND: [
-                q ? {
+            // Draft stores (setup not yet launched), and stores whose trial
+            // has lapsed with no confirmed payment, never appear on the
+            // public marketplace.
+            ...storefrontVisibleWhere(),
+            // AND (not a second top-level OR) so this doesn't clobber the
+            // OR that storefrontVisibleWhere() already carries — two OR
+            // keys on the same object would silently overwrite one.
+            ...(q ? {
+                AND: [{
                     OR: [
                         { name: { contains: q, mode: 'insensitive' } },
                         { description: { contains: q, mode: 'insensitive' } },
                         { district: { contains: q, mode: 'insensitive' } },
                         { address: { contains: q, mode: 'insensitive' } }
                     ]
-                } : {},
-                { OR: [{ trialEndsAt: { gt: now } }, { subscriptionPaidUntil: { gt: now } }] }
-            ],
+                }]
+            } : {}),
             ...(category && category !== 'all' ? { products: { some: { category, deletedAt: null } } } : {}),
         };
         const [stores, total] = await Promise.all([
@@ -189,14 +191,15 @@ router.get('/search', cacheResponse(30), async (req, res, next) => {
 
         const [stores, products] = await Promise.all([
             prisma.store.findMany({
-                // Draft stores never surface in search either.
-                where: { deletedAt: null, isPublished: true, name: contains },
+                // Draft stores, and stores whose trial has lapsed with no
+                // confirmed payment, never surface in search either.
+                where: { ...storefrontVisibleWhere(), name: contains },
                 select: { id: true, slug: true, name: true, logo: true, bannerColor: true, badgeCommitmentMonths: true, verified: true, subscriptionPaidUntil: true, trialEndsAt: true, description: true, district: true, address: true },
                 orderBy: { createdAt: 'desc' },
                 take: Math.min(4, limit)
             }),
             prisma.product.findMany({
-                where: { deletedAt: null, name: contains, store: { deletedAt: null } },
+                where: { deletedAt: null, name: contains, store: storefrontVisibleWhere() },
                 select: {
                     id: true, name: true, price: true,
                     thumbnails: true, image: true, store: { select: { id: true, slug: true, name: true } }
@@ -246,9 +249,7 @@ router.get('/public/:idOrSlug', optionalAuth, async (req, res, next) => {
         // with no active subscription is hidden from everyone except its
         // own owner (who still needs to see it — to finish onboarding, or
         // to pay and reactivate it).
-        if ((!store.isPublished || !isStoreCurrentlyActive(store)) && req.user?.id !== store.ownerId) {
-            throw apiError('This store is not currently active.', 404);
-        }
+        assertStoreVisible(store, req);
         const [productCount, categoryRows] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
             prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })
@@ -263,9 +264,7 @@ router.get('/public', optionalAuth, async (req, res, next) => {
     try {
         const store = await resolveContextStore(req);
         if (!store) throw apiError('Store not found.', 404);
-        if ((!store.isPublished || !isStoreCurrentlyActive(store)) && req.user?.id !== store.ownerId) {
-            throw apiError('This store is not currently active.', 404);
-        }
+        assertStoreVisible(store, req);
         const [productCount, categoryRows] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
             prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })

@@ -658,5 +658,13 @@ model PlatformSettings {
   mtnMomoName     String   @default("NextaStore")
   airtelMoneyCode String   @default("")
   airtelMoneyName String   @default("NextaStore")
+  // Admin-editable, plain-language dial steps shown to the seller under
+  // "Send by mobile money" once they've picked that network (e.g. "Dial
+  // *165*3*171145*<amount>#, enter your PIN, then confirm."). Free text,
+  // not validated against the real USSD grammar, so admins can word it
+  // however is clearest — including updating it if MTN/Airtel change their
+  // menu. Blank means nothing is shown for that method.
+  mtnMomoInstructions     String   @default("")
+  airtelMoneyInstructions String   @default("")
   updatedAt       DateTime @updatedAt
 }

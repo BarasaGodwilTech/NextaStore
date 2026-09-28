@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="nx-loading">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +8,44 @@
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
     <title>Seller Pass · NextaStore</title>
     <meta name="description" content="Manage your NextaStore Seller Pass, mobile-money payments and seller badges.">
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/loading-overlay.css"><noscript><style>html.nx-loading>body>*:not(#nxLoader){visibility:visible!important;opacity:1!important}html.nx-loading #nxLoader{display:none!important}</style></noscript>
     <link rel="stylesheet" href="css/subscription.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body data-auth-required data-seller-required>
-    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true"><div class="skeleton skeleton-text-lg"></div><div class="skeleton skeleton-text"></div></div>
+    <div id="nxLoader" class="nx-loader" data-nx-theme="seller" data-nx-wait="app page" data-nx-timeout="7000" data-nx-phrases="Loading Seller Pass|Checking your plan|Almost there" aria-label="Loading NextaStore">
+        <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+            <filter id="nxGrain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/></filter>
+        </svg>
+        <div class="nx-loader-ambient" aria-hidden="true"><span class="nx-a"></span><span class="nx-b"></span></div>
+        <div class="nx-loader-grain" aria-hidden="true"></div>
+        <main class="nx-loader-inner">
+            <div class="nx-loader-logo" id="nxLogoWrap" aria-hidden="true">
+                <svg viewBox="0 0 220 220">
+                    <defs>
+                        <linearGradient id="nxLiquidGrad" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="var(--nx-green-light)"/><stop offset="100%" stop-color="var(--nx-green-dark)"/></linearGradient>
+                        <radialGradient id="nxDotGrad" cx="35%" cy="35%" r="75%"><stop offset="0%" stop-color="var(--nx-gold-light)"/><stop offset="100%" stop-color="var(--nx-gold)"/></radialGradient>
+                        <clipPath id="nxClip"><rect x="0" y="0" width="220" height="220" rx="48" ry="48"/></clipPath>
+                    </defs>
+                    <rect class="nx-outline" x="1" y="1" width="218" height="218" rx="47" ry="47"/>
+                    <g clip-path="url(#nxClip)">
+                        <path id="nxWaveFill" fill="url(#nxLiquidGrad)"/>
+                        <path id="nxMeniscus" fill="none" stroke="var(--nx-gold-light)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    <path fill="#FFFFFF" d="M 132.0,176.5 L 100.5,174.0 L 82.5,53.0 L 80.0,50.5 L 79.5,175.0 L 41.5,175.0 L 43.0,44.5 L 118.5,45.0 L 139.0,170.5 L 140.5,45.0 L 160.0,44.5 L 167.0,52.5 L 177.5,56.0 L 177.5,175.0 L 132.0,176.5 Z"/>
+                    <circle class="nx-pip" id="nxPip" cx="178.1" cy="34.5" r="20.0" fill="url(#nxDotGrad)"/>
+                </svg>
+            </div>
+            <p class="nx-loader-status" id="nxStatus" role="status" aria-live="polite">Loading Seller Pass</p>
+            <button type="button" class="nx-loader-skip" id="nxSkip">Taking longer than usual — continue anyway</button>
+        </main>
+        <div class="nx-loader-pct" id="nxPct" aria-hidden="true">0%</div>
+    </div>
+    <script src="js/loading-overlay.js"></script>
+
+
 
     <header class="subscription-topbar">
         <a href="dashboard.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
@@ -32,9 +62,8 @@
         <section class="subscription-hero" aria-labelledby="subscriptionTitle">
             <div>
                 <span class="subscription-eyebrow"><i class="fas fa-shield-heart"></i> Seller Pass</span>
-                <h1 id="subscriptionTitle">Build a longer commitment. Earn a stronger badge.</h1>
-                <p>Seller Pass keeps your store active after the free trial and records the paid coverage you have committed to. <strong>6 months is the first badge level.</strong> 12 and 24 months unlock higher badge levels.</p>
-                <div class="subscription-local-note"><i class="fas fa-mobile-screen-button"></i><span>Pay from MTN MoMo or Airtel Money, then enter the transaction ID here. We confirm the payment before changing your badge.</span></div>
+                <h1 id="subscriptionTitle">Keep your store live. Earn your badge.</h1>
+                <p>Pay with mobile money below — 6 months unlocks your first badge.</p>
             </div>
             <div class="subscription-hero-art" aria-hidden="true">
                 <div class="badge-coin badge-coin-main"><i class="fas fa-award"></i><span>Seller Pass</span></div>
@@ -43,66 +72,118 @@
             </div>
         </section>
 
-        <section id="subStatusCard" class="subscription-status-card" aria-live="polite"><div class="skeleton skeleton-text-lg"></div></section>
-
-        <section class="subscription-goal-card" id="subGoalCard" aria-live="polite"></section>
-
-        <section class="subscription-badge-section" aria-labelledby="badgeLadderTitle">
-            <div class="section-heading"><div><span class="panel-kicker">Your badge path</span><h2 id="badgeLadderTitle">What your paid coverage unlocks</h2></div><span class="section-heading-note">Badges describe platform commitment — not product quality.</span></div>
-            <div class="subscription-badge-ladder" id="subscriptionBadgeLadder">
-                <article class="badge-tier"><span class="badge-tier-icon verified"><i class="fas fa-circle-check"></i></span><div><strong>Verified Seller</strong><small>6 months of active paid coverage</small></div></article>
-                <article class="badge-tier"><span class="badge-tier-icon gold"><i class="fas fa-crown"></i></span><div><strong>Gold Partner</strong><small>12 months of active paid coverage</small></div></article>
-                <article class="badge-tier"><span class="badge-tier-icon platinum"><i class="fas fa-gem"></i></span><div><strong>Platinum Partner</strong><small>24 months of active paid coverage</small></div></article>
-            </div>
-        </section>
+        <div class="subscription-progress-wrap">
+            <section id="subStatusCard" class="subscription-status-card" aria-live="polite"><div class="skeleton skeleton-text-lg"></div></section>
+            <section class="subscription-goal-card" id="subGoalCard" aria-live="polite"></section>
+            <div class="badge-track" id="subscriptionBadgeLadder" aria-label="Badge progress"></div>
+        </div>
 
         <div class="subscription-grid">
             <section class="subscription-panel subscription-pay-panel">
                 <div class="subscription-panel-heading">
-                    <div><span class="panel-kicker">Step 1 · Pay</span><h2>Pay your chosen coverage</h2></div>
+                    <div><span class="panel-kicker">Pay &amp; confirm</span><h2>Renew your Seller Pass</h2></div>
                     <span class="subscription-price-chip"><strong id="subPriceLabel">UGX 20,000</strong><small>per month</small></span>
                 </div>
-                <div class="coverage-callout" id="coverageCallout">Choose a coverage period and we will show the exact total to send.</div>
-
-                <div class="subscription-pay-numbers" id="subPayNumbers" aria-label="NextaStore payment accounts"><div class="skeleton skeleton-text-sm"></div></div>
 
                 <form id="subPaymentForm" class="subscription-form" novalidate>
-                    <label><span>Paid coverage</span>
-                        <select id="subMonths" required>
-                            <option value="1">1 month · UGX 20,000</option>
-                            <option value="3">3 months · UGX 60,000</option>
-                            <option value="6">6 months · UGX 120,000 · Verified Seller</option>
-                            <option value="12">12 months · UGX 240,000 · Gold Partner</option>
-                            <option value="24">24 months · UGX 480,000 · Platinum Partner</option>
+
+                    <div class="pay-step" data-step="1">
+                        <div class="pay-step-head"><span class="pay-step-num">1</span><h3>Choose your coverage</h3></div>
+                        <p class="pay-step-hint">Pick your months below — we calculate the exact total to send for you.</p>
+                        <div class="plan-picker" id="subPlanPicker" role="group" aria-label="Paid coverage"></div>
+                        <select id="subMonths" class="sr-only" tabindex="-1" aria-hidden="true">
+                            <option value="1">1</option>
+                            <option value="3">3</option>
+                            <option value="6">6</option>
+                            <option value="12">12</option>
+                            <option value="24">24</option>
                         </select>
-                        <small id="subMonthsHint" class="field-help">You can add another payment later while your current paid coverage is still active.</small>
-                    </label>
-                    <label><span>Exact amount you sent</span>
-                        <div class="subscription-amount-wrap"><span>UGX</span><input type="number" id="subAmount" inputmode="numeric" required></div>
-                        <small id="subAmountHint" class="field-help">The amount must match the selected coverage exactly.</small>
-                    </label>
-                    <label><span>Mobile money used</span>
-                        <select id="subMethod" required><option value="mtnMomo">MTN MoMo</option><option value="airtelMoney">Airtel Money</option></select>
-                    </label>
-                    <label><span>Transaction ID / reference</span>
-                        <input type="text" id="subReference" placeholder="e.g. the ID in your MTN/Airtel SMS" autocomplete="off" maxlength="120" required>
-                        <small class="field-help">Enter it exactly as shown in your mobile-money confirmation SMS.</small>
-                    </label>
-                    <button type="submit" class="btn btn-primary subscription-submit-btn" id="subSubmitBtn"><i class="fas fa-paper-plane"></i> Send payment for checking</button>
-                    <p class="subscription-form-note"><i class="fas fa-circle-info"></i><span>Payment only extends your Seller Pass after NextaStore confirms the money received. NextaStore does not process buyer-order payments on this page.</span></p>
+                    </div>
+
+                    <div class="pay-total" id="coverageCallout"></div>
+
+                    <div class="pay-step" data-step="2">
+                        <div class="pay-step-head"><span class="pay-step-num">2</span><h3>Send by mobile money</h3></div>
+                        <p class="pay-step-hint">Tap the network you're sending from — we'll show you what to dial.</p>
+                        <div class="subscription-pay-numbers" id="subPayNumbers" aria-label="NextaStore payment accounts"><div class="skeleton skeleton-text-sm"></div></div>
+                        <div class="subscription-pay-dial" id="subPayDial" hidden></div>
+                        <select id="subMethod" class="sr-only" tabindex="-1" aria-hidden="true">
+                            <option value="">Choose a payment option</option>
+                            <option value="mtnMomo">MTN MoMo</option>
+                            <option value="airtelMoney">Airtel Money</option>
+                        </select>
+                    </div>
+
+                    <div class="pay-step" data-step="3">
+                        <div class="pay-step-head"><span class="pay-step-num">3</span><h3>Confirm the transaction ID</h3></div>
+                        <button type="button" class="scan-proof-btn" id="subScanBtn"><span class="scan-proof-btn-icon"><i class="fas fa-camera"></i></span><span class="scan-proof-btn-copy"><strong>Scan your payment SMS</strong><small>We'll read the ID from a photo — no typing</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+                        <div class="ref-input-wrap">
+                            <i class="fas fa-receipt" aria-hidden="true"></i>
+                            <input type="text" id="subReference" placeholder="Or paste the ID from your MTN/Airtel SMS" autocomplete="off" maxlength="120" required aria-label="Transaction ID">
+                        </div>
+                        <button type="button" class="scan-proof-chip" id="scanProofChip" hidden></button>
+                    </div>
+
+                    <input type="hidden" id="subAmount">
+
+                    <button type="submit" class="btn btn-primary subscription-submit-btn" id="subSubmitBtn"><i class="fas fa-paper-plane"></i> Send for checking</button>
+                    <p class="subscription-form-note"><i class="fas fa-lock"></i><span>Checked by NextaStore before your badge or dates change. Not used for buyer-order payments.</span></p>
                 </form>
             </section>
 
             <section class="subscription-panel subscription-history-panel">
-                <div class="subscription-panel-heading"><div><span class="panel-kicker">Step 2 · Submit</span><h2>Send the transaction ID</h2></div><span class="history-icon"><i class="fas fa-clock-rotate-left"></i></span></div>
-                <p class="subscription-panel-hint">After you pay, enter the transaction ID above and submit it. Your payment then appears below as Pending while we check it; Approved means the months have been added to your Seller Pass.</p>
+                <div class="subscription-panel-heading"><div><span class="panel-kicker">History</span><h2>Your submissions</h2></div><span class="history-icon"><i class="fas fa-clock-rotate-left"></i></span></div>
                 <div id="subHistory"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
-                <div class="subscription-help-card"><i class="fas fa-headset"></i><div><strong>Need help?</strong><p>Keep your mobile-money SMS or receipt. Do not send the same payment twice while a submission is still pending.</p></div></div>
+                <div class="subscription-help-card"><i class="fas fa-headset"></i><div><strong>Need help?</strong><p>Keep your mobile-money SMS. Don't send the same payment twice while one is pending.</p></div></div>
             </section>
         </div>
 
-        <p class="subscription-footer-note"><i class="fas fa-lock"></i> Your transaction ID is used to check the payment you submitted to NextaStore. It is not shown to shoppers.</p>
+        <p class="subscription-footer-note"><i class="fas fa-lock"></i> Your transaction ID is only used to check payment. It is never shown to shoppers.</p>
     </main>
+
+    <div class="proof-modal-overlay" id="proofModalOverlay" hidden>
+        <div class="proof-modal" role="dialog" aria-modal="true" aria-labelledby="proofModalTitle">
+            <button type="button" class="proof-modal-close" id="proofModalClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+
+            <div class="proof-modal-head">
+                <span class="proof-modal-icon"><i class="fas fa-camera"></i></span>
+                <h2 id="proofModalTitle">Attach payment proof</h2>
+                <p>Show us the SMS and we'll fill in the transaction ID for you.</p>
+            </div>
+
+            <div class="proof-upload-area" id="proofUploadArea">
+                <label class="proof-dropzone" for="proofFileInput" id="proofDropzone">
+                    <i class="fas fa-camera"></i>
+                    <strong id="proofDropzoneTitle">Take a photo or choose a screenshot</strong>
+                    <span id="proofDropzoneHint">Make sure the amount and ID are visible — add a second photo if they're on different screens</span>
+                    <input type="file" id="proofFileInput" accept="image/*" multiple hidden>
+                </label>
+            </div>
+
+            <div class="proof-previews" id="proofPreviews" hidden></div>
+
+            <button type="button" class="btn btn-primary proof-extract-btn" id="proofExtractBtn" hidden><i class="fas fa-wand-magic-sparkles"></i> Extract details</button>
+
+            <div class="proof-scan-status" id="proofScanStatus" hidden></div>
+
+            <div class="proof-empty-note" id="proofEmptyNote" hidden><i class="fas fa-circle-info"></i><span></span></div>
+
+            <div class="proof-result" id="proofResult" hidden>
+                <div class="proof-result-row">
+                    <label>Amount detected</label>
+                    <div class="proof-result-value" id="proofAmountRow"></div>
+                </div>
+                <div class="proof-result-row">
+                    <label for="proofRefInput">Transaction ID detected</label>
+                    <input type="text" id="proofRefInput" class="proof-result-input" placeholder="Check it matches your SMS" maxlength="120">
+                </div>
+                <p class="proof-result-hint"><i class="fas fa-circle-info"></i> Photos can be misread — please check this against your SMS before continuing.</p>
+                <button type="button" class="btn btn-primary proof-use-btn" id="proofUseBtn" disabled>Use these details</button>
+            </div>
+
+            <button type="button" class="proof-manual-link" id="proofManualLink">I'll type the ID myself instead</button>
+        </div>
+    </div>
 
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>

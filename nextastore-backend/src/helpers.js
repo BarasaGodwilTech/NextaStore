@@ -1,6 +1,7 @@
 const prisma = require('./prisma');
 const config = require('./config');
 const { sendPushToUser } = require('./push');
+const { apiError } = require('./utils');
 
 /** Computes the denormalized Product.onSale flag from a price/originalPrice
  *  pair. Call this any time either field is written (create, or an update
@@ -205,6 +206,45 @@ function isStoreCurrentlyActive(store) {
     const trialOk = !!store.trialEndsAt && new Date(store.trialEndsAt).getTime() > now;
     const paidOk = !!store.subscriptionPaidUntil && new Date(store.subscriptionPaidUntil).getTime() > now;
     return trialOk || paidOk;
+}
+
+/** The Prisma where-fragment matching isStoreCurrentlyActive() above, for
+ *  queries that need to filter *at the database level* (marketplace grids,
+ *  search, product pages) rather than checking one already-fetched store
+ *  object. There's no single implementation both can share — one runs in
+ *  JS, the other compiles to SQL — so a change to what counts as "active"
+ *  needs to update both of these together. */
+function storeActiveWhere() {
+    const now = new Date();
+    return { OR: [{ trialEndsAt: { gt: now } }, { subscriptionPaidUntil: { gt: now } }] };
+}
+
+/** Throws a structured 404 for a store a shopper shouldn't be able to see —
+ *  the owner always passes, whether they're previewing their own draft or
+ *  managing their own lapsed-trial store's products/orders. Two different
+ *  codes rather than one generic 404, so the frontend can show "this store
+ *  is still being set up" for the common case of someone hitting a link
+ *  before the seller has launched, distinct from a reactivation-focused
+ *  message once a store has launched but let its trial lapse without
+ *  paying. */
+function assertStoreVisible(store, req) {
+    if (req.user?.id === store.ownerId) return;
+    if (!store.isPublished) throw apiError('This store is still being set up by its owner.', 404, 'STORE_DRAFT');
+    if (!isStoreCurrentlyActive(store)) throw apiError('This store is not currently available.', 404, 'STORE_INACTIVE');
+}
+
+/** The full "safe to show a shopper" filter for a store relation: not
+ *  soft-deleted, launched out of draft, and currently within its trial or
+ *  a paid period. Spread into a `store: { ... }` (or, for the Store model
+ *  itself, top-level) where-clause anywhere a marketplace/search/product
+ *  query needs to exclude draft or lapsed-subscription stores — the same
+ *  conditions GET /store/public/:idOrSlug already enforces object-by-object
+ *  via isPublished + isStoreCurrentlyActive() for a single store already in
+ *  hand. Every one of these needs to agree, or a store excluded from one
+ *  (say, the marketplace grid) could still turn up in another (search, a
+ *  direct product link) — reachable by a route that forgot the filter. */
+function storefrontVisibleWhere() {
+    return { deletedAt: null, isPublished: true, ...storeActiveWhere() };
 }
 
 /** The shareable, search-engine-visible address of a store: <site>/<slug>
@@ -484,6 +524,9 @@ module.exports = {
     serializePublicStore,
     subscriptionInfo,
     isStoreCurrentlyActive,
+    assertStoreVisible,
+    storeActiveWhere,
+    storefrontVisibleWhere,
     getPlatformSettings,
     getActivePaymentMethods,
     starterStoreData,

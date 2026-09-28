@@ -16,7 +16,7 @@
 // mismatched old-file/new-file combo across separately-cached scripts is
 // exactly what produces a "<something> is not defined" error like the
 // TokenStorage one that motivated this comment.
-const CACHE_VERSION = 'v20';
+const CACHE_VERSION = 'v22';
 const CACHE_NAME = `nextastore-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 

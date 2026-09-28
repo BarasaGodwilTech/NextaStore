@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const prisma = require('../prisma');
 const { apiError, saveImagePairsIfDataUrls, deleteImagesNotIn } = require('../utils');
-const { getStoreForUser, resolveContextStore, serializeProduct, computeOnSale, createNotification, notifyStoreFollowersOfNewProduct } = require('../helpers');
+const { getStoreForUser, resolveContextStore, serializeProduct, computeOnSale, createNotification, notifyStoreFollowersOfNewProduct, storefrontVisibleWhere, assertStoreVisible } = require('../helpers');
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, productSchema, productUpdateSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
@@ -19,8 +19,9 @@ router.get('/deals', cacheResponse(30), async (req, res, next) => {
         // discounted products fell outside whatever top-N it happened to
         // pull, and did a full row-by-row JS scan on every request.
         const products = await prisma.product.findMany({
-            // Draft stores (setup not launched) never surface here either.
-            where: { onSale: true, deletedAt: null, store: { deletedAt: null, isPublished: true } },
+            // Draft stores (setup not launched), and stores whose trial has
+            // lapsed with no confirmed payment, never surface here either.
+            where: { onSale: true, deletedAt: null, store: storefrontVisibleWhere() },
             include: { store: true },
             orderBy: { sold: 'desc' },
             take: 8
@@ -85,8 +86,10 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
 
         const where = {
             deletedAt: null,
-            // Draft stores never appear in the marketplace-wide product grid.
-            store: { deletedAt: null, isPublished: true },
+            // Draft stores, and stores whose trial has lapsed with no
+            // confirmed payment, never appear in the marketplace-wide
+            // product grid.
+            store: storefrontVisibleWhere(),
             ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
             ...(category ? { category } : {}),
             ...(Number.isFinite(minPrice) ? { price: { gte: minPrice } } : {}),
@@ -126,7 +129,7 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
 router.get('/public/:id', optionalAuth, async (req, res, next) => {
     try {
         const product = await prisma.product.findFirst({
-            where: { id: req.params.id, deletedAt: null, store: { deletedAt: null, isPublished: true } }
+            where: { id: req.params.id, deletedAt: null, store: storefrontVisibleWhere() }
         });
         if (!product) throw apiError('Product not found.', 404);
         res.json({ data: serializeProduct(product) });
@@ -139,6 +142,12 @@ router.get('/', optionalAuth, async (req, res, next) => {
     try {
         const store = await resolveContextStore(req);
         if (!store) throw apiError('Store not found.', 404);
+        // resolveContextStore() serves this dual purpose: `?store=slug`
+        // resolves to whichever store that is (a shopper on that store's
+        // page), no query resolves to the caller's own store (a seller
+        // managing their dashboard). Only the former needs gating —
+        // assertStoreVisible() already no-ops for the owner.
+        assertStoreVisible(store, req);
 
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 24));

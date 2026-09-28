@@ -276,7 +276,9 @@ const platformSettingsSchema = z.object({
     mtnMomoCode: z.string().trim().max(40).optional(),
     mtnMomoName: z.string().trim().max(60).optional(),
     airtelMoneyCode: z.string().trim().max(40).optional(),
-    airtelMoneyName: z.string().trim().max(60).optional()
+    airtelMoneyName: z.string().trim().max(60).optional(),
+    mtnMomoInstructions: z.string().trim().max(240).optional(),
+    airtelMoneyInstructions: z.string().trim().max(240).optional()
 });
 
 // Admin create/update for the payment-method catalog (see prisma schema

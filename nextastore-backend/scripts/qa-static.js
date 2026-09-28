@@ -615,8 +615,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     /id="agreeTerms" required/.test(signup) && !/<a href="#">(Terms of Service|Privacy Policy)/.test(signup));
   check('Legal pages state the real product model: no payment processing/escrow, and phone shown only if the seller chooses',
     /does not process your payment/.test(terms) && /only if the seller chooses to show it/.test(privacy) && /only if you choose to show it/.test(terms));
-  check('Legal pages use nextastores.com as the canonical host',
-    /rel="canonical" href="https:\/\/nextastores\.com\/terms\.html"/.test(terms) && /rel="canonical" href="https:\/\/nextastores\.com\/privacy\.html"/.test(privacy));
+  check('Legal pages use same-site relative canonical URLs',
+    /rel="canonical" href="\/terms\.html"/.test(terms) && /rel="canonical" href="\/privacy\.html"/.test(privacy));
   check('Footer/marketplace expose Terms and Privacy; sitemap lists both pages',
     ['index.html', 'dashboard.html', 'store-detail.html', 'marketplace.html'].every(f => /terms\.html/.test(read(f)) && /privacy\.html/.test(read(f))) &&
     /'\/terms\.html', '\/privacy\.html'/.test(read('nextastore-backend/src/seo.js')));
@@ -658,6 +658,104 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     })());
   check('Service-worker cache bumped for this batch',
     (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 18; })());
+}
+
+
+// --- WIP 25: dynamic storefront host + local slug CSS fix ---
+{
+  const main = read('js/main.js');
+  const storeDetail = read('js/store-detail.js');
+  const seoRoute = read('nextastore-backend/src/routes/seo.js');
+  const seo = read('nextastore-backend/src/seo.js');
+  const launcher = read('start-local.bat');
+  const sw = read('service-worker.js');
+
+  check('Store address uses the browser\'s current origin instead of a hardcoded production hostname',
+    /window\.location\?\.origin/.test(main) && !/const BRAND_HOST = ['"]nextastores\.com['"]/.test(main));
+  check('Store-detail canonical URL follows the current page origin',
+    /new URL\(`\/\$\{encodeURIComponent\(this\.store\.slug\)\}`, window\.location\.origin\)/.test(storeDetail));
+  check('SEO storefront pages derive their public host from the incoming request and cache per host',
+    /function requestSiteUrl\(req\)/.test(seoRoute) && /const cacheKey = `seo:store-page:\$\{siteUrl\}:\$\{slug\}`/.test(seoRoute) && /const key = `seo:sitemap:\$\{siteUrl\}`/.test(seoRoute));
+  check('SEO storefront shell no longer injects a deployment-specific base href',
+    !/baseHref/.test(seo) && !/<base href/.test(seo));
+  check('Local frontend proxy preserves the browser host for dynamic storefront URLs',
+    /--proxy-options\.changeOrigin false/.test(launcher) && /--proxy-options\.xfwd true/.test(launcher));
+  check('Service worker cache version is bumped for the dynamic-host/storefront fix',
+    (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 21; })());
+}
+
+// --- WIP 26: two-photo proof-scanner extract flow + goal-card mobile squish fix ---
+{
+  const subscriptionJs = read('js/subscription.js');
+  const subscriptionHtmlFull = read('subscription.html');
+  const mobileCss = read('css/mobile.css');
+  const sw = read('service-worker.js');
+
+  check('Proof scanner supports up to two queued photos before extraction',
+    /this\.maxPhotos\s*=\s*2/.test(subscriptionJs));
+  check('Extraction is a manual, deferred step (Extract button), not run automatically per photo',
+    /proofExtractBtn['"]\)\?\.addEventListener\('click',\s*\(\)\s*=>\s*this\.runExtraction\(\)\)/.test(subscriptionJs) &&
+    /status:\s*'pending'/.test(subscriptionJs));
+  check('A queued two-photo pair is combined into one result (amount/reference merged across all done photos, not per-photo)',
+    /recomputeExtraction\(\)/.test(subscriptionJs) && /for \(const photo of this\.photos\)/.test(subscriptionJs));
+  check('Per-photo and aggregate "nothing readable" messaging both exist',
+    /Nothing readable found/.test(subscriptionJs) && /couldn't read anything in that photo/.test(subscriptionJs) && /couldn't find an amount or transaction ID/.test(subscriptionJs));
+  check('proofExtractBtn and proofEmptyNote exist in the proof modal markup',
+    /id="proofExtractBtn"/.test(subscriptionHtmlFull) && /id="proofEmptyNote"/.test(subscriptionHtmlFull));
+  check('Goal card wraps instead of squishing on narrow screens',
+    /\.subscription-goal-card\{flex-wrap:wrap\}/.test(mobileCss));
+  check('Service-worker cache version is bumped for this batch\'s changed precached file (css/mobile.css)',
+    (() => { const m = sw.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 22; })());
+}
+
+// --- WIP 27: "No badge yet" copy, mandatory mobile-money method choice, admin-editable dial instructions ---
+{
+  const subscriptionJs = read('js/subscription.js');
+  const subscriptionHtmlFull = read('subscription.html');
+  const subscriptionCss = read('css/subscription.css');
+  const adminHtmlFull = read('admin.html');
+  const adminJs = read('js/admin.js');
+  const platformSettingsMigration = read('nextastore-backend/prisma/migrations/20260927090000_platform_settings_dial_instructions/migration.sql');
+
+  check('Mobile-money method starts unselected so a seller cannot silently default to MTN',
+    /<option value="">Choose a payment option<\/option>/.test(subscriptionHtmlFull));
+  check('Submitting without choosing a method is its own explained, blocked state',
+    /if \(!method\) return app\.showAlert\(/.test(subscriptionJs));
+  check('Payment cards show a radio indicator, not only a color/shadow change, when selected',
+    /pay-number-radio/.test(subscriptionJs) && /\.pay-number-radio\{/.test(subscriptionCss));
+  check('Merchant number is labeled as a destination ("Send to"), not a bare code',
+    /<small>Send to<\/small>/.test(subscriptionJs));
+  check('Admin-set dial instructions render under the payment cards once a method is chosen',
+    /id="subPayDial"/.test(subscriptionHtmlFull) && /renderDialInstructions\(method\)/.test(subscriptionJs) && /renderDialInstructions\(current\)/.test(subscriptionJs));
+  check('Dial instructions are carried end-to-end: schema + migration + validation + subscription route',
+    /mtnMomoInstructions\s+String\s+@default\(""\)/.test(schema) &&
+    /airtelMoneyInstructions\s+String\s+@default\(""\)/.test(schema) &&
+    /ADD COLUMN "mtnMomoInstructions"/.test(platformSettingsMigration) &&
+    /ADD COLUMN "airtelMoneyInstructions"/.test(platformSettingsMigration) &&
+    /mtnMomoInstructions:\s*z\.string\(\)\.trim\(\)\.max\(240\)\.optional\(\)/.test(validation) &&
+    /mtnMomoInstructions:\s*settings\.mtnMomoInstructions/.test(subscriptionRoute));
+  check('Admin settings form exposes and saves both dial-instruction fields',
+    /id="settingsMtnInstructions"/.test(adminHtmlFull) && /id="settingsAirtelInstructions"/.test(adminHtmlFull) &&
+    /settingsMtnInstructions['"]\)\.value/.test(adminJs) && /mtnMomoInstructions:document\.getElementById\('settingsMtnInstructions'\)\.value\.trim\(\)/.test(adminJs));
+}
+
+// --- WIP 28: badge copy reverted to "No badge", 6mo no longer pre-selected by
+// default, dial instructions always render once a method is picked, and a
+// [hidden]-vs-author-`display` bug on the dial box is fixed ---
+{
+  const subscriptionJs = read('js/subscription.js');
+  const subscriptionCss = read('css/subscription.css');
+
+  check('Coverage below the first badge threshold reads "No badge", not "No badge yet"',
+    /tone-none">No badge</.test(subscriptionJs) && !/No badge yet/.test(subscriptionJs));
+  check('A new/expired seller is not pre-steered toward 6 months by default (only an in-progress paid seller gets a recommended month count)',
+    /if \(this\.data\?\.isPaid && remaining > 0 && this\.allowedMonths\.includes\(remaining\)\) return remaining;\s*\n\s*return 1;/.test(subscriptionJs));
+  check('Dial box has its own [hidden] override so it actually disappears instead of showing an empty strip (same class of bug as .proof-modal-overlay)',
+    /\.subscription-pay-dial\[hidden\]\{display:none\}/.test(subscriptionCss));
+  check('Dial instructions always render once a network is chosen: a generated fallback (merchant code + live amount) is used whenever no admin text has been set',
+    /const fallback = code/.test(subscriptionJs) && /const text = custom \|\| fallback/.test(subscriptionJs));
+  check('Dial instructions refresh when the selected coverage/amount changes, not only when the network is (re)selected',
+    /const currentMethod = document\.getElementById\('subMethod'\)\?\.value;\s*\n\s*if \(currentMethod\) this\.renderDialInstructions\(currentMethod\);/.test(subscriptionJs));
 }
 
 let failed = 0;

@@ -1,5 +1,5 @@
 class FollowingPageManager {
-    constructor() { this.page = 1; this.init(); }
+    constructor() { this.page = 1; this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page')); }
 
     async init() { await this.load(1); }
 

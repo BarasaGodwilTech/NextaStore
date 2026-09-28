@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="nx-loading">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
     <title>Login - NextaStore</title>
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/loading-overlay.css"><noscript><style>html.nx-loading>body>*:not(#nxLoader){visibility:visible!important;opacity:1!important}html.nx-loading #nxLoader{display:none!important}</style></noscript>
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
@@ -21,11 +21,37 @@
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body data-auth-page>
-    <div class="page-init-skeleton" data-page-skeleton aria-hidden="true">
-        <div class="skeleton skeleton-text-lg"></div>
-        <div class="skeleton skeleton-text"></div>
-        <div class="skeleton skeleton-text-sm"></div>
+    <div id="nxLoader" class="nx-loader" data-nx-theme="general" data-nx-wait="app" data-nx-timeout="7000" data-nx-phrases="Signing you in|Checking your session|Almost there" aria-label="Loading NextaStore">
+        <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+            <filter id="nxGrain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/></filter>
+        </svg>
+        <div class="nx-loader-ambient" aria-hidden="true"><span class="nx-a"></span><span class="nx-b"></span></div>
+        <div class="nx-loader-grain" aria-hidden="true"></div>
+        <main class="nx-loader-inner">
+            <div class="nx-loader-logo" id="nxLogoWrap" aria-hidden="true">
+                <svg viewBox="0 0 220 220">
+                    <defs>
+                        <linearGradient id="nxLiquidGrad" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="var(--nx-green-light)"/><stop offset="100%" stop-color="var(--nx-green-dark)"/></linearGradient>
+                        <radialGradient id="nxDotGrad" cx="35%" cy="35%" r="75%"><stop offset="0%" stop-color="var(--nx-gold-light)"/><stop offset="100%" stop-color="var(--nx-gold)"/></radialGradient>
+                        <clipPath id="nxClip"><rect x="0" y="0" width="220" height="220" rx="48" ry="48"/></clipPath>
+                    </defs>
+                    <rect class="nx-outline" x="1" y="1" width="218" height="218" rx="47" ry="47"/>
+                    <g clip-path="url(#nxClip)">
+                        <path id="nxWaveFill" fill="url(#nxLiquidGrad)"/>
+                        <path id="nxMeniscus" fill="none" stroke="var(--nx-gold-light)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    <path fill="#FFFFFF" d="M 132.0,176.5 L 100.5,174.0 L 82.5,53.0 L 80.0,50.5 L 79.5,175.0 L 41.5,175.0 L 43.0,44.5 L 118.5,45.0 L 139.0,170.5 L 140.5,45.0 L 160.0,44.5 L 167.0,52.5 L 177.5,56.0 L 177.5,175.0 L 132.0,176.5 Z"/>
+                    <circle class="nx-pip" id="nxPip" cx="178.1" cy="34.5" r="20.0" fill="url(#nxDotGrad)"/>
+                </svg>
+            </div>
+            <p class="nx-loader-status" id="nxStatus" role="status" aria-live="polite">Signing you in</p>
+            <button type="button" class="nx-loader-skip" id="nxSkip">Taking longer than usual — continue anyway</button>
+        </main>
+        <div class="nx-loader-pct" id="nxPct" aria-hidden="true">0%</div>
     </div>
+    <script src="js/loading-overlay.js"></script>
+    
+    
     <div class="auth-container">
         <aside class="auth-side">
             <div class="auth-awning" aria-hidden="true"></div>

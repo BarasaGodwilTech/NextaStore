@@ -1290,3 +1290,228 @@ live browser this round.
 **Still open:** everything listed as open in WIP 23, plus the same "needs a live environment" items
 in `OPEN_ITEMS.md` — in particular, the map picker step is still only ever code-reviewed, never
 clicked through against real Leaflet tiles over a network (see OPEN_ITEMS.md, WIP 16 batches 5-9).
+
+## WIP 25 (batch 15) — fixed unstyled local store routes and made public hosts follow the site origin
+Date: 2026-09-25
+
+**Bug:** direct local store URLs such as `http://localhost:3000/rixton` could arrive through the
+frontend fallback proxy with a deployment-specific `<base href>` injected by the SEO route. That made
+relative CSS/JS/image paths resolve against whatever `FRONTEND_URL` happened to contain (currently a
+tunnel), instead of the host the browser actually opened. The screenshot symptom was the store shell
+rendering as mostly unstyled HTML while the same storefront through the tunnel was styled.
+
+**Fixes:**
+- `nextastore-backend/src/routes/seo.js` now derives the public site origin from the incoming request
+  (`X-Forwarded-*` when present, otherwise the request host) for storefront SEO, robots and sitemaps.
+  Store-page and sitemap caches are keyed by that origin so switching hosts cannot reuse another
+  domain's canonical/OG metadata.
+- Removed the SEO renderer's deployment-specific `<base>` injection entirely. The real storefront
+  keeps its existing relative `css/...`, `js/...` and asset paths, so they resolve against the host
+  the shopper actually opened.
+- `start-local.bat` explicitly keeps the browser Host while proxying fallback store routes and enables
+  forwarded headers. This makes local/tunnel host detection deterministic.
+- `js/main.js` `app.storeAddress()` now uses `window.location.origin` as the source of truth, with the
+  API `publicUrl` only as a fallback. Store links, prefixes and share URLs therefore follow the actual
+  site host automatically when moving from one domain to another (including a future `nextastore.ug`)
+  without frontend hostname edits.
+- `js/store-detail.js` now writes the canonical store URL from the current page origin rather than
+  trusting a possibly stale API hostname.
+- Legal-page canonical links and the dashboard's example store URL no longer hardcode the production
+  domain; the legal copy also avoids presenting a fixed hostname as the permanent site address.
+- Service-worker cache `v20` -> `v21` for the changed frontend scripts.
+- Added static/SEO regression checks for dynamic host handling and the absence of the old `<base>` bug.
+
+**Checks:**
+- `qa:static` — **193/193 passed**.
+- `seo-test` — **16/16 passed**.
+- `node --check` — `js/main.js`, `js/store-detail.js`, `nextastore-backend/src/routes/seo.js`,
+  `nextastore-backend/src/seo.js` all clean.
+- Render smoke test confirmed a generated `/rixton` storefront has **no `<base>` tag**, keeps relative
+  CSS/JS links, and generates a canonical URL using the supplied public origin.
+
+### Still open
+- A real browser check of `localhost:3000/<slug>` still needs to be done with the user's running
+  Postgres/backend and launcher; the uploaded project cannot reproduce the live database session here.
+- Production deployment still needs the reverse-proxy rule documented in the README: real static files
+  must win, and unknown top-level store paths must fall through to the API. The code is prepared for
+  that architecture but the deployment infrastructure itself has not been changed here.
+- Database migrations remain a deployment step, as noted in previous WIPs.
+
+## WIP 26 — payment-proof photo scanner: deferred two-photo extract + mobile goal-card squish fix
+Date: 2026-09-27
+
+**Built this round:**
+- `subscription.html`: added the "Extract details" button and a "nothing found" notice element to the
+  payment-proof modal.
+- `js/subscription.js` (`ProofScanner`): scanning is now a deferred, manual step instead of running per
+  photo as soon as it's attached. Up to 2 photos can be queued; a single tap on "Extract details" (label
+  becomes "Extract from both photos" once a second is queued) OCRs whatever is still `pending`, then
+  `recomputeExtraction()` re-derives the combined amount/reference from every photo that came back
+  `done` — so an amount found on one photo and a reference found on the other both land in the same
+  result. Each photo also gets its own status chip (`Ready to scan` / `Reading…` / `Scanned` /
+  `Nothing readable found` / an OCR error), and once every queued photo has settled with nothing usable
+  found overall, an aggregate note explains why (worded differently for "photo unreadable" vs. "photo
+  read fine, but no amount/ID in it").
+- `css/subscription.css`: styles for the new extract button, the per-photo status tags (done/warn/error/
+  pending), and the aggregate empty-note banner.
+- `css/mobile.css`: the Seller Pass goal card (`#subGoalCard`) now wraps instead of squishing its icon/
+  text/button into an unreadable single row on narrow screens.
+
+**Bug found while reviewing this round's own package (not present in WIP 25's clean state):**
+`qa:static` came back **192/193**, down from WIP 25's 193/193 — the pre-existing "Subscription page has
+exact-total UX" check failed. It requires the literal phrase "exact total" as static copy somewhere on
+the page (the JS-side half, `syncAmount`, was still intact). That copy line was no longer present in
+`subscription.html` — most likely dropped incidentally while editing the nearby step markup for the
+scanner button. Restored it as a short hint under the "Choose your coverage" step heading: "Pick your
+months below — we calculate the exact total to send for you." (`.pay-step-hint` in `subscription.css`).
+
+**Also found:** `css/mobile.css` is one of the service worker's `PRECACHE_URLS` and is served
+stale-while-revalidate, but `CACHE_VERSION` was left at `v21` despite this round changing that exact
+file — every other WIP that touched a precached asset bumped it. Left as-is, an already-installed PWA
+session (or any returning visitor with the old file cached) would keep the old, squished goal-card
+layout until a second background refetch quietly replaced it, instead of getting the instant
+new-service-worker reload that `subscription.html`'s own `controllerchange` handler is there to give
+it. Bumped `v21` → `v22`.
+
+**Checks:**
+- Added 7 new `qa:static` checks for this batch (two-photo cap, deferred/manual extraction, merged
+  cross-photo result, both levels of "nothing readable" messaging, the new modal elements, the
+  goal-card wrap rule, and the `v22` cache bump).
+- `qa:static` — **200/200 passed** (193 prior + 7 new; the exact-total regression above is included in
+  that count and now passes again).
+- `node --check` — `js/subscription.js`, `service-worker.js`, `scripts/qa-static.js` all clean.
+- `subscription.html` parses with no structural errors; `subscription.css` brace count balanced.
+
+### Still open
+- **The two-photo extract flow itself has not been exercised against real OCR in a browser.** This
+  sandbox has no network access (npm registry and the Tesseract.js CDN are both unreachable here) and
+  no browser, so the actual click-through — attach 2 photos → Extract → confirm the amount from one and
+  the reference from the other both appear merged; attach a blank/blurry photo → confirm the
+  "nothing readable" note appears — could only be reviewed by reading the code, not run. This is the
+  same "needs a live environment" constraint noted throughout this log; it's on you to click through
+  before this goes out further.
+- Everything already listed as open in WIP 25 and in `OPEN_ITEMS.md`.
+
+## WIP 27 — Seller Pass: "No badge yet" copy, mandatory payment-method choice, admin-editable dial instructions
+Date: 2026-09-27
+
+Reviewed WIP 26's photo-scanner behaviour against a fresh ask (two-photo cap, deferred manual
+extraction, per-photo + aggregate "nothing readable" messaging) — all three were already correct, so
+no code changed there this round. The actual changes:
+
+**1. "No badge" → "No badge yet"**
+- `js/subscription.js` (`renderPlanPicker`): the 1/3-month plan tiles' badge chip now reads "No badge
+  yet" instead of "No badge", since coverage below 6 months does still lead somewhere.
+
+**2. Mobile-money method selection is now a real, required choice**
+- `subscription.html`: the hidden `#subMethod` `<select>`'s first option used to be `mtnMomo` — meaning
+  a seller who never tapped either card was silently defaulting to MTN MoMo on submit. First option is
+  now a blank `""` ("Choose a payment option"). Added a `.pay-step-hint` under the step-2 heading.
+- `js/subscription.js` (`renderPayNumbers`): each card now renders a radio-dot indicator and labels the
+  merchant number "Send to <code>" instead of a bare `<code>`, so it reads as a destination account. No
+  card shows as selected until tapped.
+- `js/subscription.js` (`submitPayment`): added an explicit `if (!method)` check ahead of the existing
+  amount/reference checks, with its own warning message, so an unchosen method is now its own error
+  state instead of silently falling through to "payment option is not currently configured".
+- `css/subscription.css`: `.pay-number-radio` dot, `.pay-number-code` label styling, `is-selected` now
+  keys off `border-color` instead of only a box-shadow so the change is visible without color reliance
+  alone.
+
+**3. Admin-editable "how to dial" instructions, shown once a network is picked**
+- `prisma/schema.prisma` + new migration `20260927090000_platform_settings_dial_instructions`: added
+  `mtnMomoInstructions` / `airtelMoneyInstructions` (`TEXT`, default `''`) to `PlatformSettings`.
+- `src/validation.js` (`platformSettingsSchema`): both fields added, optional, max 240 chars.
+- `src/routes/subscription.js`: `GET /subscription`'s `paymentInfo` now includes both fields.
+  `PUT /admin/settings` needed no route change — it already spreads the validated body straight into
+  the `prisma.platformSettings.upsert`.
+- `admin.html` / `js/admin.js`: two new "dial instructions" text inputs on the platform settings form
+  (`settingsMtnInstructions` / `settingsAirtelInstructions`), wired into `loadSettings`/`saveSettings`.
+- `css/admin.css`: `.admin-settings-card label.full` so the instruction fields span both grid columns
+  instead of being squeezed into a half-width column meant for short codes.
+- `js/subscription.js`: new `#subPayDial` block, filled in by `renderDialInstructions(method)` and
+  called on both initial render and every card tap. Renders nothing when the admin has left that
+  method's instructions blank — purely additive, never a blocker.
+- `subscription.html`: added `<div id="subPayDial" hidden>` under `#subPayNumbers`.
+
+**Checks:**
+- `qa:static` — **208/208 passed** (200 prior + 8 new, added in a follow-up pass this same round: the
+  "No badge yet" copy, the blank default payment-method option, the `if (!method)` submit guard, the
+  radio-indicator markup/CSS, the "Send to" label, the `#subPayDial`/`renderDialInstructions` wiring,
+  the schema+migration+validation+route chain for the two instruction fields, and the admin
+  form/`admin.js` load-save wiring).
+- `node --check` — `js/subscription.js`, `js/admin.js` both clean.
+- CSS brace count balanced in `css/subscription.css` after edits.
+- Checked `service-worker.js`'s `PRECACHE_URLS` — none of the files touched this round
+  (`admin.html`, `subscription.html`, `js/subscription.js`, `js/admin.js`, `css/subscription.css`,
+  `css/admin.css`) are in that list, so `CACHE_VERSION` (`v22`) did not need bumping.
+
+### Still open
+- **Migration never run against Postgres** — same sandbox constraint as every prior round (no
+  outbound network here). `mtnMomoInstructions`/`airtelMoneyInstructions` need `prisma migrate deploy`
+  (or `migrate dev`) against the real database before the admin form or `/subscription` route will
+  actually have those columns to read/write.
+- **Not clicked through in a real browser** — the radio-dot selection state, the blank-method submit
+  error, and the `#subPayDial` block reading from live `paymentInfo` are all reviewed by code only.
+- Everything already listed as open in WIP 26 and in `OPEN_ITEMS.md` — the two items above (migration
+  never run against Postgres; nothing clicked through in a real browser) are still the only real gaps
+  in this round now that qa:static coverage has been added.
+
+## WIP 28 — Seller Pass follow-up: badge copy reverted, no default 6-month pre-select, dial instructions always shown, hidden-box bug fixed
+Date: 2026-09-27
+
+Reviewed against fresh feedback on WIP 27's own changes.
+
+**1. "No badge yet" → back to "No badge"**
+- `js/subscription.js` (`renderPlanPicker`): the 1/3-month tiles' badge chip now reads "No badge"
+  again, not "No badge yet".
+
+**2. 6 months is no longer pre-selected by default for a new/expired seller**
+- `js/subscription.js` (`recommendedMonths`): dropped the `!isPaid → 6` branch. A brand-new or
+  expired seller now lands on the 1-month tile (the cheapest, first option) until they actively tap
+  a different one — or use the existing "Choose 6 months" button in the goal card, which still jumps
+  straight to 6 months on request. A seller who is already paid and part-way toward a badge still gets
+  the exact remaining month count pre-selected, since that recommendation is genuinely theirs, not a
+  platform default.
+
+**3. Payment instructions now always show real content, not just an admin's optional text**
+- `js/subscription.js` (`renderPayNumbers`): now also stores the real merchant codes
+  (`this.paymentCodes`), alongside the existing admin-text store.
+- `js/subscription.js` (`renderDialInstructions`): once a network is chosen, this no longer goes blank
+  just because the admin hasn't typed custom instructions into Platform Settings. It now falls back to
+  a generated dial string built from the real merchant code and the real amount for whatever coverage
+  is currently selected (e.g. `Dial *165*3*<code>*<amount>#, enter your PIN, then confirm.`), and only
+  falls further back to generic "open your X menu" copy if even the merchant code is missing. An
+  admin's own custom text, when set, still takes priority over both fallbacks.
+- `js/subscription.js` (`syncAmount`): now re-renders the dial box whenever months/amount change (not
+  only when the network is re-tapped), since the fallback string embeds the live amount.
+
+**4. Fixed a real bug: the dial box didn't actually hide**
+- `css/subscription.css`: `.subscription-pay-dial` sets its own `display:flex` with no `[hidden]`
+  override — the same class of bug already called out and fixed on `.proof-modal-overlay` earlier in
+  this file (an author stylesheet's `display` beats the browser's built-in `[hidden]{display:none}`
+  regardless of specificity). Practical effect: the box was never actually disappearing — it sat there
+  as an empty rounded strip under the payment cards even before a network was chosen. Added
+  `.subscription-pay-dial[hidden]{display:none}` to match the existing pattern.
+- No other `.hidden = ` toggle in `js/subscription.js` was missing its CSS override — checked each one
+  against `css/subscription.css` (`scan-proof-chip[hidden]`, `proof-modal-overlay[hidden]`,
+  `.proof-modal [hidden]`, `proof-previews[hidden]`, `proof-scan-status[hidden]` already cover the rest).
+
+**Also reviewed (no change needed):** the "Start → Verified (6mo) → Gold (12mo) → Platinum (24mo)"
+badge-ladder track (`renderBadgeLadder`) — this is separate from the two items above. "Start" is always
+shown as reached (months covered is always ≥ 0), the next unearned tier gets the dashed "is-next"
+styling, and the fill bar's width is `commitmentMonths / 24 * 100`, clamped 0–100. Read through this
+logic and the matching CSS end to end — didn't find a bug in it.
+
+**Checks:**
+- `qa:static` — **212/212 passed** (208 prior; replaced the now-obsolete "No badge yet" check with 5 new
+  ones covering all four changes above).
+- `node --check` — `js/subscription.js`, `scripts/qa-static.js` both clean.
+- CSS brace count balanced in `css/subscription.css` after edits (239/239).
+- `service-worker.js`'s `PRECACHE_URLS` doesn't include `subscription.html`/`.js`/`.css`, so
+  `CACHE_VERSION` (`v22`) did not need bumping.
+
+### Still open
+- **Not clicked through in a real browser.** The dial box's fallback text, its now-fixed hide/show
+  behavior, and the 1-month default tile are all reviewed by code only — same sandbox constraint as
+  every round before this one (no browser, no network here).
+- Everything already listed as open in WIP 27 and in `OPEN_ITEMS.md`.

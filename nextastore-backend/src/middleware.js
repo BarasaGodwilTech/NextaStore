@@ -256,7 +256,7 @@ function errorHandler(err, req, res, next) {
     const status = err.status || err.statusCode || 500;
     if (status >= 500 && status !== 503) console.error(err);
     const payload = { message: status >= 500 && status !== 503 ? 'Something went wrong.' : (err.message || 'Something went wrong.') };
-    if (err.code && (/^TOKEN_|^ACCOUNT_|^SERVICE_UNAVAILABLE$/.test(err.code))) payload.code = err.code;
+    if (err.code && (/^TOKEN_|^ACCOUNT_|^STORE_|^SERVICE_UNAVAILABLE$/.test(err.code))) payload.code = err.code;
     if (status === 413) payload.message = 'That upload is too large.';
     res.status(status).json(payload);
 }

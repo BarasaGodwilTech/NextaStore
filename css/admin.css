@@ -145,6 +145,7 @@ body[data-admin-required]{
 .admin-settings-card{padding:var(--a-s5)}
 .admin-settings-card form{display:grid;grid-template-columns:1fr 1fr;gap:var(--a-s4)}
 .admin-settings-card label,.admin-modal label{display:flex;flex-direction:column;gap:6px;font-size:.8125rem;font-weight:700;color:var(--a-ink)}
+.admin-settings-card label.full{grid-column:1/-1}
 .admin-settings-card input,.admin-modal input,.admin-modal select,.admin-modal textarea{min-height:44px;padding:.65rem .8rem;border:1px solid var(--a-line);border-radius:10px;background:#fff;font:inherit;font-size:.9375rem;font-weight:400;color:var(--a-text);outline:0}
 .admin-modal textarea{min-height:96px}
 .admin-settings-card input:focus,.admin-modal input:focus,.admin-modal select:focus,.admin-modal textarea:focus{border-color:var(--a-brand);box-shadow:0 0 0 3px rgba(1,176,117,.12)}

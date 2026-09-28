@@ -145,7 +145,7 @@ if not defined SKIP_DOCKER (
 )
 
 echo Starting frontend at http://localhost:3000 ...
-start "NextaStore Frontend" cmd /k "cd /d ""%~dp0"" && npx http-server . -p 3000 -P http://127.0.0.1:4000"
+start "NextaStore Frontend" cmd /k "cd /d ""%~dp0"" && npx http-server . -p 3000 -P http://127.0.0.1:4000 --proxy-options.changeOrigin false --proxy-options.xfwd true"
 
 echo.
 echo Starting backend at http://localhost:4000 ...

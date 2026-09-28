@@ -8,7 +8,7 @@ class MarketplaceManager {
         this.searchRequestId = 0;
         this.catalogRequestId = 0;
         this.catalogSearchDebounce = null;
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     async init() {

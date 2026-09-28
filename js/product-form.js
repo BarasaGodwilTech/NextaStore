@@ -24,7 +24,7 @@ class ProductFormPage {
         this.draftSaveTimer = null;
         this.draftStatusTimer = null;
 
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     /** Scoped per seller so a shared/public browser can't leak one

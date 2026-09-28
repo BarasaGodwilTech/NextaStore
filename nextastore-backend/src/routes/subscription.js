@@ -37,7 +37,9 @@ router.get('/', requireAuth, requireSeller, async (req, res, next) => {
                     mtnMomoCode: settings.mtnMomoCode,
                     mtnMomoName: settings.mtnMomoName,
                     airtelMoneyCode: settings.airtelMoneyCode,
-                    airtelMoneyName: settings.airtelMoneyName
+                    airtelMoneyName: settings.airtelMoneyName,
+                    mtnMomoInstructions: settings.mtnMomoInstructions,
+                    airtelMoneyInstructions: settings.airtelMoneyInstructions
                 }
             }
         });

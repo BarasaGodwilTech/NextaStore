@@ -345,6 +345,21 @@
 /* ---- Content ---- */
 .dashboard-content { padding: var(--spacing-xl); flex: 1; max-width: 100%; width: 100%; }
 
+/* Dashboard-wide status banners (draft/live/setup-nudge/subscription-nudge)
+   sit here, between the sticky top bar and .dashboard-content, so they stay
+   visible no matter which section a seller has open — previously nested
+   inside #overviewSection, they vanished the moment someone switched to
+   Products/Orders/Settings/Analytics, which mattered most for the
+   subscription nudge (see renderSubscriptionNudge() in dashboard.js): the
+   entire point of it is to keep payment pressure visible, not just on one
+   tab. display:none is toggled on this wrapper itself in JS
+   (updateStatusBannersVisibility(), called from loadStoreChrome()) once
+   every banner inside is hidden, so a healthy store doesn't carry an empty
+   gap under the header. */
+.dashboard-status-banners { padding: var(--spacing-xl) var(--spacing-xl) 0; display: flex; flex-direction: column; }
+@media (max-width: 1024px) { .dashboard-status-banners { padding: var(--spacing-md) var(--spacing-md) 0; } }
+@media (max-width: 480px) { .dashboard-status-banners { padding: var(--spacing-sm) var(--spacing-sm) 0; } }
+
 /* ---- Store Branding Section ---- */
 .store-branding-section {
     background: white;
@@ -1271,64 +1286,12 @@
 .settings-form { max-width: 700px; }
 .settings-form .card { margin-bottom: var(--spacing-lg); }
 
-.settings-tabs {
-    display: flex;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xl);
-    border-bottom: 1px solid var(--gray-200);
-    padding-bottom: var(--spacing-md);
-    overflow-x: auto;
-}
-
-.settings-tab {
-    background: none;
-    border: none;
-    padding: var(--spacing-md) var(--spacing-lg);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--gray-600);
-    cursor: pointer;
-    border-radius: var(--border-radius-md);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    white-space: nowrap;
-    transition: all 0.2s ease;
-}
-
-.settings-tab:hover {
-    background: var(--gray-100);
-    color: var(--secondary);
-}
-
-.settings-tab.active {
-    background: var(--secondary);
-    color: white;
-}
-
-.settings-content {
-    max-width: 800px;
-}
-
-.settings-panel {
-    display: none;
-}
-
-.settings-panel.active {
-    display: block;
-}
-
-/* ---- Settings Grid (New Clean Layout) ---- */
-.settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--spacing-xl);
-    padding: var(--spacing-xl);
-}
-
-.settings-grid .card {
-    margin-bottom: 0;
-}
+/* NOTE: an earlier tabs/panel-based Settings layout (.settings-tabs,
+   .settings-tab, .settings-content, .settings-panel) and a later grid
+   attempt (.settings-grid) both lived here. Neither is referenced by
+   dashboard.html or dashboard.js anymore — both were fully superseded by
+   the sidebar layout below — so they've been removed rather than left as
+   dead weight a future edit could mistake for something still in use. */
 
 /* ---- Professional Settings Layout ---- */
 .settings-container {
@@ -1918,6 +1881,19 @@
     .sidebar-overlay { overscroll-behavior: contain; touch-action: none; }
     @media (prefers-reduced-motion: reduce) { .sidebar, .sidebar.open { transition: none; } }
     .main-content { margin-left: 0; }
+
+    /* Settings sub-nav: same breakpoint as everything else above, not 480px
+       — a 250px fixed sidebar plus .settings-container's own margins left
+       almost no room for the actual form on any tablet or large phone
+       between 481-768px, while the rest of the dashboard had already
+       switched to its mobile layout. */
+    .settings-container { flex-direction: column; margin: var(--spacing-md); min-height: 0; }
+    .settings-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--gray-200); padding: var(--spacing-md) 0; }
+    .settings-nav { flex-direction: row; overflow-x: auto; padding: 0 var(--spacing-md); }
+    .settings-nav-item { padding: var(--spacing-sm) var(--spacing-md); white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+    .settings-nav-item.active { border-left: none; border-bottom-color: var(--secondary); }
+    .settings-main { padding: var(--spacing-lg); }
+    .form-row { grid-template-columns: 1fr; gap: var(--spacing-md); }
     .menu-toggle { display: block; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .welcome-banner { flex-direction: column; align-items: flex-start; gap: var(--spacing-md); }
@@ -1955,7 +1931,6 @@
     
     /* Dashboard content padding on mobile */
     .dashboard-content { padding: var(--spacing-md); }
-    .settings-container { margin: 0; }
 }
 
 @media (max-width: 480px) {
@@ -1976,7 +1951,6 @@
     .analytics-header { flex-direction: column; align-items: flex-start; }
     .analytics-controls { width: 100%; flex-direction: column; }
     .analytics-controls .form-select { width: 100%; }
-    .settings-tabs { overflow-x: auto; }
     
     /* Store branding mobile */
     .store-banner { height: 150px; }
@@ -1987,16 +1961,7 @@
     /* image keeps its square aspect-ratio at every width */
     .activity-grid { grid-template-columns: 1fr; }
     .section-header { flex-direction: column; align-items: flex-start; }
-    
-    /* Settings mobile */
-    .settings-container { flex-direction: column; margin: var(--spacing-md); }
-    .settings-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--gray-200); padding: var(--spacing-md) 0; }
-    .settings-nav { flex-direction: row; overflow-x: auto; padding: 0 var(--spacing-md); }
-    .settings-nav-item { padding: var(--spacing-sm) var(--spacing-md); white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
-    .settings-nav-item.active { border-left: none; border-bottom-color: var(--secondary); }
-    .settings-main { padding: var(--spacing-lg); }
     .settings-section-header h2 { font-size: 1.5rem; }
-    .form-row { grid-template-columns: 1fr; gap: var(--spacing-md); }
     .settings-toggle-item { padding: var(--spacing-md); }
 }
 

@@ -52,6 +52,13 @@ separated here:
   never clicked through: an admin adding/removing a method in `/admin` and reloading
   onboarding to confirm step 3 and the review-step chips pick it up is unverified against a
   live database and a real browser. *(WIP_LOG.md, WIP 13)*
+- **WIP 26's two-photo payment-proof scanner** — the deferred "Extract details" flow (queue up to
+  2 photos, OCR them together, merge the amount/reference across whichever photos actually read)
+  is code-reviewed and `qa:static`-clean (200/200), but the sandbox it was built in has no network
+  access to Tesseract.js's CDN and no browser, so the OCR itself has never actually run. Needs a
+  real click-through: attach 2 photos with the amount and ID on different screens and confirm both
+  merge into one result, and attach a blank/blurry photo and confirm the "nothing readable" note
+  appears. *(WIP_LOG.md, WIP 26)*
 
 ## Not actually built yet
 - **Notifications dropdown caps at 10** — the server returns 30, but the dropdown only shows

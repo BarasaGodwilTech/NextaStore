@@ -90,7 +90,7 @@ class OnboardingWizard {
         // once so the step-3 checkboxes and the review-step chips are both
         // built from it instead of a fixed MTN/Airtel/card list.
         this.paymentMethods = [];
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     async init() {

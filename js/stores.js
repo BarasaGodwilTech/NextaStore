@@ -4,7 +4,7 @@ class StoresDirectory {
         this.page = 1;
         this.pagination = null;
         this.loading = false;
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     async init() {

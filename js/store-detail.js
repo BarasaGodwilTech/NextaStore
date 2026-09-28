@@ -18,7 +18,7 @@ class StoreDetailManager {
             electronics: 'Electronics',
             other: 'Other'
         };
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     async init() {
@@ -27,6 +27,7 @@ class StoreDetailManager {
         this.setupProductEventListeners();
         this.showLoadingStates();
         await this.loadStoreData();
+        if (!this.store) return; // unavailable — loadStoreData() already rendered why; nothing else to load
         await this.loadFollowState();
         await this.loadProducts();
         this.renderStoreFilters();
@@ -283,7 +284,7 @@ class StoreDetailManager {
             this.loadSellerPresence();
         } catch (error) {
             console.error('Failed to load store data:', error);
-            this.renderEmptyStore();
+            this.renderStoreUnavailable(error.code);
         }
     }
 
@@ -351,17 +352,17 @@ class StoreDetailManager {
 
         document.title = `${this.store.name} - NextaStore`;
 
-        // The canonical address of this store is nextastores.com/<slug>. The API
-        // already writes it into the page it serves there; this covers the old
-        // store-detail.html?store=... form so the two never compete as duplicates.
-        if (this.store.publicUrl) {
+        // The current page origin is the canonical host. This also covers the
+        // legacy store-detail.html?store=... form and keeps the canonical URL
+        // correct when the platform moves domains without a frontend edit.
+        if (this.store.slug) {
             let canonical = document.querySelector('link[rel="canonical"]');
             if (!canonical) {
                 canonical = document.createElement('link');
                 canonical.rel = 'canonical';
                 document.head.appendChild(canonical);
             }
-            canonical.href = this.store.publicUrl;
+            canonical.href = new URL(`/${encodeURIComponent(this.store.slug)}`, window.location.origin).href;
         }
 
         // Update breadcrumb
@@ -481,7 +482,43 @@ class StoreDetailManager {
         document.getElementById('storeContent')?.classList.remove('hidden');
     }
 
-    renderEmptyStore() {
+    /** Renders why the store couldn't be shown — a distinct, appropriately
+     *  toned state per reason, not one generic "not found" for every case:
+     *    STORE_DRAFT    — the seller hasn't launched yet. Common when a
+     *                     seller shares their own link early, or someone
+     *                     revisits a link from before launch. Encouraging,
+     *                     not alarming — nothing is wrong.
+     *    STORE_INACTIVE — the store launched but its trial lapsed without
+     *                     a confirmed payment. Neutral wording that never
+     *                     surfaces *why* to a shopper (that's between the
+     *                     seller and the platform) — just that it isn't
+     *                     taking orders right now, with a nudge elsewhere.
+     *    (anything else) — genuinely missing, deleted, or a network error.
+     *                      Keeps the original "not found" copy. */
+    renderStoreUnavailable(code) {
+        const copy = {
+            STORE_DRAFT: {
+                icon: 'fa-hourglass-half',
+                title: 'This Store Is Still Being Set Up',
+                description: 'The seller hasn\u2019t finished launching this store yet — check back soon.',
+                crumb: 'Store Not Yet Open',
+                body: 'This store is still being set up by its owner. It\u2019ll appear here as soon as they launch it.',
+            },
+            STORE_INACTIVE: {
+                icon: 'fa-store-slash',
+                title: 'This Store Isn\u2019t Available Right Now',
+                description: 'It isn\u2019t taking orders at the moment — check back later, or explore other stores in the meantime.',
+                crumb: 'Store Unavailable',
+                body: 'This store isn\u2019t accepting orders right now. In the meantime, there are plenty of other great stores on NextaStore.',
+            },
+        }[code] || {
+            icon: 'fa-store-slash',
+            title: 'Store Not Found',
+            description: 'This store may have been removed or the link is incorrect.',
+            crumb: 'Store Not Found',
+            body: 'This store may have been removed or the link is incorrect.',
+        };
+
         // Hide loading states
         document.getElementById('storeLoadingState')?.classList.remove('active');
         document.getElementById('storeContent')?.classList.remove('hidden');
@@ -494,33 +531,32 @@ class StoreDetailManager {
         const infoSection = document.getElementById('storeInfoSection');
         if (infoSection) infoSection.hidden = true;
 
-        document.getElementById('storeName').textContent = 'Store Not Found';
-        document.getElementById('storeDescription').textContent = 'This store may have been removed or is temporarily unavailable.';
+        document.getElementById('storeName').textContent = copy.title;
+        document.getElementById('storeDescription').textContent = copy.description;
         document.getElementById('storeBadges').innerHTML = '';
         document.getElementById('storeLocation').textContent = 'Unknown';
         const trust = document.getElementById('storeTrustSignals'); if (trust) trust.innerHTML = '';
 
-        // Update breadcrumb for not found state
         const breadcrumbContainer = document.querySelector('.breadcrumb');
         if (breadcrumbContainer) {
             breadcrumbContainer.innerHTML = `
                 <a href="marketplace.html">Marketplace</a>
                 <span class="separator">/</span>
-                <span class="breadcrumb-current">Store Not Found</span>
+                <span class="breadcrumb-current">${copy.crumb}</span>
             `;
         }
-        
+
         // Hide the store actions
         const storeActions = document.querySelector('.store-actions');
         if (storeActions) {
             storeActions.style.display = 'none';
         }
-        
+
         document.getElementById('productsGrid').innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon"><i class="fas fa-store-slash"></i></div>
-                <h3>Store Not Available</h3>
-                <p>This store may have been removed or the link is incorrect.</p>
+                <div class="empty-icon"><i class="fas ${copy.icon}"></i></div>
+                <h3>${copy.title}</h3>
+                <p>${copy.body}</p>
                 <a href="marketplace.html" class="btn btn-primary"><i class="fas fa-store"></i> Browse Other Stores</a>
             </div>
         `;

@@ -51,7 +51,7 @@ class MessagesManager {
         // repaints the list (e.g. to clear an unread badge) before there is
         // a list — that would flash "No conversations yet".
         this._conversationsLoaded = false;
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     /* Legacy name. Only the first message of a brand-new conversation ever

@@ -192,10 +192,12 @@ function stripHeadTags(head) {
  *    untouched page plus noindex, so nothing about it leaks or gets indexed. The owner
  *    can still preview it (the page itself asks the API, which allows the owner).
  *  - no `store`: an address nobody owns. Same page, noindex; the caller sends 404.
- * `baseHref`, when given, makes the page's relative css/js/image paths resolve against
- * that origin - only needed if the API is opened on a different host than the site.
+ * Asset URLs remain relative to the public storefront origin. The API serves
+ * this shell as the fallback for the public host, so a `<base>` tag pointing
+ * at a configured deployment URL would make local/tunnel/domain-switch requests
+ * load assets from the wrong host.
  */
-function renderStoreShell(shellHtml, { store = null, live = false, products = [], productCount = 0, paymentLabels = [], siteUrl, appUrl, baseHref = null } = {}) {
+function renderStoreShell(shellHtml, { store = null, live = false, products = [], productCount = 0, paymentLabels = [], siteUrl, appUrl } = {}) {
     const headEnd = shellHtml.search(/<\/head>/i);
     if (headEnd === -1) return shellHtml;
     const headStart = shellHtml.search(/<head[^>]*>/i);
@@ -226,8 +228,7 @@ function renderStoreShell(shellHtml, { store = null, live = false, products = []
 <meta name="robots" content="noindex,nofollow">
 `;
     }
-    const base = baseHref ? `<base href="${esc(String(baseHref).replace(/\/?$/, '/'))}">\n` : '';
-    return `${shellHtml.slice(0, openTagEnd)}\n${base}${head.trim()}\n${inject}${shellHtml.slice(headEnd)}`;
+    return `${shellHtml.slice(0, openTagEnd)}\n${head.trim()}\n${inject}${shellHtml.slice(headEnd)}`;
 }
 
 function renderRobots({ siteUrl }) {

@@ -5,7 +5,7 @@ class ProductDetailManager {
         this.quantity = 1;
         this.isFavorite = false;
         this.referrer = document.referrer;
-        this.init();
+        this.init().catch(() => {}).then(() => window.NextaLoader && window.NextaLoader.ready('page'));
     }
 
     async init() {

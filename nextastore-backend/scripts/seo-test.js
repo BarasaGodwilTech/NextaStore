@@ -142,11 +142,10 @@ test('an unknown address renders the same page as noindex', () => {
     assert(/noindex/.test(html));
 });
 
-test('baseHref (API opened on another host) points relative paths at the site', () => {
-    const html = render({ store, live: true, baseHref: 'http://localhost:3000' });
-    assert(html.includes('<base href="http://localhost:3000/">'));
-    assert(html.indexOf('<base') < html.indexOf('css/main.css'), 'base must precede every relative URL');
-    assert(!render({ store, live: true }).includes('<base'));
+test('store shell keeps asset URLs relative to the host the shopper opened', () => {
+    const html = render({ store, live: true });
+    assert(!html.includes('<base '), 'store pages must not inject a deployment-specific base URL');
+    assert(html.includes('href="css/main.css"') && html.includes('src="js/store-detail.js"'));
 });
 
 test('the store address is /<slug> with no path in between', () => {

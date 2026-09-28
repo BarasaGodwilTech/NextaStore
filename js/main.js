@@ -452,7 +452,17 @@ class NextaStoreApp {
         // page should reflect the new state right away rather than on its
         // next open.
         document.addEventListener('ns-push-state-changed', () => this.refreshAllPushBellRows());
-        requestAnimationFrame(() => requestAnimationFrame(() => this.dismissPageSkeleton()));
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            this.dismissPageSkeleton();
+            // Tells the boot loading overlay (css/loading-overlay.js) that the
+            // auth check has settled and it's safe to reveal this page's own
+            // markup — a page with data-nx-wait="app page" still stays hidden
+            // until its own manager also reports 'page' (see e.g. the end of
+            // marketplace.js/dashboard.js's constructors). A page that
+            // redirected (checkAuthState() above) never gets here, so it
+            // never flashes its real content first.
+            window.NextaLoader?.ready('app');
+        }));
     }
 
     /** Finding 2: a "Remember me" session lives in localStorage, which is
@@ -1806,27 +1816,34 @@ class NextaStoreApp {
      *              API, which knows who is looking).
      */
     storeAddress(slug, publicUrl) {
-        const BRAND_HOST = 'nextastores.com';
         const clean = String(slug || '').trim();
-        let host = BRAND_HOST;
-        try {
-            if (publicUrl) {
-                const u = new URL(publicUrl);
-                const local = /^(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/.test(u.hostname)
-                    || /\.(local|ngrok-free\.dev|ngrok-free\.app|ngrok\.io|trycloudflare\.com)$/.test(u.hostname);
-                if (!local) host = u.host;
-            }
-        } catch { /* malformed publicUrl: keep the brand host */ }
         const path = clean ? `/${encodeURIComponent(clean)}` : '/';
-        let shareUrl = `https://${host}${path}`;
+
+        // The page being viewed is the source of truth for its public host.
+        // This keeps store links correct in local development, tunnels, the
+        // current production domain, and a future domain move (for example
+        // nextastores.ug) without changing frontend code or rebuilding just
+        // to update a hostname. `publicUrl` remains a fallback for non-browser
+        // contexts or an older API response that has no usable page origin.
+        let origin = '';
         try {
-            if (publicUrl && clean) shareUrl = new URL(publicUrl).origin + path;
-        } catch { /* keep the branded address */ }
+            if (window.location?.origin) origin = window.location.origin;
+        } catch { /* keep the fallback below */ }
+
+        if (!origin && publicUrl) {
+            try { origin = new URL(publicUrl).origin; } catch { /* ignore */ }
+        }
+        if (!origin) origin = 'https://nextastores.com';
+
+        let host = 'nextastores.com';
+        try { host = new URL(origin).host; } catch { /* keep the safe fallback */ }
+
+        const shareUrl = clean ? new URL(path, `${origin.replace(/\/$/, '')}/`).href : '';
         return {
             host,
             prefix: `${host}/`,
             display: clean ? `${host}${path}` : '',
-            shareUrl: clean ? shareUrl : '',
+            shareUrl,
             openUrl: clean ? path : ''
         };
     }

@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { apiError } = require('../utils');
-const { notifyNewMessage } = require('../helpers');
+const { notifyNewMessage, isStoreCurrentlyActive } = require('../helpers');
 const { requireAuth } = require('../middleware');
 const presence = require('../presence');
 const { validateBody, sendMessageSchema, replyMessageSchema } = require('../validation');
@@ -189,6 +189,16 @@ router.post('/', requireAuth, validateBody(sendMessageSchema), async (req, res, 
 
         let message = null;
         if (!conversation) {
+            // Only gates a genuinely new thread (or a new product thread
+            // with the same store) — a buyer already mid-conversation with
+            // this store keeps going even if the store lapses afterward
+            // (see findExisting() above). New contact with a store that's
+            // still being set up, or whose trial lapsed without payment, is
+            // blocked everywhere else a buyer could reach it (browsing,
+            // search, following); this is the last door.
+            if (!store.isPublished || !isStoreCurrentlyActive(store)) {
+                throw apiError('This store is not currently accepting new messages.', 404);
+            }
             // Conversation and its first message are created together, so a
             // failure can't leave the seller with an empty conversation
             // ("No messages yet") from a buyer whose message never landed.
