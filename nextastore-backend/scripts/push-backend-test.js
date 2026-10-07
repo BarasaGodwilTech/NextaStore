@@ -112,12 +112,12 @@ const httpError = (statusCode) => Object.assign(new Error(`push service said ${s
     // ------------------------------------------------------------ sendPushToUser
     reset();
     addSub('u1', 'https://push.example/a'); addSub('u1', 'https://push.example/b'); addSub('u2', 'https://push.example/other');
-    let r = await sendPushToUser('u1', { type: 'new_order', title: 'New order', body: 'Order #5', link: 'dashboard.html#orders' });
+    let r = await sendPushToUser('u1', { type: 'new_order', title: 'New order', body: 'Order #5', link: '/dashboard#orders' });
     check('sends to every device the person has, and only theirs',
         r.devices === 2 && r.sent === 2 && pushed.map((p) => p.endpoint).sort().join() === 'https://push.example/a,https://push.example/b');
     check('reports { devices, sent, failed, removed }', r.failed === 0 && r.removed === 0);
     check('payload is exactly { type, title, body, link, account }',
-        JSON.stringify(Object.keys(pushed[0].payload)) === JSON.stringify(['type', 'title', 'body', 'link', 'account']) && pushed[0].payload.link === 'dashboard.html#orders');
+        JSON.stringify(Object.keys(pushed[0].payload)) === JSON.stringify(['type', 'title', 'body', 'link', 'account']) && pushed[0].payload.link === '/dashboard#orders');
     check('payload names the account it is for, so a shared device can tell whose push it is',
         pushed.every((p) => p.payload.account === 'Amina Nakato'));
     check('each send carries that device\'s own keys', pushed.every((p) => p.keys.p256dh === `p-${p.endpoint}` && p.keys.auth === `a-${p.endpoint}`));

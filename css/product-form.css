@@ -316,3 +316,44 @@
     .cover-upload { height: 120px; }
     .avatar-upload { width: 76px; height: 76px; left: var(--spacing-lg); bottom: -26px; font-size: 1.375rem; }
 }
+
+
+/* ==========================================================================
+   Desktop layout (>=1100px): use the screen instead of a 960px column.
+   Photos, details and pricing sit side by side; the side column stays in
+   view while the seller scrolls, with a live preview on top. Phones and
+   tablets are unchanged (the preview card is hidden below 1100px).
+   ========================================================================== */
+.pf-preview { display: none; }
+@media (min-width: 1100px) {
+    .pf-content { max-width: 1280px; padding-left: var(--spacing-2xl); padding-right: var(--spacing-2xl); }
+    .pf-layout { grid-template-columns: minmax(0, 1fr) 400px; gap: var(--spacing-2xl); }
+    .pf-side { position: sticky; top: 5.5rem; }
+    .pf-preview { display: block; }
+    .image-gallery { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+.pf-preview-card { display: flex; gap: var(--spacing-md); align-items: center; }
+.pf-preview-img {
+    flex: 0 0 96px; height: 96px; border-radius: var(--border-radius-md);
+    background: var(--gray-100); color: var(--gray-400);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden;
+}
+.pf-preview-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-preview-body { min-width: 0; flex: 1; }
+.pf-preview-cat { font-size: 0.75rem; color: var(--gray-500); min-height: 1em; }
+.pf-preview-name { font-weight: 600; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pf-preview-name.is-empty { color: var(--gray-400); font-weight: 500; }
+.pf-preview-prices { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.5rem; margin-top: 0.25rem; }
+.pf-preview-price { font-weight: 700; color: var(--ink); }
+.pf-preview-orig { font-size: 0.8125rem; color: var(--gray-400); }
+.pf-preview-off { font-size: 0.75rem; font-weight: 600; color: var(--danger); }
+.pf-preview-orig[hidden], .pf-preview-off[hidden] { display: none; }
+
+/* The side column is sticky; in Chrome a sticky grid item may slide down out of its row and cover whatever sits
+   in the row below, which hid the green Save Product button. On desktop the side column now spans both rows and
+   the Save/Delete bar sits in the left column only, so nothing can slide over it. */
+@media (min-width: 1100px) {
+    .pf-main { grid-column: 1; grid-row: 1; }
+    .pf-side { grid-column: 2; grid-row: 1 / 3; }
+    .pf-actions { grid-column: 1; grid-row: 2; }
+}

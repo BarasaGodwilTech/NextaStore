@@ -139,6 +139,7 @@ class DashboardManager {
         this.setupPushSettings();
         this.setupShareModal();
         this.setupGlobalSearch();
+        this.setupStoreInfoToggles();
 
         // One-shot flag coming from the onboarding wizard's final "Launch
         // Store" step — sessionStorage so a page refresh doesn't re-trigger
@@ -331,7 +332,7 @@ class DashboardManager {
                     <div class="empty-icon"><i class="fas fa-box-open"></i></div>
                     <h3>No products yet</h3>
                     <p>Add your first product to start selling on your storefront.</p>
-                    <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                    <a class="btn btn-primary" href="/product-form"><i class="fas fa-plus"></i> Add Product</a>
                 </div>
             `;
             return;
@@ -342,7 +343,7 @@ class DashboardManager {
                 <div class="storefront-product-image" style="${app.productThumb(p) ? `background-image: url(${app.productThumb(p)})` : ''}">
                     ${!app.productThumb(p) ? `<i class="fas ${p.icon || 'fa-box'}"></i>` : ''}
                     <div class="storefront-product-actions">
-                        <a class="btn btn-sm btn-outline" href="product-form.html?id=${p.id}" title="Edit"><i class="fas fa-pen"></i></a>
+                        <a class="btn btn-sm btn-outline" href="/product-form?id=${p.id}" title="Edit"><i class="fas fa-pen"></i></a>
                         <button class="btn btn-sm btn-outline" onclick="dashboardManager.deleteProduct('${p.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
@@ -416,7 +417,9 @@ class DashboardManager {
 
             // Load store name from API or fallback to user's name + Store
             const storeName = store.name || `${app.user?.name || 'User'}'s Store`;
-            document.getElementById('storeDisplayName').textContent = storeName;
+            const nameEl = document.getElementById('storeDisplayName');
+            nameEl.textContent = storeName;
+            nameEl.title = storeName; // the header holds long names to 3 lines; hover/long-press shows the rest
 
             // Load store description — an empty one means setup was never
             // finished (Step 1 now requires this field), not that the
@@ -424,6 +427,7 @@ class DashboardManager {
             // instructional copy as if it were the seller's own words.
             const description = store.description || 'No description yet — add one so shoppers know what you sell.';
             document.getElementById('storeDescriptionDisplay').textContent = description;
+            this.syncDescriptionToggle();
 
             // Load location from API
             const locationParts = [];
@@ -444,10 +448,16 @@ class DashboardManager {
             // way or the other instead of only clearing it in the truthy
             // branch, so a store with no location set doesn't get stuck
             // showing a permanent shimmer.
-            document.getElementById('locationText').textContent = location || 'Add your location';
+            const locationEl = document.getElementById('locationText');
+            locationEl.textContent = location || 'Add your location';
+            locationEl.title = location; // the header holds long addresses to 2 lines
+            this.syncLocationToggle();
 
             // Load contact information
-            document.getElementById('storeContactEmailDisplay').textContent = store.contactEmail || app.user?.email || 'Not set';
+            const emailText = store.contactEmail || app.user?.email || 'Not set';
+            const emailEl = document.getElementById('storeContactEmailDisplay');
+            emailEl.textContent = emailText;
+            emailEl.title = emailText;
             document.getElementById('contactPhone').textContent = store.phoneNumber || 'Not set';
 
             // Load payment methods
@@ -457,7 +467,7 @@ class DashboardManager {
             const followers = store.followers || 0;
             document.getElementById('storeFollowers').textContent = `${followers.toLocaleString()} followers`;
             const badgeRoot = document.getElementById('storeBadges');
-            if (badgeRoot) badgeRoot.innerHTML = app.renderSellerBadges(store, { limit: 3 }) || '<span class="seller-badge seller-badge--ready"><i class="fas fa-hourglass-half"></i><span>Badge threshold: 6 months</span></span>';
+            if (badgeRoot) badgeRoot.innerHTML = app.renderSellerBadges(store, { limit: 3, more: true }) || '<span class="seller-badge seller-badge--ready"><i class="fas fa-hourglass-half"></i><span>Badge threshold: 6 months</span></span>';
 
         } catch (error) {
             console.error('Error loading store branding:', error);
@@ -828,7 +838,7 @@ class DashboardManager {
                     <div class="empty-icon"><i class="fas fa-box-open"></i></div>
                     <h3>No products yet</h3>
                     <p>Add your first product to start selling on your storefront.</p>
-                    <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                    <a class="btn btn-primary" href="/product-form"><i class="fas fa-plus"></i> Add Product</a>
                 </div>
             `;
             document.getElementById('clearProductFilters')?.addEventListener('click', () => {
@@ -870,7 +880,7 @@ class DashboardManager {
                     </div>
                 </div>
                 <div class="manage-product-actions">
-                    <a class="btn btn-outline btn-sm" href="product-form.html?id=${p.id}"><i class="fas fa-pen"></i> Edit</a>
+                    <a class="btn btn-outline btn-sm" href="/product-form?id=${p.id}"><i class="fas fa-pen"></i> Edit</a>
                     <button class="btn btn-outline btn-sm" onclick="dashboardManager.deleteProduct('${p.id}')" aria-label="Delete ${app.escapeHtml(p.name)}"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
@@ -995,7 +1005,7 @@ class DashboardManager {
         const failed = results.filter(r => r.status === 'rejected').length;
         const succeeded = ids.length - failed;
 
-        if (succeeded) app.showAlert(`${succeeded} product${succeeded === 1 ? '' : 's'} moved to ${category}.`, failed ? 'warning' : 'success');
+        if (succeeded) app.showAlert(`${succeeded} product${succeeded === 1 ? '' : 's'} moved to ${(window.NXCategories ? window.NXCategories.label(category) : category)}.`, failed ? 'warning' : 'success');
         if (failed) app.showAlert(`${failed} product${failed === 1 ? '' : 's'} could not be updated.`, 'error');
 
         select.value = '';
@@ -1109,9 +1119,12 @@ class DashboardManager {
         `;
         container.querySelectorAll('[data-view-seller-order]').forEach(btn => btn.addEventListener('click', () => this.showSellerOrder(btn.dataset.viewSellerOrder)));
         container.querySelectorAll('[data-order-action]').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const targetStatus = btn.dataset.orderAction;
-                if (targetStatus === 'cancelled' && !window.confirm('Cancel this order? This cannot be undone.')) return;
+                if (targetStatus === 'cancelled') {
+                    const ok = await app.confirm({ title: 'Cancel this order?', message: 'The buyer will be told it was cancelled. This cannot be undone.', confirmText: 'Cancel order', cancelText: 'Keep order', tone: 'danger' });
+                    if (!ok) return;
+                }
                 this.updateOrderStatus(btn.dataset.orderId, targetStatus);
             });
         });
@@ -1120,7 +1133,7 @@ class DashboardManager {
         });
     }
 
-    async showSellerOrder(id){try{const r=await app.apiRequest(`/orders/${encodeURIComponent(id)}`),o=r.data,store=o.store||{},modal=document.createElement('div');modal.className='order-detail-modal';const pickup=o.fulfillmentMethod==='pickup',loc=[store.district,store.address].filter(Boolean).join(' · '),mapsUrl=store.mapCoordinates?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.mapCoordinates)}`:'',map=mapsUrl?`<a target="_blank" rel="noopener" href="${mapsUrl}">Open map location</a>`:'',sellerMapPreviewId=`sellerOrderMapPreview-${o.id}`,sellerMapPreview=pickup&&store.mapCoordinates?`<div class="map-preview-slot" id="${sellerMapPreviewId}" style="margin-top:8px;"></div>`:'';modal.innerHTML=`<div class="order-detail-panel" role="dialog" aria-modal="true"><button class="modal-close" aria-label="Close">&times;</button><div class="order-detail-head"><div><span class="eyebrow">Seller order view</span><h2>#${app.escapeHtml(o.id)}</h2></div><span class="order-status status-${o.status}">${o.status}</span></div><div class="order-trust-strip"><span><i class="fas fa-${pickup?'store':'truck'}"></i> ${pickup?'Pick up / visit the store':'Delivery'}</span><span><i class="fas fa-money-bill"></i> ${app.escapeHtml(o.paymentMethod||'Payment not specified')}</span><span><i class="fas fa-circle"></i> ${app.escapeHtml(o.paymentStatus||'unpaid')}</span></div>${pickup?`<div class="seller-pickup-box"><strong>Pickup location</strong><span>${app.escapeHtml(loc||'No saved address')}</span>${store.detailedDirections?`<small>${app.escapeHtml(store.detailedDirections)}</small>`:''}${map?map:''}${sellerMapPreview}</div>`:`<div class="seller-pickup-box"><strong>Delivery address</strong><span>${app.escapeHtml(o.deliveryAddress||'Address not provided')}</span></div>`}<div class="detail-items">${(o.items||[]).map(i=>`<div><span>${i.quantity} × ${app.escapeHtml(i.productName)}</span><strong>${app.formatCurrency(i.unitPrice*i.quantity)}</strong></div>`).join('')}</div><div class="detail-total"><span>Total</span><strong>${app.formatCurrency(o.total)}</strong></div><div class="delivery-detail"><div><dt>Buyer</dt><dd>${app.escapeHtml(o.customerName)} · ${app.escapeHtml(o.customerPhone)}</dd></div></div><div class="detail-actions"><a class="btn btn-outline" href="messages.html?store=${encodeURIComponent(store.id||'')}&order=${encodeURIComponent(o.id)}"><i class="fas fa-message"></i> Message buyer</a><button class="btn btn-outline" data-report-seller><i class="fas fa-flag"></i> Report an issue</button></div></div>`;document.body.appendChild(modal);if(pickup&&store.mapCoordinates){const[lat,lng]=store.mapCoordinates.split(',').map(Number);if(Number.isFinite(lat)&&Number.isFinite(lng)){const slot=document.getElementById(sellerMapPreviewId);window.NextaStoreMapPreview?.render(slot,{lat,lng,width:260,height:130,mapsUrl})}}const close=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('.modal-close'))close()});modal.querySelector('[data-report-seller]').addEventListener('click',async()=>{const reason=window.prompt('Briefly describe the issue with this order:');if(!reason)return;try{await app.apiRequest(`/orders/${encodeURIComponent(o.id)}/report`,{method:'POST',body:JSON.stringify({reason})});app.showAlert('Issue reported and attached to this order.','success');modal.querySelector('[data-report-seller]').disabled=true}catch(e){app.showAlert(e.message,'error')}})}catch(e){app.showAlert(e.message,'error')}}
+    async showSellerOrder(id){try{const r=await app.apiRequest(`/orders/${encodeURIComponent(id)}`),o=r.data,store=o.store||{},modal=document.createElement('div');modal.className='order-detail-modal';const pickup=o.fulfillmentMethod==='pickup',loc=[store.district,store.address].filter(Boolean).join(' · '),mapsUrl=store.mapCoordinates?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.mapCoordinates)}`:'',map=mapsUrl?`<a target="_blank" rel="noopener" href="${mapsUrl}">Open map location</a>`:'',sellerMapPreviewId=`sellerOrderMapPreview-${o.id}`,sellerMapPreview=pickup&&store.mapCoordinates?`<div class="map-preview-slot" id="${sellerMapPreviewId}" style="margin-top:8px;"></div>`:'';modal.innerHTML=`<div class="order-detail-panel" role="dialog" aria-modal="true"><button class="modal-close" aria-label="Close">&times;</button><div class="order-detail-head"><div><span class="eyebrow">Seller order view</span><h2>#${app.escapeHtml(o.id)}</h2></div><span class="order-status status-${o.status}">${o.status}</span></div><div class="order-trust-strip"><span><i class="fas fa-${pickup?'store':'truck'}"></i> ${pickup?'Pick up / visit the store':'Delivery'}</span><span><i class="fas fa-money-bill"></i> ${app.escapeHtml(o.paymentMethod||'Payment not specified')}</span><span><i class="fas fa-circle"></i> ${app.escapeHtml(o.paymentStatus||'unpaid')}</span></div>${pickup?`<div class="seller-pickup-box"><strong>Pickup location</strong><span>${app.escapeHtml(loc||'No saved address')}</span>${store.detailedDirections?`<small>${app.escapeHtml(store.detailedDirections)}</small>`:''}${map?map:''}${sellerMapPreview}</div>`:`<div class="seller-pickup-box"><strong>Delivery address</strong><span>${app.escapeHtml(o.deliveryAddress||'Address not provided')}</span></div>`}<div class="detail-items">${(o.items||[]).map(i=>`<div><span>${i.quantity} × ${app.escapeHtml(i.productName)}</span><strong>${app.formatCurrency(i.unitPrice*i.quantity)}</strong></div>`).join('')}</div><div class="detail-total"><span>Total</span><strong>${app.formatCurrency(o.total)}</strong></div><div class="delivery-detail"><div><dt>Buyer</dt><dd>${app.escapeHtml(o.customerName)} · ${app.escapeHtml(o.customerPhone)}</dd></div></div><div class="detail-actions"><a class="btn btn-outline" href="/messages?store=${encodeURIComponent(store.id||'')}&order=${encodeURIComponent(o.id)}"><i class="fas fa-message"></i> Message buyer</a><button class="btn btn-outline" data-report-seller><i class="fas fa-flag"></i> Report an issue</button></div></div>`;document.body.appendChild(modal);if(pickup&&store.mapCoordinates){const[lat,lng]=store.mapCoordinates.split(',').map(Number);if(Number.isFinite(lat)&&Number.isFinite(lng)){const slot=document.getElementById(sellerMapPreviewId);window.NextaStoreMapPreview?.render(slot,{lat,lng,width:260,height:130,mapsUrl})}}const close=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('.modal-close'))close()});modal.querySelector('[data-report-seller]').addEventListener('click',async()=>{const reason=await app.prompt({title:'Report an issue',message:'Describe what went wrong. Your report is attached to this order.',label:'What happened?',placeholder:'e.g. The item never arrived, or the price was different from what we agreed',confirmText:'Send report',minLength:5,maxLength:1000,minLengthMessage:'Please describe the issue in a few words (at least 5 characters).'});if(!reason)return;try{await app.apiRequest(`/orders/${encodeURIComponent(o.id)}/report`,{method:'POST',body:JSON.stringify({reason})});app.showAlert('Issue reported and attached to this order.','success');modal.querySelector('[data-report-seller]').disabled=true}catch(e){app.showAlert(e.message,'error')}})}catch(e){app.showAlert(e.message,'error')}}
 
     renderOrdersPagination() {
         const p = this.ordersPagination;
@@ -1554,20 +1567,105 @@ class DashboardManager {
             </div>`).join('');
     }
 
-    /** Overview header badges: only the methods this store accepts. */
+    /** Overview header badges: only the methods this store accepts. The first
+     *  PAYMENT_CHIP_LIMIT show; the rest fold behind a "+N more" control so a
+     *  store that accepts everything doesn't turn the header into a wall of
+     *  chips (most of all on a phone). The expanded state survives the
+     *  re-renders loadStoreBranding() does after every Settings save. */
     async renderPaymentBadges(store) {
         const root = document.getElementById('storePaymentsDisplay');
         if (!root) return;
+        const LIMIT = 4;
         try {
             const methods = await this.getPaymentMethods();
             const accepted = store?.payments || {};
             const active = methods.filter(m => accepted[m.code]);
-            root.innerHTML = active.length
-                ? active.map(m => `<span class="payment-badge active"><i class="fas ${app.escapeHtml(m.icon || 'fa-wallet')}"></i> ${app.escapeHtml(m.label || m.code)}</span>`).join('')
-                : '<span class="payment-badge">No payment methods selected</span>';
+            if (!active.length) {
+                root.classList.remove('is-expanded');
+                root.innerHTML = '<span class="payment-badge"><span>No payment methods selected</span></span>';
+                return;
+            }
+            const icon = (m) => /^fa-[a-z0-9-]{1,32}$/.test(m.icon || '') ? m.icon : 'fa-wallet';
+            const chips = active.map((m, i) => {
+                const label = app.escapeHtml(m.label || m.code);
+                return `<span class="payment-badge active${i >= LIMIT ? ' is-extra' : ''}" title="${label}"><i class="fas ${icon(m)}" aria-hidden="true"></i><span>${label}</span></span>`;
+            }).join('');
+            const extra = active.length - LIMIT;
+            const expanded = extra > 0 && !!this.paymentsExpanded;
+            root.classList.toggle('is-expanded', expanded);
+            root.innerHTML = chips + (extra > 0
+                ? `<button type="button" class="store-more-toggle" id="storePaymentsToggle" aria-expanded="${expanded}" aria-controls="storePaymentsDisplay" data-extra="${extra}">${expanded ? 'Show fewer' : `+${extra} more`}</button>`
+                : '');
         } catch (e) {
             root.innerHTML = '';
         }
+    }
+
+    /** Wires the two "show more" controls in the Overview header. Both are
+     *  event-delegated / observer-based so they keep working when the header
+     *  is repainted. Called once from init(). */
+    setupStoreInfoToggles() {
+        const desc = document.getElementById('storeDescriptionDisplay');
+        const descBtn = document.getElementById('storeDescToggle');
+        if (descBtn && desc) {
+            descBtn.addEventListener('click', () => {
+                const open = !desc.classList.contains('is-expanded');
+                desc.classList.toggle('is-expanded', open);
+                this.syncDescriptionToggle();
+            });
+            // Whether the text is cut off depends on the width (rotate a phone,
+            // resize a window) and on the section being on screen at all
+            // (Overview is display:none when a seller lands on #settings), so
+            // re-check whenever the paragraph's own size changes.
+            if (typeof ResizeObserver === 'function') new ResizeObserver(() => this.syncDescriptionToggle()).observe(desc);
+            else window.addEventListener('resize', () => this.syncDescriptionToggle());
+        }
+        const loc = document.getElementById('locationText');
+        const locBtn = document.getElementById('storeLocToggle');
+        if (locBtn && loc) {
+            locBtn.addEventListener('click', () => {
+                loc.classList.toggle('is-expanded', !loc.classList.contains('is-expanded'));
+                this.syncLocationToggle();
+            });
+            if (typeof ResizeObserver === 'function') new ResizeObserver(() => this.syncLocationToggle()).observe(loc);
+            else window.addEventListener('resize', () => this.syncLocationToggle());
+        }
+        const pay = document.getElementById('storePaymentsDisplay');
+        if (pay) {
+            pay.addEventListener('click', (e) => {
+                const btn = e.target.closest('#storePaymentsToggle');
+                if (!btn) return;
+                this.paymentsExpanded = !pay.classList.contains('is-expanded');
+                pay.classList.toggle('is-expanded', this.paymentsExpanded);
+                btn.setAttribute('aria-expanded', String(this.paymentsExpanded));
+                btn.textContent = this.paymentsExpanded ? 'Show fewer' : `+${btn.dataset.extra} more`;
+            });
+        }
+    }
+
+    /** Shows a "more" control only when the text really is longer than its
+     *  clamp, and folds it back if the text stops needing it. Phones have no
+     *  hover, so a clamped value with only a tooltip would be unreadable. */
+    syncClampToggle(textId, btnId, maxLines, moreLabel, lessLabel) {
+        const el = document.getElementById(textId);
+        const btn = document.getElementById(btnId);
+        if (!el || !btn) return;
+        if (!el.offsetParent) return; // section hidden: measured again when it is shown (ResizeObserver)
+        const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 22;
+        const needsToggle = Math.round(el.scrollHeight / lineHeight) > maxLines;
+        if (!needsToggle) el.classList.remove('is-expanded');
+        const open = el.classList.contains('is-expanded');
+        btn.hidden = !needsToggle;
+        btn.setAttribute('aria-expanded', String(open));
+        btn.textContent = open ? lessLabel : moreLabel;
+    }
+
+    syncDescriptionToggle() {
+        this.syncClampToggle('storeDescriptionDisplay', 'storeDescToggle', 3, 'Read more', 'Show less');
+    }
+
+    syncLocationToggle() {
+        this.syncClampToggle('locationText', 'storeLocToggle', 2, 'Show full address', 'Show less');
     }
 
     renderSettingsMapPin() {
@@ -2203,7 +2301,7 @@ class DashboardManager {
                 // rather than leave the button looking like it did nothing.
             }
             app.endSession('logout');
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         });
 
         document.getElementById('notificationsForm')?.addEventListener('submit', (e) => {
@@ -2663,7 +2761,7 @@ class DashboardManager {
 
     editProduct(productId) {
         this.closeSearchResults();
-        window.location.href = `product-form.html?id=${productId}`;
+        window.location.href = `/product-form?id=${productId}`;
     }
 
     /** Overview's quick "Edit" pin link. Saves immediately via PUT /store
@@ -2692,7 +2790,11 @@ class DashboardManager {
                     if (res.data.district) locationParts.push(res.data.district.charAt(0).toUpperCase() + res.data.district.slice(1));
                     if (placeName) locationParts.push(placeName);
                     else if (res.data.address) locationParts.push(res.data.address);
-                    document.getElementById('locationText').textContent = locationParts.length ? locationParts.join(', ') : 'Add your location';
+                    const savedLocation = locationParts.join(', ');
+                    const savedLocationEl = document.getElementById('locationText');
+                    savedLocationEl.textContent = savedLocation || 'Add your location';
+                    savedLocationEl.title = savedLocation;
+                    this.syncLocationToggle();
                     this.settingsMapCoordinates = res.data.mapCoordinates || '';
                     this.settingsMapPlaceName = placeName || '';
                     app.showAlert('Location saved', 'success');

@@ -23,7 +23,9 @@ router.get('/', requireAuth, async (req, res, next) => {
 
         const where = {
             userId: req.user.id,
-            product: { deletedAt: null, store: { deletedAt: null, isPublished: true } }
+            // Open stores only: a favorite whose store lapsed drops off the list
+            // (the heart is kept, and it returns with the store).
+            product: { deletedAt: null, store: storefrontVisibleWhere() }
         };
 
         const [rows, total] = await Promise.all([
@@ -44,6 +46,25 @@ router.get('/', requireAuth, async (req, res, next) => {
             })),
             pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 }
         });
+    } catch (err) { next(err); }
+});
+
+// Which of a page of products the viewer has favorited, in ONE query:
+// GET /favorites/check?ids=a,b,c  ->  { data: { favorited: ['a', 'c'] } }.
+// The storefront paints every card's heart from this instead of asking
+// GET /favorites/:productId once per card (24 requests a page). Must be
+// declared BEFORE '/:productId' or "check" would be read as a product id.
+// Signed-out viewers get an empty list, like the single lookup's `false`.
+// Capped at 60 ids (the list endpoint's own page limit); extras are ignored.
+router.get('/check', optionalAuth, async (req, res, next) => {
+    try {
+        const ids = [...new Set(String(req.query.ids || '').split(',').map(id => id.trim()).filter(id => id && id.length <= 64))].slice(0, 60);
+        let favorited = [];
+        if (req.user && ids.length) {
+            const rows = await prisma.productFavorite.findMany({ where: { userId: req.user.id, productId: { in: ids } }, select: { productId: true } });
+            favorited = rows.map(r => r.productId);
+        }
+        res.json({ data: { favorited } });
     } catch (err) { next(err); }
 });
 

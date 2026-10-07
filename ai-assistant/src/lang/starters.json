@@ -1,0 +1,38 @@
+{
+  "_note": "Conversation starters shown in the hero chat. 'en' is authoritative. 'lg' is regenerated from 'en' by `npm run translate:starters` using the local Ganda Gemma model (needs GANDA_MODEL). Until that has been run, 'lg' holds draft wording and lg_status says so.",
+  "lg_status": "draft",
+  "en": {
+    "guest": [
+      "How do I start my first store?",
+      "What should I sell as a beginner?",
+      "Give me business ideas I can start with a small budget",
+      "How do I price my products?",
+      "How do I find a trustworthy seller?",
+      "How can I buy safely on NextaStore?"
+    ],
+    "seller": [
+      "What should I add to my store next?",
+      "How do I get more customers?",
+      "How do I take good product photos?",
+      "How do I price my products?",
+      "How does the Seller Pass work?"
+    ]
+  },
+  "lg": {
+    "guest": [
+      "Nnyinza ntya okutandika edduuka lyange erisooka?",
+      "Ntunde ki nga nkyatandika?",
+      "Mpa ebirowoozo by'obusuubuzi bye nsobola okutandika n'ensimbi entono",
+      "Nsalawo ntya ku bbeeyi y'ebintu byange?",
+      "Nnyinza ntya okufuna omutunzi omwesigwa?",
+      "Nnyinza ntya okugula mu ngeri etaliimu bulabe?"
+    ],
+    "seller": [
+      "Ntunde ki ekirala mu dduuka lyange?",
+      "Nnyinza ntya okufuna bakasitoma abangi?",
+      "Nnyinza ntya okukwata ebifaananyi ebirungi eby'ebintu byange?",
+      "Nsalawo ntya ku bbeeyi y'ebintu byange?",
+      "Seller Pass ekola etya?"
+    ]
+  }
+}

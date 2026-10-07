@@ -189,8 +189,18 @@ page itself is a JavaScript shell.
 | --- | --- |
 | `/<store-slug>` | The storefront. Live stores get their own tags; drafts and lapsed stores get generic tags + `noindex` (the owner can still preview - the page asks the API); an unknown slug gets the same page with a real 404 status |
 | `/s/<store-slug>` | Old links: 301 to `/<store-slug>` |
+| `/<store-slug>/<name>-<key>` | A product's own address, e.g. `nextastores.com/asia-ivan/blue-sofa-5efgh6ij`. The API answers it with the **real** `product-detail.html` and rewrites only its `<head>` for that product (title `Blue Sofa – UGX 450,000`, description, canonical URL, Open Graph/Twitter tags, schema.org `Product` JSON-LD), exactly as it does for stores - so the address in the browser *is* the address that previews well when pasted anywhere. The photo is the ~480px cover thumbnail (a small JPEG WhatsApp always shows; full photos can exceed its size limit and be silently dropped), falling back to the full photo, the store logo, then the brand card. The page learns which product it is from two `<meta>` tags (`nx-product-id`, `nx-store-slug`) because the address only holds a short key. The `<key>` is the last 8 characters of the product id, looked up *inside* the named store, so renaming a product never breaks its links: any other spelling of the name, capitals, a trailing slash, or the store's id in place of its slug 301s to the one real address (query string kept). A draft / lapsed / deleted-store product gets generic tags + `noindex` (the owner still gets through - the page asks the API); an unknown one gets the same page with a real 404. Products of a store that opted out of search engines are `noindex` too. Needs no proxy change: it is not a file, so it already falls through to the API |
+| `/p/<productId>` | A product by its id alone (a product shared inside a chat, an old link): 301 to the product's own address, query string kept |
+| `/product-detail?id=...&store=...` | The old static address. Still works; once the product has loaded, the page rewrites the address bar to the product's own address (no reload) |
 | `/sitemap.xml` | Every published, currently-active store that hasn't opted out (max 50,000 URLs; cached 1h) |
 | `/robots.txt` | Allows the public site, blocks private pages, points at the sitemap |
+
+**WhatsApp caches previews.** WhatsApp remembers what a link looked like the first time it was shared, so a link shared *before* a change keeps its old preview for a long while; test with a link that has never been shared, and to re-test after an edit, add a throwaway query string (`.../blue-sofa-5efgh6ij?x=2` - it is kept through every redirect). Facebook's Sharing Debugger shows exactly which tags a crawler reads.
+
+`store-detail.html` is the page shell the API serves at every `/<store-slug>`; it is never a
+public address. Opened directly, it redirects (in the browser, at the top of `<head>`) to
+`/<slug>` when `?store=` names one, or to the marketplace when it doesn't, and no link in the
+site points at it. The file must stay where the API can read it.
 
 Slugs share the site root with pages and folders, so `login`, `cart`, `admin`,
 `api`, `css`... are reserved (`src/slugs.js`). `npm run test:seo` fails if a new
@@ -198,11 +208,17 @@ top-level page or folder is added without being listed there.
 
 **Required infrastructure step.** Real files must win, and everything else must
 reach the API. `http-server ... -P` in `start-local.bat` already behaves this way.
-In production, with a reverse proxy in front of both:
+In production, with a reverse proxy in front of both (this is also where clean
+page addresses come from - see "Clean URLs" below):
 
 ```nginx
 location /api/ { proxy_pass http://api_upstream; }
-location / { try_files $uri $uri/ @api; }      # static file first ...
+location = /index.html { return 301 /; }
+location / {
+    # /dashboard.html -> 301 -> /dashboard (query string kept)
+    if ($request_uri ~ "^/([A-Za-z0-9_-]+)\.html(\?.*)?$") { return 301 /$1$2; }
+    try_files $uri $uri.html $uri/ @api;         # file, then <name>.html, then ...
+}
 location @api { proxy_pass http://api_upstream; } # ... otherwise the API
 ```
 
@@ -215,6 +231,38 @@ Console and use URL Inspection on one `/<slug>` page. Indexing is not instant.
 
 Tests: `npm run test:seo` (head rewriting, escaping, JSON-LD, sitemap, reserved
 words; no DB needed).
+
+## Clean URLs (no `.html`)
+
+Every page is reached at `/<name>`: `/dashboard`, `/marketplace`, `/product-detail?id=...`,
+`/login`, `/` for the home page. Nothing in the site links to `something.html` any more,
+and the old addresses keep working: they redirect to the clean one.
+
+It is a **rule, not a list**, so a page added later is clean the moment its `.html` file
+exists - there is no table of pages to update:
+
+| Where | How |
+| --- | --- |
+| Production (nginx, above) | `try_files $uri $uri.html ...` serves `/name` from `name.html`; the `if ($request_uri ~ ...\.html)` line 301-redirects `/name.html` to `/name`. `$request_uri` is the *original* request, which is why the internal `.html` lookup cannot redirect-loop. |
+| Local (`start-local.bat`) | `http-server -e html` serves `/name` from `name.html`. It cannot 301, so `js/clean-url.js` rewrites a typed `/name.html` to `/name` in the address bar (no reload). |
+| Netlify / Cloudflare Pages / Vercel (`cleanUrls`) | Already the default (or one setting); no extra rule needed. |
+| Any other static host | Turn on its "clean URLs" / "pretty URLs" option, or add the equivalent of the nginx lines. Without it `/dashboard` will 404 - the link generators (`app.storeLink`, notification links, emails) all use clean addresses. |
+
+Adding a page: create `newpage.html` in the site root, put `<script src="/js/clean-url.js"></script>`
+in its `<head>` (copy any other page), link to it as `/newpage`, and add the name to
+`RESERVED_SLUGS` in `src/slugs.js` so no store can take that address. `npm run qa:static`
+and `npm run test:seo` fail if any of these is forgotten, or if a page or script links to a
+`.html` address.
+
+Things that intentionally still say `.html`:
+
+* the files on disk, and `store-detail.html` in `src/storeShell.js` / the fallback redirect in
+  `src/routes/seo.js` (they name the file, and both work through the redirect);
+* `errors/*.html` (served by the proxy as error pages, not visited by address);
+* `"id": "/index.html"` in `manifest.json` - an installed app's identity. Changing it would make
+  browsers treat already-installed copies as a different app.
+* notification links saved before this change (`messages.html?conversation=...`): the site and the
+  service worker still read them and open the clean address.
 
 ## Web Push (mobile notifications)
 
@@ -425,3 +473,41 @@ uploads, `.git`, or development secrets. `.env.example` is the only environment
 template. Local demo data belongs only in `scripts/seed-dev.js` and is refused
 when `NODE_ENV=production`.
 
+
+
+## Listing types (products, services, digital items)
+
+Every product has a `listingType`: `physical` (the default; every existing product), `service`, or `digital`.
+
+| Type | How shoppers get it | Stock | Fields |
+|---|---|---|---|
+| physical | Add to Cart, then checkout and order | tracked, decremented per order | price, stock |
+| service | **Enquiry through Messages** ("Request a quote") | none | starting price ("From UGX x"), `serviceArea`, `serviceDuration` |
+| digital | **Enquiry through Messages** ("Message seller") | none | price |
+
+- A store can mix all three. Stock is always stored as 0 for service and digital listings.
+- Orders reject service/digital items server-side (both checkout paths in `routes/orders.js`) with a message telling
+  the buyer to message the seller, so a stale cart or a hand-made request cannot create an order for them.
+- Migration: `20261001090000_product_listing_type` (adds three columns with defaults; existing rows stay physical).
+  Run `npx prisma migrate deploy`.
+
+### Service flow, now: enquiry through Messages (chosen)
+The product page and store cards show "Request a quote" / "Enquire" instead of Add to Cart. It uses the existing
+"Message seller" dialog, so price, time and place are agreed in the conversation. No new order type is needed.
+
+### Service flow, later: booking orders (option 2, NOT built)
+For sellers who want a firm booking instead of a conversation. Rough plan:
+1. `Product`: `bookingMode` (`enquiry` | `booking`), optional `depositPercent`, weekly availability and slot length.
+2. `Order`: `kind` (`goods` | `booking`), `scheduledFor` (DateTime), `serviceAddress`; no stock reserve or restock for bookings.
+3. Order statuses for bookings: requested, accepted (or declined/rescheduled), completed, cancelled. Seller sees
+   bookings in a calendar-style list; buyer can cancel before a cutoff.
+4. Product page: date/time picker and address field replace the quantity box; the orders.js guard becomes
+   "allow `service` only when `bookingMode = booking`".
+5. Digital delivery (file link or code released after payment is confirmed) belongs in the same round, since a digital
+   item bought through checkout needs something to deliver.
+Enquiry stays available alongside booking, so a seller can offer both.
+
+## Nexi (AI assistant) proxy, WIP 53
+`/api/assistant/*` forwards to the separate assistant service (`../ai-assistant`). Set `ASSISTANT_URL` (default `http://127.0.0.1:4100`) and optionally
+`ASSISTANT_TIMEOUT_MS` (default 120000; use 150000 if the assistant runs on a small CPU-only server with Luganda replies on) and `ASSISTANT_TOKEN` (shared secret, must match the assistant's own `ASSISTANT_TOKEN`; required if the assistant is on another machine). Limits: 12 chats/minute and 100/hour per IP, on top of the general API limit. Keep the assistant service private.
+Test without a database: `node scripts/assistant-proxy-test.js`; browser: `npm run test:assistant-browser`.

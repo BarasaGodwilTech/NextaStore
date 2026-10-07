@@ -1,0 +1,180 @@
+/* Category icon tiles + picker (WIP 44). Icons come from js/category-sprite.js. */
+
+.nx-cat-icon { display: block; flex: none; }
+
+/* ---- Marketplace tiles ------------------------------------------------ */
+.cat-tiles {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: var(--spacing-md) var(--spacing-sm);
+}
+.cat-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .55rem;
+    padding: .25rem .1rem;
+    background: none;
+    border: 0;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: .8125rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.cat-tile-art {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 92px;
+    aspect-ratio: 1;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 22px;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.cat-tile-art .nx-cat-icon { width: 62%; height: 62%; }
+.cat-tile:hover .cat-tile-art,
+.cat-tile:focus-visible .cat-tile-art { transform: translateY(-3px); border-color: var(--primary); box-shadow: var(--shadow-md); background: #fff; }
+.cat-tile:focus-visible { outline: none; }
+.cat-tile:focus-visible .cat-tile-art { box-shadow: 0 0 0 3px var(--primary-light), var(--shadow-md); }
+.cat-tile.is-active .cat-tile-art { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 2px var(--primary); }
+.cat-tile.is-active { font-weight: 700; }
+.cat-tile--action .cat-tile-art { background: var(--primary-light); border-color: transparent; }
+.cat-tile-label { max-width: 100%; overflow-wrap: anywhere; }
+
+/* Collapsed by default: two rows on desktop, three on phones. */
+.cat-tiles.is-collapsed .cat-tile:nth-child(n+17) { display: none; }
+.cat-tiles-toggle {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: var(--spacing-lg) auto 0;
+    padding: .6rem 1.1rem;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    color: var(--ink);
+    font: 600 .875rem var(--font-body);
+    cursor: pointer;
+}
+.cat-tiles-toggle:hover { border-color: var(--primary); }
+.cat-tiles-toggle .nx-cat-icon { width: 20px; height: 20px; }
+
+.cat-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 0 var(--spacing-md);
+    padding: .35rem .5rem .35rem .75rem;
+    background: var(--primary-light);
+    border-radius: 999px;
+    color: var(--ink);
+    font: 600 .8125rem var(--font-body);
+}
+.cat-filter-chip[hidden] { display: none; }
+.cat-filter-chip button { border: 0; background: rgba(11,59,43,.1); color: var(--ink); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: .7rem; line-height: 1; }
+.cat-filter-chip button:hover { background: rgba(11,59,43,.2); }
+
+@media (max-width: 1024px) {
+    .cat-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+    .cat-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--spacing-md) .35rem; }
+    .cat-tiles.is-collapsed .cat-tile:nth-child(n+17) { display: none; }
+    .cat-tiles.is-collapsed .cat-tile:nth-child(n+13) { display: none; }
+    .cat-tile { font-size: .72rem; gap: .4rem; }
+    .cat-tile-art { border-radius: 18px; }
+}
+/* Override the old 1-column / 2-column rules for the previous card grid. */
+@media (max-width: 480px) {
+    .cat-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---- Category picker (dropdown with icons) ---------------------------- */
+.nx-catpick { position: relative; width: 100%; }
+.nx-catpick-native {
+    position: absolute !important;
+    left: 0; bottom: 0;
+    width: 1px !important; height: 1px !important;
+    padding: 0 !important; border: 0 !important;
+    opacity: 0; pointer-events: none;
+}
+.nx-catpick-btn {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    background-image: none;
+}
+.nx-catpick-btn .nx-cat-icon { width: 22px; height: 22px; }
+.nx-catpick-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-catpick-text.is-placeholder { color: var(--gray-400); }
+.nx-catpick-caret { margin-left: auto; font-size: .7rem; color: var(--gray-500); transition: transform .15s ease; }
+.nx-catpick.is-open .nx-catpick-caret { transform: rotate(180deg); }
+.nx-catpick-btn:disabled { opacity: .6; cursor: not-allowed; }
+.nx-catpick.is-sm .nx-catpick-btn { padding: .5rem var(--spacing-md); font-size: .875rem; }
+.nx-catpick.is-sm .nx-catpick-btn .nx-cat-icon { width: 20px; height: 20px; }
+
+.nx-catpick-list {
+    position: absolute;
+    z-index: 60;
+    left: 0; top: calc(100% + 6px);
+    min-width: 100%;
+    width: max-content;
+    max-width: min(340px, 92vw);
+    max-height: min(360px, 55vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: .35rem;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-lg);
+    outline: none;
+}
+.nx-catpick-list[hidden] { display: none; }
+.nx-catpick.opens-up .nx-catpick-list { top: auto; bottom: calc(100% + 6px); }
+.nx-catpick-group { padding: .6rem .6rem .25rem; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-500); }
+.nx-catpick-opt {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .5rem .6rem;
+    border-radius: 8px;
+    font-size: .9rem;
+    color: var(--ink);
+    cursor: pointer;
+}
+.nx-catpick-opt .nx-cat-icon { width: 22px; height: 22px; }
+.nx-catpick-opt.is-active { background: var(--gray-100); }
+.nx-catpick-opt.is-selected { background: var(--primary-light); font-weight: 600; }
+.nx-catpick-opt.is-disabled { color: var(--gray-400); cursor: default; }
+
+/* Phones: the list becomes a bottom sheet so touch targets are comfortable. */
+@media (max-width: 640px) {
+    .nx-catpick-list {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: auto; max-width: none;
+        max-height: 70vh;
+        border-radius: 18px 18px 0 0;
+        padding: .5rem .5rem calc(.75rem + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -12px 40px rgba(11,59,43,.25);
+    }
+    .nx-catpick-opt { padding: .7rem .75rem; font-size: 1rem; }
+    .nx-catpick.is-open::before { content: ""; position: fixed; inset: 0; z-index: 59; background: rgba(11,59,43,.35); }
+}
+
+/* WIP 49: category icons next to names outside the dropdowns */
+.filter-tab .nx-cat-icon { vertical-align: -4px; margin-right: .4rem; }
+#categoryList a[data-category] { display: flex; align-items: center; gap: .5rem; }
+#categoryList a[data-category] .nx-cat-icon { flex: none; }
+.filter-chip .nx-cat-icon { flex: none; }
+#productCategory, .pf-preview-cat { display: inline-flex; align-items: center; gap: .35rem; }

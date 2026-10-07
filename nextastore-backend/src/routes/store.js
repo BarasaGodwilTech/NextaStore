@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { apiError, saveImageIfDataUrl, slugify, isReservedSlug, deleteImageIfReplaced } = require('../utils');
-const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, assertStoreVisible, storefrontVisibleWhere, maybeNotifySubscriptionReminder, createNotification } = require('../helpers');
+const { getStoreForUser, resolveContextStore, serializeStore, serializePublicStore, serializeProduct, assertStoreVisible, storefrontVisibleWhere, maybeNotifySubscriptionReminder, createNotification, ownerLifecycle } = require('../helpers');
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, updateStoreSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
@@ -12,7 +12,13 @@ const router = express.Router();
 // follow clicks idempotent; the public counter is updated in the same transaction.
 router.get('/follow/:storeId', optionalAuth, async (req, res, next) => {
     try {
-        const store = await prisma.store.findFirst({ where: { id: req.params.storeId, deletedAt: null }, select: { id: true, followers: true } });
+        // Same rule as the storefront itself: a draft or lapsed store answers
+        // like a store that does not exist (its owner excepted), so this can
+        // not be used to probe ids or read a hidden store's follower count.
+        const store = await prisma.store.findFirst({
+            where: { id: req.params.storeId, deletedAt: null, OR: [{ AND: [storefrontVisibleWhere()] }, ...(req.user ? [{ ownerId: req.user.id }] : [])] },
+            select: { id: true, followers: true }
+        });
         if (!store) throw apiError('Store not found.', 404);
         const following = req.user
             ? !!(await prisma.storeFollow.findUnique({ where: { userId_storeId: { userId: req.user.id, storeId: store.id } }, select: { id: true } }))
@@ -70,7 +76,10 @@ router.get('/follows', requireAuth, async (req, res, next) => {
         const page = Math.max(1, Number(req.query.page) || 1);
         const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 24));
 
-        const where = { userId: req.user.id, store: { deletedAt: null, isPublished: true } };
+        // Only stores that are open right now: a followed store that lapsed
+        // drops off the list (the follow itself is kept, so it returns with
+        // the store) instead of linking to a page that says "closed".
+        const where = { userId: req.user.id, store: storefrontVisibleWhere() };
 
         const [rows, total] = await Promise.all([
             prisma.storeFollow.findMany({
@@ -105,12 +114,26 @@ router.get('/follows', requireAuth, async (req, res, next) => {
 // marketplace silently rendered an empty store grid. Implemented for real
 // here, with a single grouped count query instead of one COUNT per store.
 // Cached: no auth branch on this route, same body for everyone per query string.
+//
+// Built for a directory that keeps growing: always paginated (limit capped at 50),
+// the order is deterministic (a unique `id` tie-breaker, so no store is skipped or
+// repeated between pages when many share a createdAt), and a page far past the end
+// is clamped to a harmless value instead of a deep OFFSET scan. Optional query
+// params: q, category, sort (featured | newest | name), badged=1 (badge holders only).
+const DIRECTORY_SORTS = {
+    featured: [{ verified: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }],
+    newest: [{ createdAt: 'desc' }, { id: 'asc' }],
+    name: [{ name: 'asc' }, { id: 'asc' }]
+};
+const DIRECTORY_MAX_PAGE = 5000;
 router.get('/public/all', cacheResponse(30), async (req, res, next) => {
     try {
-        const page = Math.max(1, Number(req.query.page) || 1);
-        const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
-        const q = String(req.query.q || '').trim();
-        const category = String(req.query.category || '').trim();
+        const page = Math.min(DIRECTORY_MAX_PAGE, Math.max(1, Math.floor(Number(req.query.page)) || 1));
+        const limit = Math.min(50, Math.max(1, Math.floor(Number(req.query.limit)) || 12));
+        const q = String(req.query.q || '').trim().slice(0, 100);
+        const category = String(req.query.category || '').trim().slice(0, 60);
+        const sortKey = Object.prototype.hasOwnProperty.call(DIRECTORY_SORTS, req.query.sort) ? req.query.sort : 'featured';
+        const badgedOnly = req.query.badged === '1' || req.query.badged === 'true';
         const where = {
             // Draft stores (setup not yet launched), and stores whose trial
             // has lapsed with no confirmed payment, never appear on the
@@ -130,11 +153,19 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
                 }]
             } : {}),
             ...(category && category !== 'all' ? { products: { some: { category, deletedAt: null } } } : {}),
+            // Same rule the badge itself uses (see subscriptionInfo): a confirmed, still-running paid commitment of 6+ months.
+            ...(badgedOnly ? { verified: true, badgeCommitmentMonths: { gte: 6 }, subscriptionPaidUntil: { gt: new Date() } } : {}),
         };
         const [stores, total] = await Promise.all([
             prisma.store.findMany({
                 where,
-                orderBy: { createdAt: 'desc' },
+                // A badge gives a store a small edge: badged stores are listed
+                // ahead of unbadged ones, newest first within each group.
+                // `verified` is only true for a store that qualified for a badge
+                // (6+ month paid commitment). Deliberately NO ordering between
+                // Verified / Gold / Platinum - the tier is shown, not ranked -
+                // and real placement is reserved for paid promotion.
+                orderBy: DIRECTORY_SORTS[sortKey],
                 skip: (page - 1) * limit,
                 take: limit
             }),
@@ -195,7 +226,8 @@ router.get('/search', cacheResponse(30), async (req, res, next) => {
                 // confirmed payment, never surface in search either.
                 where: { ...storefrontVisibleWhere(), name: contains },
                 select: { id: true, slug: true, name: true, logo: true, bannerColor: true, badgeCommitmentMonths: true, verified: true, subscriptionPaidUntil: true, trialEndsAt: true, description: true, district: true, address: true },
-                orderBy: { createdAt: 'desc' },
+                // Same small edge as the marketplace list: badged first, then newest.
+                orderBy: [{ verified: 'desc' }, { createdAt: 'desc' }],
                 take: Math.min(4, limit)
             }),
             prisma.product.findMany({
@@ -226,6 +258,15 @@ router.get('/search', cacheResponse(30), async (req, res, next) => {
     }
 });
 
+/** Only the store's own owner ever gets a `preview` block: what state their
+ *  storefront is in (draft / lapsed / ending soon), so the page can show them
+ *  a banner about it. Everyone else gets nothing extra - a shopper is never
+ *  told whether, or why, a store is closed. */
+function ownerPreviewFor(store, req) {
+    if (!req.user || req.user.id !== store.ownerId) return {};
+    return { preview: ownerLifecycle(store) };
+}
+
 // A specific seller's public storefront, looked up by either their id or
 // their slug — different pages link to a store using whichever one they
 // happen to have on hand (marketplace/product cards pass the id, the
@@ -250,11 +291,19 @@ router.get('/public/:idOrSlug', optionalAuth, async (req, res, next) => {
         // own owner (who still needs to see it — to finish onboarding, or
         // to pay and reactivate it).
         assertStoreVisible(store, req);
-        const [productCount, categoryRows] = await Promise.all([
+        const [productCount, categoryRows, priceAgg] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })
+            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } }),
+            // Lowest / highest live price — drives the storefront's price
+            // slider so its ends match what this store actually sells.
+            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null }, _min: { price: true }, _max: { price: true } })
         ]);
-        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, categories: categoryRows.map(row => row.category) } });
+        const minPrice = priceAgg?._min?.price;
+        const maxPrice = priceAgg?._max?.price;
+        const priceRange = (minPrice === null || minPrice === undefined || maxPrice === null || maxPrice === undefined)
+            ? null
+            : { min: Number(minPrice), max: Number(maxPrice) };
+        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, priceRange, categories: categoryRows.map(row => row.category), ...ownerPreviewFor(store, req) } });
     } catch (err) {
         next(err);
     }
@@ -265,11 +314,19 @@ router.get('/public', optionalAuth, async (req, res, next) => {
         const store = await resolveContextStore(req);
         if (!store) throw apiError('Store not found.', 404);
         assertStoreVisible(store, req);
-        const [productCount, categoryRows] = await Promise.all([
+        const [productCount, categoryRows, priceAgg] = await Promise.all([
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } })
+            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } }),
+            // Lowest / highest live price — drives the storefront's price
+            // slider so its ends match what this store actually sells.
+            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null }, _min: { price: true }, _max: { price: true } })
         ]);
-        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, categories: categoryRows.map(row => row.category) } });
+        const minPrice = priceAgg?._min?.price;
+        const maxPrice = priceAgg?._max?.price;
+        const priceRange = (minPrice === null || minPrice === undefined || maxPrice === null || maxPrice === undefined)
+            ? null
+            : { min: Number(minPrice), max: Number(maxPrice) };
+        res.json({ data: { ...serializePublicStore(store, { productCount }), productCount, priceRange, categories: categoryRows.map(row => row.category), ...ownerPreviewFor(store, req) } });
     } catch (err) {
         next(err);
     }
@@ -352,7 +409,7 @@ router.put('/', requireAuth, requireSeller, validateBody(updateStoreSchema), asy
                 type: 'store_live',
                 title: 'Your store is live',
                 body: `${updated.name} is now open to shoppers. Share your store link to get your first visitors.`,
-                link: 'dashboard.html'
+                link: '/dashboard'
             });
         }
         res.json({ data: serializeStore(updated) });

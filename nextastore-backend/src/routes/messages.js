@@ -409,7 +409,7 @@ const conversationGetHandler = (peekOnly) => async (req, res, next) => {
             // badge doesn't stay lit for messages already read in-thread.
             if (result.count > 0) {
                 prisma.notification.updateMany({
-                    where: { userId: req.user.id, type: 'new_message', link: `messages.html?conversation=${conversation.id}`, readAt: null },
+                    where: { userId: req.user.id, type: 'new_message', link: { in: [`/messages?conversation=${conversation.id}`, `messages.html?conversation=${conversation.id}`] }, readAt: null },
                     // Opening the thread settles both the item's own unread
                     // state and its contribution to the bell badge — there's
                     // no separate "acknowledge" gesture to wait for once the

@@ -13,6 +13,20 @@ separated here:
 
 ## Needs a live environment (verify, don't rebuild)
 
+- **Product address + WhatsApp preview (WIP 42 + 43)** — a product's own address
+  (`nextastores.com/<store-slug>/<name>-<key>`, which is also what the browser shows) is built and
+  tested (real handlers, stubbed DB/cache; real Chromium with the real page renderer; crawler view
+  over raw HTTP) but nobody has pasted a real link into WhatsApp from a deployed site yet. To check:
+  deploy, open a product and copy the link **from the address bar**, send it to yourself on WhatsApp;
+  the card should show the product photo, "Name – UGX price" and the store line. Then tap Share >
+  WhatsApp on the product page (same address). Facebook's Sharing Debugger shows exactly what a
+  crawler read. WhatsApp caches a link's preview, so use a never-shared product (or add `?x=2`) when
+  re-testing. Also confirm: an old `/product-detail?id=...` bookmark still opens the product and
+  tidies its address; Back from a shared link reads "Back to store"; the PWA (installed app) still
+  opens product pages (the service worker cache moved to v33). **Deploy note:** the new address only
+  works where your proxy sends non-file paths to the API (the documented `try_files $uri $uri.html $uri/
+  @api` rule; `http-server -P` locally) - the same rule store links already need.
+  *(WIP_LOG.md, WIP 42 and 43)*
 - **Two message/notification routes** (`GET /messages/conversations/:id/peek`,
   `GET /notifications?unread=1`) — matched their changelog on code review; never run against
   a live database. *(MESSAGES_NOTIFICATIONS_PERF_CHANGELOG.md)*
@@ -61,6 +75,9 @@ separated here:
   appears. *(WIP_LOG.md, WIP 26)*
 
 ## Not actually built yet
+- **Booking orders and digital delivery (future, WIP 47)** — services and digital items are enquiry-only for now (built in
+  WIP 47, not yet run against Postgres or a browser; needs `prisma migrate deploy`). The booking-order plan is in
+  `nextastore-backend/README.md` ("Listing types"). *(WIP_LOG.md, WIP 44-47)*
 - **Notifications dropdown caps at 10** — the server returns 30, but the dropdown only shows
   the newest 10; nothing beyond that is visible except via "Mark all as read". No full
   notifications *page* exists, though the original spec allowed for one.
@@ -108,3 +125,78 @@ separated here:
   backend routes. Batch 8 checked the map modal's layout in real Chromium at 320-1440px, but with a layout-only stand-in for
   Leaflet (no network in the sandbox): real tiles, real pin dragging/pinch-zoom, Leaflet's own `panInside`, iOS Safari
   and a real device are still unverified.
+
+## From WIP 29-30 (storefront polish, added 2026-09-29)
+- **Needs a live environment:** the storefront (`priceRange`, slider, filter drawer, heart -> favorites API) and WIP 30's
+  presence owner-preview fix and card overflow fixes were only exercised against mock data in Chromium — never against
+  the real backend/Postgres, never with real product photos, never in Safari/iOS (range-slider thumb styling in
+  particular). *(WIP_LOG.md, WIP 29 and 30)*
+- **Unconfirmed:** the `/api/presence/store/amina-crafts` console 404 is explained by the owner-preview gap fixed in
+  WIP 30 *only if* you were previewing your own draft/lapsed store; otherwise suspect an older running backend. The
+  `NextaLoader timed out ... waiting for: page` warning was not reproduced; WIP 30 only stops follow-state from being
+  able to cause it.
+- **Built in WIP 31, needs a live environment:** `GET /favorites/check?ids=` (storefront hearts in one request, with a
+  per-card fallback on older backends) — unit-tested with stubs only, never against real Express/Postgres.
+- **Not built yet:** live presence *stream* updates for an owner previewing a draft store.
+
+## From WIP 33 (password hashing, added 2026-09-29)
+- **Needs a live environment:** the worker-thread password pool (`src/password.js`) was only exercised with a stubbed
+  database in the sandbox — never against real Postgres, never on your actual host. Check that login, signup, reset and
+  password change work on the deployed backend, and that a login while other requests are running no longer stalls them.
+  If your host forbids worker threads it silently falls back to blocking in-thread hashing. *(WIP_LOG.md, WIP 33)*
+- **Decided (WIP 34):** no public "payment overdue" note on a closed store; a badge gives only a small edge over unbadged
+  stores (no ranking between tiers); real placement is reserved for a future paid-promotion feature, **not built yet**.
+- **Worth watching:** the badge edge is a hard step (all badged stores list above all unbadged ones on the marketplace
+  list). If unbadged stores get buried once many sellers have badges, soften it — see WIP_LOG.md, WIP 34.
+
+
+## From WIP 36 (product page, added 2026-09-29)
+- **Needs a live environment:** the photo viewer's pinch-zoom, swipe, swipe-down-to-close, Back-button close and scroll lock were only driven by synthetic pointer events in desktop Chromium — never with real fingers, on a real phone, or in iOS Safari. Also never seen with real product photos or icons loaded (Font Awesome is a CDN the sandbox can't reach). *(WIP_LOG.md, WIP 36)*
+- **Decision for the owner:** the old product-page shipping fees and 7-day return policy were invented and have been removed; the tab now says delivery/returns are agreed with the seller. If you want real numbers shown, they need to be per-seller fields (fee, timing, return window) that sellers set — **not built yet.**
+- **Not built yet:** sticky "Add to Cart" bar on phones; merging the duplicated Description tab into the top description.
+
+## From WIP 37 (clean URLs, added 2026-09-30)
+- **Before deploying:** apply the nginx clean-URL block from `nextastore-backend/README.md` ("Clean URLs") on the production proxy, or enable the host's clean-URLs option. Without it `/dashboard` etc. will 404. *(WIP_LOG.md, WIP 37)*
+- **Check locally once:** `start-local.bat` now uses `http-server -e html`; confirm `http://localhost:3000/dashboard` opens (not verified against the real http-server here).
+- **Overview store-info section:** done in WIP 38 (see below).
+- **Pre-existing browser-test failures (also in WIP 36):** `messages-flows` (uncaught `reading '0'` page error, 38/39) and `mobile-drawer` (orders page status control not found at 390px, 78/79). Worth a look; not caused by WIP 37.
+
+## From WIP 38 (Overview store-info header, added 2026-09-30)
+- **Needs a live environment:** checked in real Chromium against a fake API only. Never seen with a real logo/banner image, with Font Awesome icons loaded (CDN unreachable in the sandbox), in Safari/iOS, or on a real phone. *(WIP_LOG.md, WIP 38)*
+- **Known limit:** a revenue figure over ~1 trillion UGX wraps mid-number in the mini-stats cell. Everyday amounts do not. If ever needed, compact large numbers (e.g. "UGX 1.2T") with the full figure in a tooltip.
+- **Not changed, still open:** the Dashboard UX pass (Prompt 12) and the admin users table remain as listed above.
+
+## From WIP 39 (Overview store info, added 2026-09-30)
+- **Not yet tested with long content:** the Settings > Store form, the public store page (`store-detail`) and the store cards on `stores`/`marketplace`. Only the dashboard Overview block was covered.
+- **Needs a live environment:** as WIP 38. Pin/Edit icons and the address toggle were seen without Font Awesome. *(WIP_LOG.md, WIP 39)*
+- **Watermark on existing product photos (WIP 49)** — only newly added photos are stamped. Stamping the old ones needs an
+  image library on the server (none installed) or each seller re-adding photos. Also decide: a seller on/off switch?
+
+## From WIP 50 (marketplace rebuild)
+- **Check the claim "Payments handled for you"** in the Seller CTA on `marketplace.html` (and "No setup fees"): left as written. Fulfilment is
+  directly between buyer and seller, so make sure the wording is true.
+- **Footer social links** (facebook.com/nextastore, twitter.com/nextastore, instagram.com/nextastore) were already there and are unchanged;
+  confirm those accounts exist.
+- **Product cards have no favourite heart** on the marketplace (store pages and favorites.html do). Not added: needs the favorites state wiring.
+- **Needs a real look:** open `/marketplace` on a phone with real data, and with a logged-in seller account (hero button, header).
+
+## From WIP 53 (Nexi, added 2026-10-03)
+- **Needs a live environment:** run Ollama + `ai-assistant` + backend together and ask the six starters in English; check answer quality, first-token time and total time on the real
+  machine (CPU-only can take 20-60 s; consider a smaller model or a GPU). Run `npm run reindex` (four new knowledge files).
+- **Add to your real `nextastore-backend/.env.example`** (it was not in the zip I received): `ASSISTANT_URL=http://127.0.0.1:4100` and optionally `ASSISTANT_TIMEOUT_MS=120000`.
+- **Luganda:** get a Sunbird API key, then `npm run translate:starters`. Check Sunbird's price / limits / terms and add the third-party disclosure to the privacy policy.
+  Until then the Luganda starters are drafts and Luganda questions get English answers plus a note. Have one Luganda speaker spot-check money / safety answers once.
+- **Production:** keep port 4100 private; if the backend runs on a different machine set `ASSISTANT_URL` to its private address. The proxy limits are per IP (needs the existing `trust proxy` setting to be right).
+- **Knowledge accuracy:** `ai-assistant/src/knowledge/02-selling-and-stores.md` and `04-...seller-pass.md` were written before WIP 27/28 (badge ladder, Seller Pass plans); re-read them against
+  the live platform so Nexi doesn't state old facts. New files 08-11 deliberately avoid fees and badge rules.
+- **Design follow-ups (optional):** the hero chat could remember a "sell vs buy" choice; a typing/answer-time estimate; admin view of which questions Nexi couldn't answer.
+
+
+## From WIP 54 (Luganda on the server + VPS, added 2026-10-03)
+- **Needs a live environment:** run `npm run bench` on your own machine before paying for the VPS, then `deploy/setup-vps.sh` on the real server. Check `free -h` / `ollama ps` with all three models loaded
+  (plan: about 6 to 6.5 GB used of 8) and that swap stays quiet. If an English answer takes more than about 20 s, use a smaller chat model or a bigger plan.
+- **Luganda quality:** have one Luganda speaker read real answers from Ganda Gemma (especially money, fees, safety) and put approved wording in `ai-assistant/src/lang/translation-memory.json`.
+  Its published score is modest (BLEU about 7, chrF++ about 40 on English -> Luganda), so treat it as a helper, not a final authority. The phrasebook entries are still unreviewed drafts.
+- **Not built:** reading Luganda *questions* into English locally (needs NLLB, a Python service and more RAM). Sunbird does it if you accept sending those chats to them.
+- **Privacy policy:** with `LOG_LUGANDA_MISSES=true`, Luganda question text (first 300 characters, no account or IP) is stored on the server; mention it. Local Luganda sends nothing to third parties.
+- **Backend `.env`:** add `ASSISTANT_TOKEN` (same as the assistant's) and `ASSISTANT_TIMEOUT_MS=150000`. The backend `.env.example` was not in the zip, so it was not edited.

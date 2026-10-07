@@ -2,6 +2,7 @@ const prisma = require('./prisma');
 const config = require('./config');
 const { sendPushToUser } = require('./push');
 const { apiError } = require('./utils');
+const { productPath } = require('./slugs');
 
 /** Computes the denormalized Product.onSale flag from a price/originalPrice
  *  pair. Call this any time either field is written (create, or an update
@@ -32,6 +33,26 @@ function serializeProduct(p) {
     };
 }
 
+// Platform rules (price, trial, tier table) live in platformRules.js so the facts
+// endpoint for Nexi reads the very same values.
+const { SUBSCRIPTION_PRICE_UGX, TRIAL_DAYS, TIER_PERKS } = require('./platformRules');
+
+/** The paid-commitment tier badge a store currently holds, or null. Only the
+ *  three trust tiers count - the operational "Store Ready" badge is not one. */
+function storeTier(store) {
+    if (!store) return null;
+    const badge = sellerBadges({ ...store, verified: !!store.verified }).find(b => TIER_PERKS[b.tone]);
+    return badge || null;
+}
+
+/** The slim tier summary that rides on product payloads (marketplace grids,
+ *  deals) so a product card can show its seller's trust mark without a
+ *  second request. Null for a store with no tier. */
+function tierSummary(store) {
+    const tier = storeTier(store);
+    return tier ? { key: tier.key, tone: tier.tone, label: tier.label, shortLabel: tier.shortLabel, icon: tier.icon, rank: tier.rank } : null;
+}
+
 function sellerBadges(store, { productCount = null } = {}) {
     if (!store) return [];
     const subscription = subscriptionInfo(store);
@@ -41,11 +62,11 @@ function sellerBadges(store, { productCount = null } = {}) {
     // Primary trust badge: only a confirmed paid commitment of 6+ months.
     if (subscription?.isPaid && !!store.verified && commitment >= 6) {
         if (commitment >= 24) {
-            badges.push({ key: 'platinum-partner', label: 'Platinum Partner', shortLabel: 'Platinum', icon: 'fa-gem', tone: 'platinum', reason: '24+ month confirmed commitment' });
+            badges.push({ key: 'platinum-partner', label: 'Platinum Partner', shortLabel: 'Platinum', icon: 'fa-gem', tone: 'platinum', ...TIER_PERKS.platinum });
         } else if (commitment >= 12) {
-            badges.push({ key: 'gold-partner', label: 'Gold Partner', shortLabel: 'Gold', icon: 'fa-crown', tone: 'gold', reason: '12+ month confirmed commitment' });
+            badges.push({ key: 'gold-partner', label: 'Gold Partner', shortLabel: 'Gold', icon: 'fa-crown', tone: 'gold', ...TIER_PERKS.gold });
         } else {
-            badges.push({ key: 'verified-seller', label: 'Verified Seller', shortLabel: 'Verified', icon: 'fa-circle-check', tone: 'verified', reason: '6+ month confirmed commitment' });
+            badges.push({ key: 'verified-seller', label: 'Verified Seller', shortLabel: 'Verified', icon: 'fa-circle-check', tone: 'verified', ...TIER_PERKS.verified });
         }
     }
 
@@ -100,10 +121,6 @@ function serializeOrder(o) {
     return serialized;
 }
 
-// Monthly subscription price for the paid "verified seller" badge.
-const SUBSCRIPTION_PRICE_UGX = 20000;
-const TRIAL_DAYS = 7;
-
 /** Derived, read-only view of a store's subscription state. Always
  *  recomputed from the actual trialEndsAt/subscriptionPaidUntil dates
  *  rather than trusting the stored subscriptionStatus column alone, so a
@@ -124,12 +141,13 @@ function subscriptionInfo(store) {
     const commitmentMonths = isPaid ? Math.max(0, Number(store.badgeCommitmentMonths || 0)) : 0;
     const badge = isPaid && !!store.verified && commitmentMonths >= 6
         ? commitmentMonths >= 24
-            ? { key: 'platinum-partner', label: 'Platinum Partner', shortLabel: 'Platinum', icon: 'fa-gem', tone: 'platinum', reason: '24+ months of active paid coverage' }
+            ? { key: 'platinum-partner', label: 'Platinum Partner', shortLabel: 'Platinum', icon: 'fa-gem', tone: 'platinum', ...TIER_PERKS.platinum }
             : commitmentMonths >= 12
-                ? { key: 'gold-partner', label: 'Gold Partner', shortLabel: 'Gold', icon: 'fa-crown', tone: 'gold', reason: '12+ months of active paid coverage' }
-                : { key: 'verified-seller', label: 'Verified Seller', shortLabel: 'Verified', icon: 'fa-circle-check', tone: 'verified', reason: '6+ months of active paid coverage' }
+                ? { key: 'gold-partner', label: 'Gold Partner', shortLabel: 'Gold', icon: 'fa-crown', tone: 'gold', ...TIER_PERKS.gold }
+                : { key: 'verified-seller', label: 'Verified Seller', shortLabel: 'Verified', icon: 'fa-circle-check', tone: 'verified', ...TIER_PERKS.verified }
         : null;
     const nextThreshold = commitmentMonths < 6 ? 6 : commitmentMonths < 12 ? 12 : commitmentMonths < 24 ? 24 : null;
+    const nextTone = nextThreshold === 6 ? 'verified' : nextThreshold === 12 ? 'gold' : nextThreshold === 24 ? 'platinum' : null;
     return {
         status, active, isPaid, inTrial,
         trialEndsAt: trialEndsAt ? trialEndsAt.toISOString() : null,
@@ -139,6 +157,7 @@ function subscriptionInfo(store) {
         commitmentMonths,
         badge,
         nextBadgeMonths: nextThreshold,
+        nextBadgePerks: nextTone ? TIER_PERKS[nextTone].perks : [],
         monthsToNextBadge: nextThreshold ? Math.max(0, nextThreshold - commitmentMonths) : 0
     };
 }
@@ -177,7 +196,7 @@ async function maybeNotifySubscriptionReminder(store) {
         const body = isExpired
             ? 'Your trial ended and no subscription payment has been confirmed yet. Renew your Seller Pass to return to the marketplace; a 6+ month commitment restores a seller badge after approval.'
             : `Start your Seller Pass at UGX ${sub.priceUgx.toLocaleString('en-UG')}/month. Choose 6+ months to earn a seller badge and keep your store visible when the trial ends.`;
-        const link = '/subscription.html';
+        const link = '/subscription';
 
         const recent = await prisma.notification.findFirst({
             where: {
@@ -230,7 +249,54 @@ function storeActiveWhere() {
 function assertStoreVisible(store, req) {
     if (req.user?.id === store.ownerId) return;
     if (!store.isPublished) throw apiError('This store is still being set up by its owner.', 404, 'STORE_DRAFT');
-    if (!isStoreCurrentlyActive(store)) throw apiError('This store is not currently available.', 404, 'STORE_INACTIVE');
+    if (!isStoreCurrentlyActive(store)) {
+        const err = apiError('This store is not currently available.', 404, 'STORE_INACTIVE');
+        // Just enough for the "shutters down" page to look like THIS shop
+        // (its name, logo and colour) - the identity the store already showed
+        // publicly. Never the reason, the dates or anything else: to a
+        // shopper it is simply closed. Drafts get none of this, because a
+        // seller may not have chosen to publish a name yet.
+        err.meta = closedStoreIdentity(store);
+        throw err;
+    }
+}
+
+/** The public identity shown on the "closed" page of a store that was live and
+ *  has lapsed. Deliberately tiny. */
+function closedStoreIdentity(store) {
+    return { name: store.name, slug: store.slug, logo: store.logo || null, bannerColor: store.bannerColor || null };
+}
+
+/** Whether a store may take NEW business (orders, first messages) right now.
+ *  Stricter than assertStoreVisible: the owner does not get to bypass it. The
+ *  owner may look at their own lapsed storefront, but nobody - not even the
+ *  owner, and not someone holding a stale cart or a copied product id - can
+ *  place an order with a store that is a draft or has no trial/paid time
+ *  left. */
+function assertStoreOpenForBusiness(store) {
+    if (!store || store.deletedAt) throw apiError('Store not found.', 404);
+    if (!store.isPublished) throw apiError('This store is not open yet.', 409, 'STORE_DRAFT');
+    if (!isStoreCurrentlyActive(store)) {
+        throw apiError(`${store.name || 'This store'} is not taking orders right now.`, 409, 'STORE_INACTIVE');
+    }
+}
+
+/** What state a store is in, for the OWNER's own view of their storefront:
+ *   draft  - not launched yet
+ *   lapsed - trial over / paid time over: closed to shoppers
+ *   ending - live, but the trial or paid time runs out within 3 days
+ *   live   - live and comfortable
+ *  Only ever sent to the owner (see routes/store.js): shoppers are never
+ *  told why a store is closed. */
+function ownerLifecycle(store) {
+    const sub = subscriptionInfo(store);
+    if (!store.isPublished) return { state: 'draft' };
+    if (!sub.active) {
+        const endedAt = store.subscriptionPaidUntil || store.trialEndsAt || null;
+        return { state: 'lapsed', endedAt: endedAt ? new Date(endedAt).toISOString() : null, hadPaidPlan: !!store.subscriptionPaidUntil };
+    }
+    if (sub.daysLeft <= 3) return { state: 'ending', daysLeft: sub.daysLeft, onTrial: sub.inTrial && !sub.isPaid };
+    return { state: 'live', daysLeft: sub.daysLeft };
 }
 
 /** The full "safe to show a shopper" filter for a store relation: not
@@ -292,7 +358,8 @@ function serializePublicStore(s, context = {}) {
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
         verified,
-        badges: sellerBadges({ ...s, verified }, context).filter(b => b.key !== 'store-ready')
+        badges: sellerBadges({ ...s, verified }, context).filter(b => b.key !== 'store-ready'),
+        tier: tierSummary({ ...s, verified })
     };
 }
 
@@ -386,11 +453,15 @@ async function notifyNewMessage({ userId, conversationId, senderName, preview, m
             const stored = await prisma.message.findUnique({ where: { id: messageId }, select: { readAt: true } });
             if (stored && stored.readAt) return;
         }
-        const link = `messages.html?conversation=${conversationId}`;
+        const link = `/messages?conversation=${conversationId}`;
+        // Bell rows written before pages lost their `.html` carry the old link;
+        // an unread one is still "this thread's" notification, so it is found
+        // (and refreshed) rather than duplicated.
+        const legacyLink = `messages.html?conversation=${conversationId}`;
         const title = `New message from ${senderName}`;
         const body = preview.length > 120 ? `${preview.slice(0, 117)}...` : preview;
         const existing = await prisma.notification.findFirst({
-            where: { userId, type: 'new_message', link, readAt: null },
+            where: { userId, type: 'new_message', link: { in: [link, legacyLink] }, readAt: null },
             select: { id: true }
         });
         if (existing) {
@@ -399,7 +470,7 @@ async function notifyNewMessage({ userId, conversationId, senderName, preview, m
             // once and this row's badge-contribution had cleared) so the
             // badge re-lights for the fresh message rather than staying
             // silently at 0 for an item that now has new, unseen content.
-            await prisma.notification.update({ where: { id: existing.id }, data: { title, body, createdAt: new Date(), acknowledgedAt: null } });
+            await prisma.notification.update({ where: { id: existing.id }, data: { title, body, link, createdAt: new Date(), acknowledgedAt: null } });
         } else {
             await prisma.notification.create({ data: { userId, type: 'new_message', title, body, link } });
         }
@@ -444,7 +515,9 @@ async function notifyStoreFollowersOfNewProduct({ storeId, storeName, storeSlug,
         // requires non-empty), so this is the only thing keeping a title
         // written by the seller from blowing out the bell's layout.
         const body = productName.length > 120 ? `${productName.slice(0, 117)}...` : productName;
-        const link = `product-detail.html?id=${productId}&store=${encodeURIComponent(storeSlug || '')}`;
+        // The product's own address (/<store>/<name>-<key>); /p/<id> when the
+        // store has no slug to build it from - the server sends that on.
+        const link = productPath({ id: productId, name: productName }, storeSlug) || `/p/${encodeURIComponent(productId)}`;
 
         await prisma.notification.createMany({
             data: followers.map(f => ({ userId: f.userId, type: 'new_product', title, body, link }))
@@ -525,6 +598,12 @@ module.exports = {
     subscriptionInfo,
     isStoreCurrentlyActive,
     assertStoreVisible,
+    assertStoreOpenForBusiness,
+    ownerLifecycle,
+    closedStoreIdentity,
+    storeTier,
+    tierSummary,
+    TIER_PERKS,
     storeActiveWhere,
     storefrontVisibleWhere,
     getPlatformSettings,

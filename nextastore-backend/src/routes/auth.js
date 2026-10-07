@@ -1,5 +1,6 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs'); // only for the one-time dummy hash at boot
+const passwords = require('../password');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
@@ -105,7 +106,7 @@ router.post('/signup', authLimiter, validateBody(signupSchema), async (req, res,
         const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
         if (existing) throw apiError('An account with that email already exists.');
 
-        const passwordHash = bcrypt.hashSync(password, 10);
+        const passwordHash = await passwords.hash(password, 10);
         const isSeller = accountType === 'seller';
 
         // A brand-new store starts empty. It used to be auto-seeded with
@@ -146,7 +147,7 @@ router.post('/login', authLimiter, perEmailLoginLimiter, validateBody(loginSchem
         const { email, password } = req.body;
         const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 
-        // bcrypt.compareSync always runs, whether or not `user` exists — the
+        // passwords.compare always runs, whether or not `user` exists — the
         // real hash when it does, a fixed dummy hash when it doesn't — so a
         // login attempt for a registered email and one for an unregistered
         // email take the same amount of time. Without this, skipping the
@@ -154,7 +155,7 @@ router.post('/login', authLimiter, perEmailLoginLimiter, validateBody(loginSchem
         // empty made the response measurably faster for unregistered
         // emails, letting someone quietly enumerate which addresses have
         // NextaStore accounts just by timing this endpoint.
-        const passwordOk = bcrypt.compareSync(password, user ? user.passwordHash : DUMMY_PASSWORD_HASH);
+        const passwordOk = await passwords.compare(password, user ? user.passwordHash : DUMMY_PASSWORD_HASH);
         if (!user || !passwordOk) {
             throw apiError('That email and password don\u2019t match our records.', 401);
         }
@@ -208,7 +209,7 @@ router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema),
         // if there's actually a user to issue one for.
         if (user) {
             const token = await issueToken(user.id, 'password_reset');
-            const link = `${config.frontendUrl}/forgot-password.html?token=${token}`;
+            const link = `${config.frontendUrl}/forgot-password?token=${token}`;
             await sendMail({
                 to: user.email,
                 subject: 'Reset your NextaStore password',
@@ -226,7 +227,7 @@ router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema),
 router.post('/reset-password', authLimiter, validateBody(resetPasswordSchema), async (req, res, next) => {
     try {
         const userId = await redeemToken(req.body.token, 'password_reset');
-        const passwordHash = bcrypt.hashSync(req.body.newPassword, 10);
+        const passwordHash = await passwords.hash(req.body.newPassword, 10);
         // Anyone holding a token from before this reset (finding 6) should
         // not still be signed in afterwards — that was the whole point of
         // resetting the password. Bumping tokenVersion here, not just on the
@@ -247,7 +248,7 @@ router.post('/send-verification', requireAuth, authLimiter, async (req, res, nex
     try {
         if (req.user.emailVerifiedAt) throw apiError('This email is already verified.');
         const token = await issueToken(req.user.id, 'email_verify');
-        const link = `${config.frontendUrl}/verify-email.html?token=${token}`;
+        const link = `${config.frontendUrl}/verify-email?token=${token}`;
         await sendMail({
             to: req.user.email,
             subject: 'Verify your NextaStore email',

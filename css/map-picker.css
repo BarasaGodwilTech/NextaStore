@@ -814,3 +814,33 @@ body.map-picker-open {
     overflow: hidden;
     overscroll-behavior: none;
 }
+
+
+/* --- Map preview: loading + "tiles unavailable" states --------------------
+   OpenStreetMap can refuse tile requests (missing Referer, rate limits). The
+   preview used to show its raw "Access blocked" image; now it shows a calm
+   placeholder while loading and a clean location card if tiles are refused. */
+.map-preview-loading {
+    background: linear-gradient(100deg, var(--gray-100, #f1f1f1) 30%, #fafafa 50%, var(--gray-100, #f1f1f1) 70%);
+    background-size: 200% 100%;
+    animation: mapPreviewShimmer 1.4s linear infinite;
+}
+@keyframes mapPreviewShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .map-preview-loading { animation: none; } }
+
+.map-preview-fallback { background: #e9f3ee; }
+.map-preview-fallback-grid {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 133, 88, 0.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 133, 88, 0.10) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+.map-preview-fallback-note {
+    position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+    max-width: calc(100% - 20px); padding: 3px 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.95); color: var(--secondary-dark, #062A1F);
+    font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+.map-preview-attribution a { color: inherit; text-decoration: none; position: relative; z-index: 2; }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -20,6 +21,7 @@
     <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/categories.css">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body data-auth-required data-seller-required>
@@ -60,9 +62,9 @@
         <div class="page-breadcrumb">
             <div class="breadcrumb-container">
                 <div class="breadcrumb">
-                    <a href="dashboard.html">Dashboard</a>
+                    <a href="/dashboard">Dashboard</a>
                     <span class="separator">/</span>
-                    <a href="dashboard.html" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
+                    <a href="/dashboard" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
                     <span class="separator">/</span>
                     <span class="breadcrumb-current">Add Product</span>
                 </div>
@@ -123,9 +125,28 @@
                                 <span class="char-counter" id="productDescriptionCounter">0/1000</span>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="productListingType">What are you listing?</label>
+                            <select class="form-input" id="productListingType">
+                                <option value="physical">A product (shipped or collected)</option>
+                                <option value="service">A service (I do the work for the customer)</option>
+                                <option value="digital">A digital item (file, ticket, course)</option>
+                            </select>
+                            <p class="form-hint" id="listingTypeHint"></p>
+                        </div>
+                        <div id="serviceFields" hidden>
+                            <div class="form-group">
+                                <label class="form-label" for="productServiceArea">Where you work</label>
+                                <input type="text" class="form-input" id="productServiceArea" maxlength="120" placeholder="e.g. Kampala and Wakiso, or online">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="productServiceDuration">How long it usually takes</label>
+                                <input type="text" class="form-input" id="productServiceDuration" maxlength="60" placeholder="e.g. 1 hour, or 2-3 days">
+                            </div>
+                        </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label" for="productCategory">Category <span class="required-mark" title="Required">*</span></label>
-                            <select class="form-select" id="productCategory" required aria-describedby="productCategoryError">
+                            <select class="form-select" id="productCategory" required data-nx-category aria-describedby="productCategoryError">
                                 <option value="" disabled selected>Select a category</option>
                                 <option value="clothing">Clothing</option>
                                 <option value="accessories">Accessories</option>
@@ -143,10 +164,25 @@
                 </div>
 
                 <div class="pf-side">
+                    <div class="card pf-preview" id="pfPreview" aria-label="Preview of your listing">
+                        <div class="card-header"><h3>How shoppers will see it</h3></div>
+                        <div class="pf-preview-card">
+                            <div class="pf-preview-img"><i class="fas fa-image" aria-hidden="true"></i></div>
+                            <div class="pf-preview-body">
+                                <div class="pf-preview-cat"></div>
+                                <div class="pf-preview-name is-empty">Your product name</div>
+                                <div class="pf-preview-prices">
+                                    <span class="pf-preview-price">UGX 0</span>
+                                    <s class="pf-preview-orig" hidden></s>
+                                    <span class="pf-preview-off" hidden></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="card">
                         <div class="card-header"><h3>Pricing</h3></div>
                         <div class="form-group">
-                            <label class="form-label" for="productPrice">Price (UGX) <span class="required-mark" title="Required">*</span></label>
+                            <label class="form-label" for="productPrice"><span id="priceLabelText">Price (UGX)</span> <span class="required-mark" title="Required">*</span></label>
                             <input type="number" class="form-input" id="productPrice" min="0" step="1" inputmode="numeric" placeholder="0" required aria-describedby="productPriceError">
                             <div class="form-field-footer">
                                 <div class="form-error" id="productPriceError"></div>
@@ -163,7 +199,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
+                    <div class="card" id="inventoryCard">
                         <div class="card-header"><h3>Inventory</h3></div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label" for="productStock">Stock Quantity</label>
@@ -185,16 +221,16 @@
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
         <div class="footer-links">
-            <a href="index.html#features">Features</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="signup.html" data-hide-when-authed>Create account</a>
-            <a href="marketplace.html">Shop</a>
+            <a href="/#features">Features</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-hide-when-authed>Create account</a>
+            <a href="/marketplace">Shop</a>
             <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
-        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a>
+        <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a>
     </footer>
 
 
@@ -202,7 +238,11 @@
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/store-banner.js"></script>
     <script src="js/image-crop.js"></script>
+    <script src="js/category-sprite.js"></script><script src="js/categories.js"></script><script src="js/category-picker.js"></script>
+    <script src="js/image-watermark.js"></script>
+    <script src="js/product-form-listing.js"></script>
     <script src="js/product-form.js"></script>
+    <script src="js/product-form-preview.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         // Forces an already-open tab/installed PWA window onto a newly

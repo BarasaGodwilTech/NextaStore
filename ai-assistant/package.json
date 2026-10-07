@@ -1,0 +1,29 @@
+{
+  "name": "nextastore-ai-assistant",
+  "version": "0.7.0",
+  "description": "Self-hosted AI assistant (Nexi) for NextaStore. Everything runs on this machine: a light local chat model via Ollama, in-memory keyword search over the knowledge files (no embedding model, no reindex), and optional on-server Ganda Gemma 1B for Luganda replies.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "reindex": "node scripts/reindex.js",
+    "check-ollama": "node scripts/check-ollama.js",
+    "selftest": "node scripts/selftest.js",
+    "translate:starters": "node scripts/translate-starters.js",
+    "bench": "node scripts/bench.js",
+    "lg:misses": "node scripts/export-lg-misses.js",
+    "flags": "node scripts/export-flags.js",
+    "facts:seed": "node scripts/refresh-facts-seed.js",
+    "test:widget": "python scripts/widget-test.py",
+    "test:starters": "python scripts/starter-row-test.py"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

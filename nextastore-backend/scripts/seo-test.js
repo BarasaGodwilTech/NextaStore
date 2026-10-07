@@ -96,16 +96,18 @@ test('robots.txt points at the sitemap and does not block the API', () => {
     const txt = seo.renderRobots({ siteUrl: site + '/' });
     assert(txt.includes('Sitemap: https://nextastore.ug/sitemap.xml'));
     assert(!/Disallow:\s*\/api/.test(txt));
-    assert(/Disallow: \/dashboard\.html/.test(txt));
+    assert(/^Disallow: \/dashboard\$/m.test(txt), 'clean address, end-anchored');
+    assert(/^Disallow: \/dashboard\?/m.test(txt) && /^Disallow: \/dashboard\.html/m.test(txt), 'query form and old .html form');
+    assert(!/^Disallow: \/dashboard$/m.test(txt), 'never a bare prefix that would hide a store called dashboard-store');
 });
 
 test('sitemap lists store pages, escapes URLs, and only adds static pages on the same host', () => {
     const same = seo.renderSitemap({ siteUrl: site, appUrl: site, stores: [{ slug: 'a&b', updatedAt: '2026-09-01T00:00:00Z' }] });
     assert(same.includes('<loc>https://nextastore.ug/a%26b</loc>'));
     assert(same.includes('<lastmod>2026-09-01T00:00:00.000Z</lastmod>'));
-    assert(same.includes('<loc>https://nextastore.ug/marketplace.html</loc>'));
+    assert(same.includes('<loc>https://nextastore.ug/marketplace</loc>'));
     const diff = seo.renderSitemap({ siteUrl: 'https://api.example.com', appUrl: site, stores: [{ slug: 'x' }] });
-    assert(!diff.includes('marketplace.html'));
+    assert(!diff.includes('/marketplace'));
     assert(diff.includes('<loc>https://api.example.com/x</loc>'));
 });
 

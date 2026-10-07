@@ -27,9 +27,10 @@ const RESERVED_SLUGS = new Set([
     'login', 'marketplace', 'messages', 'offline', 'onboarding', 'orders', 'privacy',
     'product-detail', 'product-form', 'safety', 'signup', 'store', 'store-detail',
     'stores', 'subscription', 'terms', 'verify-email',
+    'nextastore-loading-everyone', 'nextastore-loading-seller',
     // folders and files served from the site root
     'api', 'assets', 'css', 'js', 'errors', 'uploads', 'sitemap', 'robots', 'manifest',
-    'service-worker', 'favicon', 'static', 'public', 'health', 's',
+    'service-worker', 'favicon', 'static', 'public', 'health', 's', 'p',
     // routes the site may grow into, and words that would look official
     'home', 'about', 'contact', 'help', 'support', 'pricing', 'blog', 'docs', 'status',
     'search', 'shop', 'sell', 'seller', 'sellers', 'buyer', 'account', 'settings',
@@ -51,4 +52,56 @@ function storeSlugFrom(text) {
     return isReservedSlug(slug) ? `${slug}-store` : slug;
 }
 
-module.exports = { slugify, RESERVED_SLUGS, isReservedSlug, storeSlugFrom };
+
+// ---- Product addresses: /<store-slug>/<product-name>-<key> ---------------------
+//
+// A product's public address is the store's address plus a readable name and a
+// short key: nextastores.com/asia-ivan/blue-sofa-x7k2m9ab. The key is the tail
+// of the product's id (its random part), so the address survives a product
+// rename - the name in it is decoration, the server finds the product by the key
+// inside that store and 301s to the current spelling.
+//
+// js/main.js carries a copy of these three functions for the browser (they
+// build the links on cards, search results, favorites...). scripts/
+// product-url-test.js runs both against the same inputs, so they cannot drift.
+const PRODUCT_KEY_LENGTH = 8;   // characters of the id used as the key
+const PRODUCT_KEY_MIN = 4;      // a shorter id cannot make a safe address
+const PRODUCT_SLUG_MAX = 60;    // readable part only, never the key
+
+function productKey(id) {
+    return String(id == null ? '' : id).toLowerCase().replace(/[^a-z0-9]/g, '').slice(-PRODUCT_KEY_LENGTH);
+}
+
+function productSlugFrom(name) {
+    let slug = String(name == null ? '' : name)
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    if (slug.length > PRODUCT_SLUG_MAX) {
+        slug = slug.slice(0, PRODUCT_SLUG_MAX);
+        const cut = slug.lastIndexOf('-');
+        if (cut > 20) slug = slug.slice(0, cut);   // end on a whole word when we can
+        slug = slug.replace(/-$/, '');
+    }
+    return slug || 'product';
+}
+
+/** `/<store-slug>/<name>-<key>`, or null when there is no store slug or the id is
+ *  too short to key on (callers then use /p/<id>, which the server resolves). */
+function productPath(product, storeSlug) {
+    const slug = String(storeSlug || '').trim();
+    const key = productKey(product && product.id);
+    if (!slug || !/^[A-Za-z0-9-]+$/.test(slug) || key.length < PRODUCT_KEY_MIN) return null;
+    return `/${slug}/${productSlugFrom(product.name)}-${key}`;
+}
+
+/** The key out of the last part of a product address (`blue-sofa-x7k2m9ab` ->
+ *  `x7k2m9ab`), or null when it cannot be one. */
+function productKeyFromSlug(productSlug) {
+    const raw = String(productSlug || '');
+    const key = raw.slice(raw.lastIndexOf('-') + 1).toLowerCase();
+    return /^[a-z0-9]+$/.test(key) && key.length >= PRODUCT_KEY_MIN && key.length <= 32 ? key : null;
+}
+
+module.exports = { slugify, RESERVED_SLUGS, isReservedSlug, storeSlugFrom, productKey, productSlugFrom, productPath, productKeyFromSlug, PRODUCT_KEY_LENGTH, PRODUCT_KEY_MIN };

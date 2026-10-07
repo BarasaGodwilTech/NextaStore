@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -69,8 +70,8 @@
     
     
     <header class="messages-topbar">
-        <a href="marketplace.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
-        <a href="marketplace.html" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> Back to marketplace</a>
+        <a href="/marketplace" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <a href="/marketplace" class="btn btn-ghost btn-sm" data-back-link data-back-fallback="/marketplace" data-back-fallback-label="Back to marketplace"><i class="fas fa-arrow-left" aria-hidden="true"></i> <span data-back-label>Back</span></a>
     <div class="account-nav-slot" data-account-nav></div>
     </header>
 
@@ -86,20 +87,20 @@
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
         <div class="footer-links">
-            <a href="index.html#features">Features</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="signup.html" data-hide-when-authed>Create account</a>
-            <a href="marketplace.html">Shop</a>
+            <a href="/#features">Features</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-hide-when-authed>Create account</a>
+            <a href="/marketplace">Shop</a>
             <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
-        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a>
+        <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a>
     </footer>
 
     <script src="js/api.js"></script>
-    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/back-nav.js"></script><script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/favorites.js"></script>
     <script>
       if ("serviceWorker" in navigator) {

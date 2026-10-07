@@ -18,6 +18,7 @@ class SubscriptionManager {
         try {
             const res = await app.apiRequest('/subscription');
             this.data = res.data || {};
+            this.renderMyStoreLink();
             this.renderPlanPicker();
             this.renderStatus();
             this.renderGoal();
@@ -30,6 +31,16 @@ class SubscriptionManager {
             const card = document.getElementById('subStatusCard');
             if (card) card.innerHTML = '<div class="subscription-status-pill status-expired"><i class="fas fa-triangle-exclamation"></i> Could not load</div><h1>We could not confirm your Seller Pass status</h1><p>Refresh the page before sending money so you are not working from old information.</p>';
         }
+    }
+
+    /** Header "My store" link: the store's real address (/<slug>) - never a
+     *  store page file. Hidden until the slug is known. */
+    renderMyStoreLink() {
+        const link = document.getElementById('subMyStoreLink');
+        const slug = this.data?.storeSlug;
+        if (!link || !slug) return;
+        link.href = app.storeLink({ slug });
+        link.hidden = false;
     }
 
     expectedAmount() {
@@ -159,6 +170,21 @@ class SubscriptionManager {
         } else {
             el.innerHTML = `<div class="goal-icon goal-icon-muted"><i class="fas fa-flag-checkered"></i></div><div><strong>First badge at 6 months</strong><p>A 6-month approved payment unlocks Verified Seller.</p></div><button type="button" class="btn btn-primary btn-sm" id="goalStartButton">Choose 6 months</button>`;
             document.getElementById('goalStartButton')?.addEventListener('click', () => jumpTo(6));
+        }
+
+        // What the badge actually earns on the storefront: the next tier's perks
+        // while there is one to reach, otherwise the perks of the top badge held.
+        const perks = (d.nextBadgeMonths ? d.nextBadgePerks : d.badge?.perks) || [];
+        el.querySelector('.goal-perks')?.remove();
+        if (Array.isArray(perks) && perks.length) {
+            const box = document.createElement('div');
+            box.className = 'goal-perks';
+            const head = document.createElement('strong');
+            head.textContent = d.nextBadgeMonths ? 'What the next badge gets your store' : 'What your badge gets your store';
+            const ul = document.createElement('ul');
+            perks.forEach(text => { const li = document.createElement('li'); li.textContent = String(text); ul.appendChild(li); });
+            box.append(head, ul);
+            el.appendChild(box);
         }
     }
 

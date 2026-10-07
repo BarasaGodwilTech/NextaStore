@@ -6,6 +6,7 @@
 .subscription-topnav{display:flex;align-items:center;gap:5px;margin-left:auto}
 .subscription-topnav a{display:inline-flex;align-items:center;gap:.45rem;padding:.6rem .75rem;border-radius:10px;color:#456058;text-decoration:none;font-size:.78rem;font-weight:800}
 .subscription-topnav a:hover,.subscription-topnav a.is-active{background:#edf8f3;color:#00794f}
+.subscription-topnav a[hidden]{display:none}
 .subscription-shell{max-width:1180px;margin:0 auto;padding:32px 22px 52px}
 
 /* ---- hero ---- */
@@ -37,7 +38,7 @@
 .inline-badge--gold{background:#fff3d7;color:#9a6500}
 .inline-badge--platinum{background:#f0e7f9;color:#6d43a5}
 .threshold-pill{display:inline-flex;align-items:center;gap:.4rem;background:#f1f4f3;color:#63756f;padding:.3rem .55rem;border-radius:999px;font-size:.68rem;font-weight:800}
-.subscription-goal-card{display:flex;align-items:center;gap:14px;padding:16px 0}
+.subscription-goal-card{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:16px 0}
 .subscription-goal-card>div:nth-child(2){flex:1}
 .goal-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:#e7f8ef;color:#00794f;font-size:1rem;flex:none}
 .goal-icon-muted{background:#f1f5f3;color:#5c746b}
@@ -290,3 +291,10 @@ body.modal-open{overflow:hidden}
   .subscription-topbar{padding:0 14px}
   .subscription-topbar .brand-lockup img{max-width:130px}
 }
+
+/* perks the badge earns on the storefront (renderGoal in js/subscription.js) */
+.goal-perks{flex:1 1 100%;margin-top:6px;padding-top:12px;border-top:1px dashed #d5e3dc}
+.goal-perks strong{display:block;font-size:.8125rem;color:#0b3b2b;margin-bottom:6px}
+.goal-perks ul{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.goal-perks li{position:relative;padding-left:20px;font-size:.8125rem;color:#3f524b;line-height:1.4}
+.goal-perks li::before{content:"\2713";position:absolute;left:0;color:#00794f;font-weight:800}

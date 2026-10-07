@@ -32,6 +32,9 @@ router.get('/', requireAuth, requireSeller, async (req, res, next) => {
         res.json({
             data: {
                 ...subscriptionInfo(store),
+                // So the page header's "My store" link can point at the store's real
+                // address (/<slug>) instead of a generic page.
+                storeSlug: store.slug || null,
                 payments: payments.map(serializePayment),
                 paymentInfo: {
                     mtnMomoCode: settings.mtnMomoCode,
@@ -62,10 +65,20 @@ router.post('/payments', requireAuth, requireSeller, validateBody(subscriptionPa
             throw apiError(`For ${periodMonths} month${periodMonths === 1 ? '' : 's'}, enter exactly ${expectedAmount.toLocaleString('en-UG')} UGX.`);
         }
 
+        // One mobile-money transaction can only pay for one thing. The check is
+        // across ALL stores (it used to be per store, so the same receipt could
+        // be submitted by several stores and an admin approving each in turn
+        // would grant several passes for one payment). Case-insensitive, and
+        // only rejected submissions free a reference up again.
         const duplicate = await prisma.subscriptionPayment.findFirst({
-            where: { storeId: store.id, reference, status: { not: 'rejected' } }
+            where: { reference: { equals: reference, mode: 'insensitive' }, status: { not: 'rejected' } }
         });
         if (duplicate) throw apiError('That transaction reference has already been submitted.');
+
+        // A queue of unreviewed claims is the only thing an admin has to wade
+        // through, so it is capped per store.
+        const pending = await prisma.subscriptionPayment.count({ where: { storeId: store.id, status: 'pending' } });
+        if (pending >= 3) throw apiError('You already have payments waiting for review. Please wait for them to be confirmed before submitting another.', 429);
 
         const payment = await prisma.subscriptionPayment.create({
             data: { storeId: store.id, amount, method, reference, periodMonths }

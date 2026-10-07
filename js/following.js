@@ -21,7 +21,7 @@ class FollowingPageManager {
     render(stores, p) {
         const c = document.getElementById('followingListContainer');
         if (!stores.length) {
-            c.innerHTML = `<div class="following-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>Not following any stores yet</h2><p>Follow a seller's store to keep up with their new products here.</p><a href="marketplace.html" class="btn btn-primary">Browse marketplace</a></div>`;
+            c.innerHTML = `<div class="following-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>Not following any stores yet</h2><p>Follow a seller's store to keep up with their new products here.</p><a href="/marketplace" class="btn btn-primary">Browse marketplace</a></div>`;
             document.getElementById('followingPagination').style.display = 'none';
             return;
         }
@@ -38,7 +38,7 @@ class FollowingPageManager {
                     <div class="store-logo" style="${store.logo ? `background-image: url(${app.resolveImageUrl(store.logo)}); background-size: cover; background-position: center;` : ''}">
                         ${!store.logo ? app.getInitial(store.name) : ''}
                     </div>
-                    <h3 class="store-name">${app.escapeHtml(store.name)} <span class="store-badge-row">${app.renderSellerBadges(store, { limit: 2 })}</span></h3>
+                    <h3 class="store-name" title="${app.escapeHtml(store.name)}"><span class="store-name-text">${app.escapeHtml(store.name)}</span> <span class="store-badge-row">${app.renderSellerBadges(store, { limit: 2, more: true })}</span></h3>
                     <p class="store-description">${app.escapeHtml(store.description || 'No description available')}</p>
                     <div class="store-meta">
                         <span class="store-meta-item"><i class="fas fa-users"></i> ${(store.followers || 0).toLocaleString()}</span>

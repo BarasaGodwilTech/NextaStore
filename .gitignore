@@ -1,0 +1,13 @@
+# secrets - never commit or zip these
+.env
+.env.*
+!.env.example
+nextastore-backend/.env
+nextastore-backend/.env.*
+!nextastore-backend/.env.example
+
+node_modules/
+nextastore-backend/node_modules/
+.DS_Store
+*.log
+nextastore-backend/uploads/

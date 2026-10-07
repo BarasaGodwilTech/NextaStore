@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -10,15 +11,17 @@
     <meta name="robots" content="noindex">
     <script>
         // Old link (store.html?store=<slug>): send it to the store's own
-        // address, /<slug>. An id (not a slug) goes to the storefront page,
-        // which swaps in the slug address once it has loaded the store.
+        // address, /<slug>. An id goes to /<id>, which the server sends on to
+        // the slug address. Nothing here ever opens store-detail.html.
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const storeId = urlParams.get('store');
-            const isSlug = storeId && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(storeId);
-            const redirectUrl = !storeId
-                ? 'store-detail.html'
-                : (isSlug ? `/${storeId}` : `store-detail.html?store=${encodeURIComponent(storeId)}`);
+            // Slug -> /<slug>. A store id also works at /<id>: the server
+            // resolves it and sends the browser on to the store's slug.
+            const isKey = storeId && /^[A-Za-z0-9-]+$/.test(storeId);
+            const redirectUrl = isKey
+                ? `/${encodeURIComponent(storeId)}`
+                : '/marketplace';
             window.location.replace(redirectUrl);
         })();
     </script>
@@ -38,7 +41,7 @@
         <div class="skeleton skeleton-text"></div>
         <div class="skeleton skeleton-text-sm"></div>
     </div>
-    <p>Opening the store… <a href="store-detail.html">Continue</a></p>
+    <p>Opening the store… <a href="/marketplace">Continue</a></p>
     <script>
       if ("serviceWorker" in navigator) {
         // Forces an already-open tab/installed PWA window onto a newly

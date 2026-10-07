@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
   const u = new URL(req.url, `http://localhost:${PORT}`);
   const p = u.pathname;
   if (!p.startsWith('/api/')) {
-    const file = path.join(ROOT, p === '/' ? 'index.html' : p);
+    const file = path.join(ROOT, (rel => rel === '/' ? 'index.html' : (fs.existsSync(path.join(ROOT, rel)) || path.extname(rel) ? rel : rel + '.html'))(p));
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
     return fs.createReadStream(file).pipe(res);

@@ -2,12 +2,25 @@ const express = require('express');
 const crypto = require('crypto');
 const prisma = require('../prisma');
 const { apiError, saveImagePairsIfDataUrls, deleteImagesNotIn } = require('../utils');
-const { getStoreForUser, resolveContextStore, serializeProduct, computeOnSale, createNotification, notifyStoreFollowersOfNewProduct, storefrontVisibleWhere, assertStoreVisible } = require('../helpers');
+const { getStoreForUser, resolveContextStore, serializeProduct, computeOnSale, createNotification, notifyStoreFollowersOfNewProduct, storefrontVisibleWhere, assertStoreVisible, tierSummary } = require('../helpers');
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, productSchema, productUpdateSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
 
 const LOW_STOCK_THRESHOLD = 3;
+
+/** A store shouldn't list the same product twice by accident. Same name (ignoring case and extra spaces),
+ *  in the same store, not deleted. Answers 409 DUPLICATE_PRODUCT with the existing product so the form can
+ *  ask the seller; the form re-sends with allowDuplicate: true if they choose to add it anyway. */
+async function assertNoDuplicateProduct(storeId, name, excludeId) {
+    const clean = String(name || '').trim().replace(/\s+/g, ' ');
+    if (!clean) return;
+    const dup = await prisma.product.findFirst({
+        where: { storeId, deletedAt: null, ...(excludeId ? { id: { not: excludeId } } : {}), name: { equals: clean, mode: 'insensitive' } },
+        select: { id: true, name: true, price: true }
+    });
+    if (dup) throw apiError(`You already have a product called "${dup.name}".`, 409, 'DUPLICATE_PRODUCT', { id: dup.id, name: dup.name, price: Number(dup.price) });
+}
 
 const router = express.Router();
 
@@ -32,6 +45,7 @@ router.get('/deals', cacheResponse(30), async (req, res, next) => {
                 discount: Math.round((1 - Number(p.price) / Number(p.originalPrice)) * 100),
                 storeName: p.store ? p.store.name : 'NextaStore Seller',
                 storeSlug: p.store ? p.store.slug : null,
+                sellerTier: tierSummary(p.store),
                 store: undefined
             }));
         res.json({ data: list });
@@ -102,12 +116,15 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
                 ? [{ price: 'asc' }, { createdAt: 'desc' }]
                 : sort === 'price-high'
                     ? [{ price: 'desc' }, { createdAt: 'desc' }]
-                    : [{ sold: 'desc' }, { createdAt: 'desc' }];
+                    // "popular": sales first. A seller's badge only breaks a tie
+                    // between equal sales (a small edge, never above real sales),
+                    // then newest.
+                    : [{ sold: 'desc' }, { store: { verified: 'desc' } }, { createdAt: 'desc' }];
 
         const [list, total] = await Promise.all([
             prisma.product.findMany({
                 where, orderBy, skip: (page - 1) * limit, take: limit,
-                include: { store: { select: { id: true, slug: true, name: true } } }
+                include: { store: { select: { id: true, slug: true, name: true, verified: true, badgeCommitmentMonths: true, subscriptionPaidUntil: true, trialEndsAt: true } } }
             }),
             prisma.product.count({ where })
         ]);
@@ -117,6 +134,7 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
                 ...serializeProduct(p),
                 storeName: p.store ? p.store.name : 'NextaStore Seller',
                 storeSlug: p.store ? p.store.slug : null,
+                sellerTier: tierSummary(p.store),
                 store: undefined
             })),
             pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 }
@@ -212,6 +230,7 @@ router.post('/', requireAuth, requireSeller, validateBody(productSchema), async 
         // of the old flat "uploads/" prefix shared by every image on the
         // whole marketplace. A plain string primary key accepts this fine;
         // nothing else assumes the id is in cuid's own format.
+        if (!payload.allowDuplicate) await assertNoDuplicateProduct(store.id, payload.name);
         const productId = crypto.randomUUID();
         const { images, thumbnails } = await saveImagePairsIfDataUrls(payload.images, payload.thumbnails, `products/${productId}`);
 
@@ -229,7 +248,11 @@ router.post('/', requireAuth, requireSeller, validateBody(productSchema), async 
                 thumbnails,
                 image: images[0] || null,
                 icon: payload.icon,
-                stock: payload.stock
+                // Service/digital listings have no stock; service fields only apply to services.
+                stock: payload.listingType === 'physical' ? payload.stock : 0,
+                listingType: payload.listingType,
+                serviceArea: payload.listingType === 'service' ? payload.serviceArea : '',
+                serviceDuration: payload.listingType === 'service' ? payload.serviceDuration : ''
             }
         });
         res.status(201).json({ data: serializeProduct(product) });
@@ -261,6 +284,11 @@ router.put('/:id', requireAuth, requireSeller, validateBody(productUpdateSchema)
 
         const payload = req.body;
         const data = { ...payload };
+        delete data.allowDuplicate;
+        if (payload.name !== undefined && !payload.allowDuplicate
+            && payload.name.trim().replace(/\s+/g, ' ').toLowerCase() !== existing.name.trim().replace(/\s+/g, ' ').toLowerCase()) {
+            await assertNoDuplicateProduct(existing.storeId, payload.name, existing.id);
+        }
 
         // productUpdateSchema is a .partial() — either field may be absent
         // from this request, so recompute onSale from whichever one changed
@@ -279,6 +307,11 @@ router.put('/:id', requireAuth, requireSeller, validateBody(productUpdateSchema)
             data.thumbnails = saved.thumbnails;
             data.image = data.images[0] || null;
         }
+
+        // Switching a listing's type keeps the stored fields consistent.
+        const nextType = data.listingType !== undefined ? data.listingType : existing.listingType;
+        if (nextType !== 'physical') data.stock = 0;
+        if (nextType !== 'service' && (data.listingType !== undefined || data.serviceArea !== undefined || data.serviceDuration !== undefined)) { data.serviceArea = ''; data.serviceDuration = ''; }
 
         const product = await prisma.product.update({ where: { id: existing.id }, data });
 
@@ -300,7 +333,7 @@ router.put('/:id', requireAuth, requireSeller, validateBody(productUpdateSchema)
                 type: 'low_stock',
                 title: `Low stock: ${product.name}`,
                 body: `Only ${product.stock} left.`,
-                link: `dashboard.html#products`
+                link: `/dashboard#products`
             });
         }
 

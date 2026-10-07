@@ -3,7 +3,7 @@ const prisma = require('../prisma');
 const presence = require('../presence');
 const { apiError } = require('../utils');
 const { isStoreCurrentlyActive } = require('../helpers');
-const { requireAuth } = require('../middleware');
+const { requireAuth, optionalAuth } = require('../middleware');
 const { validateBody, presenceStreamSchema } = require('../validation');
 
 const router = express.Router();
@@ -135,14 +135,22 @@ router.post('/stream', requireAuth, validateBody(presenceStreamSchema), async (r
 // by somebody who is not signed in (so cannot hold a stream), and for the
 // instant first paint before a stream's snapshot arrives. Public, like the
 // storefront itself; never cached, because it changes by the minute.
-router.get('/store/:slug', async (req, res, next) => {
+//
+// Same visibility rule as GET /store/public (assertStoreVisible): everyone
+// else needs a published, currently-active store, but the OWNER may always
+// open their own storefront to preview it - draft, or trial lapsed. Without
+// that exception the storefront rendered for the owner while this endpoint
+// 404'd, which showed up as a console error on every preview.
+router.get('/store/:slug', optionalAuth, async (req, res, next) => {
     try {
         if (!/^[A-Za-z0-9_-]{1,80}$/.test(req.params.slug)) throw apiError('Store not found.', 404);
         const store = await prisma.store.findFirst({
-            where: { slug: req.params.slug, deletedAt: null, isPublished: true },
+            where: { slug: req.params.slug, deletedAt: null },
             select: { slug: true, ownerId: true, isPublished: true, deletedAt: true, trialEndsAt: true, subscriptionPaidUntil: true, owner: { select: { id: true, lastActiveAt: true } } }
         });
-        if (!store || !store.owner || !isPubliclyVisible(store)) throw apiError('Store not found.', 404);
+        if (!store || !store.owner) throw apiError('Store not found.', 404);
+        const isOwner = !!req.user && req.user.id === store.ownerId;
+        if (!isOwner && !isPubliclyVisible(store)) throw apiError('Store not found.', 404);
         const states = await presence.describe([store.owner]);
         res.set('Cache-Control', 'no-store');
         res.json({ data: { key: `store:${store.slug}`, ...states.get(store.owner.id) } });

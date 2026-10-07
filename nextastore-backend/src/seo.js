@@ -16,6 +16,8 @@
  * be unit-tested without a database - see scripts/seo-test.js.
  */
 
+const { productPath } = require('./slugs');
+
 const DEFAULT_OG_IMAGE_PATH = '/assets/brand/png/social/og-link-preview-1200x630.png';
 const SITEMAP_MAX_URLS = 50000; // sitemaps.org hard limit per file
 
@@ -85,8 +87,11 @@ function appStoreUrl(appUrl, slug) {
     return `${String(appUrl).replace(/\/$/, '')}/${encodeURIComponent(slug)}`;
 }
 
-function appProductUrl(appUrl, productId, slug) {
-    return `${String(appUrl).replace(/\/$/, '')}/product-detail.html?id=${encodeURIComponent(productId)}&store=${encodeURIComponent(slug)}`;
+function appProductUrl(appUrl, product, slug) {
+    const base = String(appUrl).replace(/\/$/, '');
+    // /<store>/<name>-<key>; /p/<id> only when a clean address cannot be made,
+    // and the server sends that on to the real one.
+    return `${base}${productPath(product, slug) || `/p/${encodeURIComponent(product && product.id)}`}`;
 }
 
 function firstImage(product) {
@@ -143,7 +148,7 @@ function buildStoreSeo({ store, products = [], productCount = 0, siteUrl, appUrl
             name: `${store.name} products`,
             numberOfItems: productCount || products.length,
             itemListElement: products.map((p, i) => {
-                const productUrl = appProductUrl(appUrl, p.id, store.slug);
+                const productUrl = appProductUrl(appUrl, p, store.slug);
                 const img = firstImage(p);
                 return {
                     '@type': 'ListItem',
@@ -231,26 +236,200 @@ function renderStoreShell(shellHtml, { store = null, live = false, products = []
     return `${shellHtml.slice(0, openTagEnd)}\n${head.trim()}\n${inject}${shellHtml.slice(headEnd)}`;
 }
 
+// ---- Product pages: nextastores.com/<store-slug>/<name>-<key> -----------------
+//
+// A product's address is its page: the API answers /<store>/<name>-<key> with
+// the real product-detail.html (the normal, fully styled page) and rewrites only
+// its <head> for that product - title with the price, description, preview
+// photo, canonical URL, Open Graph / Twitter tags and schema.org JSON-LD - the
+// same way stores work at /<slug>. So the link in the address bar IS the link
+// that previews well: copy it, share it, paste it anywhere.
+//
+// Image choice (what looks professional AND always shows up in WhatsApp): the
+// product's ~480px cover THUMBNAIL. WhatsApp draws a product link as a small
+// square photo, so 480px is sharp at that size, and being a small JPEG it is
+// never over the size limit past which WhatsApp silently drops an og:image (the
+// full-size photos go up to 1800px and can be). The full photo, the store logo
+// and the brand card are fallbacks, in that order.
+
+function siteBase(url) { return String(url).replace(/\/$/, ''); }
+
+/** The public, shareable address of a product:
+ *  https://nextastores.com/<store-slug>/<name>-<key>. */
+function productShareUrl(siteUrl, product, storeSlug) {
+    return `${siteBase(siteUrl)}${productPath(product, storeSlug) || `/p/${encodeURIComponent(product && product.id)}`}`;
+}
+
+/** "UGX 450,000" - whole shillings with thousands separators, or '' when the
+ *  product has no usable price (so a title never says "UGX 0"). */
+function formatUgx(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return '';
+    return `UGX ${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+}
+
+/** The preview photo. Index 0 is the cover in every image array, so only the
+ *  cover is considered - never a later photo that happens to be valid. */
+function productShareImage(product, store, defaultImage) {
+    const first = arr => (Array.isArray(arr) ? arr[0] : null);
+    return [first(product.thumbnails), first(product.images), product.image, store && store.logo]
+        .find(isAbsoluteUrl) || defaultImage;
+}
+
+/** Everything a product page's <head> needs for one LIVE product of a LIVE store. */
+function buildProductShare({ product, store, siteUrl, appUrl }) {
+    const name = collapse(product.name) || 'Product';
+    const price = formatUgx(product.price);
+    const priceSuffix = price ? ` \u2013 ${price}` : '';
+    // The price is the last thing dropped: shorten the name, never the price.
+    const title = `${clip(name, 70 - priceSuffix.length)}${priceSuffix}`;
+
+    const district = titleCase(store.district);
+    const inStock = Number(product.stock) > 0;
+    const lead = `Sold by ${store.name}${district ? ` in ${district}` : ''} on NextaStore.${inStock ? '' : ' Currently out of stock.'}`;
+    const description = clip(`${lead} ${collapse(product.description)}`, 160);
+
+    const defaultImage = `${siteBase(appUrl)}${DEFAULT_OG_IMAGE_PATH}`;
+    const url = productShareUrl(siteUrl, product, store.slug);
+    const image = productShareImage(product, store, defaultImage);
+    const numericPrice = price ? Math.round(Number(product.price)) : null;
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        '@id': `${url}#product`,
+        name,
+        url,
+        image: [image],
+        ...(collapse(product.description) ? { description: clip(product.description, 300) } : {}),
+        ...(numericPrice ? {
+            offers: {
+                '@type': 'Offer',
+                price: numericPrice,
+                priceCurrency: 'UGX',
+                availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                url,
+                seller: { '@type': 'Organization', name: store.name }
+            }
+        } : {})
+    };
+
+    return {
+        title,
+        description,
+        url,
+        image,
+        imageAlt: clip(name, 100),
+        price: numericPrice,
+        inStock,
+        // Listed by search engines unless the owner switched that off for the store.
+        robots: isIndexable(store) ? 'index,follow,max-image-preview:large' : 'noindex,nofollow',
+        jsonLd
+    };
+}
+
+/** product-detail.html loads its CSS, scripts and images with relative paths
+ *  (`css/main.css`). That works at /product-detail and at /<slug>, but this page
+ *  lives one folder deeper (/<store>/<product>), where `css/main.css` would mean
+ *  /<store>/css/main.css. Make every relative file reference root-relative. Left
+ *  alone: absolute paths, full URLs, data:/mailto:/javascript: and #anchors. */
+function rootRelative(html) {
+    return html.replace(/(\s(?:src|href)=)(["'])(?!\/|#|\?|[a-z][a-z0-9+.-]*:)([^"']+)\2/gi,
+        (m, attr, quote, value) => `${attr}${quote}/${value}${quote}`);
+}
+
+/**
+ * The real product-detail.html, with its <head> rewritten for one product.
+ *  - `share` given:            a live product: its own title, description, photo,
+ *                              canonical URL and JSON-LD.
+ *  - `product` but no `share`: a draft / lapsed store's product. Generic brand
+ *                              tags + noindex, so nothing about it leaks or gets
+ *                              indexed; the owner still sees it (the page asks the
+ *                              API, which knows who is looking).
+ *  - neither:                  an address nobody owns. Same page, noindex; the
+ *                              caller sends 404 and the page shows "not found".
+ * Whenever a product exists, its id and store go into the page as two <meta>
+ * tags: the address only carries a short key, and the page needs the full id to
+ * ask the API for the product.
+ */
+function renderProductShell(shellHtml, { share = null, product = null, store = null, siteUrl, appUrl } = {}) {
+    const headEnd = shellHtml.search(/<\/head>/i);
+    if (headEnd === -1) return shellHtml;
+    const headStart = shellHtml.search(/<head[^>]*>/i);
+    const openTagEnd = shellHtml.indexOf('>', headStart) + 1;
+    const head = stripHeadTags(shellHtml.slice(openTagEnd, headEnd));
+
+    const defaultImage = `${siteBase(appUrl || siteUrl)}${DEFAULT_OG_IMAGE_PATH}`;
+    let inject;
+    if (share) {
+        inject = `<title>${esc(share.title)}</title>
+<meta name="description" content="${esc(share.description)}">
+<meta name="robots" content="${esc(share.robots)}">
+<link rel="canonical" href="${esc(share.url)}">
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="NextaStore">
+<meta property="og:title" content="${esc(share.title)}">
+<meta property="og:description" content="${esc(share.description)}">
+<meta property="og:url" content="${esc(share.url)}">
+<meta property="og:image" content="${esc(share.image)}">
+<meta property="og:image:alt" content="${esc(share.imageAlt)}">
+${share.price ? `<meta property="product:price:amount" content="${share.price}">
+<meta property="product:price:currency" content="UGX">
+` : ''}<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${esc(share.title)}">
+<meta name="twitter:description" content="${esc(share.description)}">
+<meta name="twitter:image" content="${esc(share.image)}">
+<script type="application/ld+json">${safeJson(share.jsonLd)}</script>
+`;
+    } else {
+        // Generic brand card. Only the title differs between "not public" and
+        // "no such product".
+        inject = `<title>${product ? 'Product' : 'Product not found'} | NextaStore</title>
+<meta name="description" content="Open this product on NextaStore.">
+<meta name="robots" content="noindex,nofollow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NextaStore">
+<meta property="og:title" content="Product | NextaStore">
+<meta property="og:description" content="Open this product on NextaStore.">
+<meta property="og:image" content="${esc(defaultImage)}">
+<meta property="og:image:alt" content="NextaStore">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Product | NextaStore">
+<meta name="twitter:description" content="Open this product on NextaStore.">
+<meta name="twitter:image" content="${esc(defaultImage)}">
+`;
+    }
+    const ids = product
+        ? `<meta name="nx-product-id" content="${esc(product.id)}">\n<meta name="nx-store-slug" content="${esc((store && store.slug) || '')}">\n`
+        : '';
+    return rootRelative(`${shellHtml.slice(0, openTagEnd)}\n${head.trim()}\n${inject}${ids}${shellHtml.slice(headEnd)}`);
+}
+
+// Pages nobody should find through a search engine (they need a login, or exist
+// only to be arrived at from an email). Their clean addresses are listed here;
+// robotsRulesFor() turns each into the rules for /page, /page?query and the
+// old /page.html.
+const PRIVATE_PAGES = [
+    'dashboard', 'admin', 'messages', 'cart', 'orders', 'favorites', 'following',
+    'subscription', 'onboarding', 'product-form', 'login', 'signup',
+    'forgot-password', 'verify-email'
+];
+
+// A bare "Disallow: /cart" would also hide every store whose address merely
+// starts with "cart" (a store called "Cart Kings" lives at /cart-kings), so the
+// clean address is end-anchored with `$` (understood by Google and Bing) and the
+// query-string form is listed on its own.
+function robotsRulesFor(page) {
+    return [`Disallow: /${page}$`, `Disallow: /${page}?`, `Disallow: /${page}.html`];
+}
+
 function renderRobots({ siteUrl }) {
     // Deliberately NOT disallowing /api/: Googlebot renders the JavaScript
-    // pages (store-detail.html, product-detail.html) and needs the API to do it.
+    // pages (store-detail.html, product-detail) and needs the API to do it.
     return [
         'User-agent: *',
         'Allow: /',
-        'Disallow: /dashboard.html',
-        'Disallow: /admin.html',
-        'Disallow: /messages.html',
-        'Disallow: /cart.html',
-        'Disallow: /orders.html',
-        'Disallow: /favorites.html',
-        'Disallow: /following.html',
-        'Disallow: /subscription.html',
-        'Disallow: /onboarding.html',
-        'Disallow: /product-form.html',
-        'Disallow: /login.html',
-        'Disallow: /signup.html',
-        'Disallow: /forgot-password.html',
-        'Disallow: /verify-email.html',
+        ...PRIVATE_PAGES.flatMap(robotsRulesFor),
         '',
         `Sitemap: ${String(siteUrl).replace(/\/$/, '')}/sitemap.xml`,
         ''
@@ -269,7 +448,7 @@ function renderSitemap({ siteUrl, appUrl, stores = [] }) {
     // host as /sitemap.xml (a sitemap may not list other hosts' URLs).
     try {
         if (new URL(appUrl).host === new URL(site).host) {
-            ['/', '/marketplace.html', '/stores.html', '/safety.html', '/terms.html', '/privacy.html'].forEach(p => urls.push({ loc: `${site}${p}` }));
+            ['/', '/marketplace', '/stores', '/safety', '/terms', '/privacy'].forEach(p => urls.push({ loc: `${site}${p}` }));
         }
     } catch (e) { /* ignore malformed URLs; store pages are still listed */ }
     stores.slice(0, SITEMAP_MAX_URLS - urls.length).forEach(s => {
@@ -285,5 +464,7 @@ ${urls.map(u => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.last
 module.exports = {
     esc, safeJson, clip, isIndexable, storeUrl, appStoreUrl, appProductUrl,
     buildStoreSeo, renderStoreShell, renderRobots, renderSitemap,
+    productShareUrl, formatUgx, productShareImage, rootRelative,
+    buildProductShare, renderProductShell,
     SITEMAP_MAX_URLS
 };

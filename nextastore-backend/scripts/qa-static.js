@@ -37,7 +37,7 @@ check('Order stores payment status', /paymentStatus\s+PaymentStatus/.test(schema
 check('Order reports are persisted', /model OrderReport/.test(schema) && /orderReport\.create/.test(orderRoutes));
 check('Report endpoint is authenticated', /router\.post\(['"]\/:id\/report['"],\s*requireAuth/.test(orderRoutes));
 check('Trust & Safety page exists', fs.existsSync(path.join(root, 'safety.html')));
-check('Checkout links to Trust & Safety', /safety\.html/.test(cartPage));
+check('Checkout links to Trust & Safety', /href="\/safety"/.test(cartPage));
 check('Buyer orders expose reporting UI', /report/i.test(orders));
 check('Seller dashboard exposes reporting UI', /report/i.test(dashboard));
 check('Store directory uses seller badges', /renderSellerBadges/.test(read('js/stores.js')));
@@ -162,7 +162,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     return m ? [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]).sort() : [];
   };
   const pages = fs.readdirSync(root).filter(f => f.endsWith('.html'));
-  const withAttr = (attr) => pages.filter(f => new RegExp(`<body[^>]*\\b${attr}\\b`).test(read(f))).sort();
+  // auth.js lists clean addresses (/dashboard); the files on disk still end in .html
+  const withAttr = (attr) => pages.filter(f => new RegExp(`<body[^>]*\\b${attr}\\b`).test(read(f))).map(f => '/' + f.replace(/\.html$/, '')).sort();
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   check('Login redirect: SELLER_ONLY_PAGES matches every data-seller-required page',
     same(listOf('SELLER_ONLY_PAGES'), withAttr('data-seller-required')),
@@ -557,7 +558,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
 
   check('Product form reads ?from=onboarding and routes its return trip to the review step, not the dashboard',
     /this\.fromOnboarding = this\.params\.get\('from'\) === 'onboarding'/.test(productFormJs) &&
-    /this\.returnTo = this\.fromOnboarding \? 'onboarding\.html\?step=4' : 'dashboard\.html#products'/.test(productFormJs));
+    /this\.returnTo = this\.fromOnboarding \? '\/onboarding\?step=4' : '\/dashboard#products'/.test(productFormJs));
   check('Product form relabels its back link/breadcrumb when arriving from onboarding (no dead-end "Back to Products")',
     /Back to store setup/.test(productFormJs) && /Store setup<\/a>/.test(productFormJs));
   check('The save/delete redirects and the unsaved-changes guard all read the dynamic this.returnTo, not a hardcoded dashboard link',
@@ -608,18 +609,18 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
 
   check('terms.html and privacy.html exist, are titled, and cross-link to each other',
     /<title>Terms of Service - NextaStore<\/title>/.test(terms) && /<title>Privacy Policy - NextaStore<\/title>/.test(privacy) &&
-    /href="privacy\.html"/.test(terms) && /href="terms\.html"/.test(privacy));
+    /href="\/privacy"/.test(terms) && /href="\/terms"/.test(privacy));
   check('Signup links go to the real pages in a new tab (no more "#"), and the agree checkbox is still required',
-    /href="terms\.html" target="_blank" rel="noopener">Terms of Service/.test(signup) &&
-    /href="privacy\.html" target="_blank" rel="noopener">Privacy Policy/.test(signup) &&
+    /href="\/terms" target="_blank" rel="noopener">Terms of Service/.test(signup) &&
+    /href="\/privacy" target="_blank" rel="noopener">Privacy Policy/.test(signup) &&
     /id="agreeTerms" required/.test(signup) && !/<a href="#">(Terms of Service|Privacy Policy)/.test(signup));
   check('Legal pages state the real product model: no payment processing/escrow, and phone shown only if the seller chooses',
     /does not process your payment/.test(terms) && /only if the seller chooses to show it/.test(privacy) && /only if you choose to show it/.test(terms));
   check('Legal pages use same-site relative canonical URLs',
-    /rel="canonical" href="\/terms\.html"/.test(terms) && /rel="canonical" href="\/privacy\.html"/.test(privacy));
+    /rel="canonical" href="\/terms"/.test(terms) && /rel="canonical" href="\/privacy"/.test(privacy));
   check('Footer/marketplace expose Terms and Privacy; sitemap lists both pages',
-    ['index.html', 'dashboard.html', 'store-detail.html', 'marketplace.html'].every(f => /terms\.html/.test(read(f)) && /privacy\.html/.test(read(f))) &&
-    /'\/terms\.html', '\/privacy\.html'/.test(read('nextastore-backend/src/seo.js')));
+    ['index.html', 'dashboard.html', 'store-detail.html', 'marketplace.html'].every(f => /href="\/terms"/.test(read(f)) && /href="\/privacy"/.test(read(f))) &&
+    /'\/terms', '\/privacy'/.test(read('nextastore-backend/src/seo.js')));
 
   check('Map modal close / dismiss / remove-pin buttons use inline SVG (do not depend on the icon-font CDN)',
     /ICON_X/.test(picker) && /ICON_TRASH/.test(picker) &&
@@ -756,6 +757,265 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     /const fallback = code/.test(subscriptionJs) && /const text = custom \|\| fallback/.test(subscriptionJs));
   check('Dial instructions refresh when the selected coverage/amount changes, not only when the network is (re)selected',
     /const currentMethod = document\.getElementById\('subMethod'\)\?\.value;\s*\n\s*if \(currentMethod\) this\.renderDialInstructions\(currentMethod\);/.test(subscriptionJs));
+}
+
+// WIP 29 — storefront polish (store-detail)
+{
+  const sdHtml = read('store-detail.html');
+  const sdCss = read('css/store-detail.css');
+  const storeRoute = read('nextastore-backend/src/routes/store.js');
+  check('Storefront price filter is a two-thumb slider (range inputs), not number boxes',
+    /id="minPrice"[^>]*type="range"|type="range"[^>]*id="minPrice"/.test(sdHtml) && /id="maxPrice"[^>]*type="range"|type="range"[^>]*id="maxPrice"/.test(sdHtml) && !/applyPriceFilter/.test(sdHtml + storeDetail));
+  check('GET /store/public returns the store\'s real priceRange (min/max) for the slider ends',
+    /priceRange/.test(storeRoute) && /_min: \{ price: true \}/.test(storeRoute) && /priceRange/.test(storeDetail));
+  check('Price slider hides itself when every product costs the same (nothing to slide between)',
+    /range\.max > range\.min/.test(storeDetail));
+  check('Description, directions and category names are clamped / wrapped so long text cannot break the header',
+    /store-description-toggle/.test(sdHtml) && /setupDescriptionClamp/.test(storeDetail) && /-webkit-line-clamp: 3/.test(sdCss) && /overflow-wrap: anywhere/.test(sdCss));
+  check('Badges overflow into a "+N" chip and are not repeated inside the pill row',
+    /seller-badge--more/.test(storeDetail) && !/badgePills/.test(storeDetail));
+  check('Active filters show as removable chips with Clear all',
+    /data-remove-filter/.test(storeDetail) && /id="activeFilters"/.test(sdHtml));
+  check('Mobile filters are a drawer with header, Reset and "Show N results" footer; Escape and overlay close it',
+    /sidebar-drawer-foot/.test(sdHtml) && /key === 'Escape'/.test(storeDetail) && /store-drawer-open/.test(storeDetail));
+  check('Favorites toggle on the storefront is saved to the API (POST/DELETE), not just a visual flip',
+    /method: wasOn \? 'DELETE' : 'POST'/.test(storeDetail));
+}
+
+// WIP 30 — store-card badge/name overflow on every surface, presence owner preview, loader grace
+{
+  const mainJs = read('js/main.js');
+  const mainCss = read('css/main.css');
+  const presenceRoute = read('nextastore-backend/src/routes/presence.js');
+  check('renderSellerBadges has an opt-in "more" chip (+N) that lists the hidden badges in its tooltip',
+    /renderSellerBadges\(store, \{[^}]*more = false[^}]*\}/.test(mainJs) && /seller-badge--more/.test(mainJs) && /rest\.map\(b => b\.label\)/.test(mainJs));
+  check('Every store card (marketplace, following, home, directory, product mini card) asks for the "+N" chip',
+    /limit: 1, more: true/.test(read('js/marketplace.js')) && /limit: 2, more: true/.test(read('js/following.js')) &&
+    /limit: 2, more: true/.test(read('index.html')) && /more: true/.test(read('js/stores.js')) && /limit: 2, more: true/.test(read('js/product-detail.js')));
+  check('The storefront header does NOT pass "more" (it draws its own chip, so it would show two)',
+    !/renderSellerBadges\(this\.store, \{[^}]*more/.test(read('js/store-detail.js')));
+  check('A badge can never be wider than its container: labels truncate with an ellipsis (main.css)',
+    /\.seller-badge\{max-width:100%;min-width:0/.test(mainCss) && /\.seller-badge>span\{[^}]*text-overflow:ellipsis/.test(mainCss) && /\.seller-badge--more\{/.test(mainCss));
+  check('Store names clamp to 2 lines on marketplace/following/home cards and the directory; directory and home descriptions clamp too',
+    /\.store-name-text\{[^}]*-webkit-line-clamp:2/.test(read('css/marketplace.css')) && /\.directory-title h2\{[^}]*-webkit-line-clamp:2/.test(read('css/stores.css')) &&
+    /\.directory-info p\{[^}]*-webkit-line-clamp:3/.test(read('css/stores.css')) && /\.store-details p \{[^}]*-webkit-line-clamp: 3/.test(read('index.html')));
+  check('GET /api/presence/store/:slug lets the store\u2019s owner through (draft/lapsed preview) via optionalAuth; everyone else still needs a published, active store',
+    /optionalAuth/.test(presenceRoute) && /isOwner/.test(presenceRoute) && /!isOwner && !isPubliclyVisible\(store\)/.test(presenceRoute));
+  check('Storefront follow-state can only hold the page loader for a short grace period (Promise.race), not indefinitely',
+    /Promise\.race\(\[followState/.test(storeDetail) && !/Promise\.all\(\[this\.loadFollowState\(\), this\.loadProducts\(\)\]\)/.test(storeDetail));
+  check('Service worker cache bumped for the changed main.js / main.css (v23 or later)',
+    (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 23; })());
+}
+
+// WIP 31 — one bulk favorites lookup instead of one request per product card
+{
+  const favRoute = read('nextastore-backend/src/routes/favorites.js');
+  check("GET /favorites/check?ids= exists, is declared before '/:productId', and caps ids at 60",
+    /router\.get\('\/check', optionalAuth/.test(favRoute) && favRoute.indexOf("router.get('/check'") < favRoute.indexOf("router.get('/:productId'") && /\.slice\(0, 60\)/.test(favRoute));
+  check('The storefront asks /favorites/check once per page and falls back to per-card lookups only if the answer has no list',
+    /favorites\/check\?ids=/.test(storeDetail) && /Array\.isArray\(bulk\?\.data\?\.favorited\)/.test(storeDetail));
+  check('package.json has a test:favorites-bulk script', /favorites-bulk-test\.js/.test((JSON.parse(read('nextastore-backend/package.json')).scripts || {})['test:favorites-bulk'] || ''));
+}
+
+// WIP 36 — product page: enlarge/zoom viewer, stock states, honest delivery & returns copy, related products
+{
+  const pdJs = read('js/product-detail.js');
+  const pdHtml = read('product-detail.html');
+  const pdCss = read('css/product-detail.css');
+  check('Product page has a full-screen image viewer (dialog markup, open/close, paging, zoom)',
+    /id="lightbox"[^>]*role="dialog"[^>]*aria-modal="true"/.test(pdHtml) && /openLightbox\(/.test(pdJs) && /closeLightbox\(/.test(pdJs) && /stepLightbox\(/.test(pdJs) && /zoomAt\(/.test(pdJs));
+  check('The viewer answers Escape / arrow keys, traps Tab, and locks page scroll while open',
+    /e\.key === 'Escape'/.test(pdJs) && /e\.key === 'ArrowRight'/.test(pdJs) && /e\.key === 'Tab'/.test(pdJs) && /lightbox-open/.test(pdJs) && /html\.lightbox-open[^{]*\{[^}]*overflow:\s*hidden/.test(pdCss));
+  check("The browser's Back button closes the viewer instead of leaving the product (pushState + popstate)",
+    /history\.pushState\(\{ nxLightbox: 1 \}/.test(pdJs) && /addEventListener\('popstate'/.test(pdJs));
+  check('The viewer is above the sticky header and below alerts (z-index 1100; alerts are 5000)',
+    /\.lightbox\s*\{[^}]*z-index:\s*1100/.test(pdCss));
+  check('Main product photo is shown whole (contain), and gallery thumbnails use the small thumbnails[] variants',
+    /\.main-image img\s*\{[^}]*object-fit:\s*contain/.test(pdCss) && /product\?\.thumbnails/.test(pdJs));
+  check('Swipe on the main photo pages the gallery and is not also counted as the click that opens the viewer',
+    /bindSwipe\(/.test(pdJs) && /_swipeHandled/.test(pdJs));
+  check('Out-of-stock products cannot be added, and quantity is capped by stock minus what is already in the cart',
+    /Out of stock/.test(pdJs) && /maxQuantity\(\)/.test(pdJs) && /stock - this\.inCartQuantity\(\)/.test(pdJs) && /nextastore:cart-changed/.test(pdJs));
+  check('The product page no longer states invented shipping fees, delivery times or a 7-day return policy (NextaStore takes no payment and guarantees no delivery)',
+    !/UGX\s*5,000|UGX\s*15,000|Express Shipping|Standard Shipping|Shipping:\s*<strong>Available|within 7 days of delivery|5-7 business days/i.test(pdHtml) && /agreed directly with the seller/.test(pdHtml));
+  check('"Related products" is store-scoped: real View all link (no href="#"), section hidden when there is nothing to show',
+    !/class="btn-link">View All/.test(pdHtml) && !/href="#" class="btn-link"/.test(pdHtml) && /if \(!this\.store\) \{ if \(section\) section\.hidden = true; return; \}/.test(pdJs) && /if \(!related\.length\) \{ if \(section\) section\.hidden = true; return; \}/.test(pdJs));
+  check('Share uses the phone share sheet when available and has a clipboard fallback',
+    /navigator\.share/.test(pdJs) && /copyToClipboard\(/.test(pdJs) && /execCommand\('copy'\)/.test(pdJs));
+  check('Product-detail browser test is wired into package.json and the service worker cache is v26 or later',
+    /product-detail-browser-test\.js/.test((JSON.parse(read('nextastore-backend/package.json')).scripts || {})['test:product-detail-browser'] || '')
+    && (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 26; })());
+}
+
+// --- WIP 38: Overview store-info header holds long content (behaviour: dashboard-overview-browser-test.js) ---
+{
+  const dashHtml = read('dashboard.html');
+  const dashCss = read('css/dashboard.css');
+  check('Overview: description is clamped to 3 lines with a Read more toggle, long text wraps instead of running off the card',
+    /id="storeDescToggle"[^>]*aria-expanded="false"/.test(dashHtml)
+    && /\.store-description\s*\{[^}]*-webkit-line-clamp:\s*3/.test(dashCss)
+    && /\.store-info\s*\{[^}]*min-width:\s*0/.test(dashCss)
+    && /overflow-wrap:\s*anywhere/.test(dashCss));
+  check('Overview: a long address is clamped to 2 lines with a Show full address toggle (phones have no tooltips), and a divider keeps the address Edit apart from the stats',
+    /id="storeLocToggle"[^>]*aria-expanded="false"/.test(dashHtml)
+    && /#locationText\s*\{[^}]*-webkit-line-clamp:\s*2/.test(dashCss)
+    && /#locationText\.is-expanded/.test(dashCss)
+    && /syncLocationToggle/.test(dashboard) && /storeLocToggle/.test(dashboard)
+    && /\.store-stats-mini\s*\{[^}]*border-left:\s*1px solid/.test(dashCss));
+  check('Overview: payment methods fold after 4 behind a "+N more" control, hidden badges get a "+N" chip, edit buttons are labelled',
+    /PAYMENT_CHIP_LIMIT|const LIMIT = 4/.test(dashboard) && /storePaymentsToggle/.test(dashboard)
+    && /renderSellerBadges\(store, \{ limit: 3, more: true \}\)/.test(dashboard)
+    && /aria-label="Edit store details"/.test(dashHtml) && /aria-label="Edit store location"/.test(dashHtml));
+  check('Overview: phone layout stretches the header children (flex-start let long text run past the card edge and get clipped)',
+    /@media \(max-width: 768px\)[\s\S]*?\.store-header\s*\{[^}]*align-items:\s*stretch/.test(dashCss));
+  check('Overview browser test is wired into package.json and the service worker cache is v28 or later',
+    /dashboard-overview-browser-test\.js/.test((JSON.parse(read('nextastore-backend/package.json')).scripts || {})['test:dashboard-overview-browser'] || '')
+    && (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 28; })());
+}
+
+
+// ---- WIP 40: full notification text, no native popups, smart Back ----
+{
+  const mainJs = read('js/main.js'), mainCss = read('css/main.css'), backNav = read('js/back-nav.js');
+  const siteJs = ['js/dashboard.js', 'js/orders.js', 'js/admin.js', 'js/cart-page.js', 'js/store-detail.js', 'js/product-detail.js', 'js/messages.js', 'js/marketplace.js']
+    .map(f => read(f)).join('\n');
+  check('Notifications: desktop shows the full title and body (no nowrap / ellipsis on the item text)',
+    !/\.notification-preview-main (?:strong|span)\{[^}]*(?:white-space:nowrap|text-overflow:ellipsis)/.test(mainCss));
+  check('No native browser popups: window.alert / confirm / prompt are not used anywhere in the site scripts',
+    !/(?:^|[^A-Za-z0-9_.$])window\.(?:alert|confirm|prompt)\s*\(/m.test(siteJs + read('js/admin.js')) && !/(?<![A-Za-z0-9_.$])(?:alert|prompt)\s*\(/.test(siteJs.replace(/showAlert\(/g, '')));
+  check('app.prompt() exists beside app.confirm(), validates inline, and keeps typed text when the backdrop is clicked',
+    /\n    prompt\(\{/.test(mainJs) && /site-dialog-error/.test(mainJs) && /_downOnBackdrop/.test(mainJs) && /\.site-dialog-form/.test(mainCss));
+  check('Back: js/back-nav.js exists and every page with a back control loads it',
+    ['cart', 'favorites', 'following', 'orders', 'store-detail', 'product-detail', 'safety'].every(p => /back-nav\.js/.test(read(`${p}.html`))));
+  check('Back: no page hard-wires "Back to marketplace" any more (data-back-link with a fallback instead)',
+    ['cart', 'favorites', 'following', 'orders', 'store-detail', 'product-detail', 'safety'].every(p => /data-back-link/.test(read(`${p}.html`)))
+    && /data-back-link/.test(storeDetail) && !/closed-screen-back"><i/.test(storeDetail));
+  check('Back: the product page falls back to its store (a bare shared link has no earlier page)',
+    /backFallbackLabel = 'Back to store'/.test(read('js/product-detail.js')) && /history\.back\(\)/.test(backNav));
+  check('Dialogs/Back browser test is wired into package.json and the service worker cache is v30 or later',
+    /dialogs-back-browser-test\.js/.test((JSON.parse(read('nextastore-backend/package.json')).scripts || {})['test:dialogs-back-browser'] || '')
+    && (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 30; })());
+}
+
+// ---- WIP 41: badge wording ("24+ months on NextaStore. Confirmed by us, not self-declared.") ----
+{
+  const helpersSrc = read('nextastore-backend/src/helpers.js'), detailSrc = read('js/store-detail.js');
+  check('Badge wording: each tier\'s reason lives once on TIER_PERKS (6+/12+/24+ months on NextaStore) and the six duplicated literals are gone',
+    /verified: \{\s*rank: 1,\s*reason: '6\+ months on NextaStore'/.test(helpersSrc)
+    && /gold: \{\s*rank: 2,\s*reason: '12\+ months on NextaStore'/.test(helpersSrc)
+    && /platinum: \{\s*rank: 3,\s*reason: '24\+ months on NextaStore'/.test(helpersSrc)
+    && !/reason: '(?:6|12|24)\+ months?(?: of active paid coverage| confirmed commitment)'/.test(helpersSrc));
+  check('Badge wording: the buyer-facing trust card reads "<reason>. Confirmed by us, not self-declared." and the old sentence is gone',
+    /\}\. Confirmed by us, not self-declared\.`/.test(detailSrc) && !/earned from confirmed paid time/.test(detailSrc));
+  check('Badge wording: badge copy makes no "guaranteed" / "secured" claim (badges are not a guarantee of quality, delivery or a sale)',
+    !/reason: '[^']*(?:guarantee|secured)/i.test(helpersSrc) && !/Confirmed by us[^`]*(?:guarantee|secured)/i.test(detailSrc));
+  check('Badge wording: service worker cache is v31 or later so returning visitors get the new copy',
+    (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 31; })());
+}
+
+// ---- WIP 42 + 43: a product's own address, which previews properly in WhatsApp ----
+{
+  const seoRoute = read('nextastore-backend/src/routes/seo.js'), seoSrc = read('nextastore-backend/src/seo.js');
+  const appSrc = read('nextastore-backend/src/app.js'), detailJs = read('js/product-detail.js');
+  const mainJs = read('js/main.js'), authJs = read('js/auth.js'), slugSrc = read('nextastore-backend/src/slugs.js');
+  const pkg = JSON.parse(read('nextastore-backend/package.json')).scripts || {};
+  const idx = k => seoRoute.indexOf(`router.get('${k}'`);
+  check('Product address: GET /:storeSlug/:productSlug and GET /p/:productId exist and are both registered before the /:slug catch-all',
+    idx('/:storeSlug/:productSlug') > -1 && idx('/p/:productId') > -1 && idx('/:storeSlug/:productSlug') < idx('/:slug') && idx('/p/:productId') < idx('/:slug'));
+  check('Product address: it serves the REAL product page (renderProductShell on product-detail.html) - never a redirect page with a meta refresh or script redirect',
+    /renderProductShell\(shell/.test(seoRoute) && /loadProductShell/.test(read('nextastore-backend/src/storeShell.js')) && /product-detail\.html/.test(read('nextastore-backend/src/storeShell.js'))
+    && !/http-equiv="refresh"/i.test(seoSrc) && !/location\.replace\(/.test(seoSrc));
+  check('Product address: the page\'s relative CSS / JS / image paths are made root-relative (it lives one folder deeper than the other pages)',
+    /function rootRelative\(/.test(seoSrc) && /return rootRelative\(/.test(seoSrc));
+  check('Product address: the preview photo is the cover thumbnail first (small JPEG WhatsApp always shows), then the full photo, store logo, brand card',
+    /first\(product\.thumbnails\), first\(product\.images\), product\.image, store && store\.logo/.test(seoSrc) && /DEFAULT_OG_IMAGE_PATH/.test(seoSrc));
+  check('Product address: a draft / lapsed / deleted-store / unknown product gets generic tags only (live check on the STORE, not the product alone)',
+    (() => { const handler = seoRoute.slice(idx('/:storeSlug/:productSlug'), idx('/:slug')); // the product handler only: the store route has the same line
+      return /const live = store\.isPublished && isStoreCurrentlyActive\(store\)/.test(handler) && /store\.deletedAt/.test(handler) && /noindex,nofollow/.test(seoSrc); })());
+  check('Product address: found by the id\'s tail INSIDE the named store (indexed store filter, case-insensitive), never a table-wide scan',
+    /id: \{ endsWith: key, mode: 'insensitive' \}/.test(seoRoute) && /store: \{ deletedAt: null, OR: \[\{ slug: storeKey \}, \{ id: rawStore \}\] \}/.test(seoRoute));
+  check('Product address: one address per product - any other spelling 301s to it, and the reserved first words (css, api, errors...) are never shadowed',
+    /req\.path !== clean/.test(seoRoute) && /isReservedSlug\(storeKey\)\) return next\(\)/.test(seoRoute) && /RESERVED_SLUGS[\s\S]*'p'/.test(slugSrc));
+  check('Product address: both routes are under the public per-IP rate limiter (unauthenticated, read the database)',
+    /app\.use\(\['\/s', '\/p', '\/sitemap\.xml', '\/robots\.txt'\], publicCatalogLimiter\)/.test(appSrc) && /\\\/\[A-Za-z0-9-\]\+\(\?:\\\/\[A-Za-z0-9-\]\+\)\?\\\/\?\$\/\.test\(req\.path\)/.test(appSrc));
+  check('Product address: the product page reads its product from the server\'s <meta> tags (the address only has a short key), the old ?id= form as fallback, and tidies the address bar',
+    /readRoute\(\)/.test(detailJs) && /nx-product-id/.test(detailJs) && /nx-store-slug/.test(detailJs) && /cleanAddress\(\)/.test(detailJs) && /history\.replaceState/.test(detailJs));
+  check('Product address: every Share action hands out the product\'s own address (app.productLink), not whatever is in the address bar',
+    /shareUrl\(\) \{[\s\S]*?app\.productLink\(this\.product, this\.store\?\.slug\)/.test(detailJs) && /url: this\.shareUrl\(\)/.test(detailJs) && /handleShare\(platform\) \{\s*const url = this\.shareUrl\(\);/.test(detailJs));
+  // No page may go back to building the old /product-detail?id=... link by hand: one builder, one address.
+  const codeOnly = src => src.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  const handBuilt = fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js') && /product-detail\?/.test(codeOnly(read(`js/${f}`))));
+  check('Product address: no script builds /product-detail?id=... by hand any more (everything goes through app.productLink)', handBuilt.length === 0, handBuilt.join(', '));
+  const backendLegacy = ['helpers.js', 'seo.js', 'routes/seo.js', 'routes/products.js', 'routes/messages.js', 'routes/store.js'].filter(f => fs.existsSync(path.join(root, 'nextastore-backend/src', f)) && /product-detail\?id=\$\{(?!encodeURIComponent\(id\))/.test(codeOnly(read(`nextastore-backend/src/${f}`))));
+  check('Product address: the backend builds product links with productPath() too (notifications, JSON-LD), the static page only as the no-slug fallback',
+    backendLegacy.length === 0 && /productPath\(\{ id: productId, name: productName \}, storeSlug\)/.test(read('nextastore-backend/src/helpers.js')), backendLegacy.join(', '));
+  check('Product address: logging in from a product page returns to it (main.js keeps both parts; auth.js accepts exactly that shape and checks the page rules on the FIRST part)',
+    /isProductAddress/.test(mainJs) && /\(\?:\\\/\[A-Za-z0-9-\]\+\)\?/.test(authJs) && /split\('\/'\)\[0\]/.test(authJs));
+  check('Product address: the browser\'s copy of the address builder is marked in main.js and the parity test is wired in, with the route and browser tests and the service worker cache at v33 or later',
+    /nx:product-url:start/.test(mainJs) && /product-url-test\.js/.test(pkg['test:product-url'] || '') && /product-share-test\.js/.test(pkg['test:product-share'] || '') && /product-address-browser-test\.js/.test(pkg['test:product-address-browser'] || '')
+    && (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 33; })());
+
+  // ---- WIP 50: marketplace rebuild ----
+  {
+    const mkJs = read('js/marketplace.js'), mkCss = read('css/marketplace.css'), mkHtml = read('marketplace.html'), storesJs = read('js/stores.js');
+    check('Marketplace: store and product cards are real links (stretched <a>), images are lazy <img> with a data-fallback, and no card builds a CSS background-image from raw data',
+      /class="mk-store-link" href=/.test(mkJs) && /<article class="mk-product/.test(mkJs) && /class="mk-product-link" href=/.test(mkJs) && /loading="lazy"/.test(mkJs) && /data-fallback="product"/.test(mkJs) && !/background-image:url/.test(mkJs) && !/role="button"/.test(mkJs));
+    check('Marketplace: 2 store cards per row on phones and 3 / 4 / 5 on wider screens, products 2 / 3 / 4 / 6; page sizes are paired with the columns so the last row is full',
+      /\.mk-stores-grid,\s*\.mk-products-grid \{[^}]*repeat\(2, minmax\(0, 1fr\)\)/.test(mkCss) && /repeat\(5, minmax\(0, 1fr\)\)/.test(mkCss) && /repeat\(6, minmax\(0, 1fr\)\)/.test(mkCss) &&
+      /storePageSize = vw >= 1280 \? 15/.test(mkJs) && /productPageSize = vw >= 1280 \? 18/.test(mkJs));
+    check('Marketplace: Featured stores links to /stores (header link + "View all N stores"), carrying the current search/category, and /stores opens already filtered from ?q= / ?category=',
+      /id="viewAllStoresLink"/.test(mkHtml) && /id="storesViewAll"/.test(mkHtml) && /storesDirectoryHref\(\)/.test(mkJs) && /applyUrlFilters/.test(storesJs));
+    check('Marketplace: hero numbers come from the API totals (no fixed "500+ / 10K+ / 24/7" claims), a failed request says so with a retry instead of "coming soon", products page with "Show more"',
+      !/500\+|10K\+|24\/7/.test(mkHtml) && /updateHeroStats/.test(mkJs) && /data-mk-action="\$\{esc\(action\.action\)\}"/.test(mkJs) && !/<h3>[^<]*[Cc]oming [Ss]oon/.test(mkJs) && /loadMoreProducts/.test(mkJs) && /Intl\.NumberFormat\('en', \{ notation: 'compact'/.test(mkJs));
+    check('Marketplace hero v3: market-stall store cards from the stores API, Nexi chat in place of the hero search, stats band, motion respects prefers-reduced-motion',
+      /id="heroCollage"/.test(mkHtml) && /id="heroChat"/.test(mkHtml) && !/id="heroSearchForm"/.test(mkHtml) && !/hero-chips/.test(mkHtml) && /renderHeroStores/.test(mkJs) && !/renderHeroCollage/.test(mkJs) && /mountHero/.test(mkJs) && /class="hero-band"/.test(mkHtml) &&
+      /\.hero-stall-awning/.test(mkCss) && !/\.hero-tile/.test(mkCss) &&
+      /@media \(prefers-reduced-motion: no-preference\)[^@]*hero-content/.test(mkCss.replace(/\n/g, ' ')) && !/rotate\(-1\.1deg\)/.test(mkCss));
+    const nexiJs = read('js/assistant.js'), nexiCss = read('css/assistant.css');
+    check('Nexi: dock (assistant button + back-to-top), hero chat, safe rendering (no innerHTML of model text), reduced-motion + print rules',
+      /window\.NexiAssistant = \{/.test(nexiJs) && /nexi-top/.test(nexiJs) && /mountHero/.test(nexiJs) && /ALLOWED_PATHS/.test(nexiJs) && !/innerHTML\s*=\s*(m|msg|text|ev|reply)\b/.test(nexiJs) &&
+      /prefers-reduced-motion: reduce/.test(nexiCss) && /@media print/.test(nexiCss) && /\.nexi-fab/.test(nexiCss) && /z-index: 900/.test(nexiCss));
+    const mainJs = read('js/main.js');
+    check('Nexi loads on every main.js page via one loader, and admin + inbox opt out',
+      /loadAssistantDock/.test(mainJs) && /data-assistant="off"/.test(read('admin.html')) && /data-assistant="off"/.test(read('messages.html')) && /assistant\.js/.test(read('safety.html')));
+    const proxyJs = read('nextastore-backend/src/assistantProxy.js');
+    check('Nexi proxy: mounted behind its own per-minute and per-hour limits, strips client roles, never buffers the stream',
+      /api\/assistant\/chat', assistantMinuteLimiter, assistantHourLimiter/.test(app) && /app\.use\('\/api\/assistant', assistantRoutes\)/.test(app) && /role === 'user' \|\| m\.role === 'assistant'/.test(proxyJs) && /no-transform/.test(proxyJs));
+    const svcPrompt = read('ai-assistant/src/chat/sanitize.js');
+    check('Nexi service: client history is sanitised (system role dropped), detector matches whole words only',
+      /m\.role === 'user' \|\| m\.role === 'assistant'/.test(svcPrompt) && /match\(\/\[a-z/.test(read('ai-assistant/src/lang/detect.js')));
+    check('Nexi (WIP 55): panel sits above the site header (z-index > 1000) with one scrolling body + pinned composer, phones/short windows get the sheet, starters are one swipeable row on phones (WIP 56), flagged messages are tagged, service worker at v45 or later',
+      (() => { const z = /\.nexi-panel \{[^}]*?z-index:\s*(\d+)/.exec(nexiCss); return !!z && Number(z[1]) > 1000 && Number(z[1]) < 1500; })() &&
+      /\.nexi-panel-body/.test(nexiCss) && /\.nexi-panel-bottom/.test(nexiCss) && /max-width: 600px\), \(max-height: 520px\)/.test(nexiCss) && /visualViewport/.test(nexiJs) &&
+      /nexi-starters-row/.test(nexiCss) && /scroll-snap-type/.test(nexiCss) && !/nexi-more|nexi-chip--extra/.test(nexiCss) && /nexi-flagtag/.test(nexiCss) && /applyFlag/.test(nexiJs) &&
+      (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 45; })());
+    check('Nexi service (WIP 55): every message is checked for relevance before the model runs (off-topic / inappropriate / private details / manipulation / unclear), curated replies, [OFF_TOPIC] marker is stripped, flag log never stores private details',
+      /analyseTurn/.test(read('ai-assistant/src/chat/pipeline.js')) && /markerGate/.test(read('ai-assistant/src/chat/pipeline.js')) && /\[OFF_TOPIC\]/.test(read('ai-assistant/src/chat/systemPrompt.js')) &&
+      /\[not stored\]/.test(read('ai-assistant/src/chat/flagLog.js')) && /export-flags/.test(read('ai-assistant/package.json')));
+    check('Marketplace v3: product sort + price range (server-side, products only), removable filter chips, favorite hearts via /favorites/check, keyboard-navigable search suggestions',
+      /productQuery\(/.test(mkJs) && /id="productsSort"/.test(mkHtml) && /id="priceForm"/.test(mkHtml) && /renderActiveFilters/.test(mkJs) &&
+      /\/favorites\/check\?ids=/.test(mkJs) && /class="mk-fav"/.test(mkJs) && /aria-activedescendant/.test(mkJs) && /role="combobox"/.test(mkHtml) && /name="description"/.test(mkHtml));
+    check('Marketplace: the real-page browser test is wired in and the service worker cache is at v41 or later',
+      /marketplace-browser-test\.js/.test(pkg['test:marketplace-browser'] || '') && (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 41; })());
+  }
+
+  // ---- WIP 56: starter questions by screen, footer back-to-top removed, All stores directory v2 ----
+  {
+    const nexiCss56 = read('css/assistant.css'), nexiJs56 = read('js/assistant.js');
+    const stCss = read('css/stores.css'), stJs = read('js/stores.js'), stHtml = read('stores.html'), storeRoute = read('nextastore-backend/src/routes/store.js');
+    check('WIP 56: footer "Back to top" link is gone (the dock arrow is the only one)',
+      !/footer-top-link|footerTopLink/.test(read('marketplace.html') + read('js/marketplace.js') + read('css/marketplace.css')));
+    check('WIP 56: Nexi starters are one swipeable row on phones (hero + sheet) and a grid / list on desktop; no "More questions" toggle',
+      /nexi-starters-row/.test(nexiJs56) && !/nexi-more|nexi-chip--extra/.test(nexiJs56 + nexiCss56) && /scroll-snap-type: x proximity/.test(nexiCss56) && /repeat\(2, minmax\(0, 1fr\)\)/.test(nexiCss56));
+    check('WIP 56: All stores — two cards per row on phones, 3 / 4 on wider screens, 24 per page (fills 2, 3 and 4 columns)',
+      /\.stores-directory-grid\{[^}]*repeat\(2,minmax\(0,1fr\)\)/.test(stCss) && /repeat\(3,minmax\(0,1fr\)\)/.test(stCss) && /repeat\(4,minmax\(0,1fr\)\)/.test(stCss) && /STORES_PAGE_SIZE = 24/.test(stJs));
+    check('WIP 56: All stores — scales: numbered pagination with a window + go-to-page, URL state, newest-response-wins loading, lazy images, sort + badged filter in the API',
+      /pageWindow\(/.test(stJs) && /pg-jump/.test(stJs) && /pushState/.test(stJs) && /seq !== this\.seq/.test(stJs) && /loading="lazy"/.test(stJs) &&
+      /id="storesSort"/.test(stHtml) && /id="storesPager"/.test(stHtml) && /DIRECTORY_SORTS/.test(storeRoute) && /badged/.test(storeRoute) && /\{ id: 'asc' \}/.test(storeRoute) &&
+      /Store_isPublished_verified_createdAt_idx/.test(read('nextastore-backend/prisma/migrations/20261004090000_store_directory_indexes/migration.sql')));
+    check('WIP 56: service worker cache is at v46 or later',
+      (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 46; })());
+  }
 }
 
 let failed = 0;

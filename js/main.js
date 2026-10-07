@@ -385,7 +385,7 @@ class NotificationStore {
        write just after serving the thread, so an immediate count could still
        include it). */
     settleByLink(link) {
-        const norm = v => String(v || '').replace(/^\//, '');
+        const norm = v => String(v || '').replace(/^\//, '').replace(/\.html(?=[?#]|$)/, '');
         const target = norm(link);
         let changed = false;
         for (const n of this._everyKnown()) {
@@ -400,6 +400,36 @@ class NotificationStore {
         return changed;
     }
 }
+
+// nx:product-url:start
+// A product's address: /<store-slug>/<name>-<key>, e.g.
+// /asia-ivan/blue-sofa-x7k2m9ab. The key is the tail of the product's id, so the
+// address survives a rename; the server finds the product by it and 301s to the
+// current spelling. These three functions are a copy of productKey() /
+// productSlugFrom() / productPath() in nextastore-backend/src/slugs.js, and
+// scripts/product-url-test.js runs both on the same inputs: change one, change
+// the other. Pure on purpose (no `this`, no DOM) so that test can run them.
+function nxProductKey(id) {
+    return String(id == null ? '' : id).toLowerCase().replace(/[^a-z0-9]/g, '').slice(-8);
+}
+function nxProductSlug(name) {
+    var slug = String(name == null ? '' : name).toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (slug.length > 60) {
+        slug = slug.slice(0, 60);
+        var cut = slug.lastIndexOf('-');
+        if (cut > 20) slug = slug.slice(0, cut);
+        slug = slug.replace(/-$/, '');
+    }
+    return slug || 'product';
+}
+function nxProductPath(product, storeSlug) {
+    var slug = String(storeSlug || '').trim();
+    var key = nxProductKey(product && product.id);
+    if (!slug || !/^[A-Za-z0-9-]+$/.test(slug) || key.length < 4) return null;
+    return '/' + slug + '/' + nxProductSlug(product.name) + '-' + key;
+}
+// nx:product-url:end
 
 class NextaStoreApp {
     constructor() {
@@ -526,7 +556,7 @@ class NextaStoreApp {
     setupAuthAwareLinks() {
         const links = document.querySelectorAll('[data-auth-aware-link]');
         if (!links.length) return;
-        const destination = () => this.user?.role === 'seller' ? 'dashboard.html' : 'marketplace.html';
+        const destination = () => this.user?.role === 'seller' ? '/dashboard' : '/marketplace';
         links.forEach(link => {
             link.addEventListener('click', e => {
                 if (!this.token) return;
@@ -600,13 +630,13 @@ class NextaStoreApp {
     enforceSellerOnlyPage() {
         const adminOnly = document.body.hasAttribute('data-admin-required');
         if (adminOnly && this.user && this.user.role !== 'admin') {
-            window.location.href = 'marketplace.html';
+            window.location.href = '/marketplace';
             return;
         }
         if (adminOnly && !this.user && !this.token) return;
         const sellerOnly = document.body.hasAttribute('data-seller-required');
         if (sellerOnly && this.user && this.user.role !== 'seller') {
-            window.location.href = 'marketplace.html';
+            window.location.href = '/marketplace';
         }
     }
 
@@ -724,9 +754,13 @@ class NextaStoreApp {
      *  hand the page back only to the SAME person, never to whoever happens
      *  to sign in next. */
     redirectToLogin(reason = null) {
-        const here = window.location.pathname.split('/').pop() + window.location.search;
+        // One page name (`cart`), a store (`amina-crafts`), or a product's own
+        // address (`amina-crafts/blue-sofa-x7k2m9ab`: both parts are needed).
+        const parts = window.location.pathname.replace(/\.html$/i, '').split('/').filter(Boolean);
+        const isProductAddress = parts.length === 2 && parts.every(part => /^[A-Za-z0-9-]+$/.test(part));
+        const here = (isProductAddress ? parts.join('/') : (parts.pop() || '')) + window.location.search;
         const reasonPart = reason ? `&reason=${encodeURIComponent(reason)}` : '';
-        window.location.href = `login.html?redirect=${encodeURIComponent(here)}${reasonPart}`;
+        window.location.href = `/login?redirect=${encodeURIComponent(here)}${reasonPart}`;
     }
 
     /** The one way a session ends in this browser. `reason` is 'logout' when
@@ -873,7 +907,7 @@ class NextaStoreApp {
         });
         if (!confirmed) return;
         this.endSession('logout');
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 
     /** Render a consistent logged-in account control into any header container. */
@@ -889,7 +923,7 @@ class NextaStoreApp {
         modal.innerHTML = `<div class="modal-content message-seller-modal"><button class="modal-close" type="button" aria-label="Close">&times;</button>
             <div class="message-modal-header"><div class="message-seller-avatar">${storeLogo ? `<img src="${this.escapeHtml(storeLogo)}" alt="">` : '<i class="fas fa-store"></i>'}</div><div><span class="eyebrow">Message seller</span><h2>${storeName}</h2><p>Messages stay in your NextaStore inbox.</p></div></div>
             ${product ? `<div class="message-product-context">${productImage ? `<img src="${this.escapeHtml(productImage)}" alt="">` : '<i class="fas fa-box"></i>'}<div><small>About this product</small><strong>${this.escapeHtml(product.name || 'Product')}</strong></div></div>` : ''}
-            <form><div class="form-group"><label class="form-label" for="sharedSellerMessage">Message</label><textarea class="form-textarea" id="sharedSellerMessage" maxlength="2000" rows="5" required placeholder="Ask about availability, delivery, sizing…"></textarea><div class="message-safety-note"><i class="fas fa-shield-halved"></i><span>Keep communication inside NextaStore messaging so there is a record if something goes wrong. <a href="safety.html">Trust &amp; Safety</a></span></div></div><div class="message-modal-footer"><span class="message-send-state" data-send-state>Your message will appear in Messages.</span><button class="btn btn-primary" type="submit" data-send-button><i class="fas fa-paper-plane"></i> Send message</button></div></form></div>`;
+            <form><div class="form-group"><label class="form-label" for="sharedSellerMessage">Message</label><textarea class="form-textarea" id="sharedSellerMessage" maxlength="2000" rows="5" required placeholder="Ask about availability, delivery, sizing…"></textarea><div class="message-safety-note"><i class="fas fa-shield-halved"></i><span>Keep communication inside NextaStore messaging so there is a record if something goes wrong. <a href="/safety">Trust &amp; Safety</a></span></div></div><div class="message-modal-footer"><span class="message-send-state" data-send-state>Your message will appear in Messages.</span><button class="btn btn-primary" type="submit" data-send-button><i class="fas fa-paper-plane"></i> Send message</button></div></form></div>`;
         document.body.appendChild(modal);
         const close = () => modal.remove();
         modal.querySelector('.modal-close').addEventListener('click', close);
@@ -904,24 +938,46 @@ class NextaStoreApp {
                 state.textContent = 'Sent — check Messages for replies.'; button.innerHTML = '<i class="fas fa-check"></i> Sent';
                 await this.refreshUnreadBadges();
                 if (typeof onSent === 'function') onSent();
-                setTimeout(() => { close(); window.location.href = 'messages.html'; }, 450);
+                setTimeout(() => { close(); window.location.href = '/messages'; }, 450);
             } catch (err) { state.textContent = err.message || 'Could not send message'; button.disabled = false; input.disabled = false; button.innerHTML = '<i class="fas fa-paper-plane"></i> Send message'; }
         });
         requestAnimationFrame(() => modal.querySelector('textarea')?.focus());
     }
 
-    renderSellerBadges(store, { compact = false, limit = 3 } = {}) {
-        const badges = Array.isArray(store?.badges) ? store.badges.slice(0, limit) : [];
+    /** `more: true` adds a "+N" chip for the badges beyond `limit` (its
+     *  tooltip lists them), so a store holding every badge doesn't look like
+     *  it holds only two. Off by default: the storefront header draws its own
+     *  chip and must not get a second one. */
+    /** Small trust mark for a seller's paid-commitment tier (Verified / Gold /
+     *  Platinum), used on product cards. `tier` is the {tone,label,shortLabel,icon}
+     *  summary the API sends as `store.tier` / `product.sellerTier`. Returns ''
+     *  for no tier, so callers can always interpolate it. Tone is whitelisted:
+     *  it becomes part of a class name. */
+    renderTierMark(tier) {
+        if (!tier || !['verified', 'gold', 'platinum'].includes(tier.tone)) return '';
+        const icon = /^fa-[a-z0-9-]{1,32}$/.test(tier.icon || '') ? tier.icon : 'fa-circle-check';
+        const label = this.escapeHtml(tier.label || 'Trusted seller');
+        return `<span class="tier-mark tier-mark--${tier.tone}" title="${label}" aria-label="${label}"><i class="fas ${icon}" aria-hidden="true"></i><span class="tier-mark-text">${this.escapeHtml(tier.shortLabel || tier.label || '')}</span></span>`;
+    }
+
+    renderSellerBadges(store, { compact = false, limit = 3, more = false } = {}) {
+        const all = Array.isArray(store?.badges) ? store.badges : [];
+        const badges = all.slice(0, limit);
         if (!badges.length) return '';
-        return badges.map(b => `<span class="seller-badge seller-badge--${this.escapeHtml(b.tone || 'verified')} ${compact ? 'seller-badge--compact' : ''}" title="${this.escapeHtml(b.reason || b.label)}" aria-label="${this.escapeHtml(b.label)}"><i class="fas ${this.escapeHtml(b.icon || 'fa-award')}"></i><span>${this.escapeHtml(compact ? (b.shortLabel || b.label) : b.label)}</span></span>`).join('');
+        let html = badges.map(b => `<span class="seller-badge seller-badge--${this.escapeHtml(b.tone || 'verified')} ${compact ? 'seller-badge--compact' : ''}" title="${this.escapeHtml(b.reason || b.label)}" aria-label="${this.escapeHtml(b.label)}"><i class="fas ${this.escapeHtml(b.icon || 'fa-award')}"></i><span>${this.escapeHtml(compact ? (b.shortLabel || b.label) : b.label)}</span></span>`).join('');
+        const rest = all.slice(limit);
+        if (more && rest.length) {
+            html += `<span class="seller-badge seller-badge--more" title="${this.escapeHtml(rest.map(b => b.label).join(', '))}" aria-label="${rest.length} more badge${rest.length === 1 ? '' : 's'}">+${rest.length}</span>`;
+        }
+        return html;
     }
 
     renderAccountNav(containerEl) {
         if (!containerEl) return;
         if (!this.token || !this.user) {
             containerEl.innerHTML = `
-                <a href="login.html" class="btn btn-outline btn-sm">Login</a>
-                <a href="signup.html" class="btn btn-primary btn-sm">Create account</a>`;
+                <a href="/login" class="btn btn-outline btn-sm">Login</a>
+                <a href="/signup" class="btn btn-primary btn-sm">Create account</a>`;
             return;
         }
 
@@ -939,10 +995,10 @@ class NextaStoreApp {
         // would drop them into a store that isn't live yet.
         const sellerOnboardingDone = role === 'seller' && !!this.store?.isPublished;
         const seller = sellerOnboardingDone
-            ? `<a href="dashboard.html" class="account-menu-item"><i class="fas fa-gauge"></i> Seller dashboard</a>`
-            : (role === 'seller' ? `<a href="onboarding.html" class="account-menu-item"><i class="fas fa-store"></i> Finish setting up your store</a>` : '');
+            ? `<a href="/dashboard" class="account-menu-item"><i class="fas fa-gauge"></i> Seller dashboard</a>`
+            : (role === 'seller' ? `<a href="/onboarding" class="account-menu-item"><i class="fas fa-store"></i> Finish setting up your store</a>` : '');
         const admin = role === 'admin'
-            ? `<a href="admin.html" class="account-menu-item"><i class="fas fa-gauge-high"></i> Admin console</a>` : '';
+            ? `<a href="/admin" class="account-menu-item"><i class="fas fa-gauge-high"></i> Admin console</a>` : '';
         const becomeSeller = role === 'buyer'
             ? `<button type="button" class="account-menu-item is-divider-top" data-account-action="seller"><i class="fas fa-store"></i> Become a seller</button>` : '';
 
@@ -977,10 +1033,10 @@ class NextaStoreApp {
                     </div>
                     <div class="account-menu-items">
                         ${verify}${seller}${admin}
-                        <a href="orders.html" class="account-menu-item"><i class="fas fa-box"></i> Orders</a>
-                        <a href="favorites.html" class="account-menu-item"><i class="fas fa-heart"></i> Favorites</a>
-                        <a href="following.html" class="account-menu-item"><i class="fas fa-store"></i> Following</a>
-                        <a href="messages.html" class="account-menu-item"><i class="fas fa-message"></i> Messages <span class="unread-badge hidden" data-unread-badge></span></a>
+                        <a href="/orders" class="account-menu-item"><i class="fas fa-box"></i> Orders</a>
+                        <a href="/favorites" class="account-menu-item"><i class="fas fa-heart"></i> Favorites</a>
+                        <a href="/following" class="account-menu-item"><i class="fas fa-store"></i> Following</a>
+                        <a href="/messages" class="account-menu-item"><i class="fas fa-message"></i> Messages <span class="unread-badge hidden" data-unread-badge></span></a>
                         ${becomeSeller}
                     </div>
                     <button type="button" class="account-menu-item account-menu-logout" data-account-action="logout"><i class="fas fa-right-from-bracket"></i> Log out</button>
@@ -1067,7 +1123,7 @@ class NextaStoreApp {
            messagesManager doesn't exist and this is a no-op). */
         const threadIdOf = el => {
             const a = el && el.closest ? el.closest('a[data-notification-id]') : null;
-            const m = a && /^\/?messages\.html\?conversation=([A-Za-z0-9_\-%]+)$/.exec(a.getAttribute('href') || '');
+            const m = a && /^\/?messages(?:\.html)?\?conversation=([A-Za-z0-9_\-%]+)$/.exec(a.getAttribute('href') || '');
             return m ? decodeURIComponent(m[1]) : null;
         };
         let bellHoverTimer = null, bellTouchTimer = null;
@@ -1109,7 +1165,7 @@ class NextaStoreApp {
                 const response = await this.apiRequest('/user/become-seller', { method: 'POST' });
                 this.user = response.data;
                 TokenStorage.write('nextastore_user', JSON.stringify(this.user), this.remembered);
-                window.location.href = 'onboarding.html';
+                window.location.href = '/onboarding';
             } catch (err) { this.showAlert(err.message, 'error'); }
         });
         containerEl.querySelector('[data-account-action="verify"]')?.addEventListener('click', async () => {
@@ -1130,14 +1186,18 @@ class NextaStoreApp {
     }
 
     /* Notification links come from the API, but they end up in an href — so
-       only plain same-site page links ("messages.html?conversation=abc",
-       "/subscription.html", "dashboard.html#orders") are honoured. Anything
-       else (an absolute URL, a javascript: URI, stray characters) is dropped
-       and the notification is simply not clickable. */
+       only plain same-site page links ("/messages?conversation=abc",
+       "/subscription", "/dashboard#orders") are honoured. Anything else (an
+       absolute URL, a javascript: URI, stray characters) is dropped and the
+       notification is simply not clickable. Links saved before pages lost
+       their `.html` ("messages.html?conversation=abc") are still understood
+       and come back as the clean address. */
     safeInternalLink(link) {
         if (typeof link !== 'string') return '';
         const value = link.trim();
-        return /^\/?[A-Za-z0-9][A-Za-z0-9_\-\/]*\.html(\?[A-Za-z0-9_\-=&%.]*)?(#[A-Za-z0-9_\-]*)?$/.test(value) ? value : '';
+        if (!/^\/?[A-Za-z0-9][A-Za-z0-9_\-\/]*(\.html)?(\?[A-Za-z0-9_\-=&%.]*)?(#[A-Za-z0-9_\-]*)?$/.test(value)) return '';
+        const clean = value.replace(/^\//, '').replace(/\.html(?=[?#]|$)/, '');
+        return /^index(?=$|[?#])/.test(clean) ? clean.replace(/^index/, '/') : `/${clean}`;
     }
 
     /* Paints the panel's list for the current filter. Draws from the store,
@@ -1302,7 +1362,7 @@ class NextaStoreApp {
 
         // Already on the messages page: switch thread in place instead of
         // reloading the whole page.
-        const match = /^\/?messages\.html\?conversation=([A-Za-z0-9_\-%]+)$/.exec(link.getAttribute('href') || '');
+        const match = /^\/?messages(?:\.html)?\?conversation=([A-Za-z0-9_\-%]+)$/.exec(link.getAttribute('href') || '');
         if (match && window.messagesManager?.openConversation) {
             event.preventDefault();
             closeDropdown();
@@ -1350,6 +1410,99 @@ class NextaStoreApp {
             overlay.addEventListener('click', e => { if (e.target === overlay) finish(false); });
             overlay.addEventListener('keydown', e => { if (e.key === 'Escape') finish(false); });
             requestAnimationFrame(() => confirmBtn.focus());
+        });
+    }
+
+    /** Accessible in-site replacement for browser prompt().
+     *  Resolves with the trimmed text, or null if the person cancels.
+     *  - Validation (required / minLength) shows inline and keeps the dialog open.
+     *  - Clicking the backdrop only dismisses while the field is empty, so a
+     *    half-written message is never lost to a stray tap.
+     *  - `readOnly` + `copyable` turns it into a "copy this value" dialog
+     *    (used for links the person has to hand over themselves). */
+    prompt({ title = 'Add details', message = '', label = '', placeholder = '', defaultValue = '',
+             confirmText = 'Submit', cancelText = 'Cancel', tone = 'primary', icon = '',
+             multiline = true, required = true, minLength = 0, maxLength = 500,
+             readOnly = false, copyable = false, minLengthMessage = '' } = {}) {
+        return new Promise(resolve => {
+            const previouslyFocused = document.activeElement;
+            const uid = 'siteDialog' + Math.random().toString(36).slice(2, 8);
+            const iconClass = icon || (tone === 'danger' ? 'fa-triangle-exclamation' : readOnly ? 'fa-link' : 'fa-pen-to-square');
+            const field = multiline && !readOnly
+                ? `<textarea id="${uid}Field" class="form-textarea site-dialog-input" rows="4" maxlength="${Number(maxLength) || 500}" placeholder="${this.escapeHtml(placeholder)}" aria-describedby="${uid}Error"></textarea>`
+                : `<input id="${uid}Field" class="form-input site-dialog-input" type="text" ${readOnly ? 'readonly' : `maxlength="${Number(maxLength) || 500}"`} placeholder="${this.escapeHtml(placeholder)}" aria-describedby="${uid}Error">`;
+            const overlay = document.createElement('div');
+            overlay.className = 'site-dialog-overlay';
+            overlay.innerHTML = `
+                <div class="site-dialog site-dialog-form" role="dialog" aria-modal="true" aria-labelledby="${uid}Title" ${message ? `aria-describedby="${uid}Message"` : ''}>
+                    <div class="site-dialog-icon tone-${this.escapeHtml(tone)}"><i class="fas ${this.escapeHtml(iconClass)}"></i></div>
+                    <h2 id="${uid}Title">${this.escapeHtml(title)}</h2>
+                    ${message ? `<p id="${uid}Message">${this.escapeHtml(message)}</p>` : ''}
+                    ${label ? `<label class="site-dialog-label" for="${uid}Field">${this.escapeHtml(label)}</label>` : ''}
+                    <div class="site-dialog-field-row">${field}${copyable ? `<button type="button" class="btn btn-outline site-dialog-copy" data-dialog-copy><i class="fas fa-copy"></i> Copy</button>` : ''}</div>
+                    <div class="site-dialog-meta">
+                        <span class="site-dialog-error" id="${uid}Error" role="alert"></span>
+                        ${multiline && !readOnly ? `<span class="site-dialog-count" aria-hidden="true"></span>` : ''}
+                    </div>
+                    <div class="site-dialog-actions">
+                        ${readOnly ? '' : `<button type="button" class="btn btn-outline" data-dialog-cancel>${this.escapeHtml(cancelText)}</button>`}
+                        <button type="button" class="btn ${tone === 'danger' ? 'btn-danger' : 'btn-primary'}" data-dialog-confirm>${this.escapeHtml(confirmText)}</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+            const input = overlay.querySelector('.site-dialog-input');
+            const errorEl = overlay.querySelector('.site-dialog-error');
+            const countEl = overlay.querySelector('.site-dialog-count');
+            const confirmBtn = overlay.querySelector('[data-dialog-confirm]');
+            const cancelBtn = overlay.querySelector('[data-dialog-cancel]');
+            const copyBtn = overlay.querySelector('[data-dialog-copy]');
+            input.value = defaultValue || '';
+            const max = Number(maxLength) || 500;
+            const updateCount = () => { if (countEl) countEl.textContent = `${input.value.length}/${max}`; };
+            updateCount();
+            const finish = value => {
+                overlay.remove();
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.contains(previouslyFocused)) previouslyFocused.focus();
+                resolve(value);
+            };
+            const submit = () => {
+                if (readOnly) return finish(input.value);
+                const value = input.value.trim();
+                if (required && !value) { errorEl.textContent = 'Please fill this in.'; input.focus(); return; }
+                if (value && minLength && value.length < minLength) {
+                    errorEl.textContent = minLengthMessage || `Please write at least ${minLength} characters.`;
+                    input.focus();
+                    return;
+                }
+                finish(value);
+            };
+            input.addEventListener('input', () => { errorEl.textContent = ''; updateCount(); });
+            confirmBtn.addEventListener('click', submit);
+            cancelBtn?.addEventListener('click', () => finish(null));
+            copyBtn?.addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(input.value); copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied'; }
+                catch (_) { input.focus(); input.select(); copyBtn.textContent = 'Press Ctrl/Cmd+C'; }
+            });
+            overlay.addEventListener('mousedown', e => {
+                // Only a click that starts AND ends on the backdrop counts as "outside".
+                overlay._downOnBackdrop = e.target === overlay;
+            });
+            overlay.addEventListener('click', e => {
+                if (e.target !== overlay || !overlay._downOnBackdrop) return;
+                if (readOnly || !input.value.trim()) finish(readOnly ? input.value : null);
+            });
+            overlay.addEventListener('keydown', e => {
+                if (e.key === 'Escape') { e.preventDefault(); finish(readOnly ? input.value : null); return; }
+                if (e.key === 'Enter' && e.target === input && (!multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); return; }
+                if (e.key === 'Tab') {
+                    const focusables = Array.from(overlay.querySelectorAll('textarea, input, button')).filter(el => !el.disabled);
+                    if (!focusables.length) return;
+                    const first = focusables[0], last = focusables[focusables.length - 1];
+                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            });
+            requestAnimationFrame(() => { input.focus(); if (readOnly) input.select(); });
         });
     }
 
@@ -1713,6 +1866,10 @@ class NextaStoreApp {
                 const failure = new Error(error.message || (isTokenFailure ? 'Your session has expired. Please sign in again.' : 'Request failed.'));
                 failure.status = response.status;
                 failure.code = error.code || null;
+                // A closed store's public identity (name/logo/colour) rides along so the
+                // "closed" page can look like that shop. Nothing else is trusted from it.
+                if (error.store && typeof error.store === 'object') failure.store = error.store;
+                if (error.duplicate && typeof error.duplicate === 'object') failure.duplicate = error.duplicate;
                 throw failure;
             }
 
@@ -1775,24 +1932,41 @@ class NextaStoreApp {
      * and a link a seller shares all use it, so a store never has two
      * different URLs depending on how you got there. It is served by the API
      * (see nextastore-backend/src/routes/seo.js), which sends the real
-     * store-detail.html page. Falls back to `?store=<id>` only if a store
-     * genuinely has no slug yet.
+     * storefront page. store-detail.html is never linked to: a store with no
+     * slug yet is reached at /<id>, which the server sends on to its real
+     * address.
      */
     storeLink(store) {
-        if (!store) return 'marketplace.html';
+        if (!store) return '/marketplace';
         if (store.slug) return `/${encodeURIComponent(store.slug)}`;
-        return store.id ? `store-detail.html?store=${encodeURIComponent(store.id)}` : 'marketplace.html';
+        return store.id ? this.storeLinkFor(store.id) : '/marketplace';
+    }
+
+    /**
+     * The address of a product: /<store-slug>/<name>-<key> (see nxProductPath).
+     * Cards, search results, favorites, the related-products strip, shares and
+     * notifications all use it, so a product has one address however you got to
+     * it - and it is the same address the browser then shows, which is the one
+     * that previews properly when pasted into WhatsApp. `storeKey` is the store's
+     * slug (or id); without one the product's own `storeSlug` is used. With no
+     * store at all (a product shared in a chat carries only its id) the link is
+     * /p/<id>, which the server sends on to the real address.
+     */
+    productLink(product, storeKey) {
+        const id = String((product && (product.id || product.productId)) || '').trim();
+        if (!id) return '/marketplace';
+        const store = storeKey || (product && (product.storeSlug || (product.store && product.store.slug)));
+        return nxProductPath({ id, name: product.name }, store) || `/p/${encodeURIComponent(id)}`;
     }
 
     /** Same as storeLink() for callers that only have the slug (or id) string. */
     storeLinkFor(slugOrId) {
         const key = String(slugOrId || '').trim();
-        if (!key) return 'marketplace.html';
-        // Slugs are lowercase letters, digits and hyphens. Anything else is an id
-        // (or unknown), which the storefront page also accepts as ?store=.
-        return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)
-            ? `/${key}`
-            : `store-detail.html?store=${encodeURIComponent(key)}`;
+        if (!key) return '/marketplace';
+        // A slug or an id (letters, digits, hyphens) is one address segment:
+        // /<slug>, or /<id> which the server redirects to the slug. Anything
+        // else can't be a store address, so it goes to the marketplace.
+        return /^[A-Za-z0-9-]+$/.test(key) ? `/${key}` : '/marketplace';
     }
 
     /**
@@ -1894,3 +2068,27 @@ class NextaStoreApp {
 
 // Initialize app
 const app = new NextaStoreApp();
+
+// Nexi (AI assistant) + back-to-top dock: loaded on every page that uses main.js, so new pages get it automatically.
+// Opt out with <body data-assistant="off"> (admin console and inbox do). marketplace.html loads assistant.js itself
+// because its hero chat needs it first, so this skips a second load.
+(function loadAssistantDock() {
+    try {
+        if (window.NexiAssistant || document.querySelector('script[src*="assistant.js"]')) return;
+        const start = () => {
+            if (document.body && document.body.getAttribute('data-assistant') === 'off') return;
+            if (!document.querySelector('link[href*="assistant.css"]')) {
+                const css = document.createElement('link');
+                css.rel = 'stylesheet';
+                css.href = '/css/assistant.css';
+                document.head.appendChild(css);
+            }
+            const js = document.createElement('script');
+            js.src = '/js/assistant.js';
+            js.async = true;
+            document.body.appendChild(js);
+        };
+        const later = () => (window.requestIdleCallback ? window.requestIdleCallback(start, { timeout: 1500 }) : setTimeout(start, 400));
+        if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
+    } catch (e) { /* the assistant is optional: never break a page over it */ }
+})();

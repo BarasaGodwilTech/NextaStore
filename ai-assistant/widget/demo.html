@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NextaStore Assistant — Widget Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#F7FAF8; color:#0B3B2B; max-width:640px; margin:60px auto; padding:0 20px; }
+  h1 { color:#01B075; }
+  code { background:#EAF0ED; padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+  <h1>NextaStore Assistant — widget demo</h1>
+  <p>This page exists only to test the widget on its own, before it's added to
+  the real NextaStore pages. Make sure the assistant backend is running
+  (<code>npm start</code> in the <code>ai-assistant</code> folder) and reachable
+  at the address below, then click the chat bubble in the bottom-right corner.</p>
+  <p>Try a message in English, then try one in Luganda (e.g. <em>"engeri y'okugula"</em>) to see the language switch happen.</p>
+
+  <link rel="stylesheet" href="assistant-widget.css">
+  <script>
+    // Point this at wherever the assistant backend actually runs.
+    window.NextaAssistantConfig = { apiBase: 'http://localhost:4100/api/assistant' };
+  </script>
+  <script src="assistant-widget.js"></script>
+</body>
+</html>

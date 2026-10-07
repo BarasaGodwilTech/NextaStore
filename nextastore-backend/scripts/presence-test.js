@@ -41,7 +41,7 @@ Module._load = function (request, parent) {
     if (from.startsWith(SRC)) {
         if (/(^|\/)prisma$/.test(request)) return fakePrisma;
         if (/(^|\/)cache$/.test(request)) return { redisClient: null };
-        if (/(^|\/)middleware$/.test(request)) return { requireAuth: (req, res, next) => next() };
+        if (/(^|\/)middleware$/.test(request)) return { requireAuth: (req, res, next) => next(), optionalAuth: (req, res, next) => next() };
         if (/(^|\/)utils$/.test(request)) return { apiError };
         if (/(^|\/)helpers$/.test(request)) return { isStoreCurrentlyActive: (s) => !!s.trialEndsAt && new Date(s.trialEndsAt) > new Date() };
         if (/(^|\/)validation$/.test(request)) return { validateBody: () => (req, res, next) => next(), presenceStreamSchema: {} };
@@ -181,7 +181,7 @@ const mk = (o = {}) => { const saved = []; const p = createPresence({ persist: a
     await shared.shutdown();
 
     // ---- public one-off status ---------------------------------------------------
-    const storeGet = routeTable['GET /store/:slug'][0];
+    const storeGet = routeTable['GET /store/:slug'].slice(-1)[0]; // handler is last; optionalAuth comes first
     const sres = { headers: {}, body: null, set(k, v) { this.headers[k] = v; return this; }, json(b) { this.body = b; return this; } };
     let err = null;
     db.stores = [{ slug: 'live', ownerId: 's', isPublished: true, deletedAt: null, trialEndsAt: future(), owner: { id: 's', lastActiveAt: new Date('2026-09-01T00:00:00Z') } }];
@@ -191,6 +191,26 @@ const mk = (o = {}) => { const saved = []; const p = createPresence({ persist: a
     check('an unknown or hidden store is a 404, not an empty status', err && err.status === 404);
     await storeGet({ params: { slug: 'bad slug!' } }, sres, (e) => { err = e; });
     check('a malformed slug is rejected before any query', err && err.status === 404);
+
+    // Owner preview: the storefront itself opens for the owner while it is a
+    // draft or lapsed, so this endpoint must too (it used to 404 - a console
+    // error on every preview). Everyone else still gets the 404.
+    const past = () => new Date(Date.now() - 86400000);
+    db.stores = [
+        { slug: 'draft', ownerId: 's', isPublished: false, deletedAt: null, trialEndsAt: future(), owner: { id: 's', lastActiveAt: null } },
+        { slug: 'lapsed', ownerId: 's', isPublished: true, deletedAt: null, trialEndsAt: past(), owner: { id: 's', lastActiveAt: null } }
+    ];
+    for (const slug of ['draft', 'lapsed']) {
+        err = null; sres.body = null;
+        await storeGet({ params: { slug } }, sres, (e) => { err = e; });
+        check(`a ${slug} store is a 404 for an anonymous visitor`, err && err.status === 404 && !sres.body);
+        err = null; sres.body = null;
+        await storeGet({ params: { slug }, user: { id: 'someone-else' } }, sres, (e) => { err = e; });
+        check(`a ${slug} store is a 404 for a signed-in stranger`, err && err.status === 404 && !sres.body);
+        err = null; sres.body = null;
+        await storeGet({ params: { slug }, user: { id: 's' } }, sres, (e) => { err = e; });
+        check(`a ${slug} store answers its own owner (so the preview has no console 404)`, !err && sres.body && sres.body.data.key === `store:${slug}`);
+    }
 
     // ---- middleware: presence never renews a session ---------------------------------
     const m = middlewareSource.match(/const BACKGROUND_ANY_METHOD_PATH = (\/.*\/);/);

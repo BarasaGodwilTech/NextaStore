@@ -59,6 +59,8 @@ function serve() {
             if (state.down) return req.destroy();
             let p = decodeURIComponent(req.url.split('?')[0]);
             if (p === '/') p = '/index.html';
+            // like the real servers: /name is answered from name.html (clean URLs)
+            else if (!path.extname(p) && !fs.existsSync(path.join(ROOT, p))) p += '.html';
             const file = path.join(ROOT, p);
             if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end('not found'); }
             res.setHeader('Content-Type', MIME[path.extname(file)] || 'application/octet-stream');
@@ -94,7 +96,7 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         const page = await ctx.newPage();
         const pageErrors = [];
         page.on('pageerror', (e) => pageErrors.push(e.message));
-        await page.goto(`${origin}/offline.html`);
+        await page.goto(`${origin}/offline`);
 
         console.log('Service worker install / activate');
         // A cache left behind by the previous release, to prove activation cleans it.
@@ -147,7 +149,7 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         let all = await pushAndWait({ type: 'new_message', title: 'New message from Amina', body: 'Is the phone still available?', link: 'messages.html?conversation=c1' }, (a) => a.length === 1);
         let n = all && all[0];
         check('a push shows a notification with the payload title and body', n && n.title === 'New message from Amina' && n.body === 'Is the phone still available?', JSON.stringify(all));
-        check('the notification carries the resolved app link and type', n && n.data && n.data.url === '/messages.html?conversation=c1' && n.data.type === 'new_message');
+        check('the notification carries the resolved app link and type', n && n.data && n.data.url === '/messages?conversation=c1' && n.data.type === 'new_message');
         check('the notification is tagged per conversation and set to renotify', n && n.tag === 'ns-msg-c1' && n.renotify === true);
         check('icon and badge are absolute same-origin URLs', n && n.icon === `${origin}/assets/brand/png/icon/icon-192.png` && n.badge === `${origin}/assets/brand/png/badge/new_message.png`);
 
@@ -179,7 +181,7 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         await clearNotifications();
         await push({ type: 'new_order', title: 'New order', body: 'Order #1', link: 'dashboard.html#orders' });
         all = await pushAndWait({ type: 'new_order', title: 'New order', body: 'Order #2', link: 'dashboard.html#orders' }, (a) => a.length === 2);
-        check('two orders (same link) stack instead of replacing each other', !!all && all.length === 2 && all.every((x) => x.tag === '' && x.data.url === '/dashboard.html#orders'), JSON.stringify(all));
+        check('two orders (same link) stack instead of replacing each other', !!all && all.length === 2 && all.every((x) => x.tag === '' && x.data.url === '/dashboard#orders'), JSON.stringify(all));
         check('an order notification uses its own badge, distinct from the message badge',
             all && all[0].badge === `${origin}/assets/brand/png/badge/new_order.png`, JSON.stringify(all));
 
@@ -233,7 +235,7 @@ async function waitFor(fn, { timeout = 6000, every = 100 } = {}) {
         check('...carrying the notification type', !!messages && messages[0].notificationType === 'new_message');
 
         console.log('Existing offline behaviour is unchanged');
-        await page.goto(`${origin}/offline.html`); // make sure the page is controlled and precache is settled
+        await page.goto(`${origin}/offline`); // make sure the page is controlled and precache is settled
         state.down = true;
         try {
             await page.goto(`${origin}/marketplace.html`, { waitUntil: 'domcontentloaded' });

@@ -1,0 +1,20 @@
+# ONLY needed if the assistant runs on a different machine from nextastore-backend.
+# If both are on the same VPS, skip this file: the backend talks to 127.0.0.1:4100 directly.
+#
+# 1. Point a DNS name (e.g. nexi.your-domain.example) at the VPS.
+# 2. Install Caddy (https://caddyserver.com/docs/install), put this in /etc/caddy/Caddyfile,
+#    then: systemctl reload caddy      (Caddy gets the HTTPS certificate by itself)
+# 3. In nextastore-backend/.env:
+#       ASSISTANT_URL=https://nexi.your-domain.example
+#       ASSISTANT_TOKEN=<same value as in the assistant's .env>
+# 4. Do NOT open ports 4100 or 11434 in the firewall. Only 80 and 443 (and SSH).
+nexi.your-domain.example {
+    encode zstd gzip
+    # Streaming answers must not be buffered.
+    reverse_proxy 127.0.0.1:4100 {
+        flush_interval -1
+        transport http {
+            response_header_timeout 150s
+        }
+    }
+}

@@ -2,6 +2,7 @@
 <html lang="en" class="nx-loading">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -12,7 +13,7 @@
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
-<body data-auth-required data-admin-required>
+<body data-auth-required data-admin-required data-assistant="off">
     <div id="nxLoader" class="nx-loader" data-nx-theme="seller" data-nx-wait="app page" data-nx-timeout="7000" data-nx-phrases="Loading the admin console|Checking your access|Almost there" aria-label="Loading NextaStore">
         <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
             <filter id="nxGrain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/></filter>
@@ -44,7 +45,7 @@
     <script src="js/loading-overlay.js"></script>
     
     <header class="admin-topbar">
-        <a class="logo brand-lockup" href="marketplace.html"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <a class="logo brand-lockup" href="/marketplace"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
         <div class="admin-topbar-title"><span>Admin Console</span><small id="adminLevelLabel">Loading access…</small></div>
         <div class="account-nav-slot" data-account-nav></div>
     </header>
@@ -136,9 +137,9 @@
     </div>
 
     <div id="adminModalRoot"></div>
-    <footer class="footer"><div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div><p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p><a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a></footer>
+    <footer class="footer"><div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div><p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p><a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a></footer>
 
     <script src="js/api.js"></script><script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script><script src="js/admin.js"></script>
     <script>

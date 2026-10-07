@@ -120,7 +120,7 @@ function clickEvent(data) {
         check('push: title and body come from the payload', n.title === 'New message from Amina' && n.options.body === 'Is the phone still available?');
         check('push: uses the brand icon and this type\'s own monochrome badge',
             n.options.icon === '/assets/brand/png/icon/icon-192.png' && n.options.badge === '/assets/brand/png/badge/new_message.png');
-        check('push: relative server link becomes a root-relative app path', n.options.data.url === '/messages.html?conversation=c1');
+        check('push: relative server link becomes a root-relative app path (an old .html link opens the clean address)', n.options.data.url === '/messages?conversation=c1');
         check('push: message notification is tagged per conversation and renotifies',
             n.options.tag === 'ns-msg-c1' && n.options.renotify === true);
         check('push: type is carried through to the click handler', n.options.data.type === 'new_message');
@@ -141,7 +141,7 @@ function clickEvent(data) {
         const [a, b] = w.state.shown.map((s) => s.options);
         check('push: orders are NOT tagged, so two orders stack instead of replacing each other',
             !('tag' in a) && !('tag' in b) && !('renotify' in a));
-        check('push: order link keeps its #orders hash', a.data.url === '/dashboard.html#orders');
+        check('push: order link keeps its #orders hash', a.data.url === '/dashboard#orders');
     }
     {
         const w = createWorker();
@@ -151,9 +151,14 @@ function clickEvent(data) {
     {
         const w = createWorker();
         await w.fire('push', pushEvent({ type: 'low_stock', title: 'Low stock', link: '/subscription.html' }));
-        check('push: root-relative link is accepted as-is', w.state.shown[0].options.data.url === '/subscription.html');
+        check('push: old root-relative .html link is opened at its clean address', w.state.shown[0].options.data.url === '/subscription');
         await w.fire('push', pushEvent({ type: 'x', title: 't', link: `${ORIGIN}/orders.html?order=9` }));
-        check('push: absolute same-origin link is reduced to a path', w.state.shown[1].options.data.url === '/orders.html?order=9');
+        check('push: absolute same-origin link is reduced to a path', w.state.shown[1].options.data.url === '/orders?order=9');
+        await w.fire('push', pushEvent({ type: 'new_message', title: 'c', link: '/messages?conversation=c1' }));
+        check('push: a clean link is accepted as-is', w.state.shown[2].options.data.url === '/messages?conversation=c1');
+        await w.fire('push', pushEvent({ type: 'x', title: 't', link: '/index.html' }));
+        await w.fire('push', pushEvent({ type: 'x', title: 't', link: '/' }));
+        check('push: the home page is just /', w.state.shown[3].options.data.url === '/' && w.state.shown[4].options.data.url === '/');
     }
 
     // Badge differentiation: each known type gets its own status-bar glyph, so
@@ -249,13 +254,13 @@ function clickEvent(data) {
 
     // Open tabs get told so the bell can refresh; that must never block the notification.
     {
-        const c1 = fakeClient(`${ORIGIN}/orders.html`);
+        const c1 = fakeClient(`${ORIGIN}/orders`);
         const w = createWorker({ windows: [c1] });
         await w.fire('push', pushEvent({ type: 'new_order', title: 't' }));
         check('push: open pages are told a push arrived', c1.messages.length === 1 && c1.messages[0].type === 'ns-push-received' && c1.messages[0].notificationType === 'new_order');
     }
     {
-        const broken = fakeClient(`${ORIGIN}/orders.html`);
+        const broken = fakeClient(`${ORIGIN}/orders`);
         broken.postMessage = () => { throw new Error('gone'); };
         const w = createWorker({ windows: [broken] });
         let threw = false;
@@ -271,47 +276,47 @@ function clickEvent(data) {
     // ------------------------------------------------------ notificationclick --
     {
         const w = createWorker();
-        const ev = clickEvent({ url: '/messages.html?conversation=c1' });
+        const ev = clickEvent({ url: '/messages?conversation=c1' });
         await w.fire('notificationclick', ev);
         check('click: closes the notification', ev.notification.closed === 1);
-        check('click: with no window open, opens one at the absolute target', w.state.opened.length === 1 && w.state.opened[0] === `${ORIGIN}/messages.html?conversation=c1`, w.state.opened.join());
+        check('click: with no window open, opens one at the absolute target', w.state.opened.length === 1 && w.state.opened[0] === `${ORIGIN}/messages?conversation=c1`, w.state.opened.join());
     }
     {
-        const other = fakeClient(`${ORIGIN}/marketplace.html`);
+        const other = fakeClient(`${ORIGIN}/marketplace`);
         const w = createWorker({ windows: [other] });
-        await w.fire('notificationclick', clickEvent({ url: '/orders.html?order=o1' }));
-        check('click: an open window on another page is focused and navigated', other.focusCalls === 1 && other.navigateCalls[0] === `${ORIGIN}/orders.html?order=o1`);
+        await w.fire('notificationclick', clickEvent({ url: '/orders?order=o1' }));
+        check('click: an open window on another page is focused and navigated', other.focusCalls === 1 && other.navigateCalls[0] === `${ORIGIN}/orders?order=o1`);
         check('click: ...and no second window is opened', w.state.opened.length === 0);
     }
     {
-        const same = fakeClient(`${ORIGIN}/messages.html?conversation=c1`);
+        const same = fakeClient(`${ORIGIN}/messages?conversation=c1`);
         const w = createWorker({ windows: [same] });
-        await w.fire('notificationclick', clickEvent({ url: '/messages.html?conversation=c1' }));
+        await w.fire('notificationclick', clickEvent({ url: '/messages?conversation=c1' }));
         check('click: a window already on the target page is only focused (no reload)', same.focusCalls === 1 && same.navigateCalls.length === 0 && w.state.opened.length === 0);
     }
     {
-        const hidden = fakeClient(`${ORIGIN}/marketplace.html`, { visible: false });
-        const visible = fakeClient(`${ORIGIN}/cart.html`, { visible: true });
+        const hidden = fakeClient(`${ORIGIN}/marketplace`, { visible: false });
+        const visible = fakeClient(`${ORIGIN}/cart`, { visible: true });
         const w = createWorker({ windows: [hidden, visible] });
-        await w.fire('notificationclick', clickEvent({ url: '/dashboard.html#orders' }));
+        await w.fire('notificationclick', clickEvent({ url: '/dashboard#orders' }));
         check('click: prefers the visible window over a hidden one', visible.focusCalls === 1 && hidden.focusCalls === 0);
     }
     {
-        const wins = [fakeClient(`${ORIGIN}/marketplace.html`, { visible: false }), fakeClient(`${ORIGIN}/messages.html?conversation=c9`, { visible: false })];
+        const wins = [fakeClient(`${ORIGIN}/marketplace`, { visible: false }), fakeClient(`${ORIGIN}/messages?conversation=c9`, { visible: false })];
         const w = createWorker({ windows: wins });
-        await w.fire('notificationclick', clickEvent({ url: '/messages.html?conversation=c9' }));
+        await w.fire('notificationclick', clickEvent({ url: '/messages?conversation=c9' }));
         check('click: an exact-page match wins even if it is hidden', wins[1].focusCalls === 1 && wins[0].focusCalls === 0 && wins[1].navigateCalls.length === 0);
     }
     {
-        const stubborn = fakeClient(`${ORIGIN}/marketplace.html`, { navigateImpl: async () => { throw new Error('not controlled'); } });
+        const stubborn = fakeClient(`${ORIGIN}/marketplace`, { navigateImpl: async () => { throw new Error('not controlled'); } });
         const w = createWorker({ windows: [stubborn] });
-        await w.fire('notificationclick', clickEvent({ url: '/orders.html' }));
-        check('click: if navigate() rejects, falls back to opening a new window', w.state.opened.length === 1 && w.state.opened[0] === `${ORIGIN}/orders.html`);
+        await w.fire('notificationclick', clickEvent({ url: '/orders' }));
+        check('click: if navigate() rejects, falls back to opening a new window', w.state.opened.length === 1 && w.state.opened[0] === `${ORIGIN}/orders`);
     }
     {
-        const stuck = fakeClient(`${ORIGIN}/marketplace.html`, { focusImpl: async () => { throw new Error('no activation'); } });
+        const stuck = fakeClient(`${ORIGIN}/marketplace`, { focusImpl: async () => { throw new Error('no activation'); } });
         const w = createWorker({ windows: [stuck] });
-        await w.fire('notificationclick', clickEvent({ url: '/orders.html' }));
+        await w.fire('notificationclick', clickEvent({ url: '/orders' }));
         check('click: if focus() rejects, falls back to opening a new window', w.state.opened.length === 1);
     }
     {
@@ -325,13 +330,13 @@ function clickEvent(data) {
     {
         const foreign = fakeClient('https://evil.example/');
         const w = createWorker({ windows: [foreign] });
-        await w.fire('notificationclick', clickEvent({ url: '/orders.html' }));
+        await w.fire('notificationclick', clickEvent({ url: '/orders' }));
         check('click: a window on another origin is never reused', foreign.focusCalls === 0 && w.state.opened.length === 1);
     }
 
     // ------------------------------------------------- pushsubscriptionchange --
     {
-        const c = fakeClient(`${ORIGIN}/messages.html`);
+        const c = fakeClient(`${ORIGIN}/messages`);
         const w = createWorker({ windows: [c] });
         const fresh = { toJSON: () => ({ endpoint: 'https://push.example/fresh', keys: { p256dh: 'P', auth: 'A' } }) };
         await w.fire('pushsubscriptionchange', { newSubscription: fresh, oldSubscription: null });
@@ -340,7 +345,7 @@ function clickEvent(data) {
         check('subscriptionchange: ...without subscribing a second time', w.state.subscribeCalls.length === 0);
     }
     {
-        const c = fakeClient(`${ORIGIN}/messages.html`);
+        const c = fakeClient(`${ORIGIN}/messages`);
         const w = createWorker({ windows: [c] });
         const key = new Uint8Array([4, 1, 2, 3]).buffer;
         await w.fire('pushsubscriptionchange', { oldSubscription: { options: { applicationServerKey: key } } });
@@ -349,7 +354,7 @@ function clickEvent(data) {
         check('subscriptionchange: ...and hands the new one to the page', c.messages[0].subscription && c.messages[0].subscription.endpoint === 'https://push.example/new');
     }
     {
-        const c = fakeClient(`${ORIGIN}/messages.html`);
+        const c = fakeClient(`${ORIGIN}/messages`);
         const w = createWorker({ windows: [c] });
         w.state.subscribeImpl = async () => { throw new Error('permission revoked'); };
         let threw = false;

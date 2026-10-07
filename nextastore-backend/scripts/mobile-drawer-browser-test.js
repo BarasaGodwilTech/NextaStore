@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
-  const f = path.join(ROOT, p === '/' ? 'index.html' : p);
+  const f = path.join(ROOT, (rel => rel === '/' ? 'index.html' : (fs.existsSync(path.join(ROOT, rel)) || path.extname(rel) ? rel : rel + '.html'))(p));
   if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
   fs.createReadStream(f).pipe(res);

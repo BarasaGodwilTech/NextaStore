@@ -257,6 +257,10 @@ function errorHandler(err, req, res, next) {
     if (status >= 500 && status !== 503) console.error(err);
     const payload = { message: status >= 500 && status !== 503 ? 'Something went wrong.' : (err.message || 'Something went wrong.') };
     if (err.code && (/^TOKEN_|^ACCOUNT_|^STORE_|^SERVICE_UNAVAILABLE$/.test(err.code))) payload.code = err.code;
+    // The "shutters down" page of a lapsed store needs the shop's public
+    // identity (name/logo/colour) - see closedStoreIdentity in helpers.js.
+    if (err.code === 'STORE_INACTIVE' && err.meta && typeof err.meta === 'object') payload.store = err.meta;
+    if (err.code === 'DUPLICATE_PRODUCT' && err.meta) { payload.code = err.code; payload.duplicate = err.meta; }
     if (status === 413) payload.message = 'That upload is too large.';
     res.status(status).json(payload);
 }

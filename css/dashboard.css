@@ -421,6 +421,7 @@
 .store-logo-wrapper {
     position: relative;
     flex-shrink: 0;
+    align-self: flex-start;
 }
 
 .store-logo {
@@ -454,56 +455,139 @@
     box-shadow: var(--shadow-md);
 }
 
+/* Everything in the info column has to be able to shrink below its content
+   width (min-width: 0) and wrap long unbroken text (overflow-wrap), or a long
+   store name, address or email pushes past the card edge, where the card's
+   overflow: hidden clips it and the seller cannot read it at all. */
 .store-info {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: 64ch; /* one reading measure for name, description, address and contacts */
 }
 
 .store-name-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-xs);
+    min-width: 0;
 }
 
 .store-name {
+    flex: 0 1 auto; /* hugs a short name so the pencil sits beside it; a long one still shrinks */
+    min-width: 0;
     font-size: 1.75rem;
     font-weight: 700;
+    line-height: 1.2;
     margin-bottom: 0;
     color: var(--ink);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
 }
+
+.store-edit-btn { flex: none; }
 
 .store-location {
     color: var(--gray-600);
     font-size: 0.9375rem;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-xs);
+    min-width: 0;
 }
+
+.store-location > i { flex: none; margin-top: 0.3em; }
+
+#locationText {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+#locationText.is-expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+}
+
+/* Hugs the text end instead of being pushed to the far edge of the column,
+   where it read as if it belonged to the stats beside it. */
+#locationText { flex: 0 1 auto; }
+.store-location-edit { flex: none; white-space: nowrap; margin-left: var(--spacing-xs); }
+
+/* "Show full address" lines up under the address text, not under the pin. */
+.store-location-toggle { margin: -0.25rem 0 var(--spacing-xs) calc(0.9375rem + var(--spacing-sm)); }
+
+.store-description-wrap { margin-bottom: var(--spacing-xs); max-width: 62ch; }
 
 .store-description {
     color: var(--gray-700);
     font-size: 0.9375rem;
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: 0;
     line-height: 1.5;
-    max-width: 500px;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
 }
+
+.store-description.is-expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+}
+
+/* "Read more" / "+5 more" — one look for both, so it reads as the same
+   control. Plain text-button, not a chip, so it can't be mistaken for data. */
+.store-more-toggle {
+    background: none;
+    border: 0;
+    padding: 0.25rem 0;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    cursor: pointer;
+    min-height: 32px;
+}
+
+.store-more-toggle:hover { text-decoration: underline; }
+.store-more-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.store-more-toggle[hidden] { display: none; }
 
 .store-contact-info {
     display: flex;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xs) var(--spacing-lg);
     margin-bottom: var(--spacing-sm);
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .contact-item {
     color: var(--gray-600);
     font-size: 0.875rem;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-xs);
+    min-width: 0;
+    max-width: 100%;
 }
+
+.contact-item > i { flex: none; margin-top: 0.25em; }
+.contact-item > span { min-width: 0; overflow-wrap: anywhere; }
 
 .contact-item i {
     color: var(--secondary);
@@ -514,6 +598,8 @@
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
 }
 
 .payment-badge {
@@ -525,40 +611,66 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
+    max-width: 100%;
+    min-width: 0;
 }
+
+.payment-badge > i { flex: none; }
+.payment-badge > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .payment-badge.active {
     background: var(--success-light);
     color: var(--success);
 }
 
+/* Methods past the first four are folded away until the seller asks. */
+.store-payments:not(.is-expanded) .payment-badge.is-extra { display: none; }
+
 .store-badges-display {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-xs);
+    min-width: 0;
 }
+
+.store-badges-display #storeBadges { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
 
 .rating-count {
     color: var(--gray-500);
     font-size: 0.8125rem;
+    white-space: nowrap;
 }
 
 .store-stats-mini {
-    display: flex;
-    gap: var(--spacing-xl);
-    flex-shrink: 0;
+    display: grid;
+    /* Revenue is the wide one ("UGX 1,250,000"); give it the larger share so
+       an everyday figure stays on one line. */
+    grid-template-columns: minmax(56px, 0.6fr) minmax(56px, 0.6fr) minmax(0, 1.4fr);
+    gap: var(--spacing-lg);
+    flex: 0 1 auto;
+    min-width: 0;
+    width: 340px;
+    /* The name/description column wins the space contest: a huge revenue
+       figure wraps inside this cap instead of squeezing the identity block. */
+    max-width: 36%;
+    margin-left: auto; /* stats sit at the card's right edge; the info column keeps its own measure */
+    padding-left: var(--spacing-xl);
+    border-left: 1px solid var(--gray-200); /* clear break: address "Edit" can't read as part of the stats */
 }
 
 .mini-stat {
     text-align: center;
+    min-width: 0;
 }
 
 .mini-stat-value {
     display: block;
     font-size: 1.25rem;
     font-weight: 700;
+    line-height: 1.2;
     color: var(--ink);
+    overflow-wrap: anywhere;
 }
 
 .mini-stat-label {
@@ -566,6 +678,23 @@
     color: var(--gray-500);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+@media (max-width: 1024px) {
+    .store-header { flex-wrap: wrap; align-items: flex-start; }
+    .store-info { flex: 1 1 320px; }
+    .store-stats-mini {
+        flex: 1 1 100%;
+        max-width: none;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-top: 1px solid var(--gray-200);
+        border-left: 0;
+        padding-left: 0;
+        margin-left: 0;
+        padding-top: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
+    .store-info { max-width: none; }
 }
 
 /* ---- Quick Actions Bar ---- */
@@ -1910,16 +2039,34 @@
     .bulk-actions-bar-controls .form-select { max-width: none; }
     .bulk-actions-bar-controls .btn { min-height: 44px; }
     
-    /* Store branding responsive */
+    /* Store branding responsive.
+       Column layout must STRETCH its children (not flex-start): with
+       flex-start every child was as wide as its longest unbroken line, so a
+       long address or email ran off the card and was clipped. The logo
+       overlaps the banner to save a row of height. */
     .store-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-lg);
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: var(--spacing-md);
+        padding: 0 var(--spacing-lg) var(--spacing-lg);
     }
+    .store-logo-wrapper { margin-top: -36px; }
+    .store-info { flex: none; width: 100%; }
     .store-stats-mini {
+        flex: none;
         width: 100%;
-        justify-content: space-around;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr);
     }
+    /* Touch targets: 44px, like the rest of the mobile dashboard. */
+    .store-edit-btn { min-width: 44px; min-height: 44px; }
+    .store-location-edit { min-height: 44px; padding: 0 0.5rem; display: inline-flex; align-items: center; }
+    /* 44px to tap, but only ~32px of layout: the extra 6px each side is
+       hit area that overlaps empty space, not other controls. Padding 0 keeps
+       the text on the same left edge as the text above it. */
+    .store-more-toggle { min-height: 44px; padding: 0; margin: -6px 0; }
+    .store-location-toggle { margin: -6px 0 -6px calc(0.9375rem + var(--spacing-sm)); }
+    .store-contact-info { flex-direction: column; }
     .quick-actions-bar { flex-direction: column; align-items: stretch; }
     .quick-actions-bar .spacer { display: none; }
     /* The overview's own product search duplicated the one already in the
@@ -1955,8 +2102,12 @@
     /* Store branding mobile */
     .store-banner { height: 150px; }
     .store-logo { width: 60px; height: 60px; font-size: 1.5rem; }
+    .store-logo-wrapper { margin-top: -30px; }
+    .store-header { padding: 0 var(--spacing-md) var(--spacing-md); }
     .store-name { font-size: 1.25rem; }
-    .store-stats-mini { gap: var(--spacing-md); }
+    .store-stats-mini { gap: var(--spacing-sm); }
+    .mini-stat-value { font-size: 1rem; }
+    .mini-stat-label { letter-spacing: 0.02em; }
     .storefront-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
     /* image keeps its square aspect-ratio at every width */
     .activity-grid { grid-template-columns: 1fr; }

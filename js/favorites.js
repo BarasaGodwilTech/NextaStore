@@ -21,7 +21,7 @@ class FavoritesPageManager {
     render(products, p) {
         const c = document.getElementById('favoritesListContainer');
         if (!products.length) {
-            c.innerHTML = `<div class="favorites-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>No favorites yet</h2><p>Tap the heart on any product to save it here for later.</p><a href="marketplace.html" class="btn btn-primary">Browse marketplace</a></div>`;
+            c.innerHTML = `<div class="favorites-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>No favorites yet</h2><p>Tap the heart on any product to save it here for later.</p><a href="/marketplace" class="btn btn-primary">Browse marketplace</a></div>`;
             document.getElementById('favoritesPagination').style.display = 'none';
             return;
         }
@@ -51,8 +51,8 @@ class FavoritesPageManager {
         c.querySelectorAll('[data-product-id]').forEach(card => {
             card.addEventListener('click', (e) => {
                 if (e.target.closest('[data-remove-favorite]')) return;
-                const storeKey = products.find(p => p.id === card.dataset.productId)?.storeSlug;
-                window.location.href = `product-detail.html?id=${encodeURIComponent(card.dataset.productId)}${storeKey ? `&store=${encodeURIComponent(storeKey)}` : ''}`;
+                const product = products.find(p => p.id === card.dataset.productId);
+                window.location.href = app.productLink(product || { id: card.dataset.productId }, product?.storeSlug);
             });
         });
 

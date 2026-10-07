@@ -26,11 +26,32 @@ function getS3Client() {
 }
 
 /** A thrown error carrying an HTTP status, understood by the error-handling middleware. */
-function apiError(message, status = 400, code = null) {
-    const err = new Error(message); err.status = status; if (code) err.code = code; return err;
+function apiError(message, status = 400, code = null, meta = null) {
+    const err = new Error(message); err.status = status; if (code) err.code = code; if (meta) err.meta = meta; return err;
 }
 
-const DATA_URL_RE = /^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/;
+const DATA_URL_RE = /^data:(image\/[a-zA-Z0-9+.-]+);base64,([A-Za-z0-9+/]+={0,2})$/;
+const MAX_IMAGE_REF_LENGTH = 2048;
+// An absolute http(s) URL, or a root-relative path. No whitespace, quotes,
+// angle brackets, parentheses or backslashes: those are what break out of
+// url(...) in an inline style or an attribute.
+const SAFE_IMAGE_REF_RE = /^(https?:\/\/[^\s"'<>()\\]+|\/(?!\/)[A-Za-z0-9._~\/%+-]*)$/;
+
+/** True when the first bytes of `buffer` really are the image format the data
+ *  URL claimed. The declared MIME type is just text the client typed; without
+ *  this a file that is not an image at all can be stored under an image
+ *  name. */
+function matchesImageSignature(mime, buffer) {
+    if (!buffer || buffer.length < 12) return false;
+    switch (mime) {
+        case 'image/png': return buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+        case 'image/jpeg':
+        case 'image/jpg': return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+        case 'image/gif': return ['GIF87a', 'GIF89a'].includes(buffer.slice(0, 6).toString('latin1'));
+        case 'image/webp': return buffer.slice(0, 4).toString('latin1') === 'RIFF' && buffer.slice(8, 12).toString('latin1') === 'WEBP';
+        default: return false;
+    }
+}
 // SVG is deliberately excluded: unlike raster formats, an SVG file can carry
 // embedded <script>/event-handler content, so accepting it here would let
 // anyone with a logo/banner upload field stash a stored-XSS payload that
@@ -65,7 +86,14 @@ async function saveImageObjectIfDataUrl(value, folder = 'uploads') {
 
     const match = value.match(DATA_URL_RE);
     if (!match) {
-        // Not a data URL — assume it's already a URL/path from a previous save.
+        // Not a data URL - it should be a URL/path from a previous save (the
+        // edit forms send existing images back unchanged). Accept only shapes
+        // that can safely be stored and later drawn: an http(s) URL or a
+        // root-relative path, of sane length, with none of the characters that
+        // could break out of an inline style/URL. Anything else (javascript:,
+        // data:text/html, file:, a 1 MB string...) is rejected instead of being
+        // saved as-is.
+        if (!SAFE_IMAGE_REF_RE.test(value) || value.length > MAX_IMAGE_REF_LENGTH) throw apiError('Invalid image value.');
         return value;
     }
 
@@ -78,6 +106,9 @@ async function saveImageObjectIfDataUrl(value, folder = 'uploads') {
     const MAX_BYTES = 8 * 1024 * 1024; // 8MB per image
     if (buffer.length > MAX_BYTES) {
         throw apiError('Images must be smaller than 8MB.');
+    }
+    if (!matchesImageSignature(normalizedMime, buffer)) {
+        throw apiError('That file is not a valid image. Use a PNG, JPEG, GIF, or WebP file.');
     }
 
     const filename = `${crypto.randomUUID()}.${ext}`;
@@ -209,6 +240,8 @@ async function saveImagePairsIfDataUrls(images, thumbnails, folder = 'uploads') 
 }
 
 module.exports = {
+    matchesImageSignature,
+    SAFE_IMAGE_REF_RE,
     slugify,
     RESERVED_SLUGS,
     isReservedSlug,

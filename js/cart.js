@@ -54,7 +54,7 @@
         }
         renderMiniCart(root) {
             if (!root) return;
-            if (!this.items.length) { root.innerHTML = '<div class="cart-empty"><i class="fas fa-cart-shopping"></i><p>Your cart is empty</p><a class="btn btn-primary btn-sm" href="marketplace.html">Keep shopping</a></div>'; return; }
+            if (!this.items.length) { root.innerHTML = '<div class="cart-empty"><i class="fas fa-cart-shopping"></i><p>Your cart is empty</p><a class="btn btn-primary btn-sm" href="/marketplace">Keep shopping</a></div>'; return; }
             root.innerHTML = this.items.map(i => `<div class="cart-item"><div class="cart-item-thumb">${i.image ? `<img src="${i.image}" alt="">` : `<i class="fas ${i.icon} product-thumb-icon"></i>`}</div><div class="cart-item-details"><h4>${app.escapeHtml(i.name)}</h4><small>${app.escapeHtml(i.storeName)}</small><p>${app.formatCurrency(i.price)}</p><div class="quantity-selector"><button class="qty-btn" onclick="window.NextaCart.change('${i.productId}',-1)">−</button><span>${i.quantity}</span><button class="qty-btn" onclick="window.NextaCart.change('${i.productId}',1)">+</button></div></div><button class="remove-item" onclick="window.NextaCart.remove('${i.productId}')" aria-label="Remove"><i class="fas fa-trash"></i></button></div>`).join('');
         }
     }
@@ -83,7 +83,7 @@
         document.querySelectorAll('.cart-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (window.matchMedia(MOBILE_CART_BREAKPOINT).matches) {
-                    window.location.href = 'cart.html';
+                    window.location.href = '/cart';
                 } else {
                     drawer.classList.add('open');
                 }
@@ -93,7 +93,7 @@
             btn.addEventListener('click', () => drawer.classList.remove('open'));
         });
         document.getElementById('checkoutBtn')?.addEventListener('click', () => {
-            window.location.href = 'cart.html';
+            window.location.href = '/cart';
         });
         document.getElementById('orderConfirmationCloseBtn')?.addEventListener('click', () => {
             drawer.classList.remove('open');

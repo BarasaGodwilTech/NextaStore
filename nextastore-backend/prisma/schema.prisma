@@ -261,6 +261,9 @@ model Store {
   subscriptionPayments SubscriptionPayment[]
 
   @@index([createdAt])
+  // Public store directory (GET /store/public/all): filter on isPublished, order by verified/createdAt or name.
+  @@index([isPublished, verified, createdAt])
+  @@index([isPublished, name])
   // Also has GIN trigram indexes on name/description/district/address for
   // fast ILIKE '%term%' search at scale — see migration
   // 20260917120000_trigram_search_indexes (Prisma schema syntax can't
@@ -336,6 +339,13 @@ model Product {
   thumbnails    Json      @default("[]")
   icon          String    @default("fa-box")
   stock         Int       @default(0)
+  // 'physical' (bought through the cart, uses stock) | 'service' | 'digital'.
+  // Service and digital listings are not bought through the cart: shoppers
+  // enquire through Messages. See README "Listing types". serviceArea and
+  // serviceDuration are free text, only shown for services.
+  listingType     String  @default("physical")
+  serviceArea     String  @default("")
+  serviceDuration String  @default("")
   sold          Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

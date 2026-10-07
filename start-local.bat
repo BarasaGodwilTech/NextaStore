@@ -145,7 +145,9 @@ if not defined SKIP_DOCKER (
 )
 
 echo Starting frontend at http://localhost:3000 ...
-start "NextaStore Frontend" cmd /k "cd /d ""%~dp0"" && npx http-server . -p 3000 -P http://127.0.0.1:4000 --proxy-options.changeOrigin false --proxy-options.xfwd true"
+REM "-e html" is what makes /dashboard open dashboard.html (clean addresses, no .html).
+REM It is a rule, not a list, so a page added later is clean the moment the file exists.
+start "NextaStore Frontend" cmd /k "cd /d ""%~dp0"" && npx http-server . -p 3000 -e html -P http://127.0.0.1:4000 --proxy-options.changeOrigin false --proxy-options.xfwd true"
 
 echo.
 echo Starting backend at http://localhost:4000 ...
@@ -212,7 +214,7 @@ if defined IS_LOCAL_DB (
   echo Remote/shared DATABASE_URL detected; skipping dev seed.
 )
 
-start "" "http://localhost:3000/index.html"
+start "" "http://localhost:3000/"
 
 call npm start
 

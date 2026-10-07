@@ -138,9 +138,9 @@ function flush(n = 3) {
     check('Does not touch a follower of a different store', !db.notifications.some(n => n.userId === 'f3'));
     check('Every row has the right type, a title naming the store, and the product as the body',
         db.notifications.every(n => n.type === 'new_product' && n.title === 'Kampala Kicks added a new product' && n.body === 'Air Max 90'));
-    check('The link points at the product with the store slug for context', db.notifications.every(n => n.link === 'product-detail.html?id=prod1&store=kampala-kicks'));
+    check('The link is the product\'s own address: /<store-slug>/<name>-<key>', db.notifications.every(n => n.link === '/kampala-kicks/air-max-90-prod1'));
     check('Push goes out to every follower, not just the first', pushed.length === 2 && pushed.some(p => p.endpoint.includes('f1')) && pushed.some(p => p.endpoint.includes('f2')));
-    check('The push payload matches the notification exactly', pushed.every(p => p.payload.type === 'new_product' && p.payload.title === 'Kampala Kicks added a new product' && p.payload.link === 'product-detail.html?id=prod1&store=kampala-kicks'));
+    check('The push payload matches the notification exactly', pushed.every(p => p.payload.type === 'new_product' && p.payload.title === 'Kampala Kicks added a new product' && p.payload.link === '/kampala-kicks/air-max-90-prod1'));
 
     // ------------------------------------------------------------- owner exclusion
     reset();

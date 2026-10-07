@@ -1,0 +1,26 @@
+# Installed by setup-vps.sh to /etc/systemd/system/nextastore-ai.service  (@APP_DIR@ is filled in)
+[Unit]
+Description=NextaStore AI assistant (Nexi)
+After=network-online.target ollama.service
+Wants=network-online.target ollama.service
+
+[Service]
+Type=simple
+User=nexi
+Group=nexi
+WorkingDirectory=@APP_DIR@
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+# Safety nets: a runaway Node process cannot eat the RAM the models need.
+MemoryMax=400M
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=@APP_DIR@
+
+[Install]
+WantedBy=multi-user.target

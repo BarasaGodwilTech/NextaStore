@@ -1,0 +1,4 @@
+{
+  "_note": "Human-approved English -> Luganda sentences. Checked BEFORE the translation model, so anything listed here is always answered with exactly this wording. Add pairs a Luganda speaker has checked. Matching ignores capitals, extra spaces and trailing punctuation. Keep markdown links like [Open a store](/signup) exactly as in the English text.",
+  "entries": []
+}

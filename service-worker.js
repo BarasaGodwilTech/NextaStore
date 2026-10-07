@@ -16,17 +16,19 @@
 // mismatched old-file/new-file combo across separately-cached scripts is
 // exactly what produces a "<something> is not defined" error like the
 // TokenStorage one that motivated this comment.
-const CACHE_VERSION = 'v22';
+const CACHE_VERSION = 'v54';
 const CACHE_NAME = `nextastore-cache-${CACHE_VERSION}`;
-const OFFLINE_URL = '/offline.html';
+// Clean address, not /offline.html: the web server 301s every *.html to its
+// clean form, and a worker must never hand a page a redirected response for a
+// navigation (the browser refuses it). /offline answers 200 directly.
+const OFFLINE_URL = '/offline';
 
 // Keep this list small and safe — every entry is fetched individually during
 // install, and a missing file just gets skipped instead of failing the whole
 // install (so this never blocks first load if a path here goes stale).
 const PRECACHE_URLS = [
   '/',
-  '/index.html',
-  '/offline.html',
+  '/offline',
   '/manifest.json',
   '/css/main.css',
   '/css/mobile.css',
@@ -189,9 +191,10 @@ function appScope() {
 
 /** Turns a `link` from the server into a same-origin path that is safe to
  *  open, or '/' if it isn't one. The server's links are relative
- *  ("messages.html?conversation=…", "dashboard.html#orders") or root-relative
- *  ("/subscription.html"); anything else — another origin, a
- *  protocol-relative "//host", "javascript:", a nested or non-.html path — is
+ *  ("/messages?conversation=…", "/dashboard#orders"). Links saved before pages
+ *  lost their `.html` ("messages.html?conversation=…", "/subscription.html")
+ *  still work and are opened at the clean address. Anything else — another
+ *  origin, a protocol-relative "//host", "javascript:", a nested path — is
  *  ignored rather than opened, because a notification is something a person
  *  taps without reading a URL first. */
 function resolveAppLink(raw) {
@@ -199,8 +202,9 @@ function resolveAppLink(raw) {
     if (typeof raw !== 'string' || !raw.trim()) return '/';
     const url = new URL(raw.trim(), appScope());
     if (url.origin !== self.location.origin) return '/';
-    if (!/^\/(?:[A-Za-z0-9_-]+\.html)?$/.test(url.pathname)) return '/';
-    return `${url.pathname}${url.search}${url.hash}`;
+    if (!/^\/(?:[A-Za-z0-9_-]+(?:\.html)?)?$/.test(url.pathname)) return '/';
+    const pathname = url.pathname.replace(/\.html$/i, '');
+    return `${pathname === '/index' ? '/' : pathname}${url.search}${url.hash}`;
   } catch (err) {
     return '/';
   }

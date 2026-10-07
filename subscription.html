@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -48,12 +49,12 @@
 
 
     <header class="subscription-topbar">
-        <a href="dashboard.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <a href="/dashboard" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
         <nav class="subscription-topnav" aria-label="Seller navigation">
-            <a href="dashboard.html"><i class="fas fa-gauge"></i><span>Dashboard</span></a>
-            <a href="store.html"><i class="fas fa-store"></i><span>My store</span></a>
-            <a href="messages.html"><i class="fas fa-message"></i><span>Messages</span></a>
-            <a href="subscription.html" class="is-active"><i class="fas fa-award"></i><span>Seller Pass</span></a>
+            <a href="/dashboard"><i class="fas fa-gauge"></i><span>Dashboard</span></a>
+            <a href="/dashboard" id="subMyStoreLink" hidden><i class="fas fa-store"></i><span>My store</span></a>
+            <a href="/messages"><i class="fas fa-message"></i><span>Messages</span></a>
+            <a href="/subscription" class="is-active"><i class="fas fa-award"></i><span>Seller Pass</span></a>
         </nav>
         <div class="account-nav-slot" data-account-nav></div>
     </header>

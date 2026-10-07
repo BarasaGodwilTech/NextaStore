@@ -3,8 +3,9 @@ const prisma = require('../prisma');
 const config = require('../config');
 const cache = require('../cache');
 const { slugify, isReservedSlug } = require('../utils');
+const { productPath, productKeyFromSlug } = require('../slugs');
 const { isStoreCurrentlyActive, getActivePaymentMethods } = require('../helpers');
-const { loadStoreShell } = require('../storeShell');
+const { loadStoreShell, loadProductShell } = require('../storeShell');
 const seo = require('../seo');
 
 const router = express.Router();
@@ -38,6 +39,14 @@ function sendHtml(res, status, html, { cacheable }) {
     // same-origin-only resource policy) would break it.
     res.removeHeader('Content-Security-Policy');
     res.removeHeader('Cross-Origin-Resource-Policy');
+    // helmet() defaults to `Referrer-Policy: no-referrer`. That is right for JSON,
+    // but this page draws OpenStreetMap tiles, and OSM refuses any tile request
+    // that arrives without a Referer ("Access blocked" image). Send the origin
+    // only, and only cross-origin - never a full URL.
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Nothing on a storefront needs camera/mic/etc.; say so explicitly.
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', cacheable ? `public, max-age=${PAGE_TTL_SECONDS}, s-maxage=${PAGE_TTL_SECONDS}` : 'no-store');
     res.send(html);
 }
@@ -73,6 +82,146 @@ router.get('/sitemap.xml', async (req, res, next) => {
 // keep working: send them to the new one.
 router.get('/s/:slug', (req, res) => {
     res.redirect(301, `/${encodeURIComponent(slugify(req.params.slug))}`);
+});
+
+// The query string of the request, for redirects that must keep it (a throwaway
+// ?x=2 is how a link preview is re-tested, see README).
+function queryOf(req) {
+    const url = req.originalUrl || '';
+    return url.includes('?') ? url.slice(url.indexOf('?')) : '';
+}
+
+// Where a product's id alone leads when no clean address can be made (a store
+// with no usable slug, or an id too short to key on): the static product page,
+// which works on the id.
+function legacyProductUrl(id, storeSlug) {
+    return `/product-detail?id=${encodeURIComponent(id)}${storeSlug ? `&store=${encodeURIComponent(storeSlug)}` : ''}`;
+}
+
+// A product by its id alone: nextastores.com/p/<productId>.
+//
+// A product's real address is /<store-slug>/<name>-<key> (below). This is the
+// short form for places that only know the id (a product shared inside a chat,
+// a link made by hand, anything from before product addresses existed): it
+// sends the visitor on, permanently, to the real address - where the preview
+// tags live - and keeps any query string. Two path segments, so it can never
+// collide with a store's /<slug>; 'p' is a reserved word, and this is registered
+// before that catch-all, which must stay last.
+router.get('/p/:productId', async (req, res, next) => {
+    try {
+        const id = req.params.productId;
+        const siteUrl = requestSiteUrl(req);
+
+        const notFound = async () => {
+            const shell = await loadProductShell();
+            if (!shell) return next();
+            return sendHtml(res, 404, seo.renderProductShell(shell, { siteUrl, appUrl: siteUrl }), { cacheable: false });
+        };
+        // A malformed id never reaches the database.
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return notFound();
+
+        const product = await prisma.product.findFirst({
+            where: { id, deletedAt: null, store: { deletedAt: null } },
+            select: { id: true, name: true, store: { select: { slug: true } } }
+        });
+        if (!product || !product.store) return notFound();
+
+        const clean = productPath(product, product.store.slug);
+        if (!clean) return res.redirect(302, legacyProductUrl(product.id, product.store.slug));
+        res.redirect(301, `${clean}${queryOf(req)}`);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// A product's public address: nextastores.com/<store-slug>/<name>-<key>.
+//
+// Serves the REAL product-detail.html with that product's own <head> (title with
+// the price, photo, description, canonical URL, JSON-LD), exactly as /<slug> does
+// for stores - so the address in the browser is also the address that previews
+// properly in WhatsApp, Facebook and the rest. The page learns which product it
+// is from two <meta> tags in that <head>, since the address only holds a short key.
+//
+// The key is the tail of the product's id, looked up inside the named store, so
+// the readable name can change (a rename, a hand-edited link) and the address
+// still finds the product and 301s to the current spelling. Same privacy rule as
+// a store: a draft / lapsed store's product gets generic tags only; an unknown
+// one gets the page with a real 404. Steps aside for reserved first words (css,
+// api, errors...), so static folders and the API are never shadowed.
+router.get('/:storeSlug/:productSlug', async (req, res, next) => {
+    try {
+        const rawStore = req.params.storeSlug;
+        const rawProduct = req.params.productSlug;
+        if (!/^[A-Za-z0-9-]+$/.test(rawStore) || !/^[A-Za-z0-9-]+$/.test(rawProduct)) return next();
+        const storeKey = slugify(rawStore);
+        if (isReservedSlug(storeKey)) return next();
+        const key = productKeyFromSlug(rawProduct);
+        if (!key) return next();
+
+        const siteUrl = requestSiteUrl(req);
+        const query = queryOf(req);
+        const cacheKey = `seo:product-page:${siteUrl}:${storeKey}:${key}`;
+        let entry = null;
+        try { entry = JSON.parse(await cache.get(cacheKey)); } catch (e) { entry = null; }
+        if (entry && entry.path && entry.html) {
+            if (req.path !== entry.path) return res.redirect(301, `${entry.path}${query}`);
+            return sendHtml(res, 200, entry.html, { cacheable: true });
+        }
+
+        const shell = await loadProductShell();
+        const product = await prisma.product.findFirst({
+            where: {
+                deletedAt: null,
+                id: { endsWith: key, mode: 'insensitive' },
+                store: { deletedAt: null, OR: [{ slug: storeKey }, { id: rawStore }] }
+            },
+            select: {
+                id: true, name: true, description: true, price: true, stock: true,
+                image: true, images: true, thumbnails: true,
+                store: { select: { id: true, slug: true, name: true, logo: true, district: true, seo: true, isPublished: true, deletedAt: true, trialEndsAt: true, subscriptionPaidUntil: true } }
+            }
+        });
+        const store = product && product.store;
+
+        // Unknown address: still the normal page (which shows its own "product
+        // not found" state) but with a real 404 so nothing lingers in a cache.
+        // (The query already excludes deleted stores; this is the second lock.)
+        if (!product || !store || store.deletedAt) {
+            if (!shell) return next();
+            return sendHtml(res, 404, seo.renderProductShell(shell, { siteUrl, appUrl: siteUrl }), { cacheable: false });
+        }
+
+        // One address per product: a different spelling of the name, the store's
+        // id instead of its slug, capitals or a trailing slash all collapse to it.
+        const clean = productPath(product, store.slug);
+        if (clean && req.path !== clean) return res.redirect(301, `${clean}${query}`);
+        // No usable clean address (cannot happen for real ids): the static page.
+        if (!clean) return res.redirect(302, legacyProductUrl(product.id, store.slug));
+
+        if (!shell) {
+            // Can't read the page itself; the site's own copy still works.
+            return res.redirect(302, `${config.frontendUrl.replace(/\/$/, '')}${legacyProductUrl(product.id, store.slug).replace('/product-detail', '/product-detail.html')}`);
+        }
+
+        // Not public (draft, or trial / paid time over): the page is identical for
+        // everyone, so nothing product-specific goes into it; the owner still
+        // gets through because the page asks the API, which knows who is looking.
+        const live = store.isPublished && isStoreCurrentlyActive(store);
+        if (!live) {
+            return sendHtml(res, 200, seo.renderProductShell(shell, { product, store, siteUrl, appUrl: siteUrl }), { cacheable: false });
+        }
+
+        const share = seo.buildProductShare({ product, store, siteUrl, appUrl: siteUrl });
+        const html = seo.renderProductShell(shell, { share, product, store, siteUrl, appUrl: siteUrl });
+        // Never keep a live page past the moment the store's time ends.
+        const endsAt = Math.max(store.trialEndsAt ? new Date(store.trialEndsAt).getTime() : 0, store.subscriptionPaidUntil ? new Date(store.subscriptionPaidUntil).getTime() : 0);
+        const secondsLeft = Math.floor((endsAt - Date.now()) / 1000);
+        const ttl = Math.max(1, Math.min(PAGE_TTL_SECONDS, secondsLeft));
+        await cache.set(cacheKey, JSON.stringify({ path: clean, html }), ttl).catch(() => {});
+        sendHtml(res, 200, html, { cacheable: ttl >= PAGE_TTL_SECONDS });
+    } catch (err) {
+        next(err);
+    }
 });
 
 // A store's public address: nextastores.com/<slug>.
@@ -146,8 +295,14 @@ router.get('/:slug', async (req, res, next) => {
             store, live: true, products, productCount, paymentLabels,
             siteUrl, appUrl: siteUrl
         });
-        await cache.set(cacheKey, html, PAGE_TTL_SECONDS).catch(() => {});
-        sendHtml(res, 200, html, { cacheable: true });
+        // Never keep a "live" page past the moment the store's trial / paid time
+        // ends: otherwise a store that just lapsed keeps serving its old live
+        // page (products and all) until the cache happens to expire.
+        const endsAt = Math.max(store.trialEndsAt ? new Date(store.trialEndsAt).getTime() : 0, store.subscriptionPaidUntil ? new Date(store.subscriptionPaidUntil).getTime() : 0);
+        const secondsLeft = Math.floor((endsAt - Date.now()) / 1000);
+        const ttl = Math.max(1, Math.min(PAGE_TTL_SECONDS, secondsLeft));
+        await cache.set(cacheKey, html, ttl).catch(() => {});
+        sendHtml(res, 200, html, { cacheable: ttl >= PAGE_TTL_SECONDS });
     } catch (err) {
         next(err);
     }

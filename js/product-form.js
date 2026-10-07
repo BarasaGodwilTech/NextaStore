@@ -12,7 +12,7 @@ class ProductFormPage {
         // to the review step instead, where the launch gate re-checks the
         // product count itself.
         this.fromOnboarding = this.params.get('from') === 'onboarding';
-        this.returnTo = this.fromOnboarding ? 'onboarding.html?step=4' : 'dashboard.html#products';
+        this.returnTo = this.fromOnboarding ? '/onboarding?step=4' : '/dashboard#products';
         this.images = []; // [{ full, thumb }], [0] is the cover image
         this.isEditing = Boolean(this.productId);
         this.saving = false;
@@ -40,13 +40,13 @@ class ProductFormPage {
         const breadcrumbContainer = document.querySelector('.breadcrumb');
         if (breadcrumbContainer) {
             breadcrumbContainer.innerHTML = this.fromOnboarding ? `
-                <a href="onboarding.html?step=4">Store setup</a>
+                <a href="/onboarding?step=4">Store setup</a>
                 <span class="separator">/</span>
                 <span class="breadcrumb-current" id="productFormBreadcrumb">Add Product</span>
             ` : `
-                <a href="dashboard.html">Dashboard</a>
+                <a href="/dashboard">Dashboard</a>
                 <span class="separator">/</span>
-                <a href="dashboard.html" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
+                <a href="/dashboard" onclick="document.querySelector('[data-section=products]').click(); return false;">Products</a>
                 <span class="separator">/</span>
                 <span class="breadcrumb-current" id="productFormBreadcrumb">${this.isEditing ? 'Edit Product' : 'Add Product'}</span>
             `;
@@ -97,6 +97,10 @@ class ProductFormPage {
             document.getElementById('productPrice').value = p.price ?? '';
             document.getElementById('productOriginalPrice').value = p.originalPrice ?? '';
             document.getElementById('productStock').value = p.stock ?? 0;
+            document.getElementById('productListingType').value = p.listingType || 'physical';
+            document.getElementById('productServiceArea').value = p.serviceArea || '';
+            document.getElementById('productServiceDuration').value = p.serviceDuration || '';
+            document.getElementById('productListingType').dispatchEvent(new Event('change'));
             // Pair each full image with its existing thumbnail by index
             // (item 5) — falling back to the full image itself for any
             // product saved before thumbnails existed, or if the arrays
@@ -244,7 +248,10 @@ class ProductFormPage {
             category: document.getElementById('productCategory').value,
             price: document.getElementById('productPrice').value,
             originalPrice: document.getElementById('productOriginalPrice').value,
-            stock: document.getElementById('productStock').value
+            stock: document.getElementById('productStock').value,
+            listingType: document.getElementById('productListingType').value,
+            serviceArea: document.getElementById('productServiceArea').value,
+            serviceDuration: document.getElementById('productServiceDuration').value
         };
         const hasText = Object.values(fields).some(v => String(v || '').trim());
         if (!hasText && !this.images.length) { this.clearDraft(); return; }
@@ -310,6 +317,9 @@ class ProductFormPage {
         if (f.price != null) document.getElementById('productPrice').value = f.price;
         if (f.originalPrice != null) document.getElementById('productOriginalPrice').value = f.originalPrice;
         if (f.stock != null) document.getElementById('productStock').value = f.stock;
+        if (f.listingType) { document.getElementById('productListingType').value = f.listingType; document.getElementById('productListingType').dispatchEvent(new Event('change')); }
+        if (f.serviceArea != null) document.getElementById('productServiceArea').value = f.serviceArea;
+        if (f.serviceDuration != null) document.getElementById('productServiceDuration').value = f.serviceDuration;
         this.images = Array.isArray(draft.images) ? draft.images : [];
         this.dirty = true;
 
@@ -456,6 +466,16 @@ class ProductFormPage {
         e.target.value = '';
     }
 
+    /** The seller's store name for the watermark: already loaded with the account, else fetched once. */
+    async getWatermarkName() {
+        if (app.store && app.store.name) return app.store.name;
+        if (this._wmName === undefined) {
+            try { const r = await app.apiRequest('/store'); this._wmName = (r && r.data && r.data.name) || ''; }
+            catch (e) { this._wmName = ''; }
+        }
+        return this._wmName;
+    }
+
     async queueImageCrops(files) {
         for (const file of files) {
             const cropped = await window.NextaImageCrop.open(file, { aspect: 1, title: 'Crop your product photo' });
@@ -466,6 +486,14 @@ class ProductFormPage {
                 full = await app.optimizeImage(cropped, { maxDim: 1800, quality: 0.84 });
             } catch (err) {
                 console.error('Full image optimization failed; using cropped original:', err);
+            }
+            // Stamp the faint store watermark (mark + store name) once, now, so the full photo and the
+            // thumbnail made from it both carry it. Photos already saved on a product are never re-stamped.
+            // If stamping fails the photo is still added, just without it.
+            try {
+                full = await window.NextaWatermark.apply(full, { storeName: await this.getWatermarkName() });
+            } catch (err) {
+                console.error('Watermark failed; adding the photo without it:', err);
             }
             // Generate the small grid/list thumbnail right at selection
             // time (item 5) — a canvas resize is effectively free
@@ -585,7 +613,10 @@ class ProductFormPage {
             category: document.getElementById('productCategory').value,
             price: document.getElementById('productPrice').value,
             originalPrice: document.getElementById('productOriginalPrice').value || null,
-            stock: document.getElementById('productStock').value || 0,
+            stock: document.getElementById('productListingType').value === 'physical' ? (document.getElementById('productStock').value || 0) : 0,
+            listingType: document.getElementById('productListingType').value,
+            serviceArea: document.getElementById('productServiceArea').value.trim(),
+            serviceDuration: document.getElementById('productServiceDuration').value.trim(),
             // The backend expects `images`/`thumbnails` as parallel arrays of
             // strings (URLs or data URLs) — this.images is an array of
             // { full, thumb } objects for the editor's own bookkeeping, so it
@@ -615,18 +646,31 @@ class ProductFormPage {
         if (saveBtnTop) { saveBtnTop.disabled = true; saveBtnTop.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
 
         try {
-            if (this.isEditing) {
-                await app.apiRequest(`/products/${this.productId}`, { method: 'PUT', body: JSON.stringify(payload) });
-                app.showAlert('Product updated.', 'success');
-            } else {
-                await app.apiRequest('/products', { method: 'POST', body: JSON.stringify(payload) });
-                app.showAlert('Product added.', 'success');
+            const url = this.isEditing ? `/products/${this.productId}` : '/products';
+            const method = this.isEditing ? 'PUT' : 'POST';
+            const send = (extra) => app.apiRequest(url, { method, body: JSON.stringify({ ...payload, ...extra }) });
+            try {
+                await send();
+            } catch (err) {
+                // The server found another product in this store with the same name: let the seller decide.
+                if (err.code !== 'DUPLICATE_PRODUCT') throw err;
+                const d = err.duplicate || {};
+                const priceText = d.price != null ? ` (${app.formatCurrency(d.price)})` : '';
+                const proceed = await app.confirm({
+                    title: 'You already have this product',
+                    message: `"${d.name || payload.name}"${priceText} is already in your store. ${this.isEditing ? 'Save this change anyway' : 'Add this one as well'}, or go back and change it?`,
+                    confirmText: this.isEditing ? 'Save anyway' : 'Add it anyway',
+                    cancelText: 'Go back'
+                });
+                if (!proceed) { err.declinedDuplicate = true; throw err; }
+                await send({ allowDuplicate: true });
             }
+            app.showAlert(this.isEditing ? 'Product updated.' : 'Product added.', 'success');
             this.dirty = false;
             this.clearDraft();
             setTimeout(() => { window.location.href = this.returnTo; }, 700);
         } catch (err) {
-            app.showAlert(err.message || 'Could not save this product.', 'error');
+            if (!err.declinedDuplicate) app.showAlert(err.message || 'Could not save this product.', 'error');
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalHTML;
             if (saveBtnTop) { saveBtnTop.disabled = false; saveBtnTop.innerHTML = originalTopHTML; }

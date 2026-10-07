@@ -1,0 +1,261 @@
+{
+  "_read_me_first": "IMPORTANT: these Luganda answers are a first-pass draft written to be simple and safe, not verified by a fluent/native Luganda speaker. Have someone fluent review and correct every 'lg_answer' before this goes in front of real users — see README.md 'Being honest about Luganda'. Each entry's 'en_reference' is the English fact it's based on, so a reviewer can check meaning without needing to reverse-translate.",
+  "entries": [
+    {
+      "id": "greeting",
+      "en_reference": "Greeting / opening the conversation.",
+      "patterns": [
+        "oli otya",
+        "gyebale",
+        "ki kati",
+        "wasuze otya",
+        "osiibye otya"
+      ],
+      "lg_answer": "Gyebale ko! Nkuyambeko ntya ku NextaStore leero?",
+      "needs_review": true
+    },
+    {
+      "id": "how_to_buy",
+      "en_reference": "How to buy: browse Marketplace, add to cart, pay with an accepted method.",
+      "patterns": [
+        "engeri y'okugula",
+        "nga ngula",
+        "okugula ku"
+      ],
+      "lg_answer": "Okugula ku NextaStore kyangu: genda ku 'Marketplace', londa ekintu ky'oyagala, okiteeke mu 'Cart', oluvannyuma osasule nga okozesa MTN MoMo oba Airtel Money bwe biba biriwo ku sitowa eyo.",
+      "needs_review": true
+    },
+    {
+      "id": "how_to_sell",
+      "en_reference": "How to become a seller: go through onboarding, new stores get a free trial.",
+      "patterns": [
+        "okutunda ku",
+        "okufuna sitowa",
+        "okuteekawo sitowa",
+        "okutandika sitowa"
+      ],
+      "lg_answer": "Okutandika okutunda, wandiika sitowa yo nga oyita mu 'Onboarding' — ogenda kuwandiika erinnya lya sitowa n'engeri z'okusasula z'oyagala okukkiriza. Sitowa empya yonna efuna ekiseera ky'okugezesa nga tewasasula (free trial).",
+      "needs_review": true
+    },
+    {
+      "id": "payment_methods",
+      "en_reference": "Payment methods are admin-configurable; MTN MoMo and Airtel Money are the built-in mobile money options; a store chooses which to accept.",
+      "patterns": [
+        "engeri z'okusasula",
+        "mtn",
+        "airtel",
+        "okusasula ssente"
+      ],
+      "lg_answer": "Ku NextaStore tukozesa MTN MoMo ne Airtel Money okusingira ddala, era buli sitowa yesalawo ku ki ky'ekkiriza. Bw'otolaba engeri gy'oyagala ku sitowa emu, si nsobi — sitowa eyo teyagikkirizza; buuza omutunzi mu 'Messages'.",
+      "needs_review": true
+    },
+    {
+      "id": "track_order",
+      "en_reference": "Order status is tracked on the Orders page.",
+      "patterns": [
+        "order yange",
+        "ekiragiro kyange",
+        "okulondoola order"
+      ],
+      "lg_answer": "Genda ku lupapula lwa 'Orders' olabe embeera y'ekiragiro kyo — obanga kikakasiddwa, kimaliriddwa, oba kisaziddwamu.",
+      "needs_review": true
+    },
+    {
+      "id": "cancel_order",
+      "en_reference": "Buyer can cancel before the seller marks it completed; after that, message the seller.",
+      "patterns": [
+        "okusazaamu order",
+        "okusazaamu ekiragiro"
+      ],
+      "lg_answer": "Osobola okusazaamu ekiragiro nga omutunzi tannakimaliriza (completed). Bwe kiba kimaze okuteekebwa nga 'completed', tekisoboka kusazibwamu; wogera n'omutunzi mu 'Messages'.",
+      "needs_review": true,
+      "disabled": true,
+      "disabled_reason": "Out of date (WIP 60): buyers can only self-cancel for a short time after placing an order, a few times a month; the answer says they can cancel until the seller completes it. Re-enable after a Luganda speaker rewrites it from the generated platform facts."
+    },
+    {
+      "id": "subscription_status",
+      "en_reference": "Seller Pass status/days-left is live account data, not something the assistant knows — point to the subscription page.",
+      "patterns": [
+        "seller pass",
+        "ennaku ezisigadde",
+        "okusasula sitowa"
+      ],
+      "lg_answer": "Embeera ya Seller Pass olaba ku lupapula lw'okwewandiisa (subscription page) — eyo w'olaba ennaku ezikyasigadde n'obanga osasudde. Sisobola kukubuulira ebikwata ku akaunti yo kubanga sirina buyinza ku ekyo.",
+      "needs_review": true
+    },
+    {
+      "id": "payment_pending",
+      "en_reference": "Seller Pass payments are reviewed and approved by an admin, which can take time.",
+      "patterns": [
+        "nsasudde",
+        "pending",
+        "tebakkirizza",
+        "nsindise ssente"
+      ],
+      "lg_answer": "Bw'omala okusasula Seller Pass, omukulu w'ekitongole (admin) y'akebera n'akkiriza — kino kiyinza okutwala akaseera. Bwe kiba kimaze ekiseera kiwanvu nnyo, tuukirira obuyambi bwa NextaStore.",
+      "needs_review": true
+    },
+    {
+      "id": "seller_badge",
+      "en_reference": "6+ months paid in one purchase makes a seller eligible for a badge after admin approval.",
+      "patterns": [
+        "akabonero",
+        "seller badge"
+      ],
+      "lg_answer": "Bw'osasula emyezi 6 oba okusingawo mu mulundi gumu, osobola okufuna akabonero k'omutunzi oluvannyuma lw'okukakasibwa omukulu w'ekitongole.",
+      "needs_review": true,
+      "disabled": true,
+      "disabled_reason": "Out of date (WIP 60): badge months count continuous paid coverage (payments while still covered add up), not one single purchase. Re-enable after a Luganda speaker rewrites it from the generated platform facts."
+    },
+    {
+      "id": "forgot_password",
+      "en_reference": "Use 'Forgot password' on the login page.",
+      "patterns": [
+        "nneerabidde",
+        "sisobola kuyingira",
+        "password"
+      ],
+      "lg_answer": "Ku lupapula lw'okuyingira, nyiga 'Forgot password', oyingize email yo, olyoke ofune obuyambi bw'okuteekawo password mpya.",
+      "needs_review": true
+    },
+    {
+      "id": "account_safety",
+      "en_reference": "Never share passwords/OTP; change password immediately if compromised.",
+      "patterns": [
+        "akaunti etwaliddwa",
+        "ekitali kirongoofu"
+      ],
+      "lg_answer": "Tolaga muntu yenna password yo oba code y'okukakasa (OTP) — n'obanga ateeza nti ye NextaStore support. Bw'osiiga akaunti yo etwaliddwa, kyusa password amangu ddala.",
+      "needs_review": true
+    },
+    {
+      "id": "contact_support",
+      "en_reference": "Escalate serious/urgent/money issues to human support.",
+      "patterns": [
+        "obuyambi",
+        "support",
+        "njagala kwogera n'omuntu"
+      ],
+      "lg_answer": "Nsobola okukuyamba ku bibuuzo bingi. Bw'oyagala okwogera n'omuntu butereevu ku nsonga ya bukulu (nga ensimbi ezibula), tuukirira obuyambi bwa NextaStore.",
+      "needs_review": true
+    },
+    {
+      "id": "is_it_free",
+      "en_reference": "Buying is free to buyers; selling requires Seller Pass, new stores get a free trial.",
+      "patterns": [
+        "kya bwereere",
+        "sente ki"
+      ],
+      "lg_answer": "Okugula ku NextaStore tekulina nsimbi za bwereere ez'okusasula. Okutunda kwetaagisa Seller Pass, naye buli sitowa empya efuna ekiseera ky'okugezesa awatali kusasula.",
+      "needs_review": true
+    },
+    {
+      "id": "delivery_area",
+      "en_reference": "Delivery details are set per-store, not platform-wide.",
+      "patterns": [
+        "disitulikiti",
+        "okutuusa ebintu",
+        "delivery"
+      ],
+      "lg_answer": "Buli sitowa yesalawo gy'esobola okutuusa ebintu. Kebera ku lupapula lwa sitowa gy'oyagala okugulako olabe ebikwata ku disitulikiti n'okutuusa.",
+      "needs_review": true
+    },
+    {
+      "id": "thanks",
+      "en_reference": "Acknowledge thanks.",
+      "patterns": [
+        "webale",
+        "webale nyo",
+        "nkwebazizza"
+      ],
+      "lg_answer": "Kale, webale naawe! Bw'oba oyagala obuyambi obulala, mbadde wano.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_first_store",
+      "en_reference": "Starting your first store: create an account, choose to sell, complete store setup/onboarding, add at least one listing, then launch and share the store link. New stores can try NextaStore before paying.",
+      "patterns": [
+        "nnyinza ntya okutandika edduuka lyange erisooka",
+        "okutandika edduuka lyange erisooka",
+        "ntandika ntya edduuka lyange",
+        "ntandika ntya sitowa yange esooka",
+        "nnyinza ntya okutandika sitowa yange",
+        "okutandika sitowa yange esooka"
+      ],
+      "lg_answer": "Okutandika edduuka lyo erisooka ku NextaStore, kola akawunti olonde okutunda, oyite mu 'Onboarding', otegeke ebikwata ku dduuka, branding n'engeri bakasitoma gye banaasasulamu, oluvannyuma weekenneenye oteeke waakiri ekintu kimu. Gattako ebintu byo, oteeketeeke edduuka, era ogabane link ya dduuka lyo. Sitowa empya zisobola okugeza NextaStore nga tezinnasasula.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_beginner_products",
+      "en_reference": "Choosing what to sell first: start with what you know, already have access to, or people around you ask for; begin with one category and 5 to 10 items, then learn what sells and add more. Product examples include clothing, phones/accessories, home/kitchen, food/drinks, beauty, crafts, school/office and baby/kids items.",
+      "patterns": [
+        "ntunde ki nga nkyatandika",
+        "kintu ki kye ntunda nga nkyatandika",
+        "ntandika ntya okulonda ebyokutunda",
+        "bintu ki ebyokusooka okutunda",
+        "nnyinza okutunda ki nga nkyali mutandisi",
+        "kiki kye nsobola okutunda nga nkyatandika"
+      ],
+      "lg_answer": "Nga nkyatandika, tandika n'ekintu ky'omanyi, ky'olina kyangu okufuna oba abantu abakwetoolodde kye basaba. Kebera oba abantu bakigula buli kiseera, oba osobola okukifuna oba okukikola enfunda nnyingi ng'osigaza amagoba. Tandika n'ekika kimu n'ebintu nga 5–10, olyoke otegeere ebisinga okutundibwa. Ebyokulabirako mulimu engoye, engatto n'ensawo, amasimu n'ebigenderako, ebintu by'awaka, emmere, eby'okwekuuma n'ebyemikono.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_small_budget_ideas",
+      "en_reference": "Small-budget ideas: buy or make small quantities, take orders before buying/making where suitable, offer a service where skill is the main cost, and reinvest early profits into best sellers.",
+      "patterns": [
+        "mpa ebirowoozo by'obusuubuzi bye nsobola okutandika n'ensimbi entono",
+        "mpa ebirowoozo byobusuubuzi bye nsobola okutandika nensimbi entono",
+        "birowoozo ki ebyobusuubuzi ebyensimbi entono",
+        "nnyinza kutandika busuubuzi ki nensimbi entono",
+        "ntandika ntya obusuubuzi nensimbi entono",
+        "busuubuzi ki bwe nsobola okutandika nensimbi entono",
+        "ebirowoozo byobusuubuzi nensimbi entono"
+      ],
+      "lg_answer": "Bw'oba otandika n'ensimbi entono, tandika n'ebintu by'osobola okugula oba okukola mu bungi obutono. Oyinza n'okufuna oda nga tonnaba kugula oba okukola ekintu, bw'oba kikola. Obuweereza nga okukola enviiri, okutungira oba okufumbira nabwo buyinza okutandikibwa nga obukugu bwo bwe buba ssente enkulu. Amagoba agasooka gaddemu mu bintu ebikusinga okutundibwa.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_pricing",
+      "en_reference": "Pricing products: calculate full cost including purchase/making cost, packaging, transport and fair time cost; add desired profit; compare similar Marketplace items; keep discounts honest; review prices as costs change.",
+      "patterns": [
+        "nsalawo ntya ku bbeeyi y'ebintu byange",
+        "nsalawo ntya ku bbeeyi yebintu byange",
+        "nteekawo ntya bbeeyi yebintu byange",
+        "nnyinza ntya okusalawo ku bbeeyi yebintu",
+        "nteekateeka ntya bbeeyi yebintu",
+        "nkozesa ntya bbeeyi entuufu eyebintu byange",
+        "bbeeyi yebintu byange nsalawo ntya"
+      ],
+      "lg_answer": "Okusalawo ku bbeeyi y'ebintu byo, balirira omuwendo gwonna gwe wakozesa: ssente z'okugula oba okukola ekintu, okupakinga, entambula, n'omuwendo ogw'obudde bwo ogw'obwenkanya. Gattako amagoba g'oyagala. Gerageranya n'ebintu ebifaanana ku 'Marketplace' osobole okumanya oba bbeeyi yo eri kumpi n'ekya bulijjo, era okendeeza bbeeyi mu ngeri ey'amazima. Ddamu okwetegereza bbeeyi ng'ensimbi z'okukola ekintu zikyuka.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_trustworthy_seller",
+      "en_reference": "Choosing a trustworthy seller: look for a complete store profile, real location, clear photos and seller badges; message the seller about size, condition, delivery time and price; be careful with prices that seem too good to be true.",
+      "patterns": [
+        "nnyinza ntya okufuna omutunzi omwesigwa",
+        "nnonya ntya omutunzi omwesigwa",
+        "ndonda ntya omutunzi omwesigwa",
+        "kiki ekindaga omutunzi omwesigwa",
+        "ntunuulira ki okumanya omutunzi omwesigwa",
+        "nnyinza ntya okumanya omutunzi omwesigwa"
+      ],
+      "lg_answer": "Okulonda omutunzi omwesigwa, laba sitowa erina ebikwata ku yo ebimala, ekifo ekituufu, ebifaananyi ebitegeerekeka, n'akabonero k'omutunzi bwe kaba kaliwo. Wandiikira omutunzi obuuze ku sayizi, mbeera y'ekintu, ekiseera ky'okutuusa n'ebbeyi. Beera mwegendereza singa bbeeyi erabika nga nnene nnyo okusinga bwe kisuubirwa.",
+      "needs_review": true
+    },
+    {
+      "id": "starter_buy_safely",
+      "en_reference": "Buying safely: keep payment and communication on NextaStore where there is a record; be cautious if someone pushes payment or communication off-platform; never share passwords or OTP codes; use Trust and Safety if something feels wrong.",
+      "patterns": [
+        "nnyinza ntya okugula mu ngeri etaliimu bulabe",
+        "nnyinza ntya okugula nga ndi safe ku NextaStore",
+        "ngula ntya mu ngeri eyobukuumi",
+        "nkola ntya okugula nga ndi mukuumi",
+        "nnyinza ntya okwewala obubbi nga ngula",
+        "okugula mu bukuumi ku NextaStore"
+      ],
+      "lg_answer": "Okugula mu bukuumi ku NextaStore, ssaawo okusasula n'emboozi zonna ku platform awali record. Beera mwegendereza omuntu akukaka okusasula oba okwogera ebweru wa NextaStore nga oda tennatwalibwa oba okukakasibwa. Towa muntu yenna password yo oba OTP. Bw'oba olaba ekitali kituufu, kebera 'Trust and Safety' oba tuukirira obuyambi bwa NextaStore.",
+      "needs_review": true
+    }
+  ]
+}

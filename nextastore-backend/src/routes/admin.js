@@ -227,7 +227,7 @@ router.post('/users/:id/password-reset', requireAuth, requireAdminPermission(ADM
         if (target.adminLevel === 'super_admin' && !isSuperAdmin(req.user)) throw apiError('Only a super admin can reset another super admin\'s password.', 403);
         if (target.role === 'admin' && !hasPermission(req.user, ADMIN_PERMISSIONS.ADMINS_MANAGE)) throw apiError('You do not have permission to manage administrator accounts.', 403);
         const token = await issueToken(target.id, 'password_reset');
-        const resetUrl = `${config.frontendUrl}/forgot-password.html?token=${encodeURIComponent(token)}`;
+        const resetUrl = `${config.frontendUrl}/forgot-password?token=${encodeURIComponent(token)}`;
         let emailed = true;
         try {
             await sendMail({
@@ -397,7 +397,9 @@ router.put('/subscription-payments/:id/approve', requireAuth, requireAdminPermis
         const now = new Date();
         const existingPaidUntil = payment.store.subscriptionPaidUntil ? new Date(payment.store.subscriptionPaidUntil) : null;
         const wasAlreadyPaid = !!existingPaidUntil && existingPaidUntil.getTime() > now.getTime();
-        const base = wasAlreadyPaid ? existingPaidUntil : now;
+        // Copy: setMonth() mutates in place, and `now` is also written as
+        // reviewedAt below - it used to land months in the future.
+        const base = new Date(wasAlreadyPaid ? existingPaidUntil : now);
         base.setMonth(base.getMonth() + months);
         // The commitment counter follows the current continuous paid coverage.
         // Example: 3 months approved + another 3 months while active = 6 months
@@ -421,7 +423,7 @@ router.put('/subscription-payments/:id/approve', requireAuth, requireAdminPermis
                 body: badgeEligible
                     ? `Your payment is confirmed. You now have ${commitmentMonths} months of active paid coverage and your ${commitmentMonths >= 24 ? 'Platinum Partner' : commitmentMonths >= 12 ? 'Gold Partner' : 'Verified Seller'} badge is live.`
                     : `Your ${months}-month payment is confirmed. You now have ${commitmentMonths} months covered. Add ${6 - commitmentMonths} more month${6 - commitmentMonths === 1 ? '' : 's'} while your pass is active to unlock Verified Seller.`,
-                link: '/subscription.html'
+                link: '/subscription'
             });
         }
 
@@ -437,7 +439,7 @@ router.put('/subscription-payments/:id/reject', requireAuth, requireAdminPermiss
         if (existing.status !== 'pending') throw apiError('This payment was already reviewed.');
         const payment = await prisma.subscriptionPayment.update({ where: { id: req.params.id }, data: { status: 'rejected', reviewedAt: new Date(), reviewedBy: req.user.id, note } });
         await recordAdminAudit({ actorId: req.user.id, action: 'subscription_payment.rejected', targetType: 'subscription_payment', targetId: payment.id, targetUserId: existing.store.ownerId, metadata: { note: note || null } });
-        if (existing.store.ownerId) await createNotification({ userId: existing.store.ownerId, type: 'subscription', title: 'Payment needs attention', body: note || 'We could not confirm that transaction reference. Please check the mobile-money receipt and submit it again.', link: '/subscription.html' });
+        if (existing.store.ownerId) await createNotification({ userId: existing.store.ownerId, type: 'subscription', title: 'Payment needs attention', body: note || 'We could not confirm that transaction reference. Please check the mobile-money receipt and submit it again.', link: '/subscription' });
         res.json({ data: serializePayment(payment) });
     } catch (err) { next(err); }
 });

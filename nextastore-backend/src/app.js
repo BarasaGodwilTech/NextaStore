@@ -38,6 +38,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payments');
+const assistantRoutes = require('./routes/assistant');
 const favoriteRoutes = require('./routes/favorites');
 const adminRoutes = require('./routes/admin');
 const subscriptionRoutes = require('./routes/subscription');
@@ -139,10 +140,52 @@ const generalApiLimiter = rateLimit({
 });
 app.use('/api', generalApiLimiter);
 
+// Nexi (AI assistant) proxy. Each chat costs real CPU/GPU time, so it gets its
+// own much tighter limits (per minute and per hour) on top of the general one.
+const assistantMinuteLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'You are asking quickly. Please wait a moment and try again.' }
+});
+const assistantHourLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'You have reached the hourly limit for the assistant. Please try again later.' }
+});
+app.use('/api/assistant/chat', assistantMinuteLimiter, assistantHourLimiter);
+app.use('/api/assistant', assistantRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/products', productRoutes);
+// Placing an order or claiming a payment is the expensive, abusable write on
+// this API (stock rows locked, notifications sent, an admin queue filled), so
+// it gets its own tighter ceiling on top of the general one.
+const orderWriteLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'You are placing orders too quickly. Please wait a few minutes and try again.' }
+});
+app.use(['/api/orders/public', '/api/orders/batch'], orderWriteLimiter);
+const subscriptionWriteLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'Too many payment submissions. Please try again later.' }
+});
+app.use('/api/subscription/payments', subscriptionWriteLimiter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/messages', messageRoutes);
@@ -154,13 +197,15 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/presence', presenceRoutes);
 
-// Public storefront surface: /<store-slug> (the store's own address), the old
-// /s/<slug> redirect, /sitemap.xml and /robots.txt. Crawlers and shoppers hit
-// these unauthenticated, so they get the same per-IP ceiling as the public
-// catalog. In production a reverse proxy must send every path that is not a
-// real static file to this server (see README "Store links").
-app.use(['/s', '/sitemap.xml', '/robots.txt'], publicCatalogLimiter);
-app.use((req, res, next) => (req.method === 'GET' && /^\/[A-Za-z0-9-]+\/?$/.test(req.path))
+// Public storefront surface: /<store-slug> (the store's own address),
+// /<store-slug>/<product> (a product's own address), the old /s/<slug> redirect,
+// /p/<productId> (a product by id alone), /sitemap.xml and /robots.txt. Crawlers
+// and shoppers hit these unauthenticated and they read the database, so they get
+// the same per-IP ceiling as the public catalog. In production a reverse proxy
+// must send every path that is not a real static file to this server (see
+// README "Store links").
+app.use(['/s', '/p', '/sitemap.xml', '/robots.txt'], publicCatalogLimiter);
+app.use((req, res, next) => (req.method === 'GET' && /^\/[A-Za-z0-9-]+(?:\/[A-Za-z0-9-]+)?\/?$/.test(req.path))
     ? publicCatalogLimiter(req, res, next)
     : next());
 app.use(seoRoutes);

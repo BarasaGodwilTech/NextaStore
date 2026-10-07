@@ -77,7 +77,7 @@ class MessagesManager {
             // so opening the thread below pushes a real, dedicated history
             // entry — otherwise a deep link would skip the "close thread"
             // step that opening one from the list gets for free.
-            if (history.replaceState) history.replaceState(null, '', 'messages.html');
+            if (history.replaceState) history.replaceState(null, '', '/messages');
             await Promise.all([listLoad, this.openConversation(this.activeConversationId)]);
             if (this.focusComposerOnOpen) {
                 this.focusComposerOnOpen = false;
@@ -98,7 +98,7 @@ class MessagesManager {
             // gesture back from a brand-new, not-yet-sent conversation
             // skipped past the list entirely and left the messages page —
             // the same family of bug as the conversation deep-link case.
-            if (history.replaceState) history.replaceState(null, '', 'messages.html');
+            if (history.replaceState) history.replaceState(null, '', '/messages');
             await this.prepareNewConversation();
         }
         this.pollTimer = setInterval(() => this.poll(), 8000);
@@ -182,7 +182,7 @@ class MessagesManager {
         if (this._navBusy) return;
         this._navBusy = true;
         this.closeThreadView();
-        if (history.replaceState) history.replaceState(null, '', 'messages.html');
+        if (history.replaceState) history.replaceState(null, '', '/messages');
         setTimeout(() => { this._navBusy = false; }, 350);
     }
 
@@ -931,7 +931,7 @@ class MessagesManager {
             const image = meta.image ? app.resolveImageUrl(meta.image) : '';
             const caption = m.body ? `<div class="attachment-caption">${app.escapeHtml(m.body)}</div>` : '';
             const outOfStock = meta.stock === 0;
-            return `<a class="message-product-card" href="product-detail.html?id=${encodeURIComponent(meta.productId || '')}" target="_blank" rel="noopener">
+            return `<a class="message-product-card" href="${app.productLink({ id: meta.productId, name: meta.name }, meta.storeSlug)}" target="_blank" rel="noopener">
                 <span class="message-product-thumb" ${image ? `style="background-image:url('${app.cssUrl(image)}')"` : ''}>${image ? '' : '<i class="fas fa-box"></i>'}</span>
                 <span class="message-product-info">
                     <span class="message-product-eyebrow"><i class="fas fa-box-open" aria-hidden="true"></i>Shared product</span>
@@ -1033,7 +1033,7 @@ class MessagesManager {
             this.updateComposerState();
             this.updateAttachMenu();
             this.setAttachEnabled(true);
-            if (!silent) this.pushOrReplaceThreadHistory(`messages.html?store=${encodeURIComponent(this.newMessageContext.storeId)}${productId ? `&product=${encodeURIComponent(productId)}` : ''}${this.newMessageContext.orderId ? `&order=${encodeURIComponent(this.newMessageContext.orderId)}` : ''}`);
+            if (!silent) this.pushOrReplaceThreadHistory(`/messages?store=${encodeURIComponent(this.newMessageContext.storeId)}${productId ? `&product=${encodeURIComponent(productId)}` : ''}${this.newMessageContext.orderId ? `&order=${encodeURIComponent(this.newMessageContext.orderId)}` : ''}`);
             this.openThreadMobile();
             this.focusComposerIfDesktop();
         } catch (e) { if (!silent) app.showAlert(e.message, 'error'); }
@@ -1202,7 +1202,7 @@ class MessagesManager {
         if (!this._conversationsLoaded) return;   // never paint "No conversations yet" before the first list response
         this.updateTotalBadge();
         if (!this.conversations.length) {
-            body.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-comments"></i></div><h3>No conversations yet</h3><p>${app.user?.role === 'seller' ? 'When shoppers message your store, their conversations will appear here.' : 'Open a product or store and choose “Message seller” to start a conversation.'}</p><a href="marketplace.html" class="btn btn-primary btn-sm">Browse marketplace</a></div>`;
+            body.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-comments"></i></div><h3>No conversations yet</h3><p>${app.user?.role === 'seller' ? 'When shoppers message your store, their conversations will appear here.' : 'Open a product or store and choose “Message seller” to start a conversation.'}</p><a href="/marketplace" class="btn btn-primary btn-sm">Browse marketplace</a></div>`;
             return;
         }
 
@@ -1320,7 +1320,7 @@ class MessagesManager {
                     }
                 }
             }
-            if (!silent) this.pushOrReplaceThreadHistory(`messages.html?conversation=${encodeURIComponent(id)}`);
+            if (!silent) this.pushOrReplaceThreadHistory(`/messages?conversation=${encodeURIComponent(id)}`);
             this.openThreadMobile();
             // Opening a thread reads it — clear the row's badge now rather
             // than after the round trip. The real GET below is what makes it
@@ -1354,7 +1354,7 @@ class MessagesManager {
             if (conv && conv.unreadCount) { conv.unreadCount = 0; this.renderConversationList(); }
             // The server marked this thread's bell notification read when it
             // served the GET — mirror that in the open bell panel too.
-            if (app.notifications) app.notifications.settleByLink(`messages.html?conversation=${id}`);
+            if (app.notifications) app.notifications.settleByLink(`/messages?conversation=${id}`);
             // Fire and forget: the badges are a nicety, never a gate.
             app.refreshUnreadBadges();
         } catch (error) {
@@ -1527,7 +1527,7 @@ class MessagesManager {
                 if (added.length) {
                     const conv = this.conversations.find(c => c.id === id);
                     if (conv) conv.unreadCount = 0;
-                    if (app.notifications) app.notifications.settleByLink(`messages.html?conversation=${id}`);
+                    if (app.notifications) app.notifications.settleByLink(`/messages?conversation=${id}`);
                     await app.refreshUnreadBadges();
                 }
             }

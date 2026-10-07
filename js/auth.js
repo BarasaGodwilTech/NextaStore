@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Where may a login send the person afterwards?
 // ---------------------------------------------------------------------------
-// login.html?redirect=<page> is set by main.js when something needed a login.
+// /login?redirect=<page> is set by main.js when something needed a login.
 // It is user-controllable input (anyone can craft a link to it), so it is never
 // navigated to as-is. It must be a plain page name in THIS site (no scheme, no
 // host, no path, so no `https://evil.example`, `//evil.example` or
@@ -12,13 +12,16 @@
 //     sign in on a shared device was dropped onto the previous person's page.
 // Keep the two role lists in step with the data-seller-required /
 // data-admin-required attributes in the HTML (npm run qa:static checks this).
-const AUTH_PAGES = ['login.html', 'signup.html', 'forgot-password.html', 'verify-email.html'];
-const SELLER_ONLY_PAGES = ['dashboard.html', 'product-form.html', 'onboarding.html', 'subscription.html'];
-const ADMIN_ONLY_PAGES = ['admin.html'];
-// Two shapes: a page in the site root (`cart.html?x=1`) or a store's own
-// address, which is a bare slug (`amina-crafts`, opened as /amina-crafts).
-// Neither can carry a scheme, host or path separator.
-const REDIRECT_PATTERN = /^[A-Za-z0-9_-]+(?:\.html)?(?:[?#][^\s\\]*)?$/;
+const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/verify-email'];
+const SELLER_ONLY_PAGES = ['/dashboard', '/product-form', '/onboarding', '/subscription'];
+const ADMIN_ONLY_PAGES = ['/admin'];
+// Three shapes: a page in the site root (`cart.html?x=1`), a store's own
+// address, which is a bare slug (`amina-crafts`, opened as /amina-crafts), or a
+// product's own address, a store slug and a product part
+// (`amina-crafts/blue-sofa-x7k2m9ab`). The product part is letters, digits and
+// hyphens only, so none of them can carry a scheme, a host (`//evil.example`,
+// `https://...`), a dot or a backslash.
+const REDIRECT_PATTERN = /^[A-Za-z0-9_-]+(?:\.html)?(?:\/[A-Za-z0-9-]+)?(?:[?#][^\s\\]*)?$/;
 
 // Why the person was sent to the login page (main.js sets ?reason=).
 const SESSION_END_MESSAGES = {
@@ -28,18 +31,21 @@ const SESSION_END_MESSAGES = {
 };
 
 function homeFor(user) {
-    if (user?.role === 'admin') return 'admin.html';
-    return user?.role === 'seller' ? 'dashboard.html' : 'marketplace.html';
+    if (user?.role === 'admin') return '/admin';
+    return user?.role === 'seller' ? '/dashboard' : '/marketplace';
 }
 
 /** Returns the page to open after login, or null if `raw` must be ignored. */
 function safeRedirect(raw, user, reason) {
     if (!raw || !user || !REDIRECT_PATTERN.test(raw)) return null;
-    const name = raw.split(/[?#]/)[0].toLowerCase();
-    const isPage = name.endsWith('.html');
-    // A bare name is treated as the page of that name for the role checks
-    // below, so `redirect=admin` is held to the same rules as `admin.html`.
-    const page = isPage ? name : `${name}.html`;
+    // Pages have clean addresses (/dashboard, not /dashboard.html). An old link
+    // that still says `.html` is accepted and held to exactly the same rules as
+    // the clean one, so `redirect=admin`, `redirect=admin.html` and
+    // `redirect=/admin` can never differ in what they allow.
+    // Only the FIRST part names a page: `admin/anything` is held to the admin
+    // rule, it never slips past it by having a second part.
+    const name = raw.split(/[?#]/)[0].split('/')[0].toLowerCase().replace(/\.html$/, '');
+    const page = `/${name}`;
     if (AUTH_PAGES.includes(page)) return null;
     if (ADMIN_ONLY_PAGES.includes(page) && user.role !== 'admin') return null;
     if (SELLER_ONLY_PAGES.includes(page) && user.role !== 'seller') return null;
@@ -47,8 +53,11 @@ function safeRedirect(raw, user, reason) {
         const ended = SessionData.readEnded();
         if (!ended || !ended.userId || ended.userId !== user.id) return null;
     }
-    // A store address is opened from the site root, whichever page login is on.
-    return isPage ? raw : `/${raw}`;
+    // Everything is opened from the site root, whichever page login is on: a
+    // page (/cart?x=1) or a store's own address (/amina-crafts). A legacy
+    // `.html` ending is dropped, and the home page is just `/`.
+    const clean = raw.replace(/^([A-Za-z0-9_-]+)\.html(?=$|[?#\/])/i, '$1');
+    return /^index(?=$|[?#])/i.test(clean) ? clean.replace(/^index/i, '/') : `/${clean}`;
 }
 
 class AuthManager {
@@ -224,10 +233,10 @@ class AuthManager {
                 // .replace() for the same reason as handleLogin() above —
                 // signup.html shouldn't be a "back" destination once the
                 // account exists and the person has moved on.
-                setTimeout(() => { window.location.replace('onboarding.html'); }, 800);
+                setTimeout(() => { window.location.replace('/onboarding'); }, 800);
             } else {
                 app.showAlert('Account created! Start exploring the marketplace.', 'success');
-                setTimeout(() => { window.location.replace('marketplace.html'); }, 800);
+                setTimeout(() => { window.location.replace('/marketplace'); }, 800);
             }
         } catch (error) {
             app.showAlert(error.message, 'error');

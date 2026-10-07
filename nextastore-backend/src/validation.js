@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const { apiError } = require('./utils');
+const { FULFILLMENT_METHODS, LISTING_TYPES, SUBSCRIPTION_PERIOD_OPTIONS } = require('./platformRules');
 
 // z.coerce.boolean() runs every non-empty value through Boolean(), so the
 // STRING "false" (exactly what a JSON body sends when a client stringifies
@@ -33,10 +34,15 @@ function validateBody(schema) {
     };
 }
 
+// A data-URL image field (8 MB of image is ~11 MB of base64) - see utils.js.
+const IMAGE_FIELD_MAX = 12_000_000;
+
 const signupSchema = z.object({
-    name: z.string().trim().min(1, 'is required'),
-    email: z.string().trim().email('must be a valid email'),
-    password: z.string().min(8, 'must be at least 8 characters'),
+    name: z.string().trim().min(1, 'is required').max(80, 'must be 80 characters or fewer'),
+    email: z.string().trim().max(254).email('must be a valid email'),
+    // Upper bound: bcrypt only reads the first 72 bytes anyway, and an unbounded
+    // string is just a way to make the server carry a huge body around.
+    password: z.string().min(8, 'must be at least 8 characters').max(128, 'must be 128 characters or fewer'),
     // What kind of account this signup creates. Defaults to "buyer" so any
     // caller that doesn't send it (old clients, API scripts) gets the safer,
     // no-store-created behavior rather than silently becoming a seller.
@@ -44,8 +50,8 @@ const signupSchema = z.object({
 });
 
 const loginSchema = z.object({
-    email: z.string().trim().min(1, 'is required'),
-    password: z.string().min(1, 'is required'),
+    email: z.string().trim().min(1, 'is required').max(254),
+    password: z.string().min(1, 'is required').max(128),
     // Optional so older clients (and the mock API) keep working unchanged;
     // absent means "no", i.e. the shorter session. See looseBoolean() above
     // for why this isn't z.coerce.boolean().
@@ -53,22 +59,22 @@ const loginSchema = z.object({
 });
 
 const forgotPasswordSchema = z.object({
-    email: z.string().trim().email('must be a valid email')
+    email: z.string().trim().max(254).email('must be a valid email')
 });
 
 const updateUserSchema = z.object({
-    name: z.string().trim().min(1).optional(),
-    avatar: z.string().nullable().optional(),
-    cover: z.string().nullable().optional(),
-    currentPassword: z.string().optional(),
-    newPassword: z.string().min(8, 'must be at least 8 characters').optional()
+    name: z.string().trim().min(1).max(80).optional(),
+    avatar: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
+    cover: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
+    currentPassword: z.string().max(128).optional(),
+    newPassword: z.string().min(8, 'must be at least 8 characters').max(128).optional()
 });
 
 const updateStoreSchema = z.object({
-    name: z.string().trim().min(1).optional(),
-    description: z.string().optional(),
-    contactEmail: z.string().email().or(z.literal('')).optional(),
-    phoneNumber: z.string().optional(),
+    name: z.string().trim().min(1).max(80).optional(),
+    description: z.string().max(2000).optional(),
+    contactEmail: z.string().max(254).email().or(z.literal('')).optional(),
+    phoneNumber: z.string().max(30).optional(),
     // Plain z.boolean() (no default/coercion), matching isPublished below:
     // omitted means "leave it as-is" (Prisma skips undefined fields on
     // update), not "set it to false". A default() here would silently
@@ -76,21 +82,28 @@ const updateStoreSchema = z.object({
     // happen to touch this checkbox — see routes/store.js's generic
     // `data: { ...req.body }` update.
     phonePublic: z.boolean().optional(),
-    address: z.string().optional(),
-    theme: z.string().optional(),
-    layout: z.string().optional(),
-    logo: z.string().nullable().optional(),
-    banner: z.string().nullable().optional(),
+    address: z.string().max(300).optional(),
+    theme: z.string().max(40).optional(),
+    layout: z.string().max(40).optional(),
+    logo: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
+    banner: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
     // Must be a real #rrggbb hex value — this gets written straight into an
     // inline `style` attribute on the frontend, so anything looser than a
     // hex pattern here is a CSS-injection opening (e.g. `red; } </style>...`).
     bannerColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'must be a hex color like #00B074').optional(),
-    district: z.string().trim().optional(),
-    detailedDirections: z.string().optional(),
+    district: z.string().trim().max(80).optional(),
+    detailedDirections: z.string().max(1000).optional(),
     mapCoordinates: z.string().regex(/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/, 'must be "lat,lng"').or(z.literal('')).optional(),
-    payments: z.object({}).passthrough().optional(),
-    seo: z.object({}).passthrough().optional(),
-    slug: z.string().trim().min(1).optional(),
+    // A map of payment-method code -> accepted?, nothing else. It used to be
+    // any JSON object of any size, stored as-is.
+    payments: z.record(z.string().regex(/^[a-z0-9_-]{1,40}$/i), z.boolean()).refine(o => Object.keys(o).length <= 30, 'too many payment methods').optional(),
+    // Only the three keys the storefront actually reads (see seo.js).
+    seo: z.object({
+        title: z.string().max(120).optional(),
+        description: z.string().max(320).optional(),
+        indexable: z.boolean().optional()
+    }).strict().optional(),
+    slug: z.string().trim().min(1).max(60).optional(),
     // Accepted here only so onboarding.js's launch() can send it through the
     // one shared PUT /store save path. Dashboard Settings
     // never sends this field — see onboarding.js.
@@ -98,27 +111,34 @@ const updateStoreSchema = z.object({
 });
 
 const productSchema = z.object({
-    name: z.string().trim().min(1, 'is required'),
-    description: z.string().optional().default(''),
-    price: z.coerce.number().positive('must be greater than 0'),
-    originalPrice: z.coerce.number().positive().nullable().optional(),
-    category: z.string().optional().default('other'),
-    images: z.array(z.string()).optional().default([]),
+    name: z.string().trim().min(1, 'is required').max(80),
+    description: z.string().max(1000).optional().default(''),
+    price: z.coerce.number().positive('must be greater than 0').max(1_000_000_000),
+    originalPrice: z.coerce.number().positive().max(1_000_000_000).nullable().optional(),
+    category: z.string().max(40).optional().default('other'),
+    images: z.array(z.string().max(IMAGE_FIELD_MAX)).max(10).optional().default([]),
     // Parallel to `images` (same index), each entry the small client-generated
     // variant of the image at that index — see product-form.js. Optional and
     // independently-lengthed on purpose: the backend pads/truncates it to
     // match `images` rather than rejecting a mismatch, since older frontend
     // code (or a future non-browser client) may simply never send it.
-    thumbnails: z.array(z.string()).optional().default([]),
-    icon: z.string().optional().default('fa-box'),
-    stock: z.coerce.number().int().min(0).optional().default(0)
+    thumbnails: z.array(z.string().max(IMAGE_FIELD_MAX)).max(10).optional().default([]),
+    // Becomes part of a CSS class name on the frontend: FontAwesome names only.
+    icon: z.string().regex(/^fa-[a-z0-9-]{1,40}$/).optional().default('fa-box'),
+    stock: z.coerce.number().int().min(0).max(1_000_000).optional().default(0),
+    // physical = cart + stock; service / digital = shoppers enquire via Messages.
+    listingType: z.enum(LISTING_TYPES).optional().default('physical'),
+    serviceArea: z.string().trim().max(120).optional().default(''),
+    serviceDuration: z.string().trim().max(60).optional().default(''),
+    // Set by the form only after the seller confirmed "add it anyway" on the duplicate prompt. Never stored.
+    allowDuplicate: z.boolean().optional()
 });
 
 const productUpdateSchema = productSchema.partial();
 
 const orderItemSchema = z.object({
-    productId: z.string().min(1),
-    quantity: z.coerce.number().int().positive()
+    productId: z.string().min(1).max(64),
+    quantity: z.coerce.number().int().positive().max(1000)
 });
 
 function rejectDuplicateItems(items, ctx) {
@@ -129,12 +149,12 @@ function rejectDuplicateItems(items, ctx) {
 }
 
 const publicOrderSchema = z.object({
-    customerName: z.string().trim().min(1, 'is required'),
-    customerPhone: z.string().trim().min(1, 'is required'),
-    deliveryAddress: z.string().trim().optional().default(''),
-    fulfillmentMethod: z.enum(['delivery','pickup']).default('delivery'),
+    customerName: z.string().trim().min(1, 'is required').max(80),
+    customerPhone: z.string().trim().min(1, 'is required').max(30),
+    deliveryAddress: z.string().trim().max(300).optional().default(''),
+    fulfillmentMethod: z.enum(FULFILLMENT_METHODS).default('delivery'),
     paymentMethod: z.string().trim().max(50).optional().nullable(),
-    items: z.array(orderItemSchema).min(1, 'Your cart is empty.')
+    items: z.array(orderItemSchema).min(1, 'Your cart is empty.').max(50, 'Too many different items in one order.')
 }).superRefine((v, ctx) => {
     rejectDuplicateItems(v.items, ctx);
     if (v.fulfillmentMethod === 'delivery' && !v.deliveryAddress) {
@@ -143,16 +163,16 @@ const publicOrderSchema = z.object({
 });
 
 const batchOrderSchema = z.object({
-    customerName: z.string().trim().min(1, 'is required'),
-    customerPhone: z.string().trim().min(1, 'is required'),
-    deliveryAddress: z.string().trim().optional().default(''),
+    customerName: z.string().trim().min(1, 'is required').max(80),
+    customerPhone: z.string().trim().min(1, 'is required').max(30),
+    deliveryAddress: z.string().trim().max(300).optional().default(''),
     acknowledgment: z.literal(true),
     stores: z.array(z.object({
-        storeId: z.string().min(1),
-        fulfillmentMethod: z.enum(['delivery','pickup']).default('delivery'),
+        storeId: z.string().min(1).max(64),
+        fulfillmentMethod: z.enum(FULFILLMENT_METHODS).default('delivery'),
         paymentMethod: z.string().trim().max(50).optional().nullable(),
-        items: z.array(orderItemSchema).min(1)
-    })).min(1)
+        items: z.array(orderItemSchema).min(1).max(50)
+    })).min(1).max(20)
 }).superRefine((v, ctx) => {
     const storeIds = v.stores.map(s => s.storeId);
     if (new Set(storeIds).size !== storeIds.length) {
@@ -266,7 +286,7 @@ const subscriptionPaymentSchema = z.object({
     amount: z.coerce.number().positive('must be a positive amount'),
     method: z.enum(['mtnMomo', 'airtelMoney'], { errorMap: () => ({ message: 'must be mtnMomo or airtelMoney' }) }),
     reference: z.string().trim().min(3, 'enter the transaction reference/ID'),
-    periodMonths: z.coerce.number().int().refine(v => [1, 3, 6, 12, 24].includes(v), 'choose 1, 3, 6, 12 or 24 months').optional().default(1)
+    periodMonths: z.coerce.number().int().refine(v => SUBSCRIPTION_PERIOD_OPTIONS.includes(v), `choose ${SUBSCRIPTION_PERIOD_OPTIONS.slice(0, -1).join(', ')} or ${SUBSCRIPTION_PERIOD_OPTIONS[SUBSCRIPTION_PERIOD_OPTIONS.length - 1]} months`).optional().default(1)
 });
 
 // Admin-editable mobile money merchant codes shown to sellers on

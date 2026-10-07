@@ -740,7 +740,7 @@ class OnboardingWizard {
             // Nothing to save on the review step. With no products yet, the
             // primary action is to add one; otherwise it launches.
             if (this.productCount === 0) {
-                window.location.href = 'product-form.html?from=onboarding';
+                window.location.href = '/product-form?from=onboarding';
                 return;
             }
             await this.launch();
@@ -805,7 +805,7 @@ class OnboardingWizard {
             // if it fails.
             await app.apiRequest('/store', { method: 'PUT', body: JSON.stringify({ ...this.fieldsForStep(3), isPublished: true }) });
             sessionStorage.setItem('nextastore_just_launched', '1');
-            window.location.href = 'dashboard.html';
+            window.location.href = '/dashboard';
         } catch (error) {
             app.showAlert(error.message || 'Could not launch your store — please try again.', 'error');
             this.setSaving(false);
@@ -943,7 +943,7 @@ class OnboardingWizard {
             <div class="ob-fp-body">
                 <h4>Add your first product</h4>
                 <p>An empty shelf gives shoppers nothing to buy, so your store needs at least one product before it opens. Add the rest from your dashboard whenever you like.</p>
-                <a class="btn btn-primary btn-sm" href="product-form.html?from=onboarding"><i class="fas fa-plus" aria-hidden="true"></i> Add your first product</a>
+                <a class="btn btn-primary btn-sm" href="/product-form?from=onboarding"><i class="fas fa-plus" aria-hidden="true"></i> Add your first product</a>
             </div>`;
     }
 

@@ -1,0 +1,126 @@
+/* NextaStore AI Assistant widget — colors match css/main.css's brand variables
+   so this drops in visually consistent even before anyone wires it up
+   properly. Everything is namespaced under #nexta-assistant-root so it
+   can't collide with the host page's styles. */
+#nexta-assistant-root {
+    --na-primary: #01B075;
+    --na-primary-dark: #008558;
+    --na-ink: #0B3B2B;
+    --na-paper: #F7FAF8;
+    --na-gray-200: #D9E3DF;
+    --na-gray-600: #52615B;
+    --na-font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--na-font);
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 99999;
+}
+
+#nexta-assistant-root * { box-sizing: border-box; }
+
+.na-bubble {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--na-primary), var(--na-primary-dark));
+    color: #fff;
+    border: none;
+    box-shadow: 0 6px 18px rgba(1, 176, 117, 0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    transition: transform .15s ease;
+}
+.na-bubble:hover { transform: scale(1.06); }
+
+.na-panel {
+    position: absolute;
+    right: 0;
+    bottom: 72px;
+    width: min(360px, 92vw);
+    height: min(520px, 70vh);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(11, 59, 43, 0.22);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--na-gray-200);
+}
+.na-panel.na-open { display: flex; }
+
+.na-header {
+    background: var(--na-ink);
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.na-header-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.na-header-title .na-dot { width: 8px; height: 8px; border-radius: 50%; background: #2EDDA2; display: inline-block; }
+.na-header-controls { display: flex; align-items: center; gap: 8px; }
+.na-lang-select {
+    font-family: var(--na-font);
+    font-size: 12px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 3px 6px;
+}
+.na-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; line-height: 1; }
+
+.na-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: var(--na-paper);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.na-msg { max-width: 85%; padding: 9px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; }
+.na-msg-assistant { align-self: flex-start; background: #fff; border: 1px solid var(--na-gray-200); color: var(--na-ink); border-bottom-left-radius: 4px; }
+.na-msg-user { align-self: flex-end; background: var(--na-primary); color: #fff; border-bottom-right-radius: 4px; }
+.na-msg-meta { font-size: 10.5px; color: var(--na-gray-600); margin-top: 4px; }
+
+.na-typing { align-self: flex-start; font-size: 12px; color: var(--na-gray-600); padding: 0 4px; }
+
+.na-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid var(--na-gray-200);
+    background: #fff;
+}
+.na-input {
+    flex: 1;
+    border: 1px solid var(--na-gray-200);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-family: var(--na-font);
+    font-size: 13.5px;
+    resize: none;
+    max-height: 80px;
+}
+.na-input:focus { outline: none; border-color: var(--na-primary); }
+.na-send {
+    background: var(--na-primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    width: 40px;
+    cursor: pointer;
+    font-size: 15px;
+}
+.na-send:disabled { opacity: .5; cursor: default; }
+
+@media (max-width: 480px) {
+    #nexta-assistant-root { right: 12px; bottom: 12px; }
+    .na-panel { width: 94vw; height: 75vh; bottom: 68px; }
+}

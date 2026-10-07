@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -19,6 +20,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
     <link rel="stylesheet" href="css/mobile.css">
+<link rel="stylesheet" href="css/categories.css">
 </head>
 <body>
     <div id="nxLoader" class="nx-loader" data-nx-theme="general" data-nx-wait="app page" data-nx-timeout="7000" data-nx-phrases="Loading this product|Getting the details|Almost there" aria-label="Loading NextaStore">
@@ -55,7 +57,7 @@
     <header class="product-detail-header">
         <nav class="product-detail-nav">
             <div class="nav-left">
-                <a href="#" class="back-link" id="backLink"><i class="fas fa-arrow-left"></i> <span id="backText">Back</span></a>
+                <a href="/marketplace" class="back-link" id="backLink" data-back-link data-back-fallback="/marketplace" data-back-fallback-label="Back to marketplace"><i class="fas fa-arrow-left" aria-hidden="true"></i> <span id="backText" data-back-label>Back</span></a>
             </div>
             <div class="nav-right">
                 <div class="account-nav-slot" data-account-nav></div>
@@ -71,7 +73,7 @@
     <div class="page-breadcrumb">
         <div class="breadcrumb-container">
             <div class="breadcrumb">
-                <a href="marketplace.html">Marketplace</a>
+                <a href="/marketplace">Marketplace</a>
                 <span class="separator">/</span>
                 <span class="breadcrumb-current">Product</span>
             </div>
@@ -96,10 +98,16 @@
 
                 <!-- Actual Content -->
                 <div class="loading-content hidden" id="galleryContent">
-                    <div class="main-image" id="mainImage">
-                        <div class="image-placeholder">
-                            <i class="fas fa-box"></i>
+                    <div class="main-image-wrap">
+                        <div class="main-image" id="mainImage">
+                            <div class="image-placeholder">
+                                <i class="fas fa-box"></i>
+                            </div>
                         </div>
+                        <button type="button" class="gallery-nav gallery-prev" id="galleryPrev" aria-label="Previous image" hidden><i class="fas fa-chevron-left"></i></button>
+                        <button type="button" class="gallery-nav gallery-next" id="galleryNext" aria-label="Next image" hidden><i class="fas fa-chevron-right"></i></button>
+                        <span class="gallery-counter" id="galleryCounter" aria-hidden="true" hidden></span>
+                        <span class="gallery-zoom-hint" id="galleryZoomHint" aria-hidden="true" hidden><i class="fas fa-expand"></i> Enlarge</span>
                     </div>
                     <div class="thumbnail-gallery" id="thumbnailGallery">
                         <!-- Thumbnails will be loaded here -->
@@ -132,7 +140,8 @@
 
                     <div class="product-description">
                         <h3>Description</h3>
-                        <p id="productDescription"></p>
+                        <p id="productDescription" class="is-clamped"></p>
+                        <button type="button" class="read-more-btn" id="readMoreBtn" hidden>Read more</button>
                     </div>
 
                     <div class="product-meta">
@@ -140,13 +149,13 @@
                             <i class="fas fa-tag"></i>
                             <span>Category: <strong id="productCategory"></strong></span>
                         </div>
-                        <div class="meta-item">
+                        <div class="meta-item" id="stockMeta">
                             <i class="fas fa-boxes-stacked"></i>
-                            <span>Stock: <strong id="productStock"></strong> available</span>
+                            <span id="productStockText"></span>
                         </div>
                         <div class="meta-item">
                             <i class="fas fa-truck"></i>
-                            <span>Shipping: <strong>Available</strong></span>
+                            <span>Fulfilment: <strong>Delivery or pickup</strong>, agreed with the seller</span>
                         </div>
                     </div>
                 </div>
@@ -158,6 +167,7 @@
                         <input type="number" class="qty-input" id="quantityInput" value="1" min="1" max="99">
                         <button class="qty-btn" id="increaseQty" aria-label="Increase quantity">+</button>
                     </div>
+                    <small class="qty-hint" id="qtyHint" aria-live="polite"></small>
                 </div>
 
                 <div class="action-buttons">
@@ -207,7 +217,7 @@
         <div class="product-details-tabs">
             <div class="tabs-header">
                 <button class="tab-btn active" data-tab="description">Description</button>
-                <button class="tab-btn" data-tab="shipping">Shipping & Returns</button>
+                <button class="tab-btn" data-tab="shipping">Delivery &amp; Returns</button>
             </div>
 
             <div class="tab-content active" id="descriptionTab">
@@ -221,44 +231,43 @@
 
             <div class="tab-content" id="shippingTab">
                 <div class="tab-inner">
-                    <h3>Shipping Information</h3>
+                    <h3>Delivery &amp; pickup</h3>
                     <div class="shipping-info">
                         <div class="shipping-item">
                             <i class="fas fa-truck"></i>
                             <div>
-                                <h4>Standard Shipping</h4>
-                                <p>Delivery within 3-5 business days</p>
-                                <p class="shipping-price">UGX 5,000</p>
+                                <h4>Delivery to your address</h4>
+                                <p>Choose delivery at checkout. The seller confirms the delivery fee and timing with you before you pay &mdash; NextaStore does not set or collect them.</p>
                             </div>
                         </div>
                         <div class="shipping-item">
-                            <i class="fas fa-bolt"></i>
+                            <i class="fas fa-store"></i>
                             <div>
-                                <h4>Express Shipping</h4>
-                                <p>Delivery within 1-2 business days</p>
-                                <p class="shipping-price">UGX 15,000</p>
+                                <h4>Pick up from the seller</h4>
+                                <p id="pickupInfo">Choose pickup at checkout to collect from the seller's location. No delivery address needed.</p>
                             </div>
                         </div>
                     </div>
 
-                    <h3>Return Policy</h3>
+                    <h3>Returns &amp; refunds</h3>
                     <div class="return-policy">
-                        <p>Returns accepted within 7 days of delivery. Product must be in original condition and packaging.</p>
+                        <p>NextaStore connects buyers and independent sellers and does not process payments or hold funds, so returns and refunds are agreed directly with the seller. Before you buy:</p>
                         <ul>
-                            <li>Free returns for defective products</li>
-                            <li>Customer pays return shipping for change of mind</li>
-                            <li>Refunds processed within 5-7 business days</li>
+                            <li>Message the seller and ask about their return terms.</li>
+                            <li>Check that the item matches the listing before you complete payment.</li>
+                            <li>Keep the conversation inside NextaStore messaging so there is a record.</li>
                         </ul>
+                        <p><a href="/safety">Read our Trust &amp; Safety guidelines</a></p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Related Products -->
-        <div class="related-products">
+        <div class="related-products" id="relatedSection">
             <div class="section-header">
-                <h2>Related Products</h2>
-                <a href="#" class="btn-link">View All</a>
+                <h2 id="relatedTitle">More from this store</h2>
+                <a href="/marketplace" class="btn-link" id="relatedViewAll">View all</a>
             </div>
             <!-- Loading State -->
             <div class="loading-state active" id="relatedLoadingState">
@@ -335,6 +344,24 @@
         </div>
     </div>
 
+    <!-- Image viewer -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Product image viewer" hidden>
+        <div class="lightbox-top">
+            <span class="lightbox-count" id="lightboxCount" aria-live="polite"></span>
+            <div class="lightbox-tools">
+                <button type="button" class="lightbox-btn" id="lightboxZoom" aria-label="Zoom in"><i class="fas fa-magnifying-glass-plus"></i></button>
+                <button type="button" class="lightbox-btn lightbox-close" id="lightboxClose" aria-label="Close image viewer"><i class="fas fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="lightbox-stage" id="lightboxStage">
+            <img id="lightboxImg" alt="" draggable="false">
+            <div class="lightbox-spinner" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
+        <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+        <div class="lightbox-thumbs" id="lightboxThumbs"></div>
+    </div>
+
     <!-- Share Modal -->
     <div class="modal" id="shareModal">
         <div class="modal-content">
@@ -353,7 +380,7 @@
                     </button>
                     <button class="share-btn" data-platform="twitter">
                         <i class="fab fa-twitter"></i>
-                        Twitter
+                        X (Twitter)
                     </button>
                     <button class="share-btn" data-platform="copy">
                         <i class="fas fa-link"></i>
@@ -368,22 +395,23 @@
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
         <div class="footer-links">
-            <a href="index.html#features">Features</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="signup.html" data-hide-when-authed>Create account</a>
-            <a href="marketplace.html">Shop</a>
+            <a href="/#features">Features</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-hide-when-authed>Create account</a>
+            <a href="/marketplace">Shop</a>
             <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
-        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a>
+        <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a>
     </footer>
 
     <script src="js/api.js"></script>
-    <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
+    <script src="js/back-nav.js"></script><script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/store-banner.js"></script>
+    <script src="js/category-sprite.js"></script><script src="js/categories.js"></script>
     <script src="js/product-detail.js"></script>
     <script>
       if ("serviceWorker" in navigator) {

@@ -17,6 +17,13 @@ function required(name) {
 if (isProd) {
     required('DATABASE_URL');
     required('JWT_SECRET');
+    // The secret signs every login token. A short or placeholder value can be
+    // guessed offline from one token, and anyone who guesses it can mint a
+    // token for any account (admins included).
+    const jwtSecret = process.env.JWT_SECRET;
+    if (jwtSecret.length < 32 || /change[-_ ]?me|dev-only|secret|password|example/i.test(jwtSecret)) {
+        throw new Error('JWT_SECRET must be a random string of at least 32 characters (try: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))").');
+    }
     required('FRONTEND_URL');
     required('PUBLIC_URL');
     required('SMTP_HOST');
@@ -184,6 +191,13 @@ module.exports = {
     // to build links that go into emails (password reset, email
     // verification), which need an absolute URL the recipient can click.
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    // Nexi, the AI assistant, runs as a separate service (see /ai-assistant).
+    // The browser only ever talks to this API; /api/assistant/* is proxied there.
+    assistantUrl: (process.env.ASSISTANT_URL || 'http://127.0.0.1:4100').replace(/\/$/, ''),
+    // Optional shared secret sent to the assistant service (its ASSISTANT_TOKEN). Needed when the
+    // assistant is NOT on the same machine; harmless when it is.
+    assistantToken: process.env.ASSISTANT_TOKEN || '',
+    assistantTimeoutMs: Number(process.env.ASSISTANT_TIMEOUT_MS) || 120000,
     // Folder that holds the static site (store-detail.html and friends). A store's
     // public address, nextastores.com/<slug>, is answered by this API with the real
     // store-detail.html page plus that store's own title/preview tags (see

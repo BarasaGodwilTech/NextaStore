@@ -1,0 +1,5 @@
+node_modules/
+.env
+src/rag/index.json
+*.log
+data/

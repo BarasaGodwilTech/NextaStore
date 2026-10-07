@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -22,6 +23,7 @@
     <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/categories.css">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body data-auth-required data-seller-required>
@@ -60,7 +62,7 @@
     <div class="dashboard-container" id="dashboardContainer">
         <aside class="sidebar" id="dashboardSidebar" aria-label="Dashboard navigation">
             <div class="sidebar-header">
-                <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
+                <a href="/" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
             </div>
 
             <nav class="sidebar-nav">
@@ -68,8 +70,8 @@
                 <a href="#" class="nav-item" data-section="products"><i class="fas fa-box"></i> Products</a>
                 <a href="#" class="nav-item" data-section="orders"><i class="fas fa-cart-shopping"></i> Orders</a>
                 <a href="#" class="nav-item" data-section="analytics"><i class="fas fa-chart-line"></i> Analytics</a>
-                <a href="messages.html" class="nav-item"><i class="fas fa-message"></i> Messages<span class="unread-badge hidden" data-unread-badge></span></a>
-                <a href="subscription.html" class="nav-item"><i class="fas fa-shield-heart"></i> Subscription<span class="unread-badge hidden" id="subNavBadge"></span></a>
+                <a href="/messages" class="nav-item"><i class="fas fa-message"></i> Messages<span class="unread-badge hidden" data-unread-badge></span></a>
+                <a href="/subscription" class="nav-item"><i class="fas fa-shield-heart"></i> Subscription<span class="unread-badge hidden" id="subNavBadge"></span></a>
                 <a href="#" class="nav-item" data-section="settings"><i class="fas fa-gear"></i> Settings</a>
             </nav>
 
@@ -142,7 +144,7 @@
                         <strong>Your store is still a draft.</strong>
                         <span>It isn't visible to customers yet. Finish onboarding to launch it.</span>
                     </div>
-                    <a href="onboarding.html" class="btn btn-primary btn-sm"><i class="fas fa-rocket"></i> Finish &amp; launch</a>
+                    <a href="/onboarding" class="btn btn-primary btn-sm"><i class="fas fa-rocket"></i> Finish &amp; launch</a>
                 </div>
 
                 <!-- Setup nudge — shown only while the store still looks like
@@ -157,7 +159,7 @@
                     </div>
                     <div style="display:flex; gap: var(--spacing-md); align-items:center;">
                         <button type="button" class="dismiss-nudge-btn" id="dismissSetupNudge">Dismiss</button>
-                        <a href="onboarding.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Continue setup</a>
+                        <a href="/onboarding" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Continue setup</a>
                     </div>
                 </div>
 
@@ -172,7 +174,7 @@
                         <p></p>
                     </div>
                     <div style="display:flex; gap: var(--spacing-md); align-items:center;">
-                        <a href="subscription.html" class="btn btn-primary"><i class="fas fa-shield-heart"></i> Manage subscription</a>
+                        <a href="/subscription" class="btn btn-primary"><i class="fas fa-shield-heart"></i> Manage subscription</a>
                     </div>
                 </div>
             </div>
@@ -205,16 +207,22 @@
                             <div class="store-info">
                                 <div class="store-name-row">
                                     <h1 class="store-name" id="storeDisplayName">My Store</h1>
-                                    <button class="btn btn-sm btn-outline" onclick="dashboardManager.navigateToSettings('store')"><i class="fas fa-pen"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline store-edit-btn" onclick="dashboardManager.navigateToSettings('store')" aria-label="Edit store details" title="Edit store details"><i class="fas fa-pen" aria-hidden="true"></i></button>
                                 </div>
-                                <p class="store-description" id="storeDescriptionDisplay">No description yet — add one so shoppers know what you sell.</p>
+                                <!-- Long descriptions are held to 3 lines; the toggle is shown by
+                                     syncDescriptionToggle() in dashboard.js only when text is cut off. -->
+                                <div class="store-description-wrap">
+                                    <p class="store-description" id="storeDescriptionDisplay">No description yet — add one so shoppers know what you sell.</p>
+                                    <button type="button" class="store-more-toggle" id="storeDescToggle" aria-expanded="false" aria-controls="storeDescriptionDisplay" hidden>Read more</button>
+                                </div>
                                 <p class="store-location" id="storeLocationDisplay">
-                                    <i class="fas fa-map-marker-alt"></i> <span id="locationText">Add your location</span>
-                                    <button class="btn-link" onclick="dashboardManager.openMapPickerFromOverview()"><i class="fas fa-edit"></i> Edit</button>
+                                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <span id="locationText">Add your location</span>
+                                    <button type="button" class="btn-link store-location-edit" onclick="dashboardManager.openMapPickerFromOverview()" aria-label="Edit store location"><i class="fas fa-edit" aria-hidden="true"></i> Edit</button>
                                 </p>
+                                <button type="button" class="store-more-toggle store-location-toggle" id="storeLocToggle" aria-expanded="false" aria-controls="locationText" hidden>Show full address</button>
                                 <div class="store-contact-info" id="storeContactDisplay">
-                                    <span class="contact-item"><i class="fas fa-envelope"></i> <span id="storeContactEmailDisplay">Not set</span></span>
-                                    <span class="contact-item"><i class="fas fa-phone"></i> <span id="contactPhone">Not set</span></span>
+                                    <span class="contact-item"><i class="fas fa-envelope" aria-hidden="true"></i> <span id="storeContactEmailDisplay">Not set</span></span>
+                                    <span class="contact-item"><i class="fas fa-phone" aria-hidden="true"></i> <span id="contactPhone">Not set</span></span>
                                 </div>
                                 <div class="store-payments" id="storePaymentsDisplay"></div>
                                 <div class="store-badges-display seller-badges-dashboard">
@@ -241,7 +249,7 @@
 
                     <!-- Quick Actions -->
                     <div class="quick-actions-bar">
-                        <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                        <a class="btn btn-primary" href="/product-form"><i class="fas fa-plus"></i> Add Product</a>
                         <button class="btn btn-outline" onclick="dashboardManager.switchToOrders()"><i class="fas fa-box"></i> View Orders</button>
                         <button class="btn btn-outline" onclick="dashboardManager.switchToAnalytics()"><i class="fas fa-chart-line"></i> Analytics</button>
                         <div class="spacer"></div>
@@ -254,7 +262,7 @@
                         <div class="section-header">
                             <h2>Your Products</h2>
                             <div class="filter-controls">
-                                <select class="form-select form-select-sm" id="quickCategoryFilter">
+                                <select class="form-select form-select-sm" id="quickCategoryFilter" data-nx-category>
                                     <option value="">All Categories</option>
                                     <option value="clothing">Clothing</option>
                                     <option value="accessories">Accessories</option>
@@ -336,12 +344,12 @@
                         <h2>Product Management</h2>
                         <div class="products-header-actions">
                             <button type="button" class="btn btn-outline" id="toggleSelectModeBtn"><i class="fas fa-square-check"></i> Select</button>
-                            <a class="btn btn-primary" href="product-form.html"><i class="fas fa-plus"></i> Add Product</a>
+                            <a class="btn btn-primary" href="/product-form"><i class="fas fa-plus"></i> Add Product</a>
                         </div>
                     </div>
                     <div class="products-toolbar">
                         <div class="search-bar"><i class="fas fa-magnifying-glass"></i><input type="text" id="productSearchFull" placeholder="Search products..."></div>
-                        <select class="form-select" id="categoryFilter">
+                        <select class="form-select" id="categoryFilter" data-nx-category>
                             <option value="">All Categories</option>
                             <option value="clothing">Clothing</option>
                             <option value="accessories">Accessories</option>
@@ -370,7 +378,7 @@
                             <span id="bulkSelectedCount">0 selected</span>
                         </label>
                         <div class="bulk-actions-bar-controls">
-                            <select class="form-select" id="bulkCategorySelect">
+                            <select class="form-select" id="bulkCategorySelect" data-nx-category>
                                 <option value="">Move to category…</option>
                                 <option value="clothing">Clothing</option>
                                 <option value="accessories">Accessories</option>
@@ -535,7 +543,7 @@
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label class="form-label" for="storeName">Store Name</label>
-                                                <input type="text" class="form-input" id="storeName" placeholder="My Awesome Store">
+                                                <input type="text" class="form-input" id="storeName" maxlength="80" placeholder="My Awesome Store">
                                             </div>
                                             <div class="form-group">
                                                 <label class="form-label" for="storeSlug">Store link</label>
@@ -552,7 +560,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="storeDescription">Store Description</label>
-                                            <textarea class="form-textarea" id="storeDescription" placeholder="Describe your store..." rows="3"></textarea>
+                                            <textarea class="form-textarea" id="storeDescription" maxlength="2000" placeholder="Describe your store..." rows="3"></textarea>
                                         </div>
                                         <div class="form-row">
                                             <div class="form-group">
@@ -561,7 +569,7 @@
                                             </div>
                                             <div class="form-group">
                                                 <label class="form-label" for="phoneNumber">Phone Number</label>
-                                                <input type="tel" class="form-input" id="phoneNumber" placeholder="+256 700 000000">
+                                                <input type="tel" class="form-input" id="phoneNumber" maxlength="30" placeholder="+256 700 000000">
                                                 <label class="ob-toggle-row" for="phonePublic">
                                                     <input type="checkbox" id="phonePublic">
                                                     <span>Show this number on my public store page</span>
@@ -603,12 +611,12 @@
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="storeAddress">Business Address</label>
-                                            <textarea class="form-textarea" id="storeAddress" placeholder="123 Kampala Road, Kampala, Uganda" rows="2"></textarea>
+                                            <textarea class="form-textarea" id="storeAddress" maxlength="300" placeholder="123 Kampala Road, Kampala, Uganda" rows="2"></textarea>
                                             <p class="form-hint">Auto-filled once you pick a spot on the map — feel free to edit it.</p>
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="storeDetailedDirections">Detailed Directions</label>
-                                            <textarea class="form-textarea" id="storeDetailedDirections" placeholder="E.g., Located opposite Shoprite, next to the bank building, 2nd floor" rows="3"></textarea>
+                                            <textarea class="form-textarea" id="storeDetailedDirections" maxlength="1000" placeholder="E.g., Located opposite Shoprite, next to the bank building, 2nd floor" rows="3"></textarea>
                                             <p class="form-hint">Help customers find your store with specific landmarks and directions.</p>
                                         </div>
                                     </div>
@@ -834,16 +842,16 @@
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
         <div class="footer-links">
-            <a href="index.html#features">Features</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="signup.html" data-hide-when-authed>Create account</a>
-            <a href="marketplace.html">Shop</a>
+            <a href="/#features">Features</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-hide-when-authed>Create account</a>
+            <a href="/marketplace">Shop</a>
             <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
-        <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a>
+        <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a>
     </footer>
         </main>
 
@@ -858,6 +866,7 @@
     <script src="js/image-crop.js"></script>
     <script src="js/map-picker.js"></script>
     <script src="js/map-preview.js"></script>
+    <script src="js/category-sprite.js"></script><script src="js/categories.js"></script><script src="js/category-picker.js"></script>
     <script src="js/dashboard.js"></script>
     <script>
       if ("serviceWorker" in navigator) {

@@ -1,0 +1,574 @@
+[
+  {
+    "id": "store_open",
+    "questions": [
+      "How do I open a store",
+      "How can I start a store",
+      "How do I become a seller",
+      "Where do I create my store",
+      "I want to start selling",
+      "How can I set up a shop"
+    ],
+    "answer": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from /signup.",
+    "audience": "any"
+  },
+  {
+    "id": "store_steps",
+    "questions": [
+      "What are the store setup steps",
+      "What happens when I open a store",
+      "What does store onboarding include",
+      "Which steps are in store setup",
+      "How does seller onboarding work",
+      "What do I do during store setup"
+    ],
+    "answer": "Store setup has {{ONBOARDING_STEP_COUNT}} steps: {{ONBOARDING_STEPS}}. A store needs at least one product before it can launch.",
+    "audience": "any"
+  },
+  {
+    "id": "store_product_requirement",
+    "questions": [
+      "Do I need a product before launching",
+      "Can I launch a store with no products",
+      "Why can’t I launch my store",
+      "How many products do I need to launch",
+      "What must I add before launch",
+      "Why is the product form required"
+    ],
+    "answer": "A store needs at least one product before it can launch. If the store has no products at the final step, NextaStore sends you to the product form.",
+    "audience": "seller"
+  },
+  {
+    "id": "buyer_free",
+    "questions": [
+      "Is NextaStore free for buyers",
+      "Do buyers pay a platform fee",
+      "Is buying free",
+      "Does NextaStore charge buyers",
+      "Do I pay to browse products",
+      "Is there a buyer subscription"
+    ],
+    "answer": "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription.",
+    "audience": "buyer"
+  },
+  {
+    "id": "seller_pass",
+    "questions": [
+      "What is Seller Pass",
+      "How does Seller Pass work",
+      "What is the seller subscription",
+      "Why do I need Seller Pass",
+      "What keeps my store active",
+      "Tell me about the Seller Pass"
+    ],
+    "answer": "Seller Pass keeps a store active on NextaStore. Every new store starts with a free trial of {{SUBSCRIPTION_TRIAL_DAYS}} days. Paid coverage is bought in month-blocks.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_pass_price",
+    "questions": [
+      "How much is Seller Pass",
+      "What does Seller Pass cost",
+      "What is the Seller Pass price",
+      "How much do I pay for a store",
+      "What is the monthly seller fee",
+      "Tell me the subscription price"
+    ],
+    "answer": "Seller Pass costs UGX {{SUBSCRIPTION_PRICE_UGX}} per month of coverage. The current generated platform facts are the authority for this price.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_trial",
+    "questions": [
+      "How long is the free trial",
+      "How many trial days do new stores get",
+      "Do new stores get a free trial",
+      "Is there a Seller Pass trial",
+      "When does the seller trial end",
+      "How long can I try selling before paying"
+    ],
+    "answer": "Every new store starts with a free trial of {{SUBSCRIPTION_TRIAL_DAYS}} days.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_blocks",
+    "questions": [
+      "How many months can I buy",
+      "What coverage periods are available",
+      "Which Seller Pass blocks can I purchase",
+      "Can I pay for several months",
+      "What subscription month options exist",
+      "How do Seller Pass blocks work"
+    ],
+    "answer": "Seller Pass coverage is bought in blocks of {{SUBSCRIPTION_BLOCK_MONTHS}} months. The amount entered on the subscription page must match the monthly price multiplied by the selected months.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_example",
+    "questions": [
+      "How is the Seller Pass amount calculated",
+      "How do I calculate a coverage block",
+      "What would a multi month block cost",
+      "How does subscription pricing multiply",
+      "How is the amount for several months worked out",
+      "How do I work out my Seller Pass payment"
+    ],
+    "answer": "The amount for a coverage block is the monthly price multiplied by the number of months. For example, {{SUBSCRIPTION_EXAMPLE_MONTHS}} months is UGX {{SUBSCRIPTION_EXAMPLE_PRICE_UGX}}.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_payment_submit",
+    "questions": [
+      "How do I pay for Seller Pass",
+      "How do I submit a subscription payment",
+      "Where do I enter my payment reference",
+      "What happens after I pay Seller Pass",
+      "How do subscription payments get approved",
+      "How do I renew Seller Pass"
+    ],
+    "answer": "Pick a coverage block, send the mobile-money payment to the code or number shown, then submit the payment reference on the subscription page. An admin reviews and approves it before the paid coverage is extended.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_payment_status",
+    "questions": [
+      "What does a subscription payment awaiting review mean",
+      "Why has my Seller Pass payment not been approved",
+      "How are subscription payments reviewed",
+      "When does a Seller Pass payment count as paid",
+      "Why is my subscription payment waiting",
+      "What happens to an unapproved Seller Pass payment"
+    ],
+    "answer": "Seller Pass payments stay awaiting review until an admin checks the submitted reference. They are treated as approved when accepted or not confirmed when rejected. There is no fixed approval time in the knowledge base.",
+    "audience": "seller"
+  },
+  {
+    "id": "seller_lapse",
+    "questions": [
+      "What happens when Seller Pass expires",
+      "What if my store coverage lapses",
+      "What happens after my trial ends without renewal",
+      "Will my store stay active after coverage ends",
+      "What happens when my subscription runs out",
+      "How do I avoid a coverage lapse"
+    ],
+    "answer": "If paid coverage or the trial runs out before renewal, the subscription status shows as ended and the seller is prompted to renew. Renewing before then keeps the store active without interruption.",
+    "audience": "seller"
+  },
+  {
+    "id": "badge",
+    "questions": [
+      "How do seller badges work",
+      "How do I get a seller badge",
+      "What badges can sellers earn",
+      "How do I become a verified seller",
+      "How do the trust badges work",
+      "What gives a store a badge"
+    ],
+    "answer": "Seller badges come from continuous paid Seller Pass coverage. Verified Seller starts at {{BADGE_VERIFIED_SELLER_MONTHS}} or more months, Gold Partner at {{BADGE_GOLD_PARTNER_MONTHS}} or more, and Platinum Partner at {{BADGE_PLATINUM_PARTNER_MONTHS}} or more. A lapse starts the count again.",
+    "audience": "seller"
+  },
+  {
+    "id": "badge_paid",
+    "questions": [
+      "When does a seller badge appear",
+      "When is my badge applied",
+      "Why is my seller badge missing",
+      "How long before my badge shows",
+      "Does an approved payment trigger a badge",
+      "When does the trust badge update"
+    ],
+    "answer": "The badge is applied when an admin approves the payment that takes the store to the required tier, and it shows only while the store stays paid up.",
+    "audience": "seller"
+  },
+  {
+    "id": "payments",
+    "questions": [
+      "What payment methods are available",
+      "How can buyers pay",
+      "Which payment options does NextaStore support",
+      "Can I pay by mobile money",
+      "Does NextaStore accept card payments",
+      "How do payment methods work"
+    ],
+    "answer": "Payment methods are dynamic. Platform admins enable methods, and each store chooses which enabled methods it accepts. At checkout you see the overlap for that store. The platform currently includes MTN MoMo, Airtel Money, and card as payment options stores can opt into.",
+    "audience": "any"
+  },
+  {
+    "id": "mobile_money",
+    "questions": [
+      "Can I pay with MTN MoMo",
+      "Does NextaStore support Airtel Money",
+      "Can I use mobile money",
+      "How does mobile money payment work",
+      "Are MTN and Airtel supported",
+      "Which mobile money services are built in"
+    ],
+    "answer": "The platform includes MTN MoMo and Airtel Money. A store that accepts one or both shows the relevant phone number or merchant code at checkout.",
+    "audience": "buyer"
+  },
+  {
+    "id": "card",
+    "questions": [
+      "Can I pay by card",
+      "Does NextaStore accept cards",
+      "Why is card missing at checkout",
+      "How does card payment work",
+      "Can a store enable card payments",
+      "Is card an option for buyers"
+    ],
+    "answer": "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it.",
+    "audience": "buyer"
+  },
+  {
+    "id": "missing_payment",
+    "questions": [
+      "Why is my payment method missing",
+      "Why can’t I see mobile money at checkout",
+      "Why is card not showing",
+      "Why can’t I find a payment option",
+      "The checkout does not show my payment method",
+      "What if a store does not accept my payment method"
+    ],
+    "answer": "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method.",
+    "audience": "buyer"
+  },
+  {
+    "id": "payment_failure",
+    "questions": [
+      "My payment failed",
+      "What should I do if payment is stuck",
+      "A payment did not go through",
+      "Why did my payment fail",
+      "How do I report a payment problem",
+      "I was charged but checkout failed"
+    ],
+    "answer": "For a genuine payment failure, do not guess at a fix. Contact NextaStore support with the order or payment reference so a human can check the transaction record.",
+    "audience": "any"
+  },
+  {
+    "id": "find_products",
+    "questions": [
+      "How do I find products",
+      "Where can I browse products",
+      "How do I search the marketplace",
+      "Can I filter products",
+      "How do I find a product on NextaStore",
+      "Where do I shop"
+    ],
+    "answer": "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products.",
+    "audience": "buyer"
+  },
+  {
+    "id": "product_page",
+    "questions": [
+      "What is on a product page",
+      "What information does a product show",
+      "Can I see stock before buying",
+      "Where do I favorite a product",
+      "Can I message a seller before buying",
+      "What can I do from product details"
+    ],
+    "answer": "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.",
+    "audience": "buyer"
+  },
+  {
+    "id": "checkout",
+    "questions": [
+      "How does checkout work",
+      "What happens when I check out",
+      "How do I place an order",
+      "What do I choose at checkout",
+      "How do I finish a purchase",
+      "What happens after adding to cart"
+    ],
+    "answer": "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown.",
+    "audience": "buyer"
+  },
+  {
+    "id": "orders",
+    "questions": [
+      "Where can I track my order",
+      "How do I see my order",
+      "Where are my orders",
+      "How do order updates work",
+      "Can I track an order on NextaStore",
+      "Where do I see order status"
+    ],
+    "answer": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+    "audience": "buyer"
+  },
+  {
+    "id": "order_statuses",
+    "questions": [
+      "What order states are there",
+      "How many order stages exist",
+      "What are the order status labels",
+      "How do I understand order progress",
+      "What does my order stage mean",
+      "Which order stages does NextaStore use"
+    ],
+    "answer": "The platform order statuses are {{ORDER_STATUSES}}. Buyers see friendlier labels: {{ORDER_LABEL_PENDING}}, {{ORDER_LABEL_PROCESSING}}, {{ORDER_LABEL_SHIPPED}}, {{ORDER_LABEL_DELIVERED}}, and {{ORDER_LABEL_CANCELLED}} for the corresponding internal statuses.",
+    "audience": "any"
+  },
+  {
+    "id": "seller_order_moves",
+    "questions": [
+      "How do sellers process orders",
+      "What can a seller do with an order",
+      "How does a seller move an order forward",
+      "Which order actions can sellers take",
+      "How do I confirm a seller order",
+      "How do I complete an order as a seller"
+    ],
+    "answer": "Sellers move orders from the dashboard: {{SELLER_ORDER_MOVES}}. Orders that are completed or already ended cannot be changed.",
+    "audience": "seller"
+  },
+  {
+    "id": "cancel_order",
+    "questions": [
+      "Can I cancel an order",
+      "How do I cancel my order",
+      "Can a buyer cancel after checkout",
+      "Where do I cancel an order",
+      "I want to cancel a purchase",
+      "What are the buyer cancellation rules"
+    ],
+    "answer": "A buyer can cancel from the Orders page only while the order is {{BUYER_CANCEL_ALLOWED_STATUSES}}, and only within {{BUYER_CANCEL_WINDOW_MINUTES}} minutes of placing it. A short reason is required.",
+    "audience": "buyer"
+  },
+  {
+    "id": "cancel_limit",
+    "questions": [
+      "How often can I cancel orders",
+      "Is there a cancellation limit",
+      "How many orders can I cancel",
+      "Why can’t I cancel another order",
+      "What is the buyer cancellation limit",
+      "When does the cancellation limit reset"
+    ],
+    "answer": "A buyer can use the self-cancellation option at most {{BUYER_CANCEL_LIMIT}} orders in any {{BUYER_CANCEL_LIMIT_WINDOW_DAYS}} days. After the window or limit, message the seller.",
+    "audience": "buyer"
+  },
+  {
+    "id": "seller_cancel",
+    "questions": [
+      "Can a seller cancel an order",
+      "When can a seller cancel",
+      "Can sellers cancel orders that are still being handled",
+      "Can a seller cancel when stock is missing",
+      "What if the seller cannot fulfil my order",
+      "How does seller cancellation work"
+    ],
+    "answer": "A seller can cancel an order while it is still awaiting seller action or being processed, for example when an item is out of stock.",
+    "audience": "seller"
+  },
+  {
+    "id": "delivery_pickup",
+    "questions": [
+      "Does NextaStore support delivery",
+      "Can I pick up an order",
+      "What is delivery versus pickup",
+      "How do I choose delivery",
+      "Can a store offer pickup",
+      "Do I need an address for delivery"
+    ],
+    "answer": "At checkout, store items are fulfilled by {{FULFILLMENT_METHODS}}. Delivery needs a delivery address; pickup does not.",
+    "audience": "buyer"
+  },
+  {
+    "id": "listing_types",
+    "questions": [
+      "What can I sell on NextaStore",
+      "What types of listings are allowed",
+      "Can I sell a service",
+      "Can I sell a digital item",
+      "Are only physical products supported",
+      "What listing types exist"
+    ],
+    "answer": "A listing can be {{LISTING_TYPES}}. Physical listings use the cart and stock; service and digital listings use Messages for shopper enquiries.",
+    "audience": "seller"
+  },
+  {
+    "id": "contact_seller",
+    "questions": [
+      "How do I contact a seller",
+      "Can I message a seller before buying",
+      "Where do I ask a seller a question",
+      "How do buyers contact stores",
+      "How do I ask about a product",
+      "Can I message about an order"
+    ],
+    "answer": "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.",
+    "audience": "any"
+  },
+  {
+    "id": "safety",
+    "questions": [
+      "How do I buy safely",
+      "What are the safety rules",
+      "How can I avoid scams",
+      "Is it safe to pay outside the platform",
+      "What should I do if a seller pressures me",
+      "How do I stay safe on NextaStore"
+    ],
+    "answer": "Keep payment and communication on the platform where there is a record. Be cautious if someone pushes you to move payment or communication off-platform before the order has been sent or confirmed.",
+    "audience": "any"
+  },
+  {
+    "id": "safety_password",
+    "questions": [
+      "Should I share my password with support",
+      "Can I give Nexi my OTP",
+      "Should I share my payment PIN",
+      "Does support need my password",
+      "Can I send card details in chat",
+      "What sensitive information should I keep private"
+    ],
+    "answer": "Never share passwords, one-time login codes, payment PINs, or full card numbers in chat. Nexi does not need them.",
+    "audience": "any"
+  },
+  {
+    "id": "report_problem",
+    "questions": [
+      "How do I report a suspicious user",
+      "Where do I report a scam",
+      "How do I report a problem",
+      "What should I do about a suspicious seller",
+      "How do I report an unsafe transaction",
+      "Where can I report fraud"
+    ],
+    "answer": "Use the Safety page and/or Messages to report a specific user or order. For platform-level action or suspected fraud, contact NextaStore support.",
+    "audience": "any"
+  },
+  {
+    "id": "wrong_order",
+    "questions": [
+      "What if my order is wrong",
+      "What if an item is damaged",
+      "What if my order is missing",
+      "The seller is not responding",
+      "What do I do about an order problem",
+      "How do I resolve a bad order"
+    ],
+    "answer": "Start with Messages and try to resolve the issue directly with the seller. If it is not resolved or involves money or safety, escalate to support with the order number.",
+    "audience": "buyer"
+  },
+  {
+    "id": "forgot_password",
+    "questions": [
+      "I forgot my password",
+      "How do I reset my password",
+      "Where can I change a forgotten password",
+      "I cannot log in",
+      "What if I lost my password",
+      "How do I recover my account"
+    ],
+    "answer": "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.",
+    "audience": "any"
+  },
+  {
+    "id": "account",
+    "questions": [
+      "How do I create an account",
+      "Where do I sign up",
+      "How do I register",
+      "Can I create a NextaStore account",
+      "How do I join NextaStore",
+      "Where is the signup page"
+    ],
+    "answer": "Use /signup to create an account. If you want to sell, continue into the store-creation flow from there.",
+    "audience": "any"
+  },
+  {
+    "id": "pwa",
+    "questions": [
+      "Does NextaStore have an app",
+      "Can I install NextaStore on my phone",
+      "Is NextaStore a mobile app",
+      "Can I add NextaStore to my home screen",
+      "Does NextaStore support push notifications",
+      "Can I install the site"
+    ],
+    "answer": "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled.",
+    "audience": "any"
+  },
+  {
+    "id": "notifications",
+    "questions": [
+      "What notifications do I get",
+      "How do order notifications work",
+      "Will I get seller notifications",
+      "Do followers get new product alerts",
+      "Can I receive push notifications",
+      "What can NextaStore notify me about"
+    ],
+    "answer": "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders. Push notifications mirror important ones when enabled.",
+    "audience": "any"
+  },
+  {
+    "id": "favorites_following",
+    "questions": [
+      "What are favorites and following",
+      "How do I save a product",
+      "What does following a store do",
+      "Do followers get product alerts",
+      "Where are my favorite products",
+      "What is the difference between favorite and follow"
+    ],
+    "answer": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+    "audience": "buyer"
+  },
+  {
+    "id": "store_customization",
+    "questions": [
+      "How can I customize my store",
+      "Can I add a logo and banner",
+      "Can I change my store theme",
+      "Can I add store SEO details",
+      "How do I set my store location",
+      "What can sellers customize"
+    ],
+    "answer": "From the seller dashboard you can set a logo and banner, store theme and product-grid layout, district/address and directions, plus SEO title, description, and keywords.",
+    "audience": "seller"
+  },
+  {
+    "id": "products",
+    "questions": [
+      "How do I add products",
+      "What product fields can I edit",
+      "Can I add product images",
+      "How do I manage stock",
+      "Can I show a discount price",
+      "Where do sellers manage products"
+    ],
+    "answer": "Sellers manage products from the dashboard product form. It supports name, description, price, original or strikethrough price, category, and images; sold counts and stock are tracked.",
+    "audience": "seller"
+  },
+  {
+    "id": "store_location",
+    "questions": [
+      "How do I know where a store delivers",
+      "Where do I find a store location",
+      "Does NextaStore have one delivery area",
+      "Can every store choose its location",
+      "Where are store delivery details",
+      "How do I check a seller’s area"
+    ],
+    "answer": "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information.",
+    "audience": "buyer"
+  },
+  {
+    "id": "seller_tips",
+    "questions": [
+      "What should I do before launching",
+      "How can I make my new store trustworthy",
+      "What should my first listings look like",
+      "How do I prepare a new store",
+      "What should I sell first",
+      "How can I get started selling"
+    ],
+    "answer": "Use clear photos, honest prices, short descriptions, and a small focused range of listings. Share your store link, reply to messages promptly, and make sure you can restock and fulfil what you list.",
+    "audience": "seller"
+  }
+]

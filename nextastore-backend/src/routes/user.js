@@ -1,5 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
+const passwords = require('../password');
 const prisma = require('../prisma');
 const { apiError, saveImageIfDataUrl, storeSlugFrom, deleteImageIfReplaced } = require('../utils');
 const { publicUser, starterStoreData } = require('../helpers');
@@ -66,10 +66,10 @@ router.put('/me', requireAuth, validateBody(updateUserSchema), async (req, res, 
 
         let passwordChanged = false;
         if (payload.newPassword) {
-            if (!payload.currentPassword || !bcrypt.compareSync(payload.currentPassword, req.user.passwordHash)) {
+            if (!payload.currentPassword || !(await passwords.compare(payload.currentPassword, req.user.passwordHash))) {
                 throw apiError('Current password is incorrect.', 401);
             }
-            data.passwordHash = bcrypt.hashSync(payload.newPassword, 10);
+            data.passwordHash = await passwords.hash(payload.newPassword, 10);
             // Same reasoning as the reset-password route: changing your
             // password should end every OTHER session that's currently
             // logged in with the old one, not just leave them running

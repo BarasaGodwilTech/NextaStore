@@ -137,82 +137,270 @@
 
 .header-right { display: flex; gap: var(--spacing-md); align-items: center; }
 
-/* ---- Hero ---- */
+/* ---- Hero (v2): text + search on the left, a collage of real products on the right, a stats band under both ---- */
+.hero-wrap {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(55% 70% at 88% 8%, rgba(1, 176, 117, 0.15), transparent 62%),
+        radial-gradient(40% 55% at 4% 92%, rgba(255, 176, 56, 0.16), transparent 66%),
+        var(--gray-50);
+}
+/* faint dot grid that fades out downwards */
+.hero-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(rgba(11, 59, 43, 0.12) 1px, transparent 1.3px);
+    background-size: 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 80%);
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 80%);
+    pointer-events: none;
+}
+
 .marketplace-hero {
-    padding: var(--spacing-3xl) var(--spacing-xl);
+    padding: var(--spacing-3xl) var(--spacing-xl) var(--spacing-xl);
     max-width: var(--max-width);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     gap: var(--spacing-2xl);
     align-items: center;
 }
+.marketplace-hero.no-collage { grid-template-columns: minmax(0, 1fr); }
+.hero-collage[hidden] { display: none; }
+
+.hero-content { min-width: 0; }
+
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 var(--spacing-md);
+    padding: 0.35rem 0.85rem 0.35rem 0.7rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    max-width: 100%;
+}
+.hero-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 0 rgba(1, 176, 117, 0.5); animation: mk-ping 2s ease-out infinite; }
+@keyframes mk-ping { 70%, 100% { box-shadow: 0 0 0 8px rgba(1, 176, 117, 0); } }
 
 .hero-content h1 {
-    font-size: clamp(2.1rem, 3.2vw + 1rem, 3.25rem);
-    line-height: 1.08;
-    margin-bottom: var(--spacing-lg);
-    max-width: 16ch;
+    position: relative;
+    z-index: 0;
+    font-size: clamp(2rem, 2.4vw + 1rem, 3.1rem);
+    line-height: 1.06;
+    margin-bottom: var(--spacing-md);
+    max-width: 20ch;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+}
+/* a marker-pen stroke behind one word */
+.hero-accent { position: relative; white-space: nowrap; }
+.hero-accent::after {
+    content: '';
+    position: absolute;
+    left: -3%;
+    right: -3%;
+    bottom: 0.1em;
+    height: 0.32em;
+    z-index: -1;
+    border-radius: 6px;
+    background: rgba(255, 176, 56, 0.6);
+    transform: rotate(-1.2deg);
 }
 
-.hero-content p {
-    font-size: 1.0625rem;
-    color: var(--gray-600);
-    max-width: 46ch;
-    margin-bottom: var(--spacing-xl);
+.hero-lead { font-size: 1.0625rem; color: var(--gray-600); max-width: 52ch; margin: 0 0 var(--spacing-lg); }
+
+
+.hero-actions { display: none; gap: var(--spacing-md); flex-wrap: wrap; }
+
+
+.hero-sell-line { margin: var(--spacing-lg) 0 0; font-size: 0.875rem; color: var(--gray-500); }
+.marketplace-container .hero-sell-line a { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--secondary); text-decoration: none; }
+.hero-sell-line a i { font-size: 0.7rem; transition: transform 0.15s ease; }
+.hero-sell-line a:hover { text-decoration: underline; }
+.hero-sell-line a:hover i { transform: translateX(3px); }
+
+/* ---- Collage: four real products in two staggered columns (filled by marketplace.js renderHeroCollage) ---- */
+.hero-collage { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; padding-bottom: 8px; }
+.hero-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.hero-col:nth-child(2) { margin-top: 40px; }
+
+/* ---- Hero store cards: tiny market stalls. The awning takes each store's own banner colour (--bc, --bc2 = lighter stripe). ---- */
+.hero-stall {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "awn awn" "logo badge" "name name" "place place" "foot foot";
+    column-gap: 10px;
+    row-gap: 3px;
+    align-content: start;
+    min-width: 0;
+    padding: 0 14px 14px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hero-stall-awning {
+    grid-area: awn;
+    position: relative;
+    height: 40px;
+    margin: -1px -15px 0;
+    border-radius: 20px 20px 0 0;
+    background: repeating-linear-gradient(90deg, var(--bc) 0 20px, var(--bc2) 20px 40px);
+}
+.hero-stall-awning::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 100%;
+    height: 10px;
+    background:
+        radial-gradient(circle at 10px 0, var(--bc) 10px, transparent 10.5px) 0 0 / 40px 10px repeat-x,
+        radial-gradient(circle at 10px 0, var(--bc2) 10px, transparent 10.5px) 20px 0 / 40px 10px repeat-x;
+    filter: drop-shadow(0 2px 2px rgba(11, 59, 43, 0.12));
+}
+.hero-stall-logo {
+    grid-area: logo;
+    margin-top: 20px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--bc);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--gray-200);
+    overflow: hidden;
+}
+.hero-stall-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-stall[data-tier="verified"] .hero-stall-logo { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--primary); }
+.hero-stall[data-tier="gold"] .hero-stall-logo { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #E0A100; }
+.hero-stall[data-tier="platinum"] .hero-stall-logo { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #7C8DA6; }
+.hero-stall-badge { grid-area: badge; align-self: end; justify-self: end; margin-top: 20px; min-width: 0; max-width: 100%; overflow: hidden; }
+.hero-stall-name {
+    grid-area: name;
+    margin-top: 8px;
+    font-family: var(--font-display);
+    font-size: 0.98rem; font-weight: 600; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.hero-stall-place { grid-area: place; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 0.78rem; color: var(--gray-500); }
+.hero-stall-place i { flex: none; font-size: 0.7rem; color: var(--bc); }
+.hero-stall-place span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-stall-foot {
+    grid-area: foot;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 8px; padding-top: 9px;
+    border-top: 1px dashed var(--gray-300, #d5dcd8);
+    font-size: 0.78rem; color: var(--gray-600);
+}
+.hero-stall-cats { display: inline-flex; gap: 4px; min-width: 0; }
+.hero-stall-count b { color: var(--ink); font-weight: 700; }
+.hero-stall:focus-visible { outline: 3px solid var(--secondary); outline-offset: 3px; }
+.hero-stall.is-skel { display: block; min-height: 196px; padding: 0; }
+@media (hover: hover) {
+    .hero-stall:hover { transform: translateY(-4px); box-shadow: 0 18px 34px rgba(11, 59, 43, 0.18); }
 }
 
-.hero-actions {
+
+/* ---- Stats band (numbers come from the API: marketplace.js updateHeroStats; "–" until they arrive) ---- */
+.hero-band { max-width: var(--max-width); margin: 0 auto; padding: var(--spacing-md) var(--spacing-xl) var(--spacing-2xl); }
+.hero-band-card {
     display: flex;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-}
-
-.hero-badge { display: none; } /* superseded by the ledger card */
-
-/* Ledger card — the one deliberate visual flourish */
-.hero-stats {
-    background: white;
+    align-items: stretch;
+    background: #fff;
     border: 1px solid var(--gray-200);
     border-radius: var(--border-radius-lg);
-    padding: 0;
-    transform: rotate(-1.1deg);
-    box-shadow: var(--shadow-lg);
-    display: block;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
 }
-
-.hero-stats::before {
-    content: 'On NextaStore right now';
-    display: block;
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 600;
-    padding: var(--spacing-lg) var(--spacing-xl);
-    border-bottom: 1px dashed var(--gray-200);
-    color: var(--ink);
-}
-
+.hero-stats-list { display: flex; flex: 1 1 auto; margin: 0; min-width: 0; }
 .stat-item {
+    flex: 1 1 0;
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: var(--spacing-lg) var(--spacing-xl);
-    border-bottom: 1px dashed var(--gray-200);
+    flex-direction: column-reverse; /* number first, label under it (dt must come first in the markup) */
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 16px 24px;
+    border-right: 1px solid var(--gray-200);
 }
-
-.stat-item:last-child { border-bottom: none; }
-
 .stat-value {
+    margin: 0;
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    line-height: 1.15;
     font-weight: 600;
     color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
+.stat-value.is-pending { color: var(--gray-300); animation: mk-pulse 1.2s ease-in-out infinite; }
+@keyframes mk-pulse { 50% { opacity: .45; } }
+.stat-label { font-size: 0.8125rem; color: var(--gray-500); }
 
-.stat-label {
-    font-size: 0.875rem;
-    color: var(--gray-500);
+.marketplace-container a.hero-band-link {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 24px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
 }
+.marketplace-container a.hero-band-link:hover { background: var(--primary-dark); }
+.hero-band-link-text { display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; }
+.hero-band-link-text i { font-size: 0.75rem; transition: transform 0.15s ease; }
+.hero-band-link:hover .hero-band-link-text i { transform: translateX(3px); }
+
+.hero-stack { display: inline-flex; align-items: center; padding-left: 10px; min-width: 0; }
+.hero-stack-item {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    margin-left: -10px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    overflow: hidden;
+}
+.hero-stack-item img { width: 100%; height: 100%; object-fit: cover; }
+.hero-stack-more { background: #fff; color: var(--ink); font-size: 0.62rem; width: auto; min-width: 30px; padding: 0 6px; }
+
+/* ---- Hero entrance (skipped when the visitor asks for less motion) ---- */
+@media (prefers-reduced-motion: no-preference) {
+    .hero-content > * { animation: mk-rise 0.55s cubic-bezier(.2, .7, .2, 1) both; }
+    .hero-content > *:nth-child(2) { animation-delay: 0.05s; }
+    .hero-content > *:nth-child(3) { animation-delay: 0.1s; }
+    .hero-content > *:nth-child(4) { animation-delay: 0.15s; }
+    .hero-content > *:nth-child(n+5) { animation-delay: 0.2s; }
+    .hero-col:nth-child(1)     .hero-col:nth-child(2)     .hero-band-card { animation: mk-rise 0.6s cubic-bezier(.2, .7, .2, 1) 0.3s both; }
+}
+@media (prefers-reduced-motion: reduce) { .hero-dot, .stat-value.is-pending { animation: none; } }
+@keyframes mk-rise { from { opacity: 0; transform: translateY(14px); } }
 
 /* ---- Categories ("stalls") ---- */
 .marketplace-categories {
@@ -227,57 +415,9 @@
     margin-bottom: var(--spacing-xl);
 }
 
-.category-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: var(--spacing-md);
-}
-
-.category-card {
-    background: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-left: 3px solid var(--primary);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg) var(--spacing-md);
-    cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-    text-align: left;
-}
-
-.category-card:nth-child(6n+2) { border-left-color: var(--secondary); }
-.category-card:nth-child(6n+3) { border-left-color: var(--coral); }
-.category-card:nth-child(6n+4) { border-left-color: var(--secondary); }
-.category-card:nth-child(6n+5) { border-left-color: var(--primary); }
-.category-card:nth-child(6n+6) { border-left-color: var(--coral); }
-
-.category-card:hover {
-    border-left-width: 5px;
-    transform: translateX(2px);
-}
-
-.category-icon {
-    width: auto;
-    height: auto;
-    background: none;
-    border-radius: 0;
-    color: var(--ink);
-    font-size: 1.15rem;
-    margin: 0 0 var(--spacing-sm);
-    display: block;
-}
-
-.category-card h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.2rem;
-}
-
-.category-card p {
-    font-size: 0.8125rem;
-    color: var(--gray-500);
-    margin-bottom: 0;
-    font-family: var(--font-body);
-}
+.marketplace-categories,
+.marketplace-stores,
+.marketplace-products { scroll-margin-top: 84px; } /* the sticky header must not cover anchor targets */
 
 /* ---- Featured stores ---- */
 .marketplace-stores { padding: var(--spacing-3xl) 0; }
@@ -574,6 +714,461 @@
     text-decoration: line-through;
 }
 
+/* ==========================================================================
+   Marketplace page: section headers, store cards, product cards (WIP 50)
+   `mk-` classes belong to marketplace.html only. The older .store-card /
+   .product-card / .stores-grid / .products-grid rules above stay because
+   following.html and favorites.html load this file too.
+   ========================================================================== */
+.marketplace-container [hidden] { display: none !important; }
+.marketplace-container .loading-content.hidden { display: none; }
+.marketplace-container .loading-content.is-busy { opacity: 0.5; pointer-events: none; }
+
+.mk-sr {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---- Section header: title + count, "view all" link, then the category tabs ---- */
+.mk-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.mk-head-title { min-width: 0; }
+.mk-head h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.mk-sub { margin: 2px 0 0; min-height: 1.3em; font-size: 0.8125rem; color: var(--gray-500); }
+.marketplace-container a.mk-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--secondary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.marketplace-container a.mk-link i { font-size: 0.75rem; transition: transform 0.15s ease; }
+.marketplace-container a.mk-link:hover { text-decoration: underline; }
+.marketplace-container a.mk-link:hover i { transform: translateX(3px); }
+.mk-head .filter-tabs { grid-column: 1 / -1; }
+.mk-head .filter-tab { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 40px; white-space: nowrap; }
+.mk-head .filter-tab .nx-cat-icon { flex: none; }
+
+/* ---- Grids: columns and page sizes are paired in marketplace.js (storePageSize / productPageSize) ---- */
+.mk-stores-grid,
+.mk-products-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 560px) { .mk-products-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 760px) {
+    .mk-stores-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .mk-products-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+}
+@media (min-width: 1024px) { .mk-stores-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) {
+    .mk-stores-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+    .mk-products-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; }
+}
+
+/* ---- Store card ---- */
+.mk-store {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    container-type: inline-size;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.mk-store[data-tier="verified"] { border-color: #B9D4F5; }
+.mk-store[data-tier="gold"] { border-color: #E6C25A; box-shadow: 0 0 0 1px rgba(230, 194, 90, 0.45); }
+.mk-store[data-tier="platinum"] { border-color: #B8C2D6; box-shadow: 0 0 0 1px rgba(150, 165, 195, 0.45); }
+
+.mk-store-banner {
+    position: relative;
+    flex: none;
+    height: 64px;
+    background: var(--bc, #00B074);
+    overflow: hidden;
+}
+.mk-store-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mk-store-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 45%, rgba(11, 59, 43, 0.16));
+    pointer-events: none;
+}
+
+.mk-store-body { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; padding: 0 12px 12px; }
+
+.mk-store-logo {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    margin-top: -23px;
+    border-radius: 14px;
+    border: 3px solid #fff;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--gray-200), var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1;
+}
+.mk-store-logo img { width: 100%; height: 100%; object-fit: cover; }
+.mk-store[data-tier="gold"] .mk-store-logo { box-shadow: 0 0 0 2px #E6C25A; }
+.mk-store[data-tier="platinum"] .mk-store-logo { box-shadow: 0 0 0 2px #B8C2D6; }
+
+.mk-store-main { flex: 1 1 auto; min-width: 0; padding-bottom: 10px; }
+
+.mk-store-name { margin: 8px 0 0; font-size: 0.95rem; line-height: 1.25; font-weight: 600; min-width: 0; }
+.marketplace-container a.mk-store-link { display: block; color: inherit; text-decoration: none; }
+/* The whole card is the link: this overlay is the only clickable thing, so there is no nested button. */
+.mk-store-link::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: var(--border-radius-lg); }
+.mk-store-link:focus-visible { outline: none; }
+.mk-store-link:focus-visible::after { outline: 2px solid var(--secondary); outline-offset: -3px; }
+
+.mk-store-badges { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 6px; min-width: 0; overflow: hidden; pointer-events: none; }
+.mk-store-badges .seller-badge { flex: 0 1 auto; }
+.mk-store-badges .seller-badge--more { flex: none; pointer-events: auto; position: relative; z-index: 3; }
+
+.mk-store-desc {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--gray-600);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    min-height: calc(1.45em * 2);
+}
+.mk-store-desc.is-empty { color: var(--gray-400); font-style: italic; }
+
+.mk-store-place { display: flex; align-items: center; gap: 5px; margin: 6px 0 0; min-width: 0; font-size: 0.72rem; color: var(--gray-500); }
+.mk-store-place i { flex: none; color: var(--primary-dark); font-size: 0.7rem; }
+.mk-store-place span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mk-store-cats { display: flex; align-items: center; gap: 4px; margin-top: 8px; min-width: 0; overflow: hidden; }
+.mk-cat {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.mk-cat .nx-cat-icon { width: 16px; height: 16px; }
+.mk-cat--more { width: auto; min-width: 24px; padding: 0 6px; border-radius: 999px; font-size: 0.66rem; font-weight: 700; color: var(--gray-600); }
+
+.mk-store-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px dashed var(--gray-200);
+    font-size: 0.74rem;
+    color: var(--gray-500);
+}
+.mk-stat { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; white-space: nowrap; }
+.mk-stat i { color: var(--primary-dark); font-size: 0.72rem; }
+.mk-stat b { font-weight: 700; color: var(--gray-800); }
+/* The word is for screen readers on narrow cards and shown when there is room (container query below). */
+.mk-stat-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.mk-store-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    min-height: 36px;
+    padding: 0.4rem 0.75rem;
+    border: 1.5px solid var(--gray-300);
+    border-radius: var(--border-radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+@container (min-width: 200px) {
+    .mk-stat-word { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+}
+@container (min-width: 240px) {
+    .mk-store-banner { height: 76px; }
+    .mk-store-logo { width: 52px; height: 52px; margin-top: -26px; }
+    .mk-store-body { padding: 0 14px 14px; }
+    .mk-store-name { font-size: 1rem; }
+    .mk-store-desc { font-size: 0.8125rem; }
+}
+@container (max-width: 175px) {
+    .mk-store-body { padding: 0 10px 10px; }
+    .mk-store-name { font-size: 0.88rem; }
+    .mk-store-desc { font-size: 0.74rem; }
+}
+
+/* ---- Product card ---- */
+.mk-product {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    container-type: inline-size;
+    position: relative;
+    color: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.marketplace-container a.mk-product-link { color: inherit; text-decoration: none; }
+/* The whole card is the link (same pattern as the store card): this overlay is the only link, the heart sits above it. */
+.mk-product-link::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: var(--border-radius-lg); }
+.mk-product-link:focus-visible { outline: none; }
+.mk-product-link:focus-visible::after { outline: 2px solid var(--secondary); outline-offset: -3px; }
+
+/* Heart: top-right of the photo. 40px tap target inside a 44px-ish hit area on phones. */
+.mk-fav {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--gray-500);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+.mk-fav::before { content: ''; position: absolute; inset: -4px; }
+.mk-fav:hover { color: var(--coral); transform: scale(1.08); }
+.mk-fav:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
+.mk-fav.is-favorite, .mk-fav.is-favorite i { color: var(--coral); }
+@container (max-width: 175px) { .mk-fav { top: 6px; right: 6px; width: 32px; height: 32px; font-size: 0.85rem; } }
+
+.mk-product-image {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: var(--gray-100);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-300);
+    font-size: 1.75rem;
+    overflow: hidden;
+}
+.mk-product-image > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mk-product.is-soldout .mk-product-image > img { opacity: 0.5; filter: grayscale(0.5); }
+
+.mk-chip {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--ink);
+    font-size: 0.64rem;
+    font-weight: 700;
+    line-height: 1.3;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+}
+.mk-soldout {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(11, 59, 43, 0.88);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mk-product-info { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; padding: 10px 12px 12px; }
+.mk-product-store { display: flex; align-items: center; gap: 5px; min-width: 0; margin: 0 0 3px; font-size: 0.72rem; color: var(--gray-500); }
+.mk-product-store i { flex: none; font-size: 0.66rem; }
+.mk-product-store span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-product-name {
+    margin: 0 0 6px;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    min-height: calc(1.3em * 2);
+}
+.mk-product-price { margin-top: auto; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 0; min-width: 0; }
+/* Scales with the card so a long price stays inside it (the !important beats mobile.css's fixed size). */
+.mk-product-price .current-price { font-size: clamp(0.8rem, 7.6cqw, 1.0625rem) !important; line-height: 1.35; overflow-wrap: anywhere; }
+.mk-product-price .product-original-price { font-size: 0.74rem; overflow-wrap: anywhere; }
+.mk-from { font-size: 0.68rem; font-weight: 500; color: var(--gray-500); }
+
+@container (max-width: 175px) {
+    .mk-product-info { padding: 8px 9px 10px; }
+    .mk-product-name { font-size: 0.8rem; }
+    .mk-chip { bottom: 6px; right: 6px; padding: 2px 6px; font-size: 0.6rem; }
+}
+
+/* Hover lift only where there is a real pointer (touch screens keep the card still). */
+@media (hover: hover) {
+    .mk-store:hover, .mk-product:hover { border-color: var(--secondary); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+    .mk-store:hover .mk-store-cta { background: var(--secondary); border-color: var(--secondary); color: #fff; }
+}
+
+/* ---- Active filters (above the stores) ---- */
+.mk-active { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: var(--spacing-lg); }
+.mk-active-label { font-size: 0.8125rem; font-weight: 600; color: var(--gray-500); }
+.mk-fchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--primary);
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.mk-fchip span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-fchip i { flex: none; font-size: 0.7rem; opacity: 0.8; }
+.mk-fchip:hover { background: #D4F2E4; }
+.mk-fclear { min-height: 36px; padding: 0 0.5rem; border: 0; background: none; color: var(--secondary); font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+.mk-fclear:hover { text-decoration: underline; }
+.mk-fchip:focus-visible, .mk-fclear:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
+
+/* ---- Products toolbar: sort + price range ---- */
+.mk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: calc(var(--spacing-sm) * -1) 0 var(--spacing-lg); }
+.mk-select { position: relative; display: inline-flex; align-items: center; }
+.mk-select > i { position: absolute; left: 12px; font-size: 0.8rem; color: var(--gray-500); pointer-events: none; }
+.mk-select select {
+    min-height: 42px;
+    padding: 0 2rem 0 2.1rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    background: #fff;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    max-width: 100%;
+    text-align: left;
+}
+.mk-select select:focus-visible, .mk-price input:focus-visible { outline: 2px solid var(--secondary); outline-offset: 1px; }
+.mk-price { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; }
+.mk-price-label { font-size: 0.8125rem; font-weight: 600; color: var(--gray-500); white-space: nowrap; }
+.mk-price input {
+    width: 7.5rem;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 0.75rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius-md);
+    background: #fff;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+}
+.mk-price-dash { color: var(--gray-400); }
+.mk-price .btn { min-height: 42px; }
+
+/* Search dropdown: the row the arrow keys are on */
+.search-preview-item.is-active, .search-preview-submit.is-active { background: var(--gray-100); outline: 2px solid var(--secondary); outline-offset: -2px; }
+
+/* ---- Skeletons that match the cards ---- */
+.mk-skel-card { pointer-events: none; }
+.mk-skel-card .mk-store-banner.skeleton { border-radius: 0; }
+.mk-skel-card .mk-store-logo.skeleton { box-shadow: none; border-color: #fff; }
+.mk-skel-card .mk-product-image.skeleton { border-radius: 0; }
+.mk-skel-line { height: 0.9rem; margin-top: 8px; }
+.mk-skel-line--sm { height: 0.7rem; }
+.mk-skel-btn { height: 36px; margin-top: 14px; }
+
+/* ---- Footer area of a section: "View all stores" / "Show more products" ---- */
+.mk-more { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: var(--spacing-xl); }
+.mk-more .btn { min-width: min(100%, 260px); }
+.mk-more-note { margin: 0; font-size: 0.8125rem; color: var(--gray-500); }
+
+/* ---- Empty / error state inside a grid ---- */
+.mk-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+    text-align: center;
+    color: var(--gray-500);
+    background: #fff;
+    border: 1px dashed var(--gray-300);
+    border-radius: var(--border-radius-lg);
+}
+.mk-state .empty-icon { margin: 0 0 4px; }
+.mk-state h3 { margin: 0; font-size: 1.05rem; color: var(--gray-700); }
+.mk-state p { margin: 0 0 8px; max-width: 42ch; font-size: 0.875rem; }
+
 /* ---- Seller CTA ---- */
 .marketplace-cta {
     background: var(--ink);
@@ -636,6 +1231,13 @@
 .cta-feature:last-child { border-bottom: none; padding-bottom: 0; }
 .cta-feature i { color: var(--primary); }
 
+/* Search dropdown rows: name over store (they are <span>s, so they need display:block to stack),
+   and a very long price shrinks with an ellipsis instead of running over the name. */
+.search-preview-info { display: flex; flex-direction: column; gap: 1px; }
+.search-preview-name, .search-preview-meta { display: block; min-width: 0; }
+.search-preview-price { max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-preview-item { min-height: 52px; }
+
 /* ---- Footer ---- */
 /* The marketplace keeps its richer multi-column directory footer (distinct
    from the shared slim .footer used on other pages). Light theme so it blends
@@ -653,6 +1255,8 @@
     gap: var(--spacing-xl);
     margin-bottom: var(--spacing-2xl);
 }
+
+.footer-section { min-width: 0; }
 
 .footer-section .logo {
     font-family: var(--font-display);
@@ -685,19 +1289,23 @@
 }
 
 .footer-section ul { list-style: none; padding: 0; margin: 0; }
-.footer-section ul li { margin-bottom: var(--spacing-sm); }
+.footer-section ul li { margin: 0; }
 .footer-section ul li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px; /* comfortable tap target without looking looser */
     color: var(--gray-600);
     text-decoration: none;
     font-size: 0.9rem;
     transition: color 0.15s ease;
+    overflow-wrap: anywhere;
 }
-.footer-section ul li a:hover { color: var(--primary-dark); }
+.footer-section ul li a:hover { color: var(--primary-dark); text-decoration: underline; }
 
-.social-links { display: flex; gap: var(--spacing-sm); }
+.social-links { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); }
 .social-links a {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--border-radius-md);
     background: white;
     border: 1px solid var(--gray-200);
@@ -714,12 +1322,17 @@
 .footer-bottom {
     border-top: 1px solid var(--gray-200);
     padding-top: var(--spacing-lg);
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
 }
-.footer-bottom p { color: var(--gray-500); font-size: 0.85rem; margin-bottom: 0; }
+.footer-bottom p { color: var(--gray-500); font-size: 0.85rem; margin-bottom: 0; min-width: 0; }
 .footer-bottom a { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+.footer-bottom a:hover { text-decoration: underline; }
 
-/* ---- Empty & loading states ---- */
+/* ---- Empty & loading states (shared with following.html / favorites.html) ---- */
 .empty-state { text-align: center; padding: var(--spacing-3xl) var(--spacing-xl); color: var(--gray-500); }
 .empty-icon { font-size: 2.5rem; color: var(--gray-300); margin-bottom: var(--spacing-lg); }
 .empty-state h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--gray-700); }
@@ -740,29 +1353,49 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
-    .marketplace-hero { grid-template-columns: 1fr; gap: var(--spacing-2xl); }
-    .hero-stats { max-width: 380px; transform: rotate(0); }
-    .category-grid { grid-template-columns: repeat(3, 1fr); }
     .cta-content { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 900px) {
+    .marketplace-hero { grid-template-columns: minmax(0, 1fr); gap: var(--spacing-xl); padding-top: var(--spacing-2xl); }
+    .hero-content h1 { max-width: 20ch; }
+    /* the store cards become one swipeable row under the text */
+    .hero-collage { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; margin-inline: calc(-1 * var(--spacing-xl)); padding: 6px var(--spacing-xl) 16px; scrollbar-width: none; overscroll-behavior-x: contain; }
+    .hero-collage::-webkit-scrollbar { display: none; }
+    .hero-col { display: contents; }
+    .hero-col:nth-child(2) { margin-top: 0; }
+    .hero-stall { flex: 0 0 min(220px, 64vw); scroll-snap-align: start; }
+    }
+
 @media (max-width: 768px) {
+    .marketplace-container .container { padding: 0 var(--spacing-lg); }
     .header-content { flex-wrap: wrap; padding: var(--spacing-md) var(--spacing-lg); }
     .header-center { order: 3; width: 100%; max-width: none; }
     .header-right { margin-left: auto; }
 
-    .marketplace-hero { padding: var(--spacing-2xl) var(--spacing-lg); }
+    .marketplace-hero { padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-md); gap: var(--spacing-lg); }
     .hero-content h1 { max-width: none; }
-    .hero-actions { width: 100%; }
+    .hero-lead { font-size: 1rem; margin-bottom: var(--spacing-lg); }
+    /* phones: the two buttons sit under the chat; the "Selling something?" line is redundant there */
+    .hero-sell-line { display: none; }
+    .hero-collage { margin-inline: calc(-1 * var(--spacing-lg)); padding-inline: var(--spacing-lg); }
+    .hero-actions { display: flex; width: 100%; }
     .hero-actions .btn { flex: 1; }
+    .hero-band { padding: var(--spacing-md) var(--spacing-lg) var(--spacing-xl); }
+    .hero-band-card { flex-direction: column; }
+    .hero-band-link { min-height: 52px; justify-content: space-between; padding: 0 16px; }
 
     .marketplace-categories { padding: var(--spacing-2xl) 0; }
-    .category-grid { grid-template-columns: repeat(2, 1fr); }
+    .marketplace-stores { padding: var(--spacing-2xl) 0; }
+    .marketplace-categories,
+    .marketplace-stores,
+    .marketplace-products { scroll-margin-top: 132px; } /* header wraps to two rows here */
 
     .section-header { flex-direction: column; align-items: flex-start; }
     .filter-tabs { width: 100%; overflow-x: auto; }
     .filter-tab { white-space: nowrap; }
 
+    /* legacy grids (following / favorites) */
     .stores-grid, .products-grid { grid-template-columns: 1fr; }
 
     .marketplace-cta { padding: var(--spacing-2xl) var(--spacing-lg); }
@@ -774,15 +1407,46 @@
        of each stacking as its own full-width column. */
     .footer-content > .footer-section:first-child,
     .footer-content > .footer-section:last-child { grid-column: 1 / -1; }
+    .footer-bottom { flex-direction: column; justify-content: center; text-align: center; }
+}
+
+@media (max-width: 600px) {
+    .mk-toolbar { gap: 10px; }
+    .mk-select { width: 100%; }
+    .mk-select select { width: 100%; }
+    .mk-price { width: 100%; }
+    .mk-price-label { display: none; }
+    .mk-price input { flex: 1 1 0; width: auto; }
+            .mk-head h2 { font-size: 1.2rem; }
+    .mk-head .filter-tabs { flex-wrap: nowrap; padding-bottom: 2px; }
+      /* tiles are ~80px wide here: photo only (the link still carries the name + price) */
+    .hero-collage { gap: 8px; }
+            .stat-item { padding: 12px 12px; }
+    .stat-value { font-size: 1.25rem; }
+    .stat-label { font-size: 0.72rem; }
 }
 
 @media (max-width: 480px) {
-    .category-grid { grid-template-columns: 1fr; }
     .products-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
     /* image keeps its square aspect-ratio at every width */
     .footer-content { grid-template-columns: 1fr 1fr; gap: var(--spacing-lg) var(--spacing-md); }
     .footer-section h4 { font-size: 0.75rem; }
     .footer-section > p { max-width: none; }
+}
+
+/* Guest header on a phone: Login + Create account + cart used to wrap into a third row of a sticky bar.
+   Slightly smaller buttons let them share the logo's row (very narrow screens still wrap, which is fine). */
+@media (max-width: 480px) {
+    .marketplace-header-actions .btn-sm { padding: 0.45rem 0.7rem; font-size: 0.8rem; white-space: nowrap; }
+    .marketplace-header-actions { column-gap: 6px; }
+}
+
+@media (max-width: 420px) {
+    .marketplace-container .container { padding: 0 12px; }
+    .marketplace-hero { padding-left: 12px; padding-right: 12px; }
+    .hero-collage { margin-inline: -12px; padding-inline: 12px; }
+    .hero-band { padding-left: 12px; padding-right: 12px; }
+    .mk-stores-grid, .mk-products-grid { gap: 10px; }
 }
 
 /* Account avatar + dropdown menu, replacing the plain "Dashboard" link for
@@ -923,6 +1587,8 @@
     justify-content: center;
     color: var(--gray-500);
 }
+.search-preview-thumb { overflow: hidden; font-weight: 700; font-size: 0.9rem; }
+.search-preview-thumb > img { width: 100%; height: 100%; object-fit: cover; }
 
 .search-preview-info { flex: 1; min-width: 0; }
 .search-preview-name { font-size: 0.8125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -943,4 +1609,10 @@
 }
 .marketplace-header-actions{display:flex;align-items:center;gap:1rem}.header-link{font-size:.85rem;font-weight:600;color:inherit;text-decoration:none}
 
-.store-badge-row{display:inline-flex;flex-wrap:wrap;gap:.3rem;vertical-align:middle}
+.store-badge-row{display:inline-flex;flex-wrap:wrap;gap:.3rem;vertical-align:middle;min-width:0;max-width:100%}
+/* Long store name / many badges: the name takes at most 2 lines and the badge row wraps under it instead of spilling past the card. */
+.store-name{flex-wrap:wrap;column-gap:.5rem;row-gap:.3rem;min-width:0}
+.store-name-text{min-width:0;max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.store-meta{flex-wrap:wrap;row-gap:.4rem}
+.store-meta-item{min-width:0;max-width:100%}
+.store-meta-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

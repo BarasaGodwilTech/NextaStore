@@ -3,7 +3,8 @@ const { Prisma } = require('@prisma/client');
 const prisma = require('../prisma');
 const { apiError } = require('../utils');
 const { generateOrderCode } = require('../orderCode');
-const { getStoreForUser, resolveContextStore, serializeOrder, createNotification, getActivePaymentMethods } = require('../helpers');
+const { ORDER_TRANSITIONS, CANCEL_GRACE_PERIOD_MS, CANCEL_ABUSE_WINDOW_MS, CANCEL_ABUSE_LIMIT, BUYER_CANCELLABLE_STATUSES } = require('../platformRules');
+const { getStoreForUser, resolveContextStore, serializeOrder, createNotification, getActivePaymentMethods, assertStoreOpenForBusiness } = require('../helpers');
 const { requireAuth, requireSeller } = require('../middleware');
 const { validateBody, publicOrderSchema, batchOrderSchema, orderStatusSchema, orderReportSchema, orderCancelSchema } = require('../validation');
 
@@ -18,6 +19,11 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
     try {
         const store = await resolveContextStore(req);
         if (!store) throw apiError('Store not found.', 404);
+        // A draft store, or one whose trial / paid time has run out, takes no
+        // new orders - from anyone, the owner included. Without this a stale
+        // cart, a copied product id or a direct API call could still order
+        // from a store the marketplace already hides.
+        assertStoreOpenForBusiness(store);
 
         const payload = req.body;
         // Payment method labels now come from the platform's live catalog
@@ -33,6 +39,11 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
         // able to submit its own `price` per line item and the total was
         // computed from that, so anyone could check out for any amount they
         // wanted. Price, name, and total are now always looked up fresh.
+        // Declared out here, not inside the transaction: it is also read after the
+        // transaction commits (the low-stock notification below). Inside, that
+        // read threw a ReferenceError AFTER the order was saved - the buyer got a
+        // 500 for an order that existed, and a retry would have placed it twice.
+        const LOW_STOCK_THRESHOLD = 3;
         const order = await prisma.$transaction(async (tx) => {
             const productIds = payload.items.map(i => i.productId);
             const products = await tx.product.findMany({
@@ -45,6 +56,7 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
             for (const line of payload.items) {
                 const product = byId.get(line.productId);
                 if (!product) throw apiError(`One of the items in your cart is no longer available.`, 409);
+                if (product.listingType && product.listingType !== 'physical') throw apiError(`"${product.name}" is a ${product.listingType} listing, so it can't be added to an order. Message the seller to arrange it.`, 409);
                 if (product.stock < line.quantity) {
                     throw apiError(`Only ${product.stock} left of "${product.name}".`, 409);
                 }
@@ -72,7 +84,6 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
             // treat "0 rows updated" as "someone else just took it" rather than
             // trusting the earlier read.
             const lowStockCandidates = [];
-            const LOW_STOCK_THRESHOLD = 3;
             for (const item of itemsData) {
                 const result = await tx.product.updateMany({
                     where: { id: item.productId, stock: { gte: item.quantity } },
@@ -82,7 +93,11 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
                     const fresh = await tx.product.findUnique({ where: { id: item.productId } });
                     throw apiError(`Only ${fresh ? fresh.stock : 0} left of "${item.productName}".`, 409);
                 }
-                if (product.stock > LOW_STOCK_THRESHOLD && product.stock - item.quantity <= LOW_STOCK_THRESHOLD && product.stock - item.quantity > 0) lowStockCandidates.push(item.productId);
+                // `product` was not in scope here (it only exists inside the loop
+                // above), so this line threw a ReferenceError and every order
+                // through this route failed. Look the snapshot up by id.
+                const before = byId.get(item.productId);
+                if (before && before.stock > LOW_STOCK_THRESHOLD && before.stock - item.quantity <= LOW_STOCK_THRESHOLD && before.stock - item.quantity > 0) lowStockCandidates.push(item.productId);
             }
 
             // Order ids are short human-friendly codes, not cuids — collide
@@ -125,7 +140,7 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
                 type: 'new_order',
                 title: `New order ${order.created.id}`,
                 body: `${order.created.customerName} placed an order for ${order.created.items.length} item(s).`,
-                link: `dashboard.html#orders`
+                link: `/dashboard#orders`
             });
 
             // Low-stock check: threshold of 3, matching the "low stock"
@@ -140,7 +155,7 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
                     type: 'low_stock',
                     title: `Low stock: ${product.name}`,
                     body: `Only ${product.stock} left.`,
-                    link: `dashboard.html#products`
+                    link: `/dashboard#products`
                 });
             }
         }
@@ -163,11 +178,15 @@ router.post('/batch', requireAuth, validateBody(batchOrderSchema), async (req, r
             for(const group of payload.stores){
                 const store=await tx.store.findFirst({where:{id:group.storeId,deletedAt:null}});
                 if(!store) throw apiError('One of the stores in your cart is no longer available.',409);
+                // Same rule as /public above: nothing is ordered from a draft
+                // or lapsed store. The message names the store so the buyer
+                // knows which items to remove from the cart.
+                assertStoreOpenForBusiness(store);
                 if(group.fulfillmentMethod==='delivery'&&!payload.deliveryAddress) throw apiError('A delivery address is required for delivery orders.',400);
                 const accepted=store.payments||{};
                 if(group.paymentMethod){const key=Object.keys(labels).find(k=>k===group.paymentMethod||labels[k].toLowerCase()===String(group.paymentMethod).toLowerCase());if(!key||!accepted[key])throw apiError(`That store does not advertise ${labels[key]||group.paymentMethod} as an accepted payment method.`,400);}
                 const ids=group.items.map(i=>i.productId); const products=await tx.product.findMany({where:{id:{in:ids},storeId:store.id,deletedAt:null}}); const byId=new Map(products.map(p=>[p.id,p])); let total=new Prisma.Decimal(0); const itemsData=[];
-                for(const line of group.items){const product=byId.get(line.productId);if(!product)throw apiError('One of the items in your cart is no longer available.',409);const result=await tx.product.updateMany({where:{id:product.id,stock:{gte:line.quantity}},data:{stock:{decrement:line.quantity},sold:{increment:line.quantity}}});if(!result.count){const fresh=await tx.product.findUnique({where:{id:product.id}});throw apiError(`Only ${fresh?fresh.stock:0} left of "${product.name}".`,409);}total=total.plus(product.price.times(line.quantity));itemsData.push({productId:product.id,productName:product.name,quantity:line.quantity,unitPrice:product.price});}
+                for(const line of group.items){const product=byId.get(line.productId);if(!product)throw apiError('One of the items in your cart is no longer available.',409);if(product.listingType&&product.listingType!=='physical')throw apiError(`"${product.name}" is a ${product.listingType} listing, so it can't be added to an order. Message the seller to arrange it.`,409);const result=await tx.product.updateMany({where:{id:product.id,stock:{gte:line.quantity}},data:{stock:{decrement:line.quantity},sold:{increment:line.quantity}}});if(!result.count){const fresh=await tx.product.findUnique({where:{id:product.id}});throw apiError(`Only ${fresh?fresh.stock:0} left of "${product.name}".`,409);}total=total.plus(product.price.times(line.quantity));itemsData.push({productId:product.id,productName:product.name,quantity:line.quantity,unitPrice:product.price});}
                 created.push(await tx.order.create({data:{id:generateOrderCode(),storeId:store.id,buyerId:req.user.id,customerName:payload.customerName,customerPhone:payload.customerPhone,deliveryAddress:group.fulfillmentMethod==='delivery'?payload.deliveryAddress:'',fulfillmentMethod:group.fulfillmentMethod,paymentMethod:group.paymentMethod||null,paymentStatus:'unpaid',status:'pending',total,items:{create:itemsData}},include:{items:true,store:{select:{id:true,slug:true,name:true,logo:true,address:true,district:true,detailedDirections:true,mapCoordinates:true,verified:true,badgeCommitmentMonths:true}}}}));
             } return created;
         });
@@ -179,7 +198,7 @@ router.post('/batch', requireAuth, validateBody(batchOrderSchema), async (req, r
                     type: 'new_order',
                     title: `New order ${order.id}`,
                     body: `${order.customerName} placed an order for ${order.items.length} item(s).`,
-                    link: 'dashboard.html#orders'
+                    link: '/dashboard#orders'
                 });
             }
             await createNotification({
@@ -187,7 +206,7 @@ router.post('/batch', requireAuth, validateBody(batchOrderSchema), async (req, r
                 type: 'new_message',
                 title: `Order ${order.id} placed`,
                 body: `${store?.name || 'Seller'} received your order request.`,
-                link: `orders.html?order=${encodeURIComponent(order.id)}`
+                link: `/orders?order=${encodeURIComponent(order.id)}`
             });
         }
         res.status(201).json({data:orders.map(serializeOrder)});
@@ -282,13 +301,7 @@ router.put('/:id/status', requireAuth, requireSeller, validateBody(orderStatusSc
         // is kept reachable from 'shipped' itself (-> delivered) purely so
         // any order that already reached it before this simplification can
         // still be closed out; nothing routes a new order through it.
-        const transitions = {
-            pending: ['processing', 'cancelled'],
-            processing: ['delivered', 'cancelled'],
-            shipped: ['delivered'],
-            delivered: [],
-            cancelled: []
-        };
+        const transitions = ORDER_TRANSITIONS; // platformRules.js
         if (req.body.status === order.status) return res.json({ data: serializeOrder(order) });
         if (!transitions[order.status]?.includes(req.body.status)) {
             throw apiError(`An order cannot move from ${order.status} to ${req.body.status}.`, 409);
@@ -320,7 +333,7 @@ router.put('/:id/status', requireAuth, requireSeller, validateBody(orderStatusSc
                 type: 'new_order',
                 title: `Order ${order.id} is ${updated.status}`,
                 body: `Your order from ${store.name} has been updated.`,
-                link: `orders.html?order=${encodeURIComponent(order.id)}`
+                link: `/orders?order=${encodeURIComponent(order.id)}`
             });
         }
 
@@ -335,9 +348,7 @@ router.put('/:id/status', requireAuth, requireSeller, validateBody(orderStatusSc
 // isn't grace-period- or rate-limited — a seller can cancel anytime, a
 // buyer only gets a short window right after placing the order, has to
 // give a reason, and can't cycle place-then-cancel indefinitely.
-const CANCEL_GRACE_PERIOD_MS = 30 * 60 * 1000; // 30 minutes from checkout
-const CANCEL_ABUSE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // rolling 30 days
-const CANCEL_ABUSE_LIMIT = 3; // buyer-initiated cancellations allowed per window
+// CANCEL_GRACE_PERIOD_MS / CANCEL_ABUSE_WINDOW_MS / CANCEL_ABUSE_LIMIT live in platformRules.js.
 const CANCEL_REASON_LABELS = {
     changed_mind: 'Changed their mind',
     wrong_item: 'Ordered the wrong item/size/quantity by mistake',
@@ -355,7 +366,7 @@ router.post('/:id/cancel', requireAuth, validateBody(orderCancelSchema), async (
         if (!order) throw apiError('Order not found.', 404);
 
         if (order.status === 'cancelled') throw apiError('This order is already cancelled.', 409);
-        if (!['pending', 'processing'].includes(order.status)) {
+        if (!BUYER_CANCELLABLE_STATUSES.includes(order.status)) {
             throw apiError('This order has already moved past the point it can be cancelled here — message the seller instead.', 409);
         }
         const ageMs = Date.now() - new Date(order.createdAt).getTime();
@@ -407,7 +418,7 @@ router.post('/:id/cancel', requireAuth, validateBody(orderCancelSchema), async (
                 type: 'order_cancelled',
                 title: `Order ${order.id} was cancelled by the buyer`,
                 body: `${CANCEL_REASON_LABELS[req.body.reason] || req.body.reason} — "${req.body.details}"`,
-                link: 'dashboard.html#orders'
+                link: '/dashboard#orders'
             });
         }
 

@@ -3,7 +3,7 @@
   "short_name": "NextaStore",
   "description": "Build your online store. Mobile-first storefronts for East African entrepreneurs — accept Mobile Money, manage orders, and grow.",
   "id": "/index.html",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -23,17 +23,17 @@
   "shortcuts": [
     {
       "name": "Marketplace",
-      "url": "/marketplace.html",
+      "url": "/marketplace",
       "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Dashboard",
-      "url": "/dashboard.html",
+      "url": "/dashboard",
       "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Cart",
-      "url": "/cart.html",
+      "url": "/cart",
       "icons": [{ "src": "/assets/brand/png/icon/icon-192.png", "sizes": "192x192" }]
     }
   ]

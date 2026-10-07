@@ -740,6 +740,20 @@ hr.rule {
 .site-dialog-overlay { position:fixed; inset:0; background:rgba(24,20,17,.52); display:grid; place-items:center; padding:1rem; z-index:5000; }
 .site-dialog { width:min(430px,100%); background:#fff; border-radius:var(--border-radius-lg); box-shadow:var(--shadow-xl); padding:1.4rem; text-align:center; }
 .site-dialog h2{font-size:1.2rem;margin:.5rem 0}.site-dialog p{color:var(--gray-600);margin:0 0 1.2rem}.site-dialog-icon{font-size:1.5rem}.site-dialog-icon.tone-danger{color:var(--danger)}.site-dialog-actions{display:flex;justify-content:flex-end;gap:.65rem;flex-wrap:wrap}
+/* app.prompt() — the in-site replacement for window.prompt(): a labelled field inside the
+   same dialog shell as app.confirm(). Text is left-aligned (the shell centres it). */
+.site-dialog-form{text-align:left}
+.site-dialog-form .site-dialog-icon{text-align:center}
+.site-dialog-form h2{text-align:center}
+.site-dialog-form p{text-align:center;margin-bottom:1rem}
+.site-dialog-label{display:block;font-size:.8rem;font-weight:700;color:var(--gray-700);margin-bottom:.35rem}
+.site-dialog-field-row{display:flex;gap:.5rem;align-items:stretch}
+.site-dialog-input{width:100%;min-width:0;box-sizing:border-box}
+.site-dialog-form textarea.site-dialog-input{min-height:96px;max-height:40vh;resize:vertical}
+.site-dialog-copy{flex:0 0 auto;white-space:nowrap}
+.site-dialog-meta{display:flex;justify-content:space-between;gap:.75rem;min-height:1.3rem;margin:.3rem 0 .9rem;font-size:.75rem}
+.site-dialog-error{color:var(--danger);font-weight:600}
+.site-dialog-count{margin-left:auto;color:var(--gray-500)}
 @media(max-width:480px){.account-trigger-name{display:none}.site-dialog-actions .btn{flex:1;min-height:44px}}
 
 /* Round-3 mobile/accessibility baseline. */
@@ -870,15 +884,18 @@ input, select, textarea { font-size: 16px; }
     .push-soft-prompt-actions{flex-direction:row}
     .push-soft-prompt-enable,.push-soft-prompt-dismiss{flex:1}
 }
-.notification-preview-list{max-height:360px;overflow:auto}
+.notification-preview-list{max-height:min(520px,calc(100vh - 220px));overflow:auto}
 .notification-preview-item{display:grid;grid-template-columns:36px minmax(0,1fr) 10px;gap:.7rem;padding:.8rem 1rem;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit}
 .notification-preview-item:hover{background:var(--gray-50)}
 .notification-preview-item.is-unread{background:#F4FBF7}
 .notification-preview-item[role="button"]{cursor:pointer}
 .notification-preview-icon{width:36px;height:36px;border-radius:11px;background:var(--secondary-light);color:var(--primary-dark);display:grid;place-items:center}
 .notification-preview-main{min-width:0;display:flex;flex-direction:column;gap:.12rem;position:relative}
-.notification-preview-main strong{font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.notification-preview-main span{font-size:.74rem;color:var(--gray-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Full notification text on every screen size (desktop used to cut title/body to one
+   line with an ellipsis; phones already wrapped). Long unbroken strings (order codes,
+   URLs) break instead of pushing the panel wider. */
+.notification-preview-main strong{font-size:.8rem;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+.notification-preview-main span{font-size:.74rem;color:var(--gray-600);white-space:normal;overflow-wrap:anywhere;line-height:1.4}
 .notification-preview-main time{font-size:.68rem;color:var(--gray-400)}
 /* Item-level unread indicator. Green (the brand colour) on purpose — the bell's
    exterior count is gold, and the two mean different things: the count says
@@ -925,6 +942,9 @@ html,body{max-width:100%;overflow-x:clip}
    order detail) renders it identically instead of each page keeping its
    own near-duplicate rule. */
 .seller-badge{display:inline-flex;align-items:center;gap:.28rem;padding:.25rem .5rem;border-radius:999px;border:1px solid rgba(0,121,79,.14);background:#eaf8f2;color:#00794f;font-size:.68rem;font-weight:900;line-height:1;vertical-align:middle;white-space:nowrap}.seller-badge i{font-size:.68rem}.seller-badge--compact{width:21px;height:21px;padding:0;justify-content:center;border-radius:50%}.seller-badge--compact span{display:none}.seller-badge--gold{background:#fff7df;color:#8b6500;border-color:rgba(226,154,46,.22)}.seller-badge--platinum{background:#f1eefb;color:#5d4a91;border-color:rgba(93,74,145,.18)}.seller-badge--ready{background:#f2f7f5;color:#41665a;border-color:rgba(65,102,90,.14)}.seller-badge--menu{margin-left:.3rem}
+/* A badge can never be wider than the space it's in: a long label truncates with an ellipsis (full text stays in the tooltip). */
+.seller-badge{max-width:100%;min-width:0;box-sizing:border-box}.seller-badge>i{flex:none}.seller-badge>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.seller-badge--more{background:var(--gray-100,#f2f4f3);color:var(--gray-600,#5f6b66);border-color:var(--gray-200,#e3e8e5);cursor:help;flex:none}
 .verified-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:800;color:var(--brand-green-dark,#01B075);background:#E8F8F1;border:1px solid rgba(1,176,117,.15);padding:.22rem .45rem;border-radius:999px;vertical-align:middle}
 
 /* Seller identity badge shown in every authenticated account shell when the
@@ -1196,3 +1216,26 @@ html,body{max-width:100%;overflow-x:clip}
 .presence-status:empty { display: none; }
 
 .store-logo-wrap .presence-dot { right: 2px; bottom: 2px; }
+
+
+/* --- Seller tier mark (Verified / Gold / Platinum) ------------------------
+   A small trust mark on product cards, driven by product.sellerTier or the
+   storefront's own tier. Sits on the image (bottom-left), so it never fights
+   the discount badge (top-left) or the heart (top-right). */
+.tier-mark {
+    position: absolute; left: 8px; bottom: 8px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 999px;
+    font-size: 0.6875rem; font-weight: 700; line-height: 1.4; letter-spacing: 0.01em;
+    background: rgba(255, 255, 255, 0.95); color: #0B3B2B;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+}
+.tier-mark i { font-size: 0.75rem; }
+.tier-mark--verified i { color: #1a73e8; }
+.tier-mark--gold { background: linear-gradient(135deg, #fff6d6, #f5d36b); color: #6b4a00; }
+.tier-mark--gold i { color: #b57f00; }
+.tier-mark--platinum { background: linear-gradient(135deg, #f4f7fb, #cfd8e6); color: #2b3a52; }
+.tier-mark--platinum i { color: #5a6f92; }
+/* Very narrow cards: icon only. */
+@container (max-width: 170px) { .tier-mark-text { display: none; } .tier-mark { padding: 4px 6px; } }

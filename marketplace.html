@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
     <title>Marketplace - NextaStore</title>
+    <meta name="description" content="Browse local stores and products from sellers across Uganda on NextaStore. Search by name or category, compare prices, and buy straight from the shop.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="NextaStore Marketplace - local stores and products in Uganda">
+    <meta property="og:description" content="Shop clothing, food, phones, crafts and more from local sellers across Uganda.">
+    <meta name="twitter:title" content="NextaStore Marketplace - local stores and products in Uganda">
+    <meta name="twitter:description" content="Shop clothing, food, phones, crafts and more from local sellers across Uganda.">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/loading-overlay.css"><noscript><style>html.nx-loading>body>*:not(#nxLoader){visibility:visible!important;opacity:1!important}html.nx-loading #nxLoader{display:none!important}</style></noscript>
     <link rel="stylesheet" href="css/marketplace.css">
+    <link rel="stylesheet" href="css/assistant.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
@@ -19,6 +27,7 @@
     <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/categories.css">
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
@@ -52,217 +61,154 @@
     </div>
     <script src="js/loading-overlay.js"></script>
     
-    <div class="marketplace-container">
+    <div class="marketplace-container" id="top">
+        <noscript><p style="margin:0;padding:12px 16px;background:#FFF4D6;color:#5C4400;text-align:center;font-size:.9rem">NextaStore needs JavaScript to show stores and products. Please turn it on and reload.</p></noscript>
         <!-- Header -->
         <header class="marketplace-header">
             <div class="header-content">
                 <div class="header-left">
-                    <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                    <a href="/" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
                 </div>
                 <div class="header-center">
                     <div class="search-bar marketplace-search" id="marketplaceSearchBar">
                         <i class="fas fa-magnifying-glass"></i>
-                        <input type="text" id="marketplaceSearch" placeholder="Search stores, products..." autocomplete="off">
-                        <div class="search-preview-dropdown" id="searchPreviewDropdown"></div>
+                        <input type="text" id="marketplaceSearch" placeholder="Search stores, products..." autocomplete="off" maxlength="100" enterkeyhint="search" aria-label="Search stores and products" role="combobox" aria-expanded="false" aria-controls="searchPreviewDropdown" aria-autocomplete="list">
+                        <div class="search-preview-dropdown" id="searchPreviewDropdown" role="listbox" aria-label="Search suggestions"></div>
                     </div>
                 </div>
-                <div class="header-right marketplace-header-actions"><div class="account-nav-slot" data-account-nav></div><a href="cart.html" class="cart-btn" aria-label="Go to cart"><i class="fas fa-cart-shopping"></i><span class="cart-count">0</span></a></div>
+                <div class="header-right marketplace-header-actions"><div class="account-nav-slot" data-account-nav></div><a href="/cart" class="cart-btn" aria-label="Go to cart"><i class="fas fa-cart-shopping"></i><span class="cart-count">0</span></a></div>
             </div>
         </header>
 
         <!-- Hero -->
-        <section class="marketplace-hero">
+        <div class="hero-wrap">
+        <section class="marketplace-hero" aria-labelledby="heroTitle">
             <div class="hero-content">
-                <h1>Shop the stores your neighbours already trust</h1>
-                <p>NextaStore brings together clothing makers, home cooks, electronics dealers, and craftspeople from across Uganda — each running their own shop and shipping straight to your door.</p>
+                <p class="hero-eyebrow"><span class="hero-dot" aria-hidden="true"></span>Local sellers across Uganda</p>
+                <h1 id="heroTitle">Shop the stores your <span class="hero-accent">neighbours</span> already&nbsp;trust</h1>
+                <p class="hero-lead">Clothing makers, home cooks, electronics dealers and craftspeople from across Uganda, each running their own shop.<span class="hero-lead-ask"> New here? Ask Nexi anything: what to sell, how to open a store, or where to find what you need.</span></p>
+                <section class="hero-chat" id="heroChat" aria-label="Ask Nexi, the NextaStore assistant">
+                    <p class="hero-chat-fallback">Ask Nexi what to sell, how to open a store, or where to find what you need. This needs JavaScript. You can still <a href="#stores">browse stores</a> or <a href="/signup">open your own</a>.</p>
+                </section>
                 <div class="hero-actions">
                     <a href="#stores" class="btn btn-primary btn-lg">Browse stores</a>
-                    <a href="signup.html" class="btn btn-outline btn-lg">Start selling</a>
+                    <a href="/signup" class="btn btn-outline btn-lg" id="heroSellBtn" data-hero-sell>Start selling</a>
                 </div>
+                <p class="hero-sell-line">Selling something? <a href="/signup" data-hero-sell>Open a store <i class="fas fa-arrow-right" aria-hidden="true"></i></a></p>
             </div>
-            <div class="hero-stats" id="heroStats">
-                <div class="stat-item">
-                    <span class="stat-label">Active stores</span>
-                    <span class="stat-value">500+</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Products listed</span>
-                    <span class="stat-value">10K+</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Customer support</span>
-                    <span class="stat-value">24/7</span>
-                </div>
-            </div>
+            <div class="hero-collage" id="heroCollage" role="group" aria-label="A few stores on NextaStore"></div>
         </section>
+        <aside class="hero-band" id="heroStats" aria-label="NextaStore at a glance">
+            <div class="hero-band-card">
+                <dl class="hero-stats-list">
+                    <div class="stat-item">
+                        <dt class="stat-label">Stores open</dt>
+                        <dd class="stat-value is-pending" id="heroStoreCount">&ndash;</dd>
+                    </div>
+                    <div class="stat-item">
+                        <dt class="stat-label">Products listed</dt>
+                        <dd class="stat-value is-pending" id="heroProductCount">&ndash;</dd>
+                    </div>
+                    <div class="stat-item">
+                        <dt class="stat-label">Categories</dt>
+                        <dd class="stat-value" id="heroCategoryCount">&ndash;</dd>
+                    </div>
+                </dl>
+                <a class="hero-band-link" href="/stores">
+                    <span class="hero-stack" id="heroStack" aria-hidden="true"></span>
+                    <span class="hero-band-link-text">Meet the sellers <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                </a>
+            </div>
+        </aside>
+        </div>
 
         <!-- Categories -->
-        <section class="marketplace-categories">
+        <section class="marketplace-categories" id="categories">
             <div class="container">
                 <h2>Shop by category</h2>
-                <div class="category-grid" id="categoryGrid">
-                    <div class="category-card" data-category="clothing">
-                        <div class="category-icon"><i class="fas fa-shirt"></i></div>
-                        <h3>Clothing</h3>
-                        <p>Traditional & modern fashion</p>
-                    </div>
-                    <div class="category-card" data-category="accessories">
-                        <div class="category-icon"><i class="fas fa-gem"></i></div>
-                        <h3>Accessories</h3>
-                        <p>Jewelry, bags & more</p>
-                    </div>
-                    <div class="category-card" data-category="food">
-                        <div class="category-icon"><i class="fas fa-mug-saucer"></i></div>
-                        <h3>Food & Drinks</h3>
-                        <p>Local delicacies & beverages</p>
-                    </div>
-                    <div class="category-card" data-category="home">
-                        <div class="category-icon"><i class="fas fa-home"></i></div>
-                        <h3>Home & Living</h3>
-                        <p>Furniture & decor</p>
-                    </div>
-                    <div class="category-card" data-category="electronics">
-                        <div class="category-icon"><i class="fas fa-laptop"></i></div>
-                        <h3>Electronics</h3>
-                        <p>Gadgets & accessories</p>
-                    </div>
-                    <div class="category-card" data-category="crafts">
-                        <div class="category-icon"><i class="fas fa-palette"></i></div>
-                        <h3>Arts & Crafts</h3>
-                        <p>Handmade treasures</p>
-                    </div>
-                </div>
+                <div class="cat-filter-chip" id="catFilterChip" hidden><span id="catFilterChipText"></span><button type="button" id="catFilterClear" aria-label="Show all categories"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
+                <div class="cat-tiles is-collapsed" id="categoryGrid" role="list" aria-label="Categories"></div>
+                <button type="button" class="cat-tiles-toggle" id="catTilesToggle" aria-expanded="false" aria-controls="categoryGrid"><span id="catTilesToggleText">All categories</span><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
             </div>
         </section>
 
         <!-- Featured Stores -->
         <section class="marketplace-stores" id="stores">
             <div class="container">
-                <div class="section-header">
-                    <h2>Featured stores</h2>
-                    <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">All</button>
-                        <button class="filter-tab" data-filter="clothing">Clothing</button>
-                        <button class="filter-tab" data-filter="food">Food</button>
-                        <button class="filter-tab" data-filter="crafts">Crafts</button>
+                <div class="mk-active" id="activeFilters" role="group" aria-label="Active filters" hidden></div>
+                <div class="mk-head">
+                    <div class="mk-head-title">
+                        <h2 id="storesTitle">Featured stores</h2>
+                        <p class="mk-sub" id="storesCount" aria-live="polite"></p>
+                    </div>
+                    <a href="/stores" class="mk-link" id="viewAllStoresLink">View all stores <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                    <div class="filter-tabs" role="group" aria-label="Filter stores by category">
+                        <button type="button" class="filter-tab active" data-filter="all" aria-pressed="true">All</button>
+                        <button type="button" class="filter-tab" data-filter="clothing" aria-pressed="false">Clothing</button>
+                        <button type="button" class="filter-tab" data-filter="food" aria-pressed="false">Food</button>
+                        <button type="button" class="filter-tab" data-filter="crafts" aria-pressed="false">Crafts</button>
                     </div>
                 </div>
-                <!-- Loading State -->
-                <div class="loading-state active" id="storesLoadingState">
-                    <div class="stores-grid">
-                        <div class="store-card">
-                            <div class="store-banner">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="store-info">
-                                <div class="skeleton skeleton-avatar"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
-                            </div>
-                        </div>
-                        <div class="store-card">
-                            <div class="store-banner">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="store-info">
-                                <div class="skeleton skeleton-avatar"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
-                            </div>
-                        </div>
-                        <div class="store-card">
-                            <div class="store-banner">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="store-info">
-                                <div class="skeleton skeleton-avatar"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
-                            </div>
-                        </div>
-                        <div class="store-card">
-                            <div class="store-banner">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="store-info">
-                                <div class="skeleton skeleton-avatar"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-button" style="height: 2rem;"></div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Loading State (cards are drawn by marketplace.js so the count matches the grid) -->
+                <div class="loading-state active" id="storesLoadingState" aria-hidden="true">
+                    <div class="mk-stores-grid" id="storesSkeleton"></div>
                 </div>
 
                 <!-- Actual Content -->
                 <div class="loading-content hidden" id="storesContent">
-                    <div class="stores-grid" id="storesGrid">
+                    <div class="mk-stores-grid" id="storesGrid">
                         <!-- Stores will be loaded here -->
+                    </div>
+                    <div class="mk-more" id="storesMore" hidden>
+                        <a class="btn btn-outline" id="storesViewAll" href="/stores">View all stores <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Trending Products -->
-        <section class="marketplace-products">
+        <section class="marketplace-products" id="products">
             <div class="container">
-                <div class="section-header">
-                    <h2>Trending products</h2>
-                    <a href="#" class="btn-link" id="viewAllTrendingBtn">View all</a>
+                <div class="mk-head">
+                    <div class="mk-head-title">
+                        <h2 id="productsTitle">Trending products</h2>
+                        <p class="mk-sub" id="productsCount" aria-live="polite"></p>
+                    </div>
+                </div>
+                <div class="mk-toolbar" id="productsToolbar">
+                    <label class="mk-select">
+                        <i class="fas fa-arrow-down-wide-short" aria-hidden="true"></i>
+                        <span class="mk-sr">Sort products</span>
+                        <select id="productsSort">
+                            <option value="popular">Trending</option>
+                            <option value="newest">Newest first</option>
+                            <option value="price-low">Price: low to high</option>
+                            <option value="price-high">Price: high to low</option>
+                        </select>
+                    </label>
+                    <form class="mk-price" id="priceForm" novalidate>
+                        <span class="mk-price-label" aria-hidden="true">Price (UGX)</span>
+                        <label class="mk-sr" for="priceMin">Minimum price in UGX</label>
+                        <input type="text" id="priceMin" inputmode="numeric" autocomplete="off" placeholder="Min" maxlength="13">
+                        <span class="mk-price-dash" aria-hidden="true">&ndash;</span>
+                        <label class="mk-sr" for="priceMax">Maximum price in UGX</label>
+                        <input type="text" id="priceMax" inputmode="numeric" autocomplete="off" placeholder="Max" maxlength="13">
+                        <button type="submit" class="btn btn-outline btn-sm">Apply</button>
+                    </form>
                 </div>
                 <!-- Loading State -->
-                <div class="loading-state active" id="productsLoadingState">
-                    <div class="products-grid">
-                        <div class="product-card">
-                            <div class="product-image">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="product-info">
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
-                            </div>
-                        </div>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="product-info">
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
-                            </div>
-                        </div>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="product-info">
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
-                            </div>
-                        </div>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <div class="skeleton skeleton-image"></div>
-                            </div>
-                            <div class="product-info">
-                                <div class="skeleton skeleton-text-sm"></div>
-                                <div class="skeleton skeleton-text"></div>
-                                <div class="skeleton skeleton-text-sm" style="width: 60%;"></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="loading-state active" id="productsLoadingState" aria-hidden="true">
+                    <div class="mk-products-grid" id="productsSkeleton"></div>
                 </div>
 
                 <!-- Actual Content -->
                 <div class="loading-content hidden" id="productsContent">
-                    <div class="products-grid" id="trendingProducts">
+                    <div class="mk-products-grid" id="trendingProducts">
                         <!-- Products will be loaded here -->
+                    </div>
+                    <div class="mk-more" id="productsMore" hidden>
+                        <p class="mk-more-note" id="productsShown"></p>
+                        <button type="button" class="btn btn-outline" id="productsLoadMore">Show more products</button>
                     </div>
                 </div>
             </div>
@@ -272,9 +218,9 @@
         <section class="marketplace-cta">
             <div class="cta-content">
                 <div class="cta-copy">
-                    <h2>Have something to sell?</h2>
-                    <p>Set up a shop in a few minutes — list products, take orders, and get paid without needing a website of your own.</p>
-                    <a href="signup.html" class="btn btn-primary btn-lg">Start selling</a>
+                    <h2 id="ctaTitle">Have something to sell?</h2>
+                    <p id="ctaText">Set up a shop in a few minutes — list products, take orders, and get paid without needing a website of your own.</p>
+                    <a href="/signup" class="btn btn-primary btn-lg" id="ctaBtn">Start selling</a>
                 </div>
                 <div class="cta-features">
                     <div class="cta-feature">
@@ -298,30 +244,31 @@
             <div class="container">
                 <div class="footer-content">
                     <div class="footer-section">
-                        <a href="index.html" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+                        <a href="/" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
                         <p>Uganda's marketplace for local businesses</p>
                     </div>
-                    <div class="footer-section">
+                    <nav class="footer-section" aria-label="Quick links">
                         <h4>Quick Links</h4>
                         <ul>
-                            <li><a href="index.html">Home</a></li>
-                            <li><a href="marketplace.html">Marketplace</a></li>
-                            <li><a href="stores.html">All Stores</a></li>
-                            <li><a href="signup.html">Start Selling</a></li>
-                            <li><a href="login.html" data-hide-when-authed>Login</a></li>
+                            <li><a href="/">Home</a></li>
+                            <li><a href="/marketplace">Marketplace</a></li>
+                            <li><a href="/stores">All Stores</a></li>
+                            <li><a href="/marketplace#categories">Categories</a></li>
+                            <li><a href="/signup">Start Selling</a></li>
+                            <li><a href="/login" data-hide-when-authed>Login</a></li>
                         </ul>
-                    </div>
-                    <div class="footer-section">
+                    </nav>
+                    <nav class="footer-section" aria-label="Support">
                         <h4>Support</h4>
                         <ul>
-                            <li><a href="safety.html">Trust &amp; Safety</a></li>
-                            <li><a href="terms.html">Terms of Service</a></li>
-                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="/safety">Trust &amp; Safety</a></li>
+                            <li><a href="/terms">Terms of Service</a></li>
+                            <li><a href="/privacy">Privacy Policy</a></li>
                             <li><a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Help Center</a></li>
                             <li><a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Contact Us</a></li>
-                            <li><a href="signup.html">Seller Guide</a></li>
+                            <li><a href="/signup">Seller Guide</a></li>
                         </ul>
-                    </div>
+                    </nav>
                     <div class="footer-section">
                         <h4>Connect</h4>
                         <div class="social-links">
@@ -342,6 +289,8 @@
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/store-banner.js"></script>
+    <script src="js/category-sprite.js"></script><script src="js/categories.js"></script>
+    <script src="js/assistant.js"></script>
     <script src="js/marketplace.js"></script>
     <script>
       if ("serviceWorker" in navigator) {

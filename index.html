@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/clean-url.js"></script>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
@@ -120,7 +121,10 @@
         .store-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
         .store-logo-initial { display: none; }
         .store-logo[data-fallback-initial] .store-logo-initial { display: block; }
-        .store-details h3 { font-size: 1rem; margin-bottom: var(--spacing-xs); font-family: var(--font-body); font-weight: 600; }
+        .store-details h3 { font-size: 1rem; margin-bottom: var(--spacing-xs); font-family: var(--font-body); font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; column-gap: .5rem; row-gap: .3rem; min-width: 0; }
+        .store-details .store-name-text { min-width: 0; max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+        .store-details .store-badge-row { display: inline-flex; flex-wrap: wrap; gap: .3rem; min-width: 0; max-width: 100%; }
+        .store-details p { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
         .store-details p { font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-md); }
         .store-meta { display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md); }
         .store-meta span { font-size: 0.8125rem; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
@@ -172,10 +176,10 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="index.html" class="navbar-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
+        <a href="/" class="navbar-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
         <ul class="navbar-menu">
             <li><a href="#features">Features</a></li>
-            <li><a href="marketplace.html">Marketplace</a></li>
+            <li><a href="/marketplace">Marketplace</a></li>
             <li class="account-nav-slot" data-account-nav></li>
         </ul>
     </nav>
@@ -191,7 +195,7 @@
                 <h1>Your store, live in minutes — not weeks.</h1>
                 <p class="lede">Set up a mobile-first storefront, accept MTN &amp; Airtel Mobile Money, and manage orders from one simple dashboard. No developers, no code.</p>
                 <div class="hero-buttons">
-                    <a href="signup.html?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
+                    <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
                     <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-play"></i> See How It Works</a>
                 </div>
                 <div class="hero-stats">
@@ -264,7 +268,7 @@
     <section class="cta-section">
         <h2>Ready to start selling?</h2>
         <p class="lede" style="margin: 0 auto var(--spacing-xl);">Join thousands of entrepreneurs already trading on NextaStore.</p>
-        <a href="signup.html" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Create Your Store Now</a>
+        <a href="/signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Create Your Store Now</a>
     </section>
 
     <section class="deals-section" id="deals">
@@ -272,7 +276,7 @@
             <div class="deals-head">
                 <h2><i class="fas fa-fire" style="color: var(--coral);"></i> Featured Stores</h2>
                 <p>Discover amazing stores from sellers across the marketplace</p>
-                <a href="stores.html" class="btn-link">View all stores</a>
+                <a href="/stores" class="btn-link">View all stores</a>
             </div>
             <!-- Loading State -->
             <div class="loading-state active" id="featuredStoresLoadingState">
@@ -332,7 +336,7 @@
             </div>
             <div class="deals-cta">
                 <p>Explore our full marketplace with hundreds of stores and thousands of products</p>
-                <a href="marketplace.html" class="btn btn-primary"><i class="fas fa-store"></i> Visit Marketplace</a>
+                <a href="/marketplace" class="btn btn-primary"><i class="fas fa-store"></i> Visit Marketplace</a>
             </div>
         </div>
     </section>
@@ -349,7 +353,7 @@
                     <li><i class="fas fa-circle-check"></i> <strong>Secure</strong> — enterprise-grade protection</li>
                 </ul>
                 <div class="promotion-buttons">
-                    <a href="signup.html?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
+                    <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
                     <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-circle-info"></i> Learn More</a>
                 </div>
             </div>
@@ -365,15 +369,15 @@
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
         <div class="footer-links">
             <a href="#features">Features</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="signup.html" data-auth-aware-link>Create account</a>
-            <a href="marketplace.html">Shop</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-auth-aware-link>Create account</a>
+            <a href="/marketplace">Shop</a>
             <a href="https://nextawillstechnologies.com" target="_blank">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
-    <a href="safety.html" class="footer-safety-link">Trust &amp; Safety</a>
-        <a href="terms.html" class="footer-safety-link">Terms</a>
-        <a href="privacy.html" class="footer-safety-link">Privacy</a></footer>
+    <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a></footer>
 
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
@@ -401,7 +405,7 @@
                             <div class="empty-icon"><i class="fas fa-store"></i></div>
                             <h3>No stores yet</h3>
                             <p>Be the first to start selling on NextaStore!</p>
-                            <a href="signup.html" class="btn btn-primary"><i class="fas fa-rocket"></i> Create Your Store</a>
+                            <a href="/signup" class="btn btn-primary"><i class="fas fa-rocket"></i> Create Your Store</a>
                         </div>
                     `;
                     return;
@@ -423,7 +427,7 @@
                                 ${logoUrl ? `<img src="${app.escapeHtml(logoUrl)}" alt="" onerror="var p=this.parentElement;this.remove();if(p)p.setAttribute('data-fallback-initial','')">` : ''}
                                 <span class="store-logo-initial">${app.escapeHtml(app.getInitial(store.name))}</span>
                             </div>
-                            <h3>${app.escapeHtml(store.name)} <span class="store-badge-row">${app.renderSellerBadges(store, { limit: 2 })}</span></h3>
+                            <h3 title="${app.escapeHtml(store.name)}"><span class="store-name-text">${app.escapeHtml(store.name)}</span> <span class="store-badge-row">${app.renderSellerBadges(store, { limit: 2, more: true })}</span></h3>
                             <p>${app.escapeHtml(store.description || 'Quality products from Uganda')}</p>
                             <div class="store-meta">
                                 <span><i class="fas fa-award"></i> ${store.badges?.length || 0} badge${store.badges?.length === 1 ? "" : "s"}</span>
