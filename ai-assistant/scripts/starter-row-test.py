@@ -1,9 +1,11 @@
 import os
+import tempfile
 import json
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
+SHOTS = Path(os.environ.get('STARTER_ROW_SHOTS') or tempfile.mkdtemp(prefix='starter-row-'))   # test output goes to a temp dir, never into the repo
 CSS = (ROOT / 'css' / 'assistant.css').read_text(encoding='utf-8')
 JS = (ROOT / 'js' / 'assistant.js').read_text(encoding='utf-8')
 
@@ -68,6 +70,10 @@ Object.defineProperty(window,'localStorage',{value:{getItem:k=>null,setItem:()=>
 </body></html>'''
 
 
+# The New chat button's accessible name follows the language (its aria-label is repainted), so after the switch to Luganda it is the Luganda name.
+NEW_CHAT_LG = 'Tandika emboozi empya'
+
+
 def assert_true(condition, message):
     if not condition:
         raise AssertionError(message)
@@ -82,11 +88,11 @@ def run_viewport(page, width, height):
     page.set_content(HTML, wait_until='load')
     page.wait_for_timeout(100)
     if width in (1000, 390):
-        page.screenshot(path=str(ROOT / 'ai-assistant' / ('starter-row-hero-desktop.png' if width == 1000 else 'starter-row-hero-phone.png')), full_page=True)
+        page.screenshot(path=str(SHOTS / ('starter-row-hero-desktop.png' if width == 1000 else 'starter-row-hero-phone.png')), full_page=True)
     page.evaluate('window.NexiAssistant.open()')
     page.wait_for_timeout(400)
     if width in (1000, 390):
-        page.screenshot(path=str(ROOT / 'ai-assistant' / ('starter-row-panel-desktop.png' if width == 1000 else 'starter-row-panel-phone.png')), full_page=True)
+        page.screenshot(path=str(SHOTS / ('starter-row-panel-desktop.png' if width == 1000 else 'starter-row-panel-phone.png')), full_page=True)
 
     hero_box = starters(page, '#hero')
     panel_box = starters(page, '.nexi-panel')
@@ -115,7 +121,9 @@ def run_viewport(page, width, height):
         viewport_right = row.evaluate('e => e.getBoundingClientRect().right')
         assert_true(second_left < viewport_right, 'phone next card does not peek into the row')
     assert_true(prev.get_attribute('aria-label') == 'Previous questions' and nxt.get_attribute('aria-label') == 'More questions', 'arrow aria-labels wrong')
-    assert_true(prev.is_hidden(), f'{width}x{height}: previous arrow should be hidden at start')
+    # WIP 104: both arrows stay on the "Try asking" line while there is more to see; "previous" is dimmed (aria-disabled), not hidden, at the start
+    if row_overflow:
+        assert_true(not prev.is_hidden() and prev.get_attribute('aria-disabled') == 'true' and nxt.get_attribute('aria-disabled') == 'false', f'{width}x{height}: previous arrow should be shown but dimmed at start')
     if row_overflow:
         before = row.evaluate('e => e.scrollLeft')
         nxt.click(); page.wait_for_timeout(120)
@@ -127,7 +135,8 @@ def run_viewport(page, width, height):
     pprev = page.locator('.nexi-panel .nexi-starters-arrow--prev')
     pnxt = page.locator('.nexi-panel .nexi-starters-arrow--next')
     p_overflow = prow.evaluate('e => e.scrollWidth > e.clientWidth')
-    assert_true(pprev.is_hidden(), f'{width}x{height}: panel previous arrow should be hidden at start')
+    if p_overflow:
+        assert_true(not pprev.is_hidden() and pprev.get_attribute('aria-disabled') == 'true', f'{width}x{height}: panel previous arrow should be shown but dimmed at start')
     if p_overflow:
         before = prow.evaluate('e => e.scrollLeft')
         pnxt.click(); page.wait_for_timeout(120)
@@ -180,7 +189,7 @@ def main():
         lg_text = lg_chip.inner_text(); lg_chip.click(); page.wait_for_timeout(80)
         lg_req = page.evaluate('window.__requests[1]')
         assert_true(lg_req['message'] == lg_text and lg_req['lang'] == 'lg', 'Luganda starter payload mismatch')
-        page.get_by_role('button', name='Start a new chat').click(); page.wait_for_timeout(50)
+        page.get_by_role('button', name=NEW_CHAT_LG).click(); page.wait_for_timeout(50)
 
         # Chips disabled while pending.
         page.evaluate('window.__holdNext=true')
@@ -189,7 +198,7 @@ def main():
         assert_true(page.locator('#hero .nexi-starters .nexi-chip').first.is_disabled(), 'starter chips were not disabled while pending')
         page.evaluate('window.__releaseNext()'); page.wait_for_timeout(80)
         assert_true(not page.locator('#hero .nexi-starters .nexi-chip').first.is_disabled(), 'starter chips did not re-enable after pending')
-        page.get_by_role('button', name='Start a new chat').click(); page.wait_for_timeout(50)
+        page.get_by_role('button', name=NEW_CHAT_LG).click(); page.wait_for_timeout(50)
 
         # Flagged reply suggestions remain normal .nexi-suggest chips and are not starter chips.
         page.locator('#hero textarea').fill('Flag this reply')

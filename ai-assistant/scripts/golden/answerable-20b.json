@@ -1,0 +1,25 @@
+{
+  "_note": "WIP 100: 20 more answerable fact-shaped questions with natural correct replies, written BEFORE the second guard tuning round (answerable-36 had already been looked at). Same row format as answerable-36.",
+  "rows": [
+    ["can i pay for seller pass through mtn momo", "Paying for coverage", "Yes. Seller Pass can be paid by mobile money, either MTN MoMo or Airtel Money. Send the payment, then submit the payment reference on the subscription page.", "gated"],
+    ["can my store get a verified seller badge", "Seller badge tiers: Verified Seller, Gold Partner, Platinum Partner", "Yes. A store earns Verified Seller after 6 or more months of continuous paid Seller Pass coverage.", "gated"],
+    ["does nextastore keep my money when i order", "Paying for an order as a buyer at checkout", "No. NextaStore does not take or process payment from buyers. Checkout only sends each seller an order request.", "gated"],
+    ["do i pay on the website when i check out", "Paying for an order as a buyer at checkout", "No. NextaStore does not process payment at checkout. You and the seller agree how and when the money is paid.", "gated"],
+    ["how many days is the free trial", "Seller Pass price, cost, fee and free trial", "Every new store starts with a free trial of 7 days.", "gated"],
+    ["what is the cost of three months of seller pass", "Seller Pass price, cost, fee and free trial", "Three months is UGX 60,000, because the amount is the monthly price times the number of months.", "gated"],
+    ["is a password of 6 characters okay", "Account, passwords and sign-in e-mails", "No. A password must be at least 8 characters.", "gated"],
+    ["can a buyer cancel after 30 minutes have passed", "Can a buyer cancel an order? The cancellation rule", "Not from the Orders page. A buyer can cancel only within 30 minutes of placing the order. After that, message the seller to ask for the cancellation.", "gated"],
+    ["is it possible to follow a store", "Favorites and Following", "Yes. Following subscribes you to a store, and followers are notified when that store adds a new product.", "gated"],
+    ["can i save products to look at later", "Favorites and Following", "Yes. Favorites save individual products for later, and they show on the Favorites page.", "gated"],
+    ["are delivered orders final", "How a seller moves an order along", "Yes. Delivered and cancelled orders are final and cannot be changed.", "gated"],
+    ["will my store still show to shoppers after the paid months end", "Cancelling or renewing a subscription, and what happens if coverage lapses", "No. The store is hidden from shoppers once coverage ends.", "gated"],
+    ["do you accept mobile money", "Mobile money", "Yes. MTN MoMo and Airtel Money are the two mobile-money options built into the platform, and each store chooses which of them it accepts.", "gated"],
+    ["can i add directions to my store location", "Customizing a store", "Yes. From the seller dashboard a store owner can set the district or address and detailed directions.", "gated"],
+    ["is nextastore installable on my home screen", "Does NextaStore have an app?", "Yes. NextaStore is an installable web app that can be added to a phone's home screen from the browser.", "gated"],
+    ["can a password reset link be used twice", "Resetting a forgotten password", "No. A reset link can be used once and expires after a while. Asking for another link makes the older one stop being valid.", "gated"],
+    ["do i get told when my order status changes", "Placing and tracking an order", "Yes. Buyers get a notification, and a push notification if it is enabled, when the status changes.", "gated"],
+    ["can i message a seller before i buy", "Product detail page", "Yes. From the product page a buyer can message the seller directly with questions before buying.", "gated"],
+    ["is delivery arranged with the seller", "Paying for an order as a buyer at checkout", "Yes. The buyer arranges payment and delivery or pickup with the seller, using Messages if needed.", "gated"],
+    ["is there a limit on how many months of seller pass i can buy at once", "Seller Pass price, cost, fee and free trial", "Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time.", "gated"]
+  ]
+}

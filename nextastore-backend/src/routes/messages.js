@@ -85,6 +85,29 @@ function previewText(body, type, metadata) {
     return body;
 }
 
+// Stock only means something for physical listings. Services and digital items
+// keep the column at its default of 0, which must never read as "out of stock".
+function stockSnapshot(product) {
+    return (product.listingType || 'physical') === 'physical' ? product.stock : null;
+}
+
+// Product cards shared before listingType was snapshotted carry `stock: 0` for
+// services too, and the chat would show them as "Out of stock". Fill the type in
+// for those on the way out with one batched lookup (no-op once none are left).
+async function backfillProductCardTypes(messages) {
+    const stale = messages.filter(m => m.type === 'product' && m.metadata && typeof m.metadata === 'object' && m.metadata.productId && !m.metadata.listingType);
+    if (!stale.length) return messages;
+    const ids = [...new Set(stale.map(m => m.metadata.productId))];
+    const rows = await prisma.product.findMany({ where: { id: { in: ids } }, select: { id: true, listingType: true } });
+    const typeById = new Map(rows.map(r => [r.id, r.listingType || 'physical']));
+    return messages.map(m => {
+        if (!stale.includes(m)) return m;
+        const listingType = typeById.get(m.metadata.productId);
+        if (!listingType) return m;
+        return { ...m, metadata: { ...m.metadata, listingType, ...(listingType !== 'physical' ? { stock: null } : {}) } };
+    });
+}
+
 // Turns a validated `attachment` payload into the Message row's
 // `type`/`metadata` pair, snapshotting whatever the bubble needs to render
 // itself later without a second lookup. Only the seller who owns
@@ -108,7 +131,10 @@ async function resolveAttachment(attachment, conversation, senderId) {
                 name: product.name,
                 price: Number(product.price),
                 image: product.thumbnails?.[0] || product.image || product.images?.[0] || null,
-                stock: product.stock
+                listingType: product.listingType || 'physical',
+                // Services/digital items have no stock (the column just defaults to 0),
+                // so never snapshot a number that the chat card would read as "sold out".
+                stock: stockSnapshot(product)
             }
         };
     }
@@ -135,7 +161,7 @@ async function productContextMetadata(productId, storeId) {
     if (!productId) return null;
     const product = await prisma.product.findFirst({ where: { id: productId, storeId, deletedAt: null } });
     if (!product) return null;
-    return { productId: product.id, name: product.name, price: Number(product.price), image: product.thumbnails?.[0] || product.image || product.images?.[0] || null, stock: product.stock };
+    return { productId: product.id, name: product.name, price: Number(product.price), image: product.thumbnails?.[0] || product.image || product.images?.[0] || null, listingType: product.listingType || 'physical', stock: stockSnapshot(product) };
 }
 
 // Starts (or continues) a conversation with a seller. Called from the
@@ -464,7 +490,7 @@ const conversationGetHandler = (peekOnly) => async (req, res, next) => {
                     id: conversation.id,
                     store: { id: conversation.store.id, name: conversation.store.name, slug: conversation.store.slug },
                     presence: await threadPresence(conversation, req.user.id),
-                    messages: newMessages.map(serializeMessage),
+                    messages: (await backfillProductCardTypes(newMessages)).map(serializeMessage),
                     readUpdates,
                     pagination: { mode: 'since', serverTime: requestReceivedAt, truncated: newMessages.length === SINCE_POLL_CAP }
                 }
@@ -497,7 +523,7 @@ const conversationGetHandler = (peekOnly) => async (req, res, next) => {
                 buyer: conversation.buyer ? { id: conversation.buyer.id, name: conversation.buyer.name, avatar: conversation.buyer.avatar || null } : null,
                 product: conversation.product ? { id: conversation.product.id, name: conversation.product.name, image: conversation.product.image } : null,
                 presence: await threadPresence(conversation, req.user.id),
-                messages: pageMessages.map(serializeMessage),
+                messages: (await backfillProductCardTypes(pageMessages)).map(serializeMessage),
                 pagination: { mode: 'page', limit, hasMore, nextBefore, serverTime: requestReceivedAt }
             }
         });

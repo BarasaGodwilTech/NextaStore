@@ -386,3 +386,248 @@
     .showcase-toast { animation: none; }
     .auth-container * { transition: none !important; }
 }
+
+
+/* ==========================================================================
+   WIP 110 - the auth pages pick up the landing page's look
+   ---------------------------------------------------------------------------
+   Same awning idea, now with the kitenge-cloth pattern and the gold sun from
+   the new home page behind the storefront card, the brand's own category
+   stickers instead of generic icons, and a white form card on desktop so the
+   form has a clear edge. Nothing structural moved: the markers qa:static
+   checks (awning, auth-form-main, 16px inputs, reduced motion) are unchanged.
+   ========================================================================== */
+.nx-cat-icon { display: block; flex: none; }
+
+/* Sun + icon pattern live on the panel itself, so forgot-password (which has no
+   storefront card) gets them too. Both sit behind .auth-side-inner.
+   WIP 111: the kitenge rings are gone. The pattern is now the marketplace line-icon
+   tile (cart, tag, parcel, phone, shop...) used as a CSS mask, so it is transparent
+   and the colour comes from the rule below. */
+.auth-side::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: #fff;
+    opacity: 0.14;
+    -webkit-mask-image: url("../assets/brand/svg/market-line-tile.svg"), linear-gradient(160deg, transparent 6%, #000 62%);
+    -webkit-mask-size: 288px 288px, 100% 100%;
+    -webkit-mask-repeat: repeat, no-repeat;
+    -webkit-mask-composite: source-in;
+    mask-image: url("../assets/brand/svg/market-line-tile.svg"), linear-gradient(160deg, transparent 6%, #000 62%);
+    mask-size: 288px 288px, 100% 100%;
+    mask-repeat: repeat, no-repeat;
+    mask-composite: intersect;
+}
+.auth-side::after {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    right: -26%;
+    bottom: -22%;
+    width: min(78%, 36rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--accent-gold);
+}
+.auth-side .auth-awning { position: relative; z-index: 2; }
+.auth-side-inner { position: relative; z-index: 1; }
+.auth-side-content h2 { letter-spacing: -0.03em; }
+.auth-side-quote { color: rgba(255, 255, 255, 0.72); }
+@media (max-height: 800px) { .auth-side::after { display: none; } }
+
+/* Storefront card: sticker art in the tiles, and a second notification. */
+.tile-art .nx-cat-icon { width: 66%; height: 66%; }
+.showcase-card { border-radius: 22px; }
+.showcase-toast--money { top: -0.9rem; bottom: auto; animation-delay: 2.2s; }
+.showcase-toast--money > i { background: var(--accent-gold); color: var(--auth-ink); }
+
+/* Form card on desktop (phones already get a card from the 960px block). */
+@media (min-width: 961px) {
+    .auth-card {
+        max-width: 32rem;
+        padding: 1.9rem 2.25rem 1.5rem;
+        background: #fff;
+        border: 1px solid var(--gray-100);
+        border-radius: 26px;
+        box-shadow: 0 1px 0 rgba(11, 59, 43, 0.04), 0 28px 56px -28px rgba(11, 59, 43, 0.22);
+    }
+    .auth-back { max-width: 32rem; }
+}
+.auth-header h1 { font-size: clamp(1.65rem, 2.4vw, 2.1rem); letter-spacing: -0.03em; }
+@media (min-width: 961px) { .auth-header { margin-bottom: 1.2rem; } .auth-card .form-group { margin-bottom: 0.95rem; } }
+
+/* Account type: a tick on the chosen card, so the choice is not colour-only. */
+.account-type-option-card { position: relative; }
+.account-type-option input:checked + .account-type-option-card::after {
+    content: '\f00c';
+    font: 900 0.6rem 'Font Awesome 6 Free';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--store-green);
+    color: #fff;
+}
+
+/* Invite code: folded away unless someone arrived with a code. */
+.invite {
+    margin-bottom: 1.1rem;
+    border: 1.5px dashed var(--gray-300);
+    border-radius: var(--auth-radius);
+    background: var(--gray-50);
+}
+.invite > summary {
+    list-style: none;
+    display: flex; align-items: center; gap: 0.6rem;
+    min-height: 48px;
+    padding: 0.6rem 0.95rem;
+    cursor: pointer;
+    font-size: 0.9rem; font-weight: 700;
+    color: var(--primary-dark);
+    border-radius: var(--auth-radius);
+}
+.invite > summary::-webkit-details-marker { display: none; }
+.invite > summary:focus-visible { outline: 2px solid var(--store-green); outline-offset: 2px; }
+.invite > summary .form-optional { font-weight: 400; color: var(--gray-500); }
+.invite > summary .chev { margin-left: auto; font-size: 0.75rem; color: var(--gray-500); transition: transform 0.2s ease; }
+.invite[open] > summary .chev { transform: rotate(180deg); }
+.invite-body { padding: 0 0.95rem 0.95rem; }
+
+/* Small live hints under the password fields. */
+.pw-match, .caps-hint { margin-top: 0.45rem; font-size: 0.8125rem; display: flex; align-items: center; gap: 0.4rem; }
+.pw-match[hidden], .caps-hint[hidden] { display: none; }
+.pw-match.is-ok { color: var(--primary-dark); }
+.pw-match.is-no { color: var(--danger); }
+.caps-hint { color: var(--warning); font-weight: 700; }
+
+/* Login: choose your way in, instead of one plain text link. */
+.auth-switch {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background: var(--cream, #FFF4DD);
+    text-align: center;
+}
+.auth-switch p { margin: 0 0 0.7rem; font-weight: 700; color: var(--auth-ink); font-size: 0.9375rem; }
+.auth-switch-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.auth-switch-actions .btn { min-height: 44px; justify-content: center; background: #fff; }
+@media (max-width: 380px) { .auth-switch-actions { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .showcase-toast--money { animation: none; }
+    .invite > summary .chev { transition: none; }
+}
+.auth-side-quote { max-width: 15rem; } /* keeps the small print off the gold sun */
+
+@media (min-width: 1600px) { .auth-showcase { max-width: 30rem; } }
+
+
+/* ==========================================================================
+   WIP 111 - 3D scene, line-icon form side
+   ---------------------------------------------------------------------------
+   Soft 3D objects (assets/brand/3d/*.svg, drawn for NextaStore) fill the empty
+   corner of the brand panel. They sit on the gold sun, behind the storefront
+   card. Only the two objects that "hang in the air" (tag, bag) drift; the ones
+   that stand on a surface stay still. Decorative: aria-hidden in the markup.
+   ========================================================================== */
+/* The scene lives in the strip to the right of the copy column (left edge =
+   panel padding + copy width - a little overlap), so it scales with the screen
+   instead of drifting away from the text on very wide monitors. */
+.auth-container { --auth-pad: clamp(1.75rem, 4vw, 3.5rem); --auth-show: 25rem; }
+@media (min-width: 1600px) { .auth-container { --auth-show: 30rem; } }
+/* A slightly slimmer storefront card (was 27rem) frees a strip for the scene. The two
+   toasts move out to the card's corners so they no longer cover the shop name or the
+   payment chips. */
+.showcase-toast { right: -1.75rem; bottom: -2.4rem; }
+.showcase-toast--money { top: -2.7rem; bottom: auto; right: -1.5rem; }
+.showcase-tile b { font-size: 0.6875rem; letter-spacing: -0.005em; }
+.auth-showcase { max-width: var(--auth-show); }
+.auth-3d {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: calc(var(--auth-pad) + var(--auth-show) - 2rem);
+    pointer-events: none;
+}
+.auth-3d img { position: absolute; display: block; height: auto; max-width: none; }
+.auth-3d .o-float { animation: auth3d-float 7s ease-in-out infinite; }
+.auth-3d .o-float.late { animation-delay: -3.2s; animation-duration: 8.5s; }
+@keyframes auth3d-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(1.5deg); } }
+
+/* Login: secure bag and price tag above, cart standing on the sun, coins in front */
+.auth-3d--login .o-bag   { right: 3%;  top: 9%;     width: min(76%, 280px); }
+.auth-3d--login .o-tag   { left: 8%;   top: 35%;    width: min(58%, 200px); }
+.auth-3d--login .o-cart  { left: -4%;  bottom: 4%;  width: min(108%, 400px); }
+.auth-3d--login .o-coins { right: -5%; bottom: 0;   width: min(46%, 190px); }
+
+/* Signup: the shop itself, a parcel, a tag and coins */
+.auth-3d--signup .o-tag   { right: 6%;  top: 8%;     width: min(56%, 230px); }
+.auth-3d--signup .o-box   { right: -2%; top: 33%;    width: min(62%, 250px); }
+.auth-3d--signup .o-shop  { left: -4%;  bottom: 4%;  width: min(112%, 420px); }
+.auth-3d--signup .o-coins { right: -5%; bottom: 0;   width: min(42%, 180px); }
+
+/* Forgot password: no storefront card, so the scene is centred and larger. It starts
+   below the bullet list (about 40% down) so it never covers the copy. */
+.auth-3d--reset { left: 0; top: 40%; }
+.auth-3d--reset .o-bag   { left: 10%;  top: 0;      width: min(56%, 380px); }
+.auth-3d--reset .o-tag   { right: 8%;  top: 8%;     width: min(30%, 190px); }
+.auth-3d--reset .o-coins { right: 14%; bottom: 2%;  width: min(30%, 200px); }
+
+/* Short windows hide the storefront card (rule above), so the scene takes its
+   place with two hero objects instead of four, and the sun comes back behind it. */
+@media (max-height: 800px) {
+    .auth-side::after { display: block; }
+    .auth-3d:not(.auth-3d--reset) { left: 40%; top: 40%; }
+    .auth-3d:not(.auth-3d--reset) .o-tag { display: none; }
+    .auth-3d--login .o-cart  { left: 0; bottom: 3%; width: 88%; }
+    .auth-3d--login .o-bag   { right: 0; top: 0; width: 46%; }
+    .auth-3d--signup .o-shop { left: 0; bottom: 3%; width: 92%; }
+    .auth-3d--signup .o-box  { right: 0; top: 2%; width: 44%; }
+    .auth-3d:not(.auth-3d--reset) .o-coins { right: -2%; bottom: 0; width: 36%; }
+}
+@media (max-height: 560px) { .auth-3d { display: none; } }
+/* Narrow brand panel (961-1199px): the strip would be too thin to hold a scene. */
+@media (max-width: 1199px) { .auth-3d:not(.auth-3d--reset) { display: none; } }
+
+/* Wide screens: the gold sun sits behind the scene (not pinned to the panel edge). */
+@media (min-width: 1500px) and (min-height: 801px) {
+    .auth-side::after {
+        right: auto;
+        left: calc(var(--auth-pad) + var(--auth-show) - 2rem);
+        width: calc(100% - var(--auth-pad) - var(--auth-show) + 2rem);
+        bottom: -24%;
+    }
+}
+
+/* The form side carries the same icon pattern, very faint, and fades out
+   behind the card so the form stays the quietest thing on the page. */
+.auth-form-side { position: relative; isolation: isolate; }
+.auth-form-side::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--auth-ink);
+    opacity: 0.05;
+    -webkit-mask-image: url("../assets/brand/svg/market-line-tile.svg"), radial-gradient(48% 46% at 50% 50%, transparent 55%, #000 100%);
+    -webkit-mask-size: 288px 288px, 100% 100%;
+    -webkit-mask-repeat: repeat, no-repeat;
+    -webkit-mask-composite: source-in;
+    mask-image: url("../assets/brand/svg/market-line-tile.svg"), radial-gradient(48% 46% at 50% 50%, transparent 55%, #000 100%);
+    mask-size: 288px 288px, 100% 100%;
+    mask-repeat: repeat, no-repeat;
+    mask-composite: intersect;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-3d .o-float { animation: none; }
+}

@@ -23,7 +23,9 @@ function countSentences(text) { return (String(text).match(/[.!?]+(?=\s|$)/g) ||
 
 /** Group sentences, at most two per bubble and about SOFT_LIMIT characters. */
 function splitSentences(paragraph) {
-    const sentences = (paragraph.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [paragraph]).map((s) => s.trim()).filter(Boolean);
+    // WIP 97: "1. Store Basics, 2. Branding" is numbering inside one sentence, not a sentence end
+    const protectedText = paragraph.replace(/(^|\s)(\d{1,2})\.(?=\s+\S)/g, '$1$2\u2024');
+    const sentences = (protectedText.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [protectedText]).map((s) => s.trim().replace(/\u2024/g, '.')).filter(Boolean);
     const out = [];
     let cur = [];
     let len = 0;

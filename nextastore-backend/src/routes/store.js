@@ -5,6 +5,7 @@ const { getStoreForUser, resolveContextStore, serializeStore, serializePublicSto
 const { requireAuth, requireSeller, optionalAuth } = require('../middleware');
 const { validateBody, updateStoreSchema } = require('../validation');
 const { cacheResponse } = require('../cacheMiddleware');
+const growth = require('../growthInstance');
 
 const router = express.Router();
 
@@ -396,6 +397,16 @@ router.put('/', requireAuth, requireSeller, validateBody(updateStoreSchema), asy
         }
 
         const updated = await prisma.store.update({ where: { id: store.id }, data });
+
+        // NextaStore Circle / Crew. Neither call is awaited and neither can throw (hooks.safe).
+        // A saved phone number can match a Crew member's live lead (safe to repeat: it only acts when
+        // this owner has no referral yet), and going live moves a referred store forward.
+        if (data.phoneNumber !== undefined && data.phoneNumber !== store.phoneNumber) {
+            growth.hooks.safe.onStoreCreated({ user: req.user, store: updated });
+        }
+        if (data.isPublished === true && !store.isPublished) {
+            growth.hooks.safe.onStoreLive({ storeId: store.id });
+        }
 
         // Draft -> live. Onboarding's Launch button is the only caller that
         // sends isPublished, so this fires once, at the moment the seller

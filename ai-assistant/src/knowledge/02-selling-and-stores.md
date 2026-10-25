@@ -1,6 +1,7 @@
 # Selling and running a store
 
 ## Opening a store
+aliases: create my shop | open my own business online | register as a seller | set up a shop here | how to get started as a seller | what are the steps to launch a store | become a vendor | is a listing required before going live | going live with zero items | empty store launch | cannot launch my store | launch is blocked | what stops a store from opening to the public
 New sellers go through an onboarding flow with a few short steps: store
 basics, branding (logo and banner), choosing which payment methods to accept
 (from whatever the platform currently supports — see `03-payments.md`), and a
@@ -10,6 +11,7 @@ store starts on a free trial of the paid "Seller Pass" — see
 `04-subscriptions-seller-pass.md`.
 
 ## Customizing a store
+aliases: make my shop look nice | edit store details | upload a logo or banner | change theme and layout | add my location to the store | edit store info in dashboard | improve how my store looks | store description and seo | where do i add a banner | edit what buyers see on my store page
 From the seller dashboard, a store owner can set:
 - Logo and banner image
 - Store theme and product-grid layout
@@ -17,22 +19,26 @@ From the seller dashboard, a store owner can set:
 - SEO title, description, and keywords for their store page
 
 ## Managing products
+aliases: list an item for sale | edit a product | remove a product | delete an item i no longer sell | how many pictures per product | upload product images | add price and category | discount or old price | my item is missing from the store | add a product | put new goods in my store
 Sellers add, edit, and remove products from the dashboard's product form:
 name, description, price, original/strikethrough price for showing a
 discount, category, and images. Sold counts and stock are tracked per
 product.
 
 ## Managing orders (seller side)
+aliases: how do i handle orders as a seller | see new orders | confirm an order | mark order as completed | out of stock cancel order | where do i see incoming orders | seller dashboard orders
 Incoming orders appear in the seller's dashboard. The seller confirms a new
 order, marks it completed when it is done, or cancels it (for example when an
 item is out of stock). Once completed, it moves out of the active queue. Which
 moves are allowed from each status is in the generated platform facts file.
 
 ## Store followers and new-product notifications
+aliases: do followers get notified | tell my followers about a new item | notify customers of new products | alert when a store adds an item
 When a store publishes a new product, everyone following that store gets a
 notification (and a push notification if they've enabled push).
 
 ## Getting a seller badge
+aliases: how to get verified | what does the badge mean | gold and platinum badges | how do badges work | trust mark on store | how do i become a verified seller
 Sellers earn a trust badge by keeping Seller Pass paid up for long enough.
 There are three tiers; the months needed for each, and what each one gives
 the store, are in the generated platform facts file. The badge is a

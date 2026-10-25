@@ -17,6 +17,7 @@ const STOPWORDS = new Set((
 function stem(word) {
     let w = word;
     if (w.length <= 3) return w;
+    if (/able$/.test(w) && w.length > 7) w = w.slice(0, -4);          // refundable -> refund
     if (/ies$/.test(w) && w.length > 4) w = w.slice(0, -3) + 'y';
     else if (/(ss|ch|sh|x|z)es$/.test(w) && w.length > 4) w = w.slice(0, -2);
     else if (/ing$/.test(w) && w.length > 5) w = w.slice(0, -3);
@@ -42,10 +43,13 @@ class BM25 {
      * @param {{heading: string, title?: string, text: string}[]} docs
      * The heading counts three times, the file title once, so a section named "Payments" beats a passing mention.
      */
-    constructor(docs, { k1 = 1.5, b = 0.75, headingWeight = 3 } = {}) {
+    constructor(docs, { k1 = 1.5, b = 0.75, headingWeight = 3, aliasWeight = 1 } = {}) {
         this.k1 = k1;
         this.b = b;
         this.tf = [];          // per doc: Map(term -> weighted count)
+        this.headTerms = [];   // per doc: Set of terms in its heading and aliases (what the section is ABOUT)
+        this.headSets = [];    // per doc: one Set per heading/alias phrase (a gap is only closed by ONE phrase that has all its words)
+        this.docTerms = [];    // per doc: Set of every term the doc explains (used for question-term coverage)
         this.len = [];
         this.df = new Map();   // term -> number of docs containing it
         let total = 0;
@@ -53,11 +57,15 @@ class BM25 {
             const m = new Map();
             const add = (list, w) => { for (const t of list) m.set(t, (m.get(t) || 0) + w); };
             add(terms(d.heading), headingWeight);
+            this.headSets.push([new Set(terms(d.heading)), ...(d.aliases || []).map((a) => new Set(terms(a)))]);
+            this.headTerms.push(new Set([...terms(d.heading), ...terms((d.aliases || []).join(' '))]));
             add(terms(d.title || ''), 1);
+            if (d.aliases && d.aliases.length) add(terms(d.aliases.join(' ')), aliasWeight);
             add(terms(d.text), 1);
             let len = 0;
             for (const c of m.values()) len += c;
             this.tf.push(m);
+            this.docTerms.push(new Set(m.keys()));
             this.len.push(len);
             total += len;
             for (const t of m.keys()) this.df.set(t, (this.df.get(t) || 0) + 1);

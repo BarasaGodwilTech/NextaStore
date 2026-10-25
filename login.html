@@ -56,15 +56,21 @@
     <div class="auth-container">
         <aside class="auth-side">
             <div class="auth-awning" aria-hidden="true"></div>
+            <div class="auth-3d auth-3d--login" aria-hidden="true">
+                <img class="o-cart" src="assets/brand/3d/cart.svg" alt="" width="240" height="240" decoding="async">
+                <img class="o-bag o-float" src="assets/brand/3d/bag-lock.svg" alt="" width="240" height="240" decoding="async">
+                <img class="o-tag o-float late" src="assets/brand/3d/tag.svg" alt="" width="240" height="240" decoding="async">
+                <img class="o-coins" src="assets/brand/3d/coins.svg" alt="" width="240" height="240" decoding="async">
+            </div>
             <div class="auth-side-inner">
                 <a href="/" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
                 <div class="auth-side-content">
-                    <h2>Run your store from anywhere.</h2>
-                    <p>Log back in to check today's orders, update your products, and keep an eye on sales.</p>
+                    <h2>Welcome back to the market.</h2>
+                    <p>Sign in to check your orders, manage your shop, or pick up shopping where you left off.</p>
                     <ul class="auth-side-points">
-                        <li><i class="fas fa-circle-check"></i> Real-time orders &amp; revenue</li>
+                        <li><i class="fas fa-circle-check"></i> Orders and messages in one place</li>
                         <li><i class="fas fa-circle-check"></i> Mobile Money built in</li>
-                        <li><i class="fas fa-circle-check"></i> One dashboard, every device</li>
+                        <li><i class="fas fa-circle-check"></i> Your favorites, saved</li>
                     </ul>
                 </div>
             <div class="auth-showcase" aria-hidden="true">
@@ -72,18 +78,18 @@
                         <div class="showcase-head">
                             <span class="showcase-logo">A</span>
                             <div><strong>Amina's Crafts</strong><small><i class="fas fa-location-dot"></i> Kampala</small></div>
-                            <span class="showcase-live">Open</span>
                         </div>
                         <div class="showcase-grid">
-                            <div class="showcase-tile"><div class="tile-art tile-art--green"><i class="fas fa-basket-shopping"></i></div><b>Woven basket</b><small>UGX 45,000</small></div>
-                            <div class="showcase-tile"><div class="tile-art tile-art--gold"><i class="fas fa-bag-shopping"></i></div><b>Bark cloth bag</b><small>UGX 85,000</small></div>
-                            <div class="showcase-tile"><div class="tile-art tile-art--coral"><i class="fas fa-mug-hot"></i></div><b>Kawa coffee 500g</b><small>UGX 18,000</small></div>
+                            <div class="showcase-tile"><div class="tile-art tile-art--green"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></div><b>Woven basket</b><small>UGX 45,000</small></div>
+                            <div class="showcase-tile"><div class="tile-art tile-art--gold"><svg class="nx-cat-icon"><use href="#c-clothing"/></svg></div><b>Bark cloth bag</b><small>UGX 85,000</small></div>
+                            <div class="showcase-tile"><div class="tile-art tile-art--coral"><svg class="nx-cat-icon"><use href="#c-food"/></svg></div><b>Kawa coffee 500g</b><small>UGX 18,000</small></div>
                         </div>
                         <div class="showcase-pay"><span>MTN MoMo</span><span>Airtel Money</span></div>
                     </div>
                     <div class="showcase-toast"><i class="fas fa-bag-shopping"></i><div><b>New order</b><small>UGX 90,000 &middot; Airtel Money</small></div></div>
+                    <div class="showcase-toast showcase-toast--money"><i class="fas fa-check"></i><div><b>Mobile Money received</b><small>Paid in full</small></div></div>
                 </div>
-                <p class="auth-side-quote">"NextaStore paid for itself in the first week." &mdash; Amina, Kampala</p>
+                <p class="auth-side-quote">Your stall, open online.</p>
             </div>
         </aside>
 
@@ -95,7 +101,7 @@
                     <div class="auth-header">
                         <a href="/" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
                         <h1>Welcome back</h1>
-                        <p>Log in to manage your store and grow your business.</p>
+                        <p>Sign in to manage your store or keep shopping.</p>
                     </div>
 
                     <p id="sessionNotice" class="auth-notice" role="status" hidden></p>
@@ -113,6 +119,7 @@
                                 <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
                                 <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye"></i></button>
                             </div>
+                            <div class="caps-hint" id="capsHint" role="status" hidden><i class="fas fa-arrow-up"></i> Caps Lock is on</div>
                             <div class="form-error"></div>
                         </div>
 
@@ -124,8 +131,15 @@
                         <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-arrow-right-to-bracket"></i> Sign in</button>
                     </form>
 
+                    <div class="auth-switch">
+                        <p>New to NextaStore?</p>
+                        <div class="auth-switch-actions">
+                            <a href="/signup" class="btn btn-outline btn-sm">Start shopping</a>
+                            <a href="/signup?type=seller" class="btn btn-outline btn-sm">Open a shop</a>
+                        </div>
+                    </div>
+
                     <div class="auth-footer">
-                        <p>New to NextaStore? <a href="/signup">Create an account</a></p>
                         <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
                     </div>
                 </div>
@@ -133,6 +147,8 @@
         </div>
     </div>
 
+    <script src="js/category-sprite.js"></script>
+    <script>document.body.insertAdjacentHTML('afterbegin', window.NX_CATEGORY_SPRITE || '');</script>
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
     <script src="js/auth.js"></script>
@@ -145,6 +161,17 @@
             icon.classList.toggle('fa-eye', !show);
             icon.classList.toggle('fa-eye-slash', show);
         }
+        (function () {
+            var pw = document.getElementById('password'), hint = document.getElementById('capsHint');
+            function caps(e) { if (e.getModifierState) hint.hidden = !e.getModifierState('CapsLock'); }
+            pw.addEventListener('keydown', caps); pw.addEventListener('keyup', caps);
+            pw.addEventListener('blur', function () { hint.hidden = true; });
+            // Keyboard-first on desktop; on phones the keyboard would cover the form, so no autofocus there.
+            if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+                var email = document.getElementById('email');
+                if (email && !document.querySelector('.auth-notice:not([hidden])')) setTimeout(function () { email.focus(); }, 50);
+            }
+        })();
     </script>
     <script>
       if ("serviceWorker" in navigator) {

@@ -136,6 +136,10 @@ if not errorlevel 1 (
 )
 
 REM --- 10. Start the assistant ---
+REM Check backend TCP reachability without requiring an API token; this warning never blocks launch.
+powershell -NoProfile -Command "try { $c=New-Object Net.Sockets.TcpClient; $a=$c.BeginConnect('localhost',4000,$null,$null); if(-not $a.AsyncWaitHandle.WaitOne(800)){exit 1}; $c.EndConnect($a); $c.Close(); exit 0 } catch { exit 1 }" >nul 2>nul
+if errorlevel 1 echo The NextaStore backend is not running yet. Nexi will keep trying and uses saved facts until it is.
+echo.
 echo Starting the assistant on port %NX_PORT%.
 echo Keep this window open. Press Ctrl+C or close it to stop.
 echo.

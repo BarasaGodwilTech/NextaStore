@@ -1,30 +1,58 @@
 /* ==========================================================================
-   Nexi - NextaStore's AI assistant (WIP 53; layout + flagging reworked in WIP 55)
-   - .hero-chat      : the chat card inside the Marketplace hero
+   Nexi - NextaStore's AI assistant (WIP 53; reworked WIP 55; design system WIP 101)
+   - .hero-chat      : the chat card in the Marketplace hero
    - .nexi-dock      : bottom-right dock on every page (assistant button + back-to-top)
    - .nexi-panel     : the floating chat window opened from the dock
-   Self-contained: works on pages that do not load main.css.
-   Icon concept: a market stall (scalloped awning) over a chat bubble with a
-   sparkle - NextaStore's "Kampala markets" identity meets "ask me anything".
+   Self-contained: works on pages that do not load main.css (every site variable has a fallback).
+   Icon concept: a market stall (scalloped awning) over a chat bubble with a sparkle.
    ========================================================================== */
 
-:root {
-    --nx-green: #01B075;
-    --nx-green-d: #008558;
-    --nx-green-l: #E6F7F0;
-    --nx-ink: #0B3B2B;
-    --nx-gold: #FFB038;
-    --nx-line: #E3E9E5;
-    --nx-muted: #5B6B64;
-    --nexi-lift: 0px; /* raised by JS when a sticky bottom bar (Save / Continue) would be covered */
+/* ---- ONE token block. Every colour, space, radius, size and shadow below comes from here. ---- */
+.hero-chat, .nexi-dock, .nexi-panel {
+    /* colour: the site's brand variables where they exist, the same values otherwise */
+    --nx-green: var(--primary, #01B075);
+    --nx-green-d: var(--primary-dark, #008558);      /* white text on it: 4.7:1 */
+    --nx-green-dd: #075B40;                           /* green text on white / mint: 8:1 */
+    --nx-green-l: var(--primary-light, #E7F8F1);
+    --nx-ink: var(--ink, #0B3B2B);
+    --nx-gold: var(--accent-gold, #FFB038);
+    --nx-text: #17302A;
+    --nx-muted: #55655E;                              /* on white 5.9:1, on the mint tints 5.1:1 */
+    --nx-line: #E3EAE5;
+    --nx-line-2: #CFE6DC;
+    --nx-surface: #fff;
+    --nx-bot: #F4F8F6;
+    --nx-tint: #EEF3F0;
+    --nx-warn-bg: var(--warning-bg, #FFF6EA);
+    --nx-warn-line: #F6D9A8;
+    --nx-warn-ink: #6B4A00;
+    /* spacing: 4 / 8 / 12 / 16 / 24 */
+    --nx-s1: 4px; --nx-s2: 8px; --nx-s3: 12px; --nx-s4: 16px; --nx-s5: 24px;
+    /* radii */
+    --nx-r-tail: 6px; --nx-r-sm: 8px; --nx-r-md: 12px; --nx-r-lg: 16px; --nx-r-xl: 24px; --nx-r-pill: 999px;
+    /* type scale: 12 / 13 / 14 / 15 / 16 / 18 */
+    --nx-t12: 12px; --nx-t13: 13px; --nx-t14: 14px; --nx-t15: 15px; --nx-t16: 16px; --nx-t18: 18px;
+    --nx-font: var(--font-body, 'Poppins', system-ui, sans-serif);
+    --nx-font-display: var(--font-display, var(--nx-font));
+    /* shadows */
+    --nx-sh-1: 0 1px 3px rgba(11, 59, 43, 0.10);
+    --nx-sh-2: 0 6px 18px rgba(11, 59, 43, 0.16), 0 1px 3px rgba(11, 59, 43, 0.12);
+    --nx-sh-3: 0 24px 60px rgba(11, 59, 43, 0.28), 0 2px 10px rgba(11, 59, 43, 0.12);
+    /* sizes shared by the controls */
+    --nx-touch: 44px;                                  /* every tap target */
+    --nx-lane: 56px;                                   /* the strip under the thread where "Jump to latest" sits, clear of every card button */
+    --nx-field: 48px;                                  /* composer */
+    --nx-ring: 2px solid var(--nx-green-d);            /* focus ring: 4.7:1 on white */
+    --nx-motion: 160ms;
 }
+:root { --nexi-lift: 0px; /* raised by JS when a sticky bottom bar (Save / Continue) would be covered */ }
 
 .nexi-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .nexi-glyph { display: block; width: 100%; height: 100%; overflow: visible; }
 
-/* ---- Squircle avatar (same shape as the NextaStore logo) ---- */
+/* ---- Squircle avatar (same shape as the NextaStore logo) + a small "AI" mark ---- */
 .nexi-avatar {
-    flex: none;
+    position: relative; flex: none;
     display: grid; place-items: center;
     width: 40px; height: 40px;
     border-radius: 34%;
@@ -33,6 +61,14 @@
 }
 .nexi-avatar .nexi-glyph { width: 64%; height: 64%; }
 .nexi-avatar--sm { width: 28px; height: 28px; box-shadow: 0 3px 8px rgba(0, 133, 88, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.nexi-ai {
+    position: absolute; right: -5px; bottom: -4px; box-sizing: content-box;
+    min-width: 16px; height: 14px; padding: 0 2px; border: 2px solid var(--nx-surface); border-radius: var(--nx-r-pill);
+    display: grid; place-items: center;
+    background: var(--nx-ink); color: #fff; font: 700 var(--nx-t12)/1 var(--nx-font); letter-spacing: -0.02em;
+    pointer-events: none;
+}
+.nexi-avatar--sm .nexi-ai { display: none; }
 
 /* ==========================================================================
    Dock
@@ -40,8 +76,8 @@
 .nexi-dock {
     position: fixed;
     z-index: 900; /* above page content and sticky bars, below modals/drawers (1000+) and toasts */
-    right: max(16px, env(safe-area-inset-right));
-    bottom: calc(16px + env(safe-area-inset-bottom) + var(--nexi-lift));
+    right: max(var(--nx-s4), env(safe-area-inset-right));
+    bottom: calc(var(--nx-s4) + env(safe-area-inset-bottom) + var(--nexi-lift));
     display: flex; flex-direction: column; align-items: flex-end;
     pointer-events: none;
     transition: bottom 0.25s ease;
@@ -53,15 +89,15 @@
 /* back-to-top, sits above the assistant button */
 .nexi-top {
     position: relative;
-    width: 44px; height: 44px;
-    margin-bottom: 12px;
+    width: var(--nx-touch); height: var(--nx-touch);
+    margin-bottom: var(--nx-s3);
     border-radius: 50%;
     border: 0;
-    background: #fff;
+    background: var(--nx-surface);
     color: var(--nx-ink);
     display: grid; place-items: center;
     cursor: pointer;
-    box-shadow: 0 6px 18px rgba(11, 59, 43, 0.18), 0 1px 3px rgba(11, 59, 43, 0.12);
+    box-shadow: var(--nx-sh-2);
     opacity: 0; transform: translateY(10px) scale(0.85); visibility: hidden;
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
@@ -109,7 +145,7 @@
     content: ''; position: absolute; top: -3px; right: -3px;
     width: 17px; height: 17px; border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #FFD88A, var(--nx-gold));
-    box-shadow: 0 0 0 3px #fff;
+    box-shadow: 0 0 0 3px var(--nx-surface);
     transform: scale(0); transition: transform 0.2s ease;
 }
 .nexi-fab.has-unread::after { transform: scale(1); animation: nexi-ping 1.8s ease-out infinite; }
@@ -117,10 +153,10 @@
 /* "Ask Nexi" label */
 .nexi-fab-label {
     position: absolute; right: 70px; bottom: 14px;
-    padding: 9px 14px;
+    padding: 9px var(--nx-s3);
     border-radius: 14px 14px 4px 14px;
     background: var(--nx-ink); color: #fff;
-    font: 600 0.84rem/1.2 var(--font-body, system-ui, sans-serif);
+    font: 600 var(--nx-t14)/1.2 var(--nx-font);
     white-space: nowrap;
     box-shadow: 0 8px 20px rgba(11, 59, 43, 0.28);
     opacity: 0; transform: translateX(8px); visibility: hidden; pointer-events: none;
@@ -131,6 +167,75 @@
 .nexi-fab-slot.is-hidden .nexi-fab-label, .nexi-fab[aria-expanded="true"] ~ .nexi-fab-label { opacity: 0 !important; visibility: hidden !important; }
 
 /* ==========================================================================
+   Header (WIP 105): NOTHING in it is ever hidden, at any width, idle or chatting.
+   The avatar, the name, the subtitle, the language words and the buttons are always all there.
+   Roomy (hero 640px and wider): ONE row  = avatar | name + subtitle | language | new chat.
+   Everything narrower (phones, the panel): the avatar spans two rows, and the text column holds
+        name, subtitle and (under them) a small language pill; the buttons sit top right.
+        (WIP 107: the pill used to be a full-width 48px bar of its own, which cost the conversation a whole row.)
+   ========================================================================== */
+.hero-chat-head, .nexi-panel-head {
+    display: grid; align-items: center; min-width: 0; column-gap: var(--nx-s2); row-gap: var(--nx-s2);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "av title actions" "av lang lang";
+}
+.hero-chat-head > .nexi-avatar, .nexi-panel-head > .nexi-avatar { grid-area: av; align-self: start; }
+.hero-chat-title, .nexi-panel-title { grid-area: title; display: block; min-width: 0; }
+.hero-chat-head > .nexi-lang, .nexi-panel-head > .nexi-lang { grid-area: lang; }
+.hero-chat-head > .nexi-iconbtn, .nexi-head-actions { grid-area: actions; }
+.nexi-head-actions { display: flex; align-items: center; gap: var(--nx-s1); }
+.hero-chat-title strong, .nexi-panel-title strong {
+    display: block; min-width: 0; overflow-wrap: anywhere;
+    font: 700 var(--nx-t16)/1.25 var(--nx-font-display); color: var(--nx-ink);
+}
+.hero-chat-title span, .nexi-panel-title span {
+    display: block; margin: 1px 0 0; white-space: normal; text-wrap: pretty;   /* the subtitle wraps; it is never cut and never hidden */
+    font: 400 var(--nx-t12)/1.3 var(--nx-font); color: var(--nx-muted);
+}
+.nexi-iconbtn {
+    flex: none; width: var(--nx-touch); height: var(--nx-touch); padding: 0; border: 0; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer;
+    background: var(--nx-tint); color: var(--nx-ink);
+    transition: background 0.15s ease;
+}
+.nexi-iconbtn:hover { background: #E1EAE5; }
+.nexi-iconbtn:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
+.nexi-iconbtn svg { width: 18px; height: 18px; }
+.nexi-iconbtn[hidden] { display: none; }
+
+/* language: a small segmented pill that still spells the words out (English / Luganda) on every device.
+   The EN / LG spans stay in the markup for old tests and screen readers' sake but are never shown.
+   The pill LOOKS 28px tall; each button is still a full 44px tap target (the negative margin lets the button
+   extend past the pill without making the header taller), and the pressed state is painted on the word, not the button. */
+.nexi-lang {
+    display: inline-flex; align-items: center; justify-self: start; width: auto; height: 32px; padding: 2px; gap: 2px; box-sizing: border-box;
+    background: var(--nx-tint); border-radius: var(--nx-r-pill);
+}
+.nexi-lang button {
+    min-width: var(--nx-touch); min-height: var(--nx-touch); margin-block: -6px; padding: 0 2px;
+    border: 0; background: transparent; cursor: pointer; border-radius: var(--nx-r-pill);
+    font: 600 var(--nx-t12)/1 var(--nx-font); color: var(--nx-muted); white-space: nowrap;
+}
+.nexi-lang .l-full {
+    display: block; padding: 8px var(--nx-s3); border-radius: var(--nx-r-pill);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.nexi-lang button:hover:not([aria-pressed="true"]) .l-full { color: var(--nx-ink); }
+.nexi-lang button[aria-pressed="true"] { color: var(--nx-ink); }
+.nexi-lang button[aria-pressed="true"] .l-full { background: var(--nx-surface); box-shadow: var(--nx-sh-1); }
+.nexi-lang button:focus-visible { outline: var(--nx-ring); outline-offset: -2px; }
+.nexi-lang .l-short { display: none; }
+@media (min-width: 640px) {
+    .hero-chat-head { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "av title lang actions"; }
+    .hero-chat-head > .nexi-lang { justify-self: auto; }
+}
+/* a short, wide window (a phone on its side): the panel header goes back to one row so it stays low */
+@media (max-height: 520px) and (min-width: 560px) {
+    .nexi-panel-head { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "av title lang actions"; }
+    .nexi-panel-head > .nexi-lang { justify-self: auto; }
+}
+
+/* ==========================================================================
    Floating panel
    ========================================================================== */
 .nexi-panel {
@@ -138,253 +243,328 @@
     /* above the sticky site header (z-index 1000) so its title and close button are never covered;
        still below the account / notification menus (1500) and site dialogs (5000) */
     z-index: 1300;
-    right: max(16px, env(safe-area-inset-right));
-    bottom: calc(16px + env(safe-area-inset-bottom) + var(--nexi-lift) + 72px);
-    width: 392px; max-width: calc(100vw - 32px);
-    /* never taller than the space between the top of the window and the button (24px breathing room on top) */
-    height: min(640px, calc(100vh - 112px - var(--nexi-lift)));
-    height: min(640px, calc(100dvh - 112px - env(safe-area-inset-bottom) - var(--nexi-lift)));
+    right: max(var(--nx-s4), env(safe-area-inset-right));
+    bottom: calc(var(--nx-s4) + env(safe-area-inset-bottom) + var(--nexi-lift) + 72px);
+    width: 420px; max-width: calc(100vw - 32px);
+    /* never taller than the space between the site header and the button */
+    /* taller than before (640 -> 720) where the screen allows, but never up over the sticky site header (80px) */
+    height: min(720px, calc(100vh - 168px - var(--nexi-lift)));
+    height: min(720px, calc(100dvh - 168px - env(safe-area-inset-bottom) - var(--nexi-lift)));
     display: flex; flex-direction: column;
-    background: #fff;
-    border-radius: 22px;
-    box-shadow: 0 24px 60px rgba(11, 59, 43, 0.28), 0 2px 10px rgba(11, 59, 43, 0.12);
+    background: var(--nx-surface);
+    border-radius: var(--nx-r-xl);
+    box-shadow: var(--nx-sh-3);
     border: 1px solid var(--nx-line);
     overflow: hidden;
+    font-family: var(--nx-font);
     opacity: 0; visibility: hidden; transform: translateY(14px) scale(0.97); transform-origin: bottom right; pointer-events: none;
     transition: opacity 0.2s ease, transform 0.22s cubic-bezier(.2, .8, .2, 1), visibility 0.2s, bottom 0.25s ease;
 }
 .nexi-panel.is-open { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
 .nexi-panel-head {
-    flex: none;
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 14px 12px 16px;
-    background: linear-gradient(135deg, #0B3B2B 0%, #0E4A37 100%);
-    color: #fff;
+    flex: none; padding: var(--nx-s3);                  /* the avatar starts on the same left edge as the composer and the chips */
+    background-color: #0B3B2B; background-image: linear-gradient(135deg, #0B3B2B 0%, #0E4A37 100%);
 }
-.nexi-panel-title { min-width: 0; flex: 1; }
-.nexi-panel-title strong { display: block; font: 700 1rem/1.2 var(--font-display, var(--font-body, system-ui)); }
-.nexi-panel-title span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.74rem; line-height: 1.3; opacity: 0.8; margin-top: 2px; }
-.nexi-iconbtn {
-    flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%;
-    display: grid; place-items: center; cursor: pointer;
-    background: rgba(255, 255, 255, 0.12); color: #fff;
-    transition: background 0.15s ease;
-}
-.nexi-iconbtn:hover { background: rgba(255, 255, 255, 0.24); }
-.nexi-iconbtn:focus-visible { outline: 2px solid var(--nx-gold); outline-offset: 2px; }
-.nexi-iconbtn svg { width: 16px; height: 16px; }
-.nexi-iconbtn[hidden] { display: none; }
-.nexi-panel-sub { flex: none; padding: 10px 14px 8px; border-bottom: 1px solid var(--nx-line); background: #fff; }
-/* the ONE scrolling area: conversation + starter questions */
+.nexi-panel-head .nexi-avatar { width: 36px; height: 36px; }
+.nexi-panel-title strong { color: #fff; }
+.nexi-panel-title span { color: rgba(255, 255, 255, 0.82); }
+.nexi-panel-head .nexi-iconbtn { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.nexi-panel-head .nexi-iconbtn:hover { background: rgba(255, 255, 255, 0.26); }
+.nexi-panel-head .nexi-iconbtn:focus-visible { outline: 2px solid var(--nx-gold); }
+/* the ONE scrolling area: conversation + starter questions (its wrapper carries the "jump to latest" pill) */
+.nexi-panel-main { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .nexi-panel-body {
     flex: 1 1 auto; min-height: 0;
     overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     display: flex; flex-direction: column;
-    background: #fff;
+    background: var(--nx-surface);
 }
-.nexi-panel .nexi-thread { flex: 0 0 auto; overflow: visible; max-height: none; padding: 14px 14px 8px; scroll-behavior: auto; }
-.nexi-panel-bottom { flex: none; padding: 10px 14px 10px; border-top: 1px solid var(--nx-line); background: #fff; }
-.nexi-panel-bottom .nexi-foot { margin-top: 6px; padding: 0 4px; }
+.nexi-panel .nexi-thread { flex: 0 0 auto; overflow: visible; max-height: none; min-height: 240px; padding: var(--nx-s4) var(--nx-s3) var(--nx-s2); scroll-behavior: auto; }
+.nexi-panel-bottom { flex: none; padding: var(--nx-s3) var(--nx-s3) var(--nx-s1); background: var(--nx-surface); box-shadow: 0 -10px 22px rgba(11, 59, 43, 0.05); }
 
-/* phones, and any short window: full-screen sheet */
+/* phones, and any short window: a full-height sheet that respects the notch and the home indicator */
 @media (max-width: 600px), (max-height: 520px) {
     .nexi-panel {
         right: 0; left: 0; top: 0; bottom: 0;
-        width: auto; max-width: none; height: auto;
+        width: auto; max-width: none; height: 100vh; height: 100dvh;
         border-radius: 0; border: 0;
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
+        box-sizing: border-box;
         transform: translateY(24px);
     }
-    .nexi-panel-head { padding: 12px 12px 12px 14px; }
-    .nexi-panel-bottom { padding: 8px 12px 8px; }
+    .nexi-panel-head { padding: var(--nx-s2) var(--nx-s2) var(--nx-s2) var(--nx-s3); }
+    .nexi-panel-bottom { padding: var(--nx-s2) var(--nx-s3); }
     .nexi-fab[aria-expanded="true"] { visibility: hidden; } /* the panel has its own close button */
 }
 /* short windows (phone in landscape): give the conversation the room, drop the small print */
 @media (max-height: 520px) {
-    .nexi-panel-head { padding: 8px 12px; }
-    .nexi-panel-head .nexi-avatar { width: 32px; height: 32px; }
-    .nexi-panel-title span { display: none; }
-    .nexi-panel-sub { padding: 6px 12px; }
-    .nexi-panel-bottom { padding: 6px 12px; }
+    .nexi-panel .nexi-thread { min-height: 0; }
+    .nexi-panel-bottom { padding: var(--nx-s1) var(--nx-s3); }
     .nexi-panel-bottom .nexi-foot { display: none; }
+    .nexi-panel .nexi-starters-label { display: none; }
+    .nexi-panel .nexi-starters { margin-bottom: var(--nx-s1); }
 }
 html.nexi-lock, html.nexi-lock body { overflow: hidden !important; }
 
 /* ==========================================================================
-   Shared chat parts
+   Conversation
    ========================================================================== */
-.nexi-lang {
-    display: inline-flex; padding: 3px; gap: 2px;
-    background: #EEF3F0; border-radius: 999px;
-}
-.nexi-lang button {
-    border: 0; background: transparent; cursor: pointer;
-    padding: 5px 12px; border-radius: 999px;
-    font: 600 0.76rem/1 var(--font-body, system-ui, sans-serif);
-    color: var(--nx-muted);
-    transition: background 0.15s ease, color 0.15s ease;
-}
-.nexi-lang button[aria-pressed="true"] { background: #fff; color: var(--nx-ink); box-shadow: 0 1px 3px rgba(11, 59, 43, 0.15); }
-.nexi-lang button:focus-visible { outline: 2px solid var(--nx-green); outline-offset: 1px; }
-
 .nexi-thread {
     overflow-y: auto; overscroll-behavior: contain;
-    display: flex; flex-direction: column; gap: 10px;
-    padding: 14px;
+    display: flex; flex-direction: column; gap: var(--nx-s3);
+    padding: var(--nx-s4) var(--nx-s3);
     scroll-behavior: smooth;
 }
 .nexi-thread[hidden] { display: none; }
-.nexi-msg { display: flex; gap: 8px; max-width: 100%; animation: nexi-in 0.25s ease both; }
+/* soft fades where the conversation scrolls under the edges */
+.hero-chat .nexi-thread, .nexi-panel-body {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--nx-s4), #000 calc(100% - var(--nx-s4)), transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 var(--nx-s4), #000 calc(100% - var(--nx-s4)), transparent 100%);
+}
+.nexi-msg { display: flex; max-width: 100%; animation: nexi-in var(--nx-motion) ease-out both; }
 .nexi-msg[hidden] { display: none; }
 .nexi-msg.is-user { justify-content: flex-end; }
-.nexi-msg.is-bot.is-stack { flex-direction: column; align-items: flex-start; gap: 5px; }
+/* bot rows: an avatar column (filled on the first message of a run), then the bubbles one under the other */
+.nexi-msg.is-bot { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: var(--nx-s2); row-gap: var(--nx-s2); align-items: start; }
+.nexi-msg.is-bot > .nexi-avatar { grid-column: 1; grid-row: 1; }
+.nexi-msg.is-bot > .nexi-bubble { grid-column: 2; justify-self: start; }
 .nexi-bubble {
-    max-width: 88%;
-    padding: 10px 13px;
-    border-radius: 16px;
-    font-size: 0.9rem; line-height: 1.5;
+    max-width: min(100%, calc(88% + 32px));   /* 88% of the thread once the avatar column is counted */
+    box-sizing: border-box; padding: var(--nx-s3);
+    border-radius: var(--nx-r-lg);
+    font-size: var(--nx-t15); line-height: 1.5;
     overflow-wrap: anywhere;
 }
-.nexi-msg.is-bot .nexi-bubble { background: #F4F8F6; border: 1px solid var(--nx-line); color: #17302A; border-top-left-radius: 5px; }
-.nexi-msg.is-user .nexi-bubble { background: var(--nx-green-d); color: #fff; border-top-right-radius: 5px; }
-.nexi-msg.is-error .nexi-bubble { background: #FFF6EA; border-color: #F6D9A8; color: #6B4A00; }
+.nexi-msg.is-user .nexi-bubble { max-width: 88%; }
+.nexi-msg.is-bot .nexi-bubble { background: var(--nx-bot); border: 1px solid var(--nx-line); color: var(--nx-text); border-top-left-radius: var(--nx-r-tail); }
+.nexi-msg.is-user .nexi-bubble { background: var(--nx-green-d); color: #fff; border-top-right-radius: var(--nx-r-tail); }
+.nexi-msg.is-error .nexi-bubble { background: var(--nx-warn-bg); border-color: var(--nx-warn-line); color: var(--nx-warn-ink); }
 .nexi-bubble p { margin: 0; }
-.nexi-bubble.is-new { animation: nexi-in 0.25s ease both; }
-.nexi-bubble p + p, .nexi-bubble p + ul, .nexi-bubble p + ol, .nexi-bubble ul + p, .nexi-bubble ol + p { margin-top: 7px; }
+.nexi-bubble p + p, .nexi-bubble p + ul, .nexi-bubble p + ol, .nexi-bubble ul + p, .nexi-bubble ol + p { margin-top: var(--nx-s2); }
 .nexi-bubble ul, .nexi-bubble ol { margin: 0; padding-left: 1.2rem; }
-.nexi-bubble li + li { margin-top: 3px; }
-.nexi-bubble a { color: var(--nx-green-d); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.nexi-bubble li + li { margin-top: var(--nx-s1); }
+.nexi-bubble a:not(.nexi-handoff) { color: var(--nx-green-d); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .nexi-msg.is-user .nexi-bubble a { color: #fff; }
 .nexi-retry {
-    margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 12px; border-radius: 999px; border: 1px solid #E2B867; background: #fff; color: #6B4A00;
-    font: 600 0.78rem/1 var(--font-body, system-ui, sans-serif); cursor: pointer;
+    margin-top: var(--nx-s2); display: inline-flex; align-items: center; justify-content: center; gap: var(--nx-s2);
+    min-height: var(--nx-touch); padding: 0 var(--nx-s4); border-radius: var(--nx-r-pill);
+    border: 1px solid #E2B867; background: var(--nx-surface); color: var(--nx-warn-ink);
+    font: 600 var(--nx-t14)/1.2 var(--nx-font); cursor: pointer;
 }
 .nexi-retry:hover { background: #FFF0D6; }
-.nexi-typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
-.nexi-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--nx-green); opacity: 0.35; animation: nexi-dot 1.2s ease-in-out infinite; }
+.nexi-retry:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
+/* typing indicator: three soft dots in a bot bubble, shown before the first word arrives */
+.nexi-typing { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 var(--nx-s1); }
+.nexi-typing i { width: 8px; height: 8px; border-radius: 50%; background: var(--nx-green); opacity: 0.35; animation: nexi-dot 1.2s ease-in-out infinite; }
 .nexi-typing i:nth-child(2) { animation-delay: 0.15s; }
 .nexi-typing i:nth-child(3) { animation-delay: 0.3s; }
-.nexi-queue { display: block; margin-top: 4px; font-size: 12px; line-height: 1.35; opacity: 0.7; }
+.nexi-queue { display: block; margin-top: var(--nx-s1); font-size: var(--nx-t12); line-height: 1.35; opacity: 0.8; }
 
-.nexi-chip {
-    display: flex; align-items: center;
-    border: 1px solid var(--nx-line); border-radius: 14px; background: #fff;
-    font-weight: 500; font-size: 0.84rem; line-height: 1.35;
+/* "Jump to latest" */
+.nexi-jump {
+    /* centred with auto margins, not a transform: the entrance animation ends on `transform: none` */
+    /* it lives in its own lane under the thread (above the composer edge), so it never covers a card button or a link */
+    position: absolute; z-index: 3; left: 0; right: 0; bottom: calc((var(--nx-lane) - var(--nx-touch)) / 2); margin-inline: auto; width: max-content; max-width: calc(100% - var(--nx-s4)); white-space: nowrap;
+    display: flex; align-items: center; gap: var(--nx-s2);
+    min-height: var(--nx-touch); padding: 0 var(--nx-s4); border: 1px solid var(--nx-line-2); border-radius: var(--nx-r-pill);
+    background: var(--nx-surface); color: var(--nx-green-dd); box-shadow: var(--nx-sh-2); cursor: pointer;
+    font: 600 var(--nx-t14)/1 var(--nx-font);
+    animation: nexi-in var(--nx-motion) ease-out both;
 }
-.nexi-chip:hover { border-color: #8FD3B7; background: #F3FBF7; }
-.nexi-chip::after { transition: transform 0.15s ease, opacity 0.15s ease; }
-.nexi-chip:hover::after { transform: translateX(2px) rotate(45deg); }
+.nexi-jump[hidden] { display: none; }
+.hero-chat .nexi-thread-wrap.has-jump, .nexi-panel-main.has-jump { padding-bottom: var(--nx-lane); }
+.hero-chat .nexi-thread-wrap.has-jump .nexi-thread { max-height: max(240px, calc(var(--nx-thread-max) - var(--nx-lane))); }   /* the card keeps its height: the lane is taken from the thread */
+.nexi-jump svg { width: 16px; height: 16px; }
+.nexi-jump:hover { background: var(--nx-green-l); }
+.nexi-jump:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
 
-/* Conversation starters: one compact horizontal row for hero and panel at every width. */
+/* ==========================================================================
+   Chips and starters
+   ========================================================================== */
 .nexi-chip {
-    border: 1px solid #CFE6DC; background: #fff; color: var(--nx-ink); cursor: pointer;
-    padding: 9px 14px; min-height: 40px; border-radius: 999px;
-    font: 500 0.84rem/1.3 var(--font-body, system-ui, sans-serif);
-    text-align: left; max-width: 100%;
-    overflow-wrap: anywhere;
+    display: flex; align-items: center; box-sizing: border-box;
+    min-height: var(--nx-touch); padding: var(--nx-s2) var(--nx-s4);
+    border: 1px solid var(--nx-line-2); border-radius: var(--nx-r-pill); background: var(--nx-surface); color: var(--nx-ink); cursor: pointer;
+    font: 500 var(--nx-t14)/1.35 var(--nx-font);
+    text-align: left; max-width: 100%; overflow-wrap: anywhere;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
 .nexi-chip:hover { border-color: var(--nx-green); background: var(--nx-green-l); }
 .nexi-chip:active { transform: scale(0.98); }
-.nexi-chip:focus-visible { outline: 2px solid var(--nx-green); outline-offset: 2px; }
+.nexi-chip:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
 .nexi-chip:disabled { opacity: 0.55; cursor: default; }
 
-.nexi-starters { position: relative; display: block; }
+/* the starter row: arrows live in their own gutters (never on top of a chip); the edges fade */
+.nexi-starters { position: relative; display: flex; align-items: center; margin-bottom: var(--nx-s2); }
 .nexi-starters[hidden] { display: none; }
-.nexi-starters-label { margin: 2px 12px 8px; font: 600 0.8rem/1.2 var(--font-body, system-ui, sans-serif); color: var(--nx-muted); }
+/* the starters bleed out by one gutter on each side; the label and the first chip start one gutter in again: avatar, label, chip and composer share ONE left edge */
+.nexi-starters { margin-inline: calc(var(--nx-s3) * -1); }
+.nexi-starters-label { flex: 1 0 100%; margin: 0 var(--nx-s3) var(--nx-s2); font: 600 var(--nx-t13)/1.2 var(--nx-font); color: var(--nx-muted); }
+.nexi-starters { flex-wrap: wrap; }
 .nexi-starters-row {
-    display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch;
-    min-width: 0; margin: 0; padding: 2px 34px 6px 12px;
+    order: 2; flex: 1 1 0; display: flex; flex-wrap: nowrap; gap: var(--nx-s2); align-items: stretch;
+    min-width: 0; margin: 0; padding: 2px var(--nx-s3) var(--nx-s1);
     overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity; scroll-padding-inline: 12px;
+    /* no scroll-snap: an arrow moves the row by 80% of what is visible, which never lines up with the chip pitch, so snapping pulled each press back onto the previous chip */
     -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
-            mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--nx-s3), #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 var(--nx-s3), #000 calc(100% - 28px), transparent 100%);
 }
 .nexi-starters-row::-webkit-scrollbar { display: none; }
 .nexi-starters .nexi-chip {
-    flex: 0 0 clamp(200px, 72vw, 240px); width: clamp(200px, 72vw, 240px);
-    height: 68px; min-height: 68px; box-sizing: border-box;
-    padding: 10px 14px; border-radius: 14px; scroll-snap-align: start;
-    white-space: normal; overflow-wrap: anywhere; text-wrap: pretty;
+    /* a fixed width that never depends on the row: showing or hiding an arrow must not change the scroll length */
+    flex: 0 0 clamp(190px, calc(100vw - 130px), 264px); width: clamp(190px, calc(100vw - 130px), 264px); max-width: none;
+    min-height: 56px; box-sizing: border-box;            /* the tallest chip sets the height of the row: even widths AND even heights */
+    padding: var(--nx-s2) var(--nx-s3); border-radius: var(--nx-r-md);
+    display: flex; align-items: center;
 }
-.nexi-starters .nexi-chip::after { display: none; }
+/* up to three lines; a longer question ends in an ellipsis on its third line, never cut in the middle of a line */
+.nexi-chip-text {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+    overflow: hidden; text-overflow: ellipsis; min-width: 0; white-space: normal; overflow-wrap: anywhere;
+}
 .nexi-starters-arrow {
-    position: absolute; z-index: 2; top: calc(50% + 9px); width: 28px; height: 28px;
-    padding: 0; border: 1px solid var(--nx-line); border-radius: 50%;
-    display: grid; place-items: center; cursor: pointer;
-    background: rgba(255, 255, 255, 0.96); color: var(--nx-ink);
-    font: 500 1.2rem/1 var(--font-body, system-ui, sans-serif);
-    box-shadow: 0 3px 10px rgba(11, 59, 43, 0.12);
+    position: relative; flex: none; width: var(--nx-touch); height: var(--nx-touch); padding: 0; border: 0; background: transparent;
+    display: grid; place-items: center; cursor: pointer; color: var(--nx-green-dd);
+    -webkit-tap-highlight-color: transparent;
 }
-.nexi-starters-arrow:hover { border-color: #8FD3B7; background: #F3FBF7; }
-.nexi-starters-arrow:focus-visible { outline: 2px solid var(--nx-green); outline-offset: 2px; }
+.nexi-starters-arrow svg { width: 16px; height: 16px; display: block; }
+.nexi-starters-arrow::before {
+    content: ''; position: absolute; inset: 6px; border: 1px solid var(--nx-line-2); border-radius: 50%;
+    background: var(--nx-surface); box-shadow: var(--nx-sh-1); z-index: -1;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nexi-starters-arrow:hover::before { border-color: var(--nx-green); background: var(--nx-green-l); }
+.nexi-starters-arrow:active::before { background: #D5F1E5; }
+.nexi-starters-arrow:focus-visible { outline: var(--nx-ring); outline-offset: -2px; border-radius: 50%; }
 .nexi-starters-arrow[hidden] { display: none; }
-.nexi-starters-arrow--prev { left: 0; }
-.nexi-starters-arrow--next { right: 0; }
-.nexi-starters { margin-bottom: 8px; }
-.hero-chat .nexi-starters { margin-top: 14px; }
-.hero-chat .nexi-starters-row { margin-inline: -12px; }
-.hero-chat .nexi-foot { margin-top: 12px; padding: 0 6px; }
-.nexi-panel-bottom .nexi-foot { margin-top: 8px; text-align: center; }
+.nexi-starters-arrow.is-disabled { cursor: default; color: var(--nx-muted); }
+.nexi-starters-arrow.is-disabled svg { opacity: 0.45; }
+.nexi-starters-arrow.is-disabled::before { background: var(--nx-surface); border-color: var(--nx-line); box-shadow: none; }
+.nexi-starters-arrow--prev { order: 1; margin-left: calc(var(--nx-s2) * -1); }
+.nexi-starters-arrow--next { order: 3; margin-right: calc(var(--nx-s2) * -1); }
+.nexi-starters-arrow { isolation: isolate; }
 
-@media (max-width: 768px) {
-    .hero-chat .nexi-starters-row { margin-inline: -12px; }
+/* the hero: both arrows sit on the "Try asking" line, so they are always in the same place, never clipped by the card,
+   and the chips below start on the same left edge as the label and the message box */
+.nexi-starters[data-nav="inline"] { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; column-gap: 0; }
+.nexi-starters[data-nav="inline"] .nexi-starters-label { grid-area: 1 / 1; margin-bottom: 0; align-self: center; }
+.nexi-starters[data-nav="inline"] .nexi-starters-arrow { margin-block: calc(var(--nx-s2) * -1) calc(var(--nx-s2) * -1 + var(--nx-s1)); margin-inline: 0; align-self: center; }
+.nexi-starters[data-nav="inline"] .nexi-starters-arrow--prev { grid-area: 1 / 2; }
+.nexi-starters[data-nav="inline"] .nexi-starters-arrow--next { grid-area: 1 / 3; margin-right: calc(var(--nx-s2) - var(--nx-s1)); }
+.nexi-starters[data-nav="inline"] .nexi-starters-row { grid-area: 2 / 1 / 3 / 4; }
+/* WIP 107: this must come AFTER the display:grid rule above and be as specific as it, or `hidden` is ignored and the
+   starter questions stay on screen for the whole conversation (they hid in the hero only because of its own rule). */
+.nexi-starters[hidden], .nexi-starters[data-nav="inline"][hidden] { display: none; }
+/* room for two whole questions at a time once the card is wide (a desktop or tablet hero); phones keep a peek of the next one */
+@media (min-width: 640px) {
+    .hero-chat .nexi-starters .nexi-chip { flex: 0 0 calc((100% - var(--nx-s2)) / 2); width: calc((100% - var(--nx-s2)) / 2); }
+    /* only the last few pixels fade, enough to hide the sliver of a third question without touching the second */
+    .hero-chat .nexi-starters-row { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 12px), transparent calc(100% - 5px)); mask-image: linear-gradient(to right, #000 calc(100% - 12px), transparent calc(100% - 5px)); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .nexi-starters-row { scroll-behavior: auto; }
+/* ==========================================================================
+   Composer and footer
+   ========================================================================== */
+.nexi-composer {
+    display: flex; align-items: center; gap: var(--nx-s2);
+    min-height: var(--nx-field); box-sizing: border-box;
+    padding: 2px 2px 2px var(--nx-s4);
+    background: var(--nx-surface); border: 2px solid var(--nx-line); border-radius: var(--nx-r-xl);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
+.nexi-composer:focus-within { border-color: var(--nx-green-d); box-shadow: 0 0 0 4px rgba(1, 176, 117, 0.16); }
+.nexi-composer textarea {
+    flex: 1; min-width: 0; box-sizing: border-box;
+    min-height: 40px; max-height: 112px; padding: var(--nx-s2) 0;
+    resize: none; border: 0; outline: 0; background: transparent; overflow-y: auto;
+    font: 400 var(--nx-t16)/1.5 var(--nx-font); color: var(--nx-ink);
+}
+.nexi-composer textarea::placeholder { color: var(--nx-muted); opacity: 1; }
+.nexi-send {
+    flex: none; width: var(--nx-touch); height: var(--nx-touch); padding: 0; border: 0; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer;
+    background: var(--nx-green-d); color: #fff;
+    transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+.nexi-send svg { width: 20px; height: 20px; }
+.nexi-send:hover { background: var(--nx-ink); }
+.nexi-send:active { transform: scale(0.94); }
+.nexi-send:focus-visible { outline: 3px solid var(--nx-gold); outline-offset: 2px; }
+/* nothing to send yet: clearly "off" but still visible (a 3:1 icon on a pale disc) */
+.nexi-composer:has(textarea:placeholder-shown) .nexi-send:not(.is-busy) { background: #DCE6E1; color: #55655E; cursor: default; }
 .nexi-send .i-stop { display: none; }
 .nexi-send.is-busy .i-send { display: none; }
 .nexi-send.is-busy .i-stop { display: block; }
-.nexi-foot { margin: 0; font-size: 0.72rem; color: var(--nx-muted); line-height: 1.4; }
+
+.nexi-footrow { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: var(--nx-s2); min-width: 0; }
+.nexi-foot { margin: 0; font-size: var(--nx-t12); color: var(--nx-muted); line-height: 1.35; text-align: center; text-wrap: pretty; }
+/* "Need a person? Chat on WhatsApp": a quiet text button under the composer, never in the header */
+.nexi-handoff-row { display: flex; flex-direction: column; align-items: center; min-width: 0; max-width: 100%; }
+.nexi-handoff-link {
+    box-sizing: border-box; display: block; min-height: var(--nx-touch); max-width: 100%; padding: 12px var(--nx-s2);
+    border: 0; border-radius: var(--nx-r-md); background: transparent; color: var(--nx-green-dd);
+    font: 600 var(--nx-t13)/1.3 var(--nx-font); text-align: center; text-decoration: none; cursor: pointer; text-wrap: balance;
+}
+/* icon and words flow as one line of text, so a wrapped label stays centred with its icon instead of the icon sitting off to the side */
+.nexi-handoff-icon { display: inline-block; vertical-align: -4px; margin-right: var(--nx-s2); }
+.nexi-handoff-label { overflow-wrap: anywhere; }
+.nexi-handoff-link svg { width: 18px; height: 18px; }
+.nexi-handoff-link:hover { background: var(--nx-green-l); }
+.nexi-handoff-link:focus-visible, .nexi-handoff:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
+.nexi-handoff-link.is-loading, .nexi-handoff.is-loading { opacity: 0.7; }
+.nexi-handoff-notice { display: block; margin: 0; text-align: center; font-size: var(--nx-t12); line-height: 1.4; color: var(--nx-muted); overflow-wrap: anywhere; }
+.nexi-handoff-notice[hidden] { display: none; }
+.nexi-handoff-notice.is-warn { color: var(--nx-warn-ink); }
+.nexi-handoff-notice a { color: inherit; font-weight: 700; text-decoration: underline; }
 
 /* ==========================================================================
    Hero chat card (Marketplace)
    ========================================================================== */
 .hero-chat {
-    position: relative;
-    max-width: 580px;
-    margin: 0 0 var(--spacing-md, 16px);
-    padding: 14px 14px 12px;
-    background: rgba(255, 255, 255, 0.92);
+    position: relative; overflow: hidden;
+    max-width: 580px; margin: 0 0 var(--spacing-md, var(--nx-s4));
+    padding: var(--nx-s5) var(--nx-s4) var(--nx-s3);
+    background: rgba(255, 255, 255, 0.94);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    border: 1px solid var(--nx-line);
-    border-radius: 26px;
+    border: 1px solid var(--nx-line); border-radius: var(--nx-r-xl);
     box-shadow: 0 18px 44px rgba(11, 59, 43, 0.12), 0 2px 8px rgba(11, 59, 43, 0.06);
+    font-family: var(--nx-font);
 }
-.hero-chat-fallback { margin: 0; font-size: 0.9rem; color: var(--nx-muted); }
+/* the market-stall awning */
+.hero-chat::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: var(--nx-s4); pointer-events: none;
+    background: repeating-linear-gradient(90deg, var(--nx-green) 0 22px, #A6E3CC 22px 44px);
+    -webkit-mask: linear-gradient(#000, #000) top / 100% 5px no-repeat, radial-gradient(circle 11px at 50% 5px, #000 98%, #0000) 0 0 / 22px 100% repeat-x;
+            mask: linear-gradient(#000, #000) top / 100% 5px no-repeat, radial-gradient(circle 11px at 50% 5px, #000 98%, #0000) 0 0 / 22px 100% repeat-x;
+}
+.hero-chat-fallback { margin: 0; font-size: var(--nx-t14); color: var(--nx-muted); }
 .hero-chat-fallback a { color: var(--nx-green-d); font-weight: 600; }
-.hero-chat-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.hero-chat-title { flex: 1; min-width: 0; }
-.hero-chat-title strong { display: block; font: 700 0.98rem/1.2 var(--font-display, var(--font-body, system-ui)); color: var(--nx-ink); }
-.hero-chat-title span { display: block; font-size: 0.76rem; color: var(--nx-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hero-chat .nexi-iconbtn { background: #EEF3F0; color: var(--nx-ink); }
-.hero-chat .nexi-iconbtn:hover { background: #E1EAE5; }
-.hero-chat .nexi-thread { max-height: min(42vh, 330px); margin: 0 -6px 8px; padding: 6px; }
-.hero-chat .nexi-foot { margin-top: 9px; padding-left: 4px; }
+.hero-chat-head { margin-bottom: var(--nx-s3); }
+.hero-chat-title strong { font-size: var(--nx-t18); }
+.hero-chat { --nx-thread-max: max(240px, min(46vh, 420px)); }
+.hero-chat .nexi-thread { max-height: var(--nx-thread-max); min-height: 240px; margin: 0 calc(var(--nx-s3) * -1) var(--nx-s2); }
+.hero-chat .nexi-thread-wrap { position: relative; }
+.hero-chat .nexi-starters { margin-top: var(--nx-s2); }
 .marketplace-hero.is-chatting .hero-lead,
 .marketplace-hero.is-chatting .hero-sell-line { display: none; }
-
 @media (max-width: 768px) {
     .hero-lead-ask { display: none; } /* the chat is right below; save the vertical space */
-    .hero-chat { max-width: none; padding: 12px 12px 10px; border-radius: 22px; }
-    .hero-chat-title span { display: none; }
+    .hero-chat { max-width: none; padding: var(--nx-s5) var(--nx-s3) var(--nx-s2); }
+    .hero-chat-title strong { font-size: var(--nx-t16); }
 }
 
 /* ==========================================================================
    Flagged messages (WIP 55): off-topic, inappropriate, private details, manipulation, unclear
    ========================================================================== */
-.nexi-msg.has-tag { flex-direction: column; align-items: flex-end; gap: 4px; }
-.nexi-msg.is-user.is-flagged .nexi-bubble { background: #61786D; }
+.nexi-msg.has-tag { flex-direction: column; align-items: flex-end; gap: var(--nx-s1); }
+.nexi-msg.is-user.is-flagged .nexi-bubble { background: #4F665B; }
 .nexi-flagtag {
-    display: inline-flex; align-items: center; gap: 5px; padding: 0 4px;
-    font: 600 0.68rem/1.2 var(--font-body, system-ui, sans-serif); color: #6B7A73;
+    display: inline-flex; align-items: center; gap: 5px; padding: 0 var(--nx-s1);
+    font: 600 var(--nx-t12)/1.2 var(--nx-font); color: var(--nx-muted);
 }
 .nexi-flagtag::before {
     content: ''; flex: none; width: 12px; height: 12px; background: currentColor;
@@ -392,135 +572,100 @@ html.nexi-lock, html.nexi-lock body { overflow: hidden !important; }
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .nexi-msg.is-flag .nexi-bubble { background: #F2F6FA; border-color: #D3DDE8; color: #1E3345; }
-.nexi-msg.is-flag-sensitive .nexi-bubble { background: #FFF6EA; border-color: #F6D9A8; color: #6B4A00; }
-.nexi-suggest { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-.nexi-suggest .nexi-chip { width: 100%; border-radius: 12px; padding: 9px 12px; font-size: 0.8rem; background: #fff; }
-.nexi-newchat { margin-top: 10px; }
+.nexi-msg.is-flag-sensitive .nexi-bubble { background: var(--nx-warn-bg); border-color: var(--nx-warn-line); color: var(--nx-warn-ink); }
+.nexi-suggest { display: flex; flex-direction: column; gap: var(--nx-s2); margin-top: var(--nx-s3); }
+.nexi-suggest .nexi-chip { width: 100%; border-radius: var(--nx-r-md); background: var(--nx-surface); }
+.nexi-newchat { margin-top: var(--nx-s3); }
 
-/* touch screens: bigger tap targets */
-@media (pointer: coarse) {
-    .nexi-iconbtn { width: 40px; height: 40px; }
-    .nexi-lang button { padding: 8px 14px; }
+/* ==========================================================================
+   Cards: direct children of the thread, full width, a designed image fallback
+   ========================================================================== */
+.nexi-cards { display: flex; flex-direction: column; gap: var(--nx-s2); align-self: stretch; width: 100%; min-width: 0; }
+.nexi-card {
+    display: flex; flex-direction: column; gap: var(--nx-s3); min-width: 0; box-sizing: border-box; padding: var(--nx-s3);
+    border: 1px solid var(--nx-line); border-radius: var(--nx-r-lg); background: var(--nx-surface); box-shadow: var(--nx-sh-1);
 }
+.nexi-card-main { display: flex; gap: var(--nx-s3); min-width: 0; }
+.nexi-card-media {
+    position: relative; flex: 0 0 68px; width: 68px; height: 68px; min-width: 68px;
+    overflow: hidden; border-radius: var(--nx-r-md); background: var(--nx-tint); display: grid; place-items: center;
+}
+.nexi-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nexi-card-placeholder { display: grid; place-items: center; width: 100%; height: 100%; color: var(--nx-green-dd); font: 700 28px/1 var(--nx-font-display); }
+.nexi-card-placeholder svg { width: 34px; height: 34px; }
+.nexi-store-media { background: linear-gradient(145deg, #E7F8F1 0%, #CFE6DC 100%); }
+.nexi-product-media { background: linear-gradient(145deg, #F3F7F5 0%, #E1EAE5 100%); }
+.nexi-card-media:not(.is-placeholder) .nexi-card-placeholder { display: none; }
+.nexi-card-info { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
+.nexi-card-name {
+    min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    font: 700 var(--nx-t14)/1.35 var(--nx-font); color: var(--nx-ink); overflow-wrap: anywhere;
+}
+.nexi-card-prices { display: flex; align-items: baseline; gap: var(--nx-s2); flex-wrap: wrap; }
+.nexi-card-price { font: 700 var(--nx-t15)/1.3 var(--nx-font); color: var(--nx-green-dd); }
+.nexi-card-original { font: 400 var(--nx-t12)/1.3 var(--nx-font); color: var(--nx-muted); text-decoration: line-through; }
+.nexi-card-muted { font: 400 var(--nx-t12)/1.4 var(--nx-font); color: var(--nx-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nexi-card-description {
+    font: 400 var(--nx-t12)/1.4 var(--nx-font); color: var(--nx-muted); overflow: hidden;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.nexi-card-actions { display: flex; align-items: center; gap: var(--nx-s2); min-width: 0; flex-wrap: wrap; }
+.nexi-card-open, .nexi-card-share {
+    min-height: var(--nx-touch); box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--nx-r-md); cursor: pointer; text-decoration: none;
+}
+.nexi-card-open { flex: 1 1 auto; padding: 0 var(--nx-s4); border: 1px solid var(--nx-green-d); background: var(--nx-green-d); color: #fff; font: 700 var(--nx-t14)/1 var(--nx-font); }
+.nexi-card-open:visited { color: #fff; }
+.nexi-card-share { flex: 0 0 var(--nx-touch); width: var(--nx-touch); padding: 0; border: 1px solid var(--nx-line-2); background: var(--nx-surface); color: var(--nx-ink); }
+.nexi-card-share svg { width: 20px; height: 20px; }
+.nexi-card-open:hover { background: var(--nx-ink); border-color: var(--nx-ink); }
+.nexi-card-share:hover { border-color: var(--nx-green); background: var(--nx-green-l); }
+.nexi-card-open:focus-visible, .nexi-card-share:focus-visible { outline: var(--nx-ring); outline-offset: 2px; }
+.nexi-card-share[hidden] { display: none; }
+.nexi-card-share-status { flex: 1 0 100%; min-width: 0; font-size: var(--nx-t12); color: var(--nx-muted); }
+.nexi-card-share-status:empty { display: none; }
+
+/* ==========================================================================
+   Handoff CTA in the thread: a proper button, full width
+   ========================================================================== */
+.nexi-handoff-block { align-self: stretch; display: flex; flex-direction: column; gap: var(--nx-s2); min-width: 0; }
+.nexi-handoff {
+    box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: var(--nx-s2);
+    width: 100%; min-height: 48px; padding: var(--nx-s3) var(--nx-s4);
+    border: 0; border-radius: var(--nx-r-md); background: var(--nx-green-d); color: #fff;
+    font: 700 var(--nx-t15)/1.25 var(--nx-font); text-align: center; text-decoration: none; cursor: pointer;
+}
+.nexi-handoff svg { flex: none; width: 20px; height: 20px; }
+.nexi-handoff:hover { background: var(--nx-ink); }
+.nexi-handoff:visited { color: #fff; }
+.nexi-handoff-hint { margin: 0; text-align: center; font: 400 var(--nx-t13)/1.4 var(--nx-font); color: var(--nx-muted); }
+.nexi-handoff-block .nexi-handoff-notice { text-align: center; }
+
+/* ==========================================================================
+   Link-buttons vs the host page
+   The marketplace page forces `.marketplace-container a:not(.cart-btn) { color: inherit }` (specificity 0,2,1) and main.css
+   colours `a:hover`. The widget's own links are buttons with their own colours, so they carry enough weight to win there.
+   ========================================================================== */
+.hero-chat .nexi-thread a.nexi-card-open, .nexi-panel .nexi-thread a.nexi-card-open,
+.hero-chat .nexi-thread a.nexi-handoff, .nexi-panel .nexi-thread a.nexi-handoff { color: #fff; text-decoration: none; }
+.hero-chat .nexi-footrow a.nexi-handoff-link, .nexi-panel .nexi-footrow a.nexi-handoff-link { color: var(--nx-green-dd); text-decoration: none; }
+.hero-chat .nexi-thread .nexi-bubble a:not(.nexi-handoff) { color: var(--nx-green-d); }
+.hero-chat .nexi-thread .nexi-msg.is-user .nexi-bubble a { color: #fff; }
+.nexi-panel .nexi-thread .nexi-bubble a:not(.nexi-handoff) { color: var(--nx-green-d); }
+.nexi-panel .nexi-thread .nexi-msg.is-user .nexi-bubble a { color: #fff; }
 
 /* ==========================================================================
    Motion
    ========================================================================== */
-@keyframes nexi-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes nexi-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes nexi-dot { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @keyframes nexi-twinkle { 0%, 88%, 100% { transform: scale(1) rotate(0); } 94% { transform: scale(1.28) rotate(18deg); } }
 @keyframes nexi-ping { 0% { box-shadow: 0 0 0 3px #fff, 0 0 0 3px rgba(255, 176, 56, 0.6); } 100% { box-shadow: 0 0 0 3px #fff, 0 0 0 12px rgba(255, 176, 56, 0); } }
 @keyframes nexi-nudge { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) {
-    .nexi-dock, .nexi-top, .nexi-fab, .nexi-fab-slot, .nexi-fab-label, .nexi-panel, .nexi-msg, .nexi-thread { transition: none !important; animation: none !important; scroll-behavior: auto; }
-    .nexi-fab .nexi-spark, .nexi-fab.has-unread::after, .nexi-typing i { animation: none !important; }
+    .nexi-dock, .nexi-top, .nexi-fab, .nexi-fab-slot, .nexi-fab-label, .nexi-panel, .nexi-msg, .nexi-bubble, .nexi-jump, .nexi-thread, .nexi-chip, .nexi-send { transition: none !important; animation: none !important; scroll-behavior: auto; }
+    .nexi-starters-row { scroll-behavior: auto; }
+    .nexi-fab .nexi-spark, .nexi-fab.has-unread::after, .nexi-typing i, .nexi-top:hover .arrow { animation: none !important; }
     .nexi-typing i { opacity: 0.7; }
 }
 @media print { .nexi-dock, .nexi-panel { display: none !important; } }
-
-/* ==========================================================================
-   WIP 57 redesign: composer (was unstyled), starter cards, market-stall awning on the hero card
-   ========================================================================== */
-.nexi-composer {
-    display: flex; align-items: flex-end; gap: 8px;
-    padding: 4px 4px 4px 16px;
-    background: #fff; border: 1.5px solid var(--nx-line); border-radius: 24px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.nexi-composer:focus-within { border-color: var(--nx-green); box-shadow: 0 0 0 4px rgba(1, 176, 117, 0.14); }
-.nexi-composer textarea {
-    flex: 1; min-width: 0; box-sizing: border-box;
-    min-height: 40px; max-height: 112px; padding: 9px 0;
-    resize: none; border: 0; outline: 0; background: transparent; overflow-y: auto;
-    font: 400 0.94rem/1.45 var(--font-body, system-ui, sans-serif); color: var(--nx-ink);
-}
-.nexi-composer textarea::placeholder { color: #6F7F78; }
-.nexi-send {
-    flex: none; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%;
-    display: grid; place-items: center; cursor: pointer;
-    background: var(--nx-green); color: #fff;
-    transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
-}
-.nexi-send svg { width: 18px; height: 18px; }
-.nexi-send:hover { background: var(--nx-green-d); }
-.nexi-send:active { transform: scale(0.94); }
-.nexi-send:focus-visible { outline: 3px solid var(--nx-gold); outline-offset: 2px; }
-.nexi-composer:has(textarea:placeholder-shown) .nexi-send:not(.is-busy) { background: #E3EAE6; color: #7A8A83; }
-
-/* hero card: awning edge, roomier head, equal starter cards */
-.hero-chat { overflow: hidden; padding: 32px 16px 14px; border-radius: 24px; }
-.hero-chat::before {
-    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 16px; pointer-events: none;
-    background: repeating-linear-gradient(90deg, var(--nx-green) 0 22px, #A6E3CC 22px 44px);
-    -webkit-mask: linear-gradient(#000, #000) top / 100% 5px no-repeat, radial-gradient(circle 11px at 50% 5px, #000 98%, #0000) 0 0 / 22px 100% repeat-x;
-            mask: linear-gradient(#000, #000) top / 100% 5px no-repeat, radial-gradient(circle 11px at 50% 5px, #000 98%, #0000) 0 0 / 22px 100% repeat-x;
-}
-.hero-chat-head { gap: 12px; margin-bottom: 14px; }
-.hero-chat .nexi-avatar { width: 44px; height: 44px; }
-.hero-chat-title strong { font-size: 1.05rem; }
-/* floating panel */
-.nexi-panel-bottom { padding: 12px 14px 10px; border-top: 0; box-shadow: 0 -10px 22px rgba(11, 59, 43, 0.05); }
-.nexi-panel-bottom .nexi-foot { margin-top: 8px; text-align: center; }
-
-/* WIP 73: compact catalog cards inside the bot bubble. */
-.nexi-cards {
-    display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; margin-top: 10px;
-}
-.nexi-card {
-    min-width: 0; box-sizing: border-box; padding: 8px;
-    border: 1px solid var(--nx-line); border-radius: 12px; background: #fff;
-}
-.nexi-card-main { display: flex; gap: 9px; min-width: 0; }
-.nexi-card-media {
-    position: relative; flex: 0 0 56px; width: 56px; height: 56px; min-width: 56px;
-    overflow: hidden; border-radius: 9px; background: #EEF3F0; display: grid; place-items: center;
-}
-.nexi-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.nexi-card-placeholder { color: var(--nx-muted); font-weight: 700; font-size: 1rem; }
-.nexi-card-media:not(.is-placeholder) .nexi-card-placeholder { display: none; }
-.nexi-card-info { min-width: 0; flex: 1 1 auto; }
-.nexi-card-name {
-    min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
-    font-weight: 700; line-height: 1.3; color: var(--nx-ink); overflow-wrap: anywhere;
-}
-.nexi-card-prices { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; margin-top: 3px; }
-.nexi-card-price { font-weight: 700; font-size: 0.82rem; color: var(--nx-green-d); }
-.nexi-card-original { font-size: 0.72rem; color: var(--nx-muted); }
-.nexi-card-muted { margin-top: 3px; font-size: 0.72rem; color: var(--nx-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nexi-card-description {
-    margin-top: 3px; font-size: 0.74rem; line-height: 1.35; color: var(--nx-muted); overflow: hidden;
-    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-}
-.nexi-card-actions { display: flex; align-items: center; gap: 7px; margin-top: 7px; min-width: 0; }
-.nexi-card-open, .nexi-card-share {
-    min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
-    padding: 7px 12px; border-radius: 9px; font: 600 0.78rem/1 var(--font-body, system-ui, sans-serif); cursor: pointer;
-    text-decoration: none;
-}
-.nexi-bubble .nexi-cards a.nexi-card-open,
-.nexi-bubble .nexi-cards a.nexi-card-open:visited {
-    flex: 0 0 auto; border: 1px solid var(--nx-green-d); background: var(--nx-green-d); color: #fff; text-decoration: none;
-}
-.nexi-bubble .nexi-cards button.nexi-card-share {
-    flex: 0 0 auto; border: 1px solid var(--nx-line); background: #fff; color: var(--nx-ink); text-decoration: none;
-}
-.nexi-bubble .nexi-cards a.nexi-card-open:hover {
-    background: var(--nx-ink); border-color: var(--nx-ink);
-}
-.nexi-bubble .nexi-cards button.nexi-card-share:hover {
-    border-color: #8FD3B7; background: var(--nx-green-l);
-}
-.nexi-bubble .nexi-cards a.nexi-card-open:focus-visible,
-.nexi-bubble .nexi-cards button.nexi-card-share:focus-visible {
-    outline: 3px solid var(--nx-gold); outline-offset: 2px;
-}
-.nexi-card-share[hidden] { display: none; }
-.nexi-card-share-status { min-width: 0; font-size: 0.68rem; color: var(--nx-muted); }
-
-.hero-chat .nexi-starters-label { margin-left: 0; }
-
-@media (max-width: 380px) {
-    .nexi-card { padding: 7px; }
-    .nexi-card-actions { gap: 5px; }
-    .nexi-card-open, .nexi-card-share { padding-inline: 10px; }
-}

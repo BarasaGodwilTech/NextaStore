@@ -629,9 +629,11 @@ class OnboardingWizard {
         if (coords) {
             const [lat, lng] = coords.split(',').map(Number);
             if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                // Tapping the map opens the (wide) map picker to adjust the pin,
+                // rather than sending the seller off to Google Maps mid-setup.
                 NextaStoreMapPreview.render(box, {
                     lat, lng, zoom: 16, width, height, areaLabel: label,
-                    mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords)}`
+                    onOpen: () => this.openMapPicker()
                 });
                 return;
             }
@@ -640,7 +642,8 @@ class OnboardingWizard {
         if (!center) { box.hidden = true; return; }
         NextaStoreMapPreview.render(box, {
             lat: center[0], lng: center[1], zoom: kind === 'City' ? 12 : 11,
-            width, height, area: true, areaLabel: label
+            width, height, area: true, areaLabel: label,
+            onOpen: () => this.openMapPicker()
         });
     }
 

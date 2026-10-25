@@ -11,3 +11,11 @@ nextastore-backend/node_modules/
 .DS_Store
 *.log
 nextastore-backend/uploads/
+
+# WIP 97: test output and scratch files never belong in the tree
+*_screenshots/
+WIP*_screenshots/
+test-output/
+ai-assistant/starter-row-*.png
+ai-assistant/data/*.jsonl
+/*.patch

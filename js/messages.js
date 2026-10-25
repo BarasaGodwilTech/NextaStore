@@ -434,7 +434,7 @@ class MessagesManager {
             const card = e.target.closest('.message-location-card');
             if (card) {
                 const { lat, lng, label } = card.dataset;
-                if (lat && lng) this.openLocationPreview(parseFloat(lat), parseFloat(lng), label);
+                if (lat && lng) this.openLocationPreview(parseFloat(lat), parseFloat(lng), label, { directions: true });
                 return;
             }
             const retryBtn = e.target.closest('[data-retry-message]');
@@ -740,7 +740,7 @@ class MessagesManager {
                 const thumb = app.productThumb(p);
                 return `<button type="button" class="attach-product-item" data-product-id="${app.escapeHtml(p.id)}">
                     <span class="attach-product-thumb" ${thumb ? `style="background-image:url('${app.cssUrl(thumb)}')"` : ''}>${thumb ? '' : '<i class="fas fa-box"></i>'}</span>
-                    <span class="attach-product-info"><strong>${app.escapeHtml(p.name)}</strong><span>${app.escapeHtml(app.formatCurrency(p.price))}${p.stock === 0 ? ' · Out of stock' : ''}</span></span>
+                    <span class="attach-product-info"><strong>${app.escapeHtml(p.name)}</strong><span>${app.escapeHtml(app.formatCurrency(p.price))}${(p.listingType || 'physical') === 'physical' && Number(p.stock) === 0 ? ' · Out of stock' : ''}${p.listingType === 'service' ? ' · Service' : ''}</span></span>
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>`;
             }).join('');
@@ -782,7 +782,7 @@ class MessagesManager {
 
         let previewMeta = {};
         if (attachment.type === 'product' && optimisticProduct) {
-            previewMeta = { productId: optimisticProduct.id, name: optimisticProduct.name, price: Number(optimisticProduct.price), image: app.productThumb(optimisticProduct), stock: optimisticProduct.stock };
+            previewMeta = { productId: optimisticProduct.id, name: optimisticProduct.name, price: Number(optimisticProduct.price), image: app.productThumb(optimisticProduct), listingType: optimisticProduct.listingType || 'physical', stock: (optimisticProduct.listingType || 'physical') === 'physical' ? optimisticProduct.stock : null };
         } else if (attachment.type === 'location') {
             previewMeta = { lat: attachment.lat, lng: attachment.lng, label: attachment.label || null };
         }
@@ -813,7 +813,7 @@ class MessagesManager {
         modal.querySelector('.attach-confirm-preview')?.addEventListener('click', e => {
             const card = e.target.closest('.message-location-card');
             if (!card || !card.dataset.lat) return;
-            this.openLocationPreview(parseFloat(card.dataset.lat), parseFloat(card.dataset.lng), card.dataset.label);
+            this.openLocationPreview(parseFloat(card.dataset.lat), parseFloat(card.dataset.lng), card.dataset.label, { directions: false });
         });
 
         // Cancelling doesn't discard whatever caption was typed in this
@@ -880,7 +880,11 @@ class MessagesManager {
        this modal is still there for whoever actually wants turn-by-turn
        directions, but now that's a deliberate tap on its own, not a side
        effect of just wanting a bigger look at the pin. */
-    openLocationPreview(lat, lng, label) {
+    openLocationPreview(lat, lng, label, { directions = true } = {}) {
+        // The wide in-app modal (js/map-directions.js): live location, route,
+        // distance and time. Only if that file somehow isn't on the page do we
+        // fall through to the older plain enlarged map below.
+        if (window.NextaStoreDirections?.open({ lat, lng, label: label && label !== 'Shared location' ? label : '', showRoute: directions })) return;
         document.getElementById('locationPreviewModal')?.remove();
         const modal = document.createElement('div');
         modal.className = 'location-preview-modal';
@@ -930,7 +934,9 @@ class MessagesManager {
             // local dev setup this project ships with).
             const image = meta.image ? app.resolveImageUrl(meta.image) : '';
             const caption = m.body ? `<div class="attachment-caption">${app.escapeHtml(m.body)}</div>` : '';
-            const outOfStock = meta.stock === 0;
+            // Only physical listings are stocked. The server stamps listingType on every card (it
+            // backfills old ones), so a card with no known type never reads as sold out.
+            const outOfStock = meta.listingType === 'physical' && meta.stock === 0;
             return `<a class="message-product-card" href="${app.productLink({ id: meta.productId, name: meta.name }, meta.storeSlug)}" target="_blank" rel="noopener">
                 <span class="message-product-thumb" ${image ? `style="background-image:url('${app.cssUrl(image)}')"` : ''}>${image ? '' : '<i class="fas fa-box"></i>'}</span>
                 <span class="message-product-info">
@@ -970,7 +976,7 @@ class MessagesManager {
                     <span class="message-location-expand" aria-hidden="true"><i class="fas fa-expand"></i></span>
                     <span class="message-location-scrim">
                         <span class="message-location-pin-badge"><i class="fas fa-location-dot"></i></span>
-                        <span class="message-location-text"><strong>${label}</strong><span>${hasCoords ? 'Tap to view full map' : 'Location unavailable'}</span></span>
+                        <span class="message-location-text"><strong>${label}</strong><span>${hasCoords ? 'Tap for map &amp; directions' : 'Location unavailable'}</span></span>
                     </span>
                 </span>
             </button>${caption}`;
@@ -1910,7 +1916,7 @@ class MessagesManager {
         const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         let optimisticMeta = {};
         if (attachment?.type === 'product' && optimisticProduct) {
-            optimisticMeta = { productId: optimisticProduct.id, name: optimisticProduct.name, price: Number(optimisticProduct.price), image: app.productThumb(optimisticProduct), stock: optimisticProduct.stock };
+            optimisticMeta = { productId: optimisticProduct.id, name: optimisticProduct.name, price: Number(optimisticProduct.price), image: app.productThumb(optimisticProduct), listingType: optimisticProduct.listingType || 'physical', stock: (optimisticProduct.listingType || 'physical') === 'physical' ? optimisticProduct.stock : null };
         } else if (attachment?.type === 'location') {
             optimisticMeta = { lat: attachment.lat, lng: attachment.lng, label: attachment.label || null };
         }

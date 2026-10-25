@@ -1,0 +1,14 @@
+{
+ "_readme": "Human review of English answer changes that the automatic coverage check flagged as REGRESSION?. Each entry says why the new answer is the better one. Reviewed in WIP 97.",
+ "What should I add to my store next?": "old answer was a raw dump of the badge-tier section (off-topic); new answer gives first-week actions for a new store",
+ "what is the delivery fee": "old answer was the Seller Pass price (off-topic); the guides have nothing on delivery fees, so the honest handoff to the team is correct",
+ "is there a money back guarantee": "old answer was an unrelated order-problem paragraph; the guides state no guarantee, so handoff to the team is correct",
+ "how do I know a seller is genuine": "old answer was about missing payment methods (off-topic); new answer is the trustworthy-seller section",
+ "who delivers my order": "old answer was the seller's order-status buttons; new answer explains delivery or pickup per store, which is what was asked",
+ "can I delete my account": "old answer was about a compromised account (off-topic); the guides say nothing on deleting an account, so handoff to the team is correct",
+ "How do I take good product photos?": "WIP 98: the 'About ...:' lead is gone and one more sentence of the same photo section is kept (keep the style consistent); the coverage drop is the lead's heading words no longer counting",
+ "tips for taking better product photos": "WIP 98: same as above (lead removed, same section, one more sentence)",
+ "How many months can I buy": "WIP 98: old answer described the mobile-money flow and never named the blocks; new answer states the blocks of 1, 3, 6, 12 or 24 months from the facts",
+ "can I get a refund": "WIP 98: both come from 'If something goes wrong with an order'; the new answer gives the first step (Messages) instead of the escalation sentence that mentioned refunds only to say not to promise one",
+ "can I return an item I bought": "WIP 98: old answer was about sellers cancelling (off-topic); new answer is the buyer cancellation rule with its 30-minute window and limit, the closest thing the guides say about undoing an order"
+}

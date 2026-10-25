@@ -532,6 +532,7 @@ enum NotificationType {
   subscription
   new_product
   store_live
+  growth
 }
 
 model Notification {
@@ -676,5 +677,283 @@ model PlatformSettings {
   // menu. Blank means nothing is shown for that method.
   mtnMomoInstructions     String   @default("")
   airtelMoneyInstructions String   @default("")
+  supportWhatsappNumber String @default("256761789006")
+  supportWhatsappEnabled Boolean @default(true)
+  supportContactLabel String @default("NextaStore support team")
+  supportHoursNote String @default("")
   updatedAt       DateTime @updatedAt
+}
+
+// =============================================================================
+// Nexta Circle + Nexta Scouts: models to PASTE at the end of
+// nextastore-backend/prisma/schema.prisma.   (Not wired in yet.)
+//
+// Design choice: these models point at User, Store and SubscriptionPayment by
+// plain string id, with NO Prisma relation and NO foreign key. That means:
+//   - not a single existing model has to be edited (no back-relation lines),
+//   - the growth tables can be dropped or rebuilt without touching sellers,
+//   - the service checks that ids exist itself (service.js does).
+// If you would rather have real foreign keys later, add the relation fields then.
+//
+// ONE more edit is needed elsewhere: add `growth` to `enum NotificationType`
+// (see INTEGRATION_GUIDE step 1). The SQL migration already does it.
+// =============================================================================
+
+enum GrowthProgram {
+  circle
+  scout
+}
+
+enum GrowthPartnerStatus {
+  applied    // Scouts apply and wait for approval; Circle members skip this and start as active
+  active
+  frozen     // withdrawals paused, new referrals still recorded but held for review
+  rejected
+  retired    // left the program; history kept
+}
+
+enum GrowthReferralStage {
+  lead             // Scout logged a prospect who has no account yet
+  signed_up
+  store_live
+  payment_pending  // first payment submitted, awaiting admin approval
+  paid             // first payment approved -> commission rows exist
+  lapsed           // never paid inside the qualifying window / lead lock ran out
+  blocked          // risk engine said block; an admin decides
+  void             // not counted (self-referral, duplicate, etc.)
+}
+
+enum GrowthCommissionType {
+  first_payment
+  commitment_kicker
+  live_bonus
+  campaign_boost
+  renewal
+  clawback
+  adjustment
+}
+
+enum GrowthCommissionStatus {
+  held       // payment approved, clearance window running
+  review     // risk engine wants a human to release it
+  available  // cleared, withdrawable
+  voided
+}
+
+enum GrowthWithdrawalStatus {
+  requested
+  in_review    // waiting for a second admin or extra checks
+  approved
+  paid
+  rejected
+  cancelled
+}
+
+enum GrowthFlagStatus {
+  open
+  dismissed
+  confirmed
+}
+
+model GrowthPartner {
+  id                     String              @id @default(cuid())
+  userId                 String              @unique
+  program                GrowthProgram
+  status                 GrowthPartnerStatus @default(active)
+  code                   String              @unique
+  displayName            String
+  phone                  String              @default("")
+  // Scouts only
+  rankKey                String              @default("trailhead")
+  territories            String[]            @default([])
+  kycFileUrl             String?             // ID photo, uploaded through the existing upload path; never shown to other partners
+  applicationNote        String              @default("")
+  approvedBy             String?
+  approvedAt             DateTime?
+  // Payout destination. Changing it starts a withdrawal lock (rules.js WITHDRAWAL.payoutNumberChangeLockHours).
+  payoutNetwork          String?
+  payoutNumber           String?
+  payoutName             String?
+  payoutNumberChangedAt  DateTime?
+  // Quality and safety
+  qualityScore           Int                 @default(70)
+  frozenReason           String              @default("")
+  frozenAt               DateTime?
+  signupIpPrefix         String              @default("")
+  usualIpPrefixes        String[]            @default([])
+  agreedTermsVersion     String              @default("")
+  agreedTermsAt          DateTime?
+  joinedAt               DateTime            @default(now())
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  referrals   GrowthReferral[]
+  commissions GrowthCommission[]
+  withdrawals GrowthWithdrawal[]
+  visits      GrowthVisit[]
+  flags       GrowthFlag[]
+
+  @@index([program, status])
+  @@index([payoutNumber])
+}
+
+// One row = one prospect or store that a partner brought (or logged).
+model GrowthReferral {
+  id                   String              @id @default(cuid())
+  partnerId            String
+  partner              GrowthPartner       @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  stage                GrowthReferralStage @default(signed_up)
+  source               String              @default("link")   // link | code | late_claim | lead
+  // Who it ended up being (null while still only a lead)
+  recruitUserId        String?             @unique
+  storeId              String?             @unique            // one referrer per store, enforced by the database
+  // Scout lead details (never shown to other partners)
+  leadBusiness         String              @default("")
+  leadContactName      String              @default("")
+  leadPhone            String              @default("")       // normalised, 256XXXXXXXXX
+  leadDistrict         String              @default("")
+  leadNote             String              @default("")
+  leadLockExpiresAt    DateTime?
+  leadLockExtensions   Int                 @default(0)
+  // Timeline
+  signedUpAt           DateTime?
+  storeLiveAt          DateTime?
+  paymentSubmittedAt   DateTime?
+  firstPaymentId       String?
+  paidAt               DateTime?
+  qualifyBy            DateTime?                               // signedUpAt + qualifying window
+  lastAskedAt          DateTime?                               // last "Ask us to check"
+  // Evidence for the risk engine
+  signupIpPrefix       String              @default("")
+  deviceHash           String              @default("")
+  riskDecision         String              @default("clear")  // clear | review | block
+  riskScore            Int                 @default(0)
+  riskReasons          Json                @default("[]")
+  capturedOffline      Boolean             @default(false)   // Scout logged it with no signal; createdAt holds the time they captured it
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  commissions GrowthCommission[]
+  visits      GrowthVisit[]
+
+  @@index([partnerId, stage])
+  @@index([partnerId, createdAt])
+  @@index([leadPhone])
+  @@index([stage, paymentSubmittedAt])
+}
+
+// Proof a Scout really went there. NOT paid for: only used to settle "who found them first"
+// disputes and to give admins evidence when a conversion is flagged.
+model GrowthVisit {
+  id         String         @id @default(cuid())
+  partnerId  String
+  partner    GrowthPartner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  referralId String
+  referral   GrowthReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  note       String         @default("")
+  photoUrl   String?
+  lat        Float?
+  lng        Float?
+  visitedAt  DateTime       @default(now())
+
+  @@index([referralId])
+  @@index([partnerId, visitedAt])
+}
+
+// Credit side of the ledger. Rows are never edited after payout; mistakes are fixed with a
+// new `adjustment` or `clawback` row so there is always a trail.
+model GrowthCommission {
+  id                 String                 @id @default(cuid())
+  partnerId          String
+  partner            GrowthPartner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  referralId         String?
+  referral           GrowthReferral?        @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  paymentId          String?                                    // SubscriptionPayment.id that triggered it
+  paymentReviewedBy  String?                                    // admin who approved that payment (separation of duties)
+  type               GrowthCommissionType
+  amount             Int                                         // UGX, signed (clawbacks are negative)
+  status             GrowthCommissionStatus @default(held)
+  clearsAt           DateTime?
+  releasedBy         String?
+  releasedAt         DateTime?
+  voidReason         String                 @default("")
+  note               String                 @default("")
+  createdAt          DateTime               @default(now())
+
+  @@index([partnerId, status])
+  @@index([status, clearsAt])
+  @@index([referralId])
+  @@unique([paymentId, partnerId, type])   // the same approval can never pay the same line twice
+}
+
+// Debit side of the ledger.
+model GrowthWithdrawal {
+  id                  String                 @id @default(cuid())
+  partnerId           String
+  partner             GrowthPartner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  amount              Int
+  network             String
+  payoutNumber        String                                      // snapshot at request time
+  payoutName          String                 @default("")
+  status              GrowthWithdrawalStatus @default(requested)
+  requestedAt         DateTime               @default(now())
+  dueBy               DateTime                                    // 2 working days promise
+  needsSecondApproval Boolean                @default(false)
+  approvedBy          String?
+  approvedAt          DateTime?
+  paidBy              String?
+  paidAt              DateTime?
+  payoutReference     String                 @default("")         // the MoMo transaction ID the admin paid with
+  feeEstimate         Int                    @default(0)          // planning estimate of the mobile money fee NextaStore pays
+  feeActual           Int?                                        // the real fee, entered by the admin who paid
+  rejectReason        String                 @default("")
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([partnerId, status])
+  @@index([status, dueBy])
+  @@index([partnerId, requestedAt])
+}
+
+model GrowthFlag {
+  id         String           @id @default(cuid())
+  partnerId  String
+  partner    GrowthPartner    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  referralId String?
+  code       String
+  severity   String           @default("medium")   // low | medium | high
+  detail     Json             @default("{}")
+  status     GrowthFlagStatus @default(open)
+  resolvedBy String?
+  resolvedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([partnerId, status])
+  @@index([status, createdAt])
+}
+
+// Admin-created pushes: a commission boost for a window, or a "Market Day" for a district.
+model GrowthCampaign {
+  id           String         @id @default(cuid())
+  title        String
+  description  String         @default("")
+  program      GrowthProgram?                    // null = both
+  district     String         @default("")       // "" = everywhere
+  boostPercent Int            @default(0)        // extra % on the main commission of conversions that PAY in the window
+  startsAt     DateTime
+  endsAt       DateTime
+  isActive     Boolean        @default(true)
+  createdBy    String?
+  createdAt    DateTime       @default(now())
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model GrowthSettings {
+  id             String   @id @default("singleton")
+  circleOpen     Boolean  @default(false)   // false = no new Circle sign-ups (existing keep earning). Starts CLOSED: open it from the admin (Campaigns > Program settings) when ready.
+  scoutsOpen     Boolean  @default(false)   // same for Crew applications
+  extraHolidays  String[] @default([])      // 'YYYY-MM-DD', e.g. Eid dates once announced
+  termsVersion   String   @default("2026-10-draft")
+  updatedAt      DateTime @updatedAt
 }

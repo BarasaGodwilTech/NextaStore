@@ -1,0 +1,2714 @@
+{
+ "_note": "WIP 92d golden snapshot (extractive stub model, catalog cards off). Regenerate with --write only after reviewing every diff.",
+ "count": 233,
+ "answers": {
+  "How do I start my first store?": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What should I sell as a beginner?": {
+   "reply": "Create an account and choose to sell ([Open a store](/signup)).",
+   "bubbles": [
+    "Create an account and choose to sell ([Open a store](/signup))."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Give me business ideas I can start with a small budget": {
+   "reply": "Start with items you can buy or make in small quantities.",
+   "bubbles": [
+    "Start with items you can buy or make in small quantities."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I price my products?": {
+   "reply": "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.\n\nKeep discounts honest; only show an original price that was really your price.",
+   "bubbles": [
+    "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.",
+    "Keep discounts honest; only show an original price that was really your price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I find a trustworthy seller?": {
+   "reply": "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price.",
+   "bubbles": [
+    "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can I buy safely on NextaStore?": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What should I add to my store next?": {
+   "reply": "Share your store link in WhatsApp status and groups you belong to, and on Facebook, Instagram or TikTok if you use them.\n\nAdd one new listing every few days; followers are notified of new products.",
+   "bubbles": [
+    "Share your store link in WhatsApp status and groups you belong to, and on Facebook, Instagram or TikTok if you use them.",
+    "Add one new listing every few days; followers are notified of new products."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I get more customers?": {
+   "reply": "Ask happy buyers to tell others about you.",
+   "bubbles": [
+    "Ask happy buyers to tell others about you."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I take good product photos?": {
+   "reply": "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).\n\nKeep your photo style consistent across the store.",
+   "bubbles": [
+    "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).",
+    "Keep your photo style consistent across the store."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How does the Seller Pass work?": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I open a store": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can I start a store": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I become a seller": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What are the store setup steps": {
+   "reply": "Store setup has 4 steps: 1. A store needs at least one product before it can launch.",
+   "bubbles": [
+    "Store setup has 4 steps: 1. A store needs at least one product before it can launch."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What happens when I open a store": {
+   "reply": "Store setup has 4 steps: 1. A store needs at least one product before it can launch.",
+   "bubbles": [
+    "Store setup has 4 steps: 1. A store needs at least one product before it can launch."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What does store onboarding include": {
+   "reply": "Store setup has 4 steps: 1. A store needs at least one product before it can launch.",
+   "bubbles": [
+    "Store setup has 4 steps: 1. A store needs at least one product before it can launch."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Do I need a product before launching": {
+   "reply": "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.\n\nA store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.",
+   "bubbles": [
+    "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.",
+    "A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I launch a store with no products": {
+   "reply": "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.\n\nA store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.",
+   "bubbles": [
+    "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.",
+    "A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why can’t I launch my store": {
+   "reply": "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.\n\nA store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.",
+   "bubbles": [
+    "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.",
+    "A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Is NextaStore free for buyers": {
+   "reply": "Yes — browsing and buying has no platform fee charged to the buyer through the app itself.",
+   "bubbles": [
+    "Yes — browsing and buying has no platform fee charged to the buyer through the app itself."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Do buyers pay a platform fee": {
+   "reply": "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription.",
+   "bubbles": [
+    "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Is buying free": {
+   "reply": "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription.",
+   "bubbles": [
+    "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What is Seller Pass": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How does Seller Pass work": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What is the seller subscription": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How much is Seller Pass": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What does Seller Pass cost": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What is the Seller Pass price": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How long is the free trial": {
+   "reply": "Every new store starts with a free trial of 7 days. Seller Pass costs UGX 20,000 per month of coverage.",
+   "bubbles": [
+    "Every new store starts with a free trial of 7 days. Seller Pass costs UGX 20,000 per month of coverage."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How many trial days do new stores get": {
+   "reply": "Every new store starts with a free trial of 7 days. Seller Pass costs UGX 20,000 per month of coverage.",
+   "bubbles": [
+    "Every new store starts with a free trial of 7 days. Seller Pass costs UGX 20,000 per month of coverage."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Do new stores get a free trial": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. Every new store starts with a free trial period.",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. Every new store starts with a free trial period."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How many months can I buy": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time.",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What coverage periods are available": {
+   "reply": "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.\n\nCoverage only grows when the seller sends a payment and an admin approves it.",
+   "bubbles": [
+    "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.",
+    "Coverage only grows when the seller sends a payment and an admin approves it."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Which Seller Pass blocks can I purchase": {
+   "reply": "After checkout, the order appears on the buyer's Orders page with a status that updates as the seller processes it.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "After checkout, the order appears on the buyer's Orders page with a status that updates as the seller processes it.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How is the Seller Pass amount calculated": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I calculate a coverage block": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time.",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What would a multi month block cost": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time.",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I pay for Seller Pass": {
+   "reply": "This is about the SELLER paying NextaStore for the store's own coverage, not about a buyer paying for an order.\n\nOnce the trial ends (or a seller wants to pay ahead of time), the seller buys coverage in month-blocks, paid via mobile money (MTN MoMo or Airtel Money).",
+   "bubbles": [
+    "This is about the SELLER paying NextaStore for the store's own coverage, not about a buyer paying for an order.",
+    "Once the trial ends (or a seller wants to pay ahead of time), the seller buys coverage in month-blocks, paid via mobile money (MTN MoMo or Airtel Money)."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I submit a subscription payment": {
+   "reply": "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.\n\nAn admin reviews and approves the payment.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.",
+    "An admin reviews and approves the payment.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where do I enter my payment reference": {
+   "reply": "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.\n\nAn admin reviews and approves the payment.",
+   "bubbles": [
+    "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.",
+    "An admin reviews and approves the payment."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What does a subscription payment awaiting review mean": {
+   "reply": "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.\n\nAn admin reviews and approves the payment.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.",
+    "An admin reviews and approves the payment.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why has my Seller Pass payment not been approved": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Seller Pass payments are not refundable.",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. Seller Pass payments are not refundable."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How are subscription payments reviewed": {
+   "reply": "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.\n\nAn admin reviews and approves the payment.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.",
+    "An admin reviews and approves the payment.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What happens when Seller Pass expires": {
+   "reply": "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.\n\nTo cancel a Seller Pass subscription: there is nothing to cancel.",
+   "bubbles": [
+    "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.",
+    "To cancel a Seller Pass subscription: there is nothing to cancel."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What if my store coverage lapses": {
+   "reply": "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.\n\nA block bought while the store is still covered is added after the current end date, so no time is lost; one bought after coverage has ended starts from the day it is approved.",
+   "bubbles": [
+    "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.",
+    "A block bought while the store is still covered is added after the current end date, so no time is lost; one bought after coverage has ended starts from the day it is approved."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What happens after my trial ends without renewal": {
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do seller badges work": {
+   "reply": "Sellers earn a trust badge by keeping Seller Pass paid up for long enough. The badge is a recognition/trust signal shown on the store page and on its products.",
+   "bubbles": [
+    "Sellers earn a trust badge by keeping Seller Pass paid up for long enough. The badge is a recognition/trust signal shown on the store page and on its products."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I get a seller badge": {
+   "reply": "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again.",
+   "bubbles": [
+    "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What badges can sellers earn": {
+   "reply": "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again.",
+   "bubbles": [
+    "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "When does a seller badge appear": {
+   "reply": "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again.",
+   "bubbles": [
+    "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "When is my badge applied": {
+   "reply": "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again.",
+   "bubbles": [
+    "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why is my seller badge missing": {
+   "reply": "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again.",
+   "bubbles": [
+    "Badge tiers are earned from continuous paid coverage: payments made while the store is still covered add up, and a lapse starts the count again."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What payment methods are available": {
+   "reply": "Available payment methods depend on the store and are shown at checkout.",
+   "bubbles": [
+    "Available payment methods depend on the store and are shown at checkout."
+   ],
+   "source": "faq",
+   "faqId": "payments",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can buyers pay": {
+   "reply": "Available payment methods depend on the store and are shown at checkout.",
+   "bubbles": [
+    "Available payment methods depend on the store and are shown at checkout."
+   ],
+   "source": "faq",
+   "faqId": "payments",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Which payment options does NextaStore support": {
+   "reply": "Available payment methods depend on the store and are shown at checkout.",
+   "bubbles": [
+    "Available payment methods depend on the store and are shown at checkout."
+   ],
+   "source": "faq",
+   "faqId": "payments",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I pay with MTN MoMo": {
+   "reply": "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders.",
+   "bubbles": [
+    "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does NextaStore support Airtel Money": {
+   "reply": "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders.\n\n[Open Messages](/messages)",
+   "bubbles": [
+    "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders.",
+    "[Open Messages](/messages)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I use mobile money": {
+   "reply": "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders.",
+   "bubbles": [
+    "A store may accept mobile money for its orders, depending on the methods it enables. NextaStore's own mobile-money number is shown only on a seller's subscription page for that seller's own coverage; it is not shown at checkout for buyer orders."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I pay by card": {
+   "reply": "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it.",
+   "bubbles": [
+    "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does NextaStore accept cards": {
+   "reply": "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it.",
+   "bubbles": [
+    "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why is card missing at checkout": {
+   "reply": "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it.",
+   "bubbles": [
+    "Card is a payment option a store can opt into. If it is not shown for a particular store, that store has not enabled it."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why is my payment method missing": {
+   "reply": "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method.",
+   "bubbles": [
+    "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why can’t I see mobile money at checkout": {
+   "reply": "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why is card not showing": {
+   "reply": "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method.",
+   "bubbles": [
+    "A payment method must be enabled platform-wide and accepted by that specific store to appear at checkout. Ask the seller through Messages or use another accepted method."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "My payment failed": {
+   "reply": "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record.",
+   "bubbles": [
+    "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What should I do if payment is stuck": {
+   "reply": "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record.",
+   "bubbles": [
+    "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "A payment did not go through": {
+   "reply": "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record.",
+   "bubbles": [
+    "For a genuine payment failure, do not guess at a fix.com so a person can check the transaction record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I find products": {
+   "reply": "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products.",
+   "bubbles": [
+    "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products."
+   ],
+   "source": "faq",
+   "faqId": "find_products",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where can I browse products": {
+   "reply": "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products.",
+   "bubbles": [
+    "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products."
+   ],
+   "source": "faq",
+   "faqId": "find_products",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I search the marketplace": {
+   "reply": "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products.\n\n[Open Marketplace](/marketplace)",
+   "bubbles": [
+    "Browse the Marketplace page, search, and filter by category. Each store also has its own store page with that seller’s products.\n\n[Open Marketplace](/marketplace)"
+   ],
+   "source": "faq",
+   "faqId": "find_products",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What is on a product page": {
+   "reply": "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.\n\n[Open Marketplace](/marketplace)",
+   "bubbles": [
+    "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.",
+    "[Open Marketplace](/marketplace)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What information does a product show": {
+   "reply": "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.\n\n[Open Marketplace](/marketplace)",
+   "bubbles": [
+    "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.",
+    "[Open Marketplace](/marketplace)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I see stock before buying": {
+   "reply": "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller.",
+   "bubbles": [
+    "A product detail page shows price, description, images, sold count, and stock status. You can add the item to your cart, favorite it, follow the store, or message the seller."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How does checkout work": {
+   "reply": "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown.",
+   "bubbles": [
+    "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What happens when I check out": {
+   "reply": "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown.",
+   "bubbles": [
+    "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I place an order": {
+   "reply": "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown.",
+   "bubbles": [
+    "At checkout you choose the delivery district or address and a payment method. Only methods enabled by the platform and accepted by that store are shown."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where can I track my order": {
+   "reply": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I see my order": {
+   "reply": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where are my orders": {
+   "reply": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What order states are there": {
+   "reply": "The platform order statuses are pending, processing, shipped, delivered and cancelled. Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses.",
+   "bubbles": [
+    "The platform order statuses are pending, processing, shipped, delivered and cancelled.",
+    "Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses."
+   ],
+   "source": "faq",
+   "faqId": "order_statuses",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How many order stages exist": {
+   "reply": "The platform order statuses are pending, processing, shipped, delivered and cancelled. Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses.",
+   "bubbles": [
+    "The platform order statuses are pending, processing, shipped, delivered and cancelled.",
+    "Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses."
+   ],
+   "source": "faq",
+   "faqId": "order_statuses",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What are the order status labels": {
+   "reply": "The platform order statuses are pending, processing, shipped, delivered and cancelled. Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses.",
+   "bubbles": [
+    "The platform order statuses are pending, processing, shipped, delivered and cancelled.",
+    "Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses."
+   ],
+   "source": "faq",
+   "faqId": "order_statuses",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do sellers process orders": {
+   "reply": "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.\n\ndelivered and cancelled orders are final and cannot be changed.",
+   "bubbles": [
+    "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.",
+    "delivered and cancelled orders are final and cannot be changed."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What can a seller do with an order": {
+   "reply": "Incoming orders appear in the seller's dashboard. The seller confirms a new order, marks it completed when it is done, or cancels it (for example when an item is out of stock).",
+   "bubbles": [
+    "Incoming orders appear in the seller's dashboard. The seller confirms a new order, marks it completed when it is done, or cancels it (for example when an item is out of stock)."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How does a seller move an order forward": {
+   "reply": "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.\n\ndelivered and cancelled orders are final and cannot be changed.",
+   "bubbles": [
+    "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.",
+    "delivered and cancelled orders are final and cannot be changed."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I cancel an order": {
+   "reply": "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_order",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I cancel my order": {
+   "reply": "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_order",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can a buyer cancel after checkout": {
+   "reply": "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_order",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How often can I cancel orders": {
+   "reply": "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_limit",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Is there a cancellation limit": {
+   "reply": "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller.",
+   "bubbles": [
+    "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller."
+   ],
+   "source": "faq",
+   "faqId": "cancel_limit",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How many orders can I cancel": {
+   "reply": "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can use the self-cancellation option at most 3 orders in any 30 days. After the window or limit, message the seller.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_limit",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can a seller cancel an order": {
+   "reply": "A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it.\n\nEach buyer can cancel at most 3 orders this way in any 30 days.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it.",
+    "Each buyer can cancel at most 3 orders this way in any 30 days.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "When can a seller cancel": {
+   "reply": "After that, or once a seller has completed the order, ask the seller directly via Messages, or escalate to support if needed.",
+   "bubbles": [
+    "After that, or once a seller has completed the order, ask the seller directly via Messages, or escalate to support if needed."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can sellers cancel orders that are still being handled": {
+   "reply": "Incoming orders appear in the seller's dashboard. The seller confirms a new order, marks it completed when it is done, or cancels it (for example when an item is out of stock).",
+   "bubbles": [
+    "Incoming orders appear in the seller's dashboard. The seller confirms a new order, marks it completed when it is done, or cancels it (for example when an item is out of stock)."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does NextaStore support delivery": {
+   "reply": "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I pick up an order": {
+   "reply": "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What is delivery versus pickup": {
+   "reply": "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What can I sell on NextaStore": {
+   "reply": "Create an account and choose to sell ([Open a store](/signup)). New stores can try NextaStore before paying; see the Seller Pass notes for the details.",
+   "bubbles": [
+    "Create an account and choose to sell ([Open a store](/signup)). New stores can try NextaStore before paying; see the Seller Pass notes for the details."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What types of listings are allowed": {
+   "reply": "A listing can be one of these types: physical, service or digital. Physical listings use the cart and stock; service and digital listings work by shoppers sending an enquiry through Messages.",
+   "bubbles": [
+    "A listing can be one of these types: physical, service or digital. Physical listings use the cart and stock; service and digital listings work by shoppers sending an enquiry through Messages."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I sell a service": {
+   "reply": "NextaStore supports service listings too.",
+   "bubbles": [
+    "NextaStore supports service listings too."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I contact a seller": {
+   "reply": "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.\n\n[Open Messages](/messages)",
+   "bubbles": [
+    "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.",
+    "[Open Messages](/messages)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I message a seller before buying": {
+   "reply": "From here a buyer can add the item to their cart, favorite it for later, follow the store, or message the seller directly with questions before buying.",
+   "bubbles": [
+    "From here a buyer can add the item to their cart, favorite it for later, follow the store, or message the seller directly with questions before buying."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where do I ask a seller a question": {
+   "reply": "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.",
+   "bubbles": [
+    "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I buy safely": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What are the safety rules": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can I avoid scams": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Should I share my password with support": {
+   "reply": "Never share your account password, one-time login codes or payment PINs with anyone claiming to be NextaStore support.\n\nReal support will not ask for them.",
+   "bubbles": [
+    "Never share your account password, one-time login codes or payment PINs with anyone claiming to be NextaStore support.",
+    "Real support will not ask for them."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I give Nexi my OTP": {
+   "reply": "Never share passwords, one-time login codes, payment PINs, or full card numbers in chat. Nexi does not need them.",
+   "bubbles": [
+    "Never share passwords, one-time login codes, payment PINs, or full card numbers in chat. Nexi does not need them."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Should I share my payment PIN": {
+   "reply": "Never share passwords, one-time login codes, payment PINs, or full card numbers in chat. Nexi does not need them.",
+   "bubbles": [
+    "Never share passwords, one-time login codes, payment PINs, or full card numbers in chat. Nexi does not need them."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I report a suspicious user": {
+   "reply": "Use the Safety page and/or Messages to report a specific user or order.com.\n\n[Open Safety](/safety)",
+   "bubbles": [
+    "Use the Safety page and/or Messages to report a specific user or order.com.",
+    "[Open Safety](/safety)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where do I report a scam": {
+   "reply": "Use the Safety page and/or Messages to report a specific user or order.com.\n\n[Open Safety](/safety)",
+   "bubbles": [
+    "Use the Safety page and/or Messages to report a specific user or order.com.",
+    "[Open Safety](/safety)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I report a problem": {
+   "reply": "Use the Safety page and/or Messages to report a specific user or order.com.\n\n[Open Safety](/safety)",
+   "bubbles": [
+    "Use the Safety page and/or Messages to report a specific user or order.com.",
+    "[Open Safety](/safety)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What if my order is wrong": {
+   "reply": "Start with Messages and try to resolve the issue directly with the seller.com with the order number.",
+   "bubbles": [
+    "Start with Messages and try to resolve the issue directly with the seller.com with the order number."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What if an item is damaged": {
+   "reply": "Start with Messages and try to resolve the issue directly with the seller.com with the order number.",
+   "bubbles": [
+    "Start with Messages and try to resolve the issue directly with the seller.com with the order number."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What if my order is missing": {
+   "reply": "Start with Messages and try to resolve the issue directly with the seller.com with the order number.",
+   "bubbles": [
+    "Start with Messages and try to resolve the issue directly with the seller.com with the order number."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "I forgot my password": {
+   "reply": "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.",
+    "[Open Login](/login)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I reset my password": {
+   "reply": "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.",
+    "[Open Login](/login)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where can I change a forgotten password": {
+   "reply": "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.",
+    "[Open Login](/login)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I create an account": {
+   "reply": "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there.",
+   "bubbles": [
+    "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where do I sign up": {
+   "reply": "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there.",
+   "bubbles": [
+    "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I register": {
+   "reply": "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there.",
+   "bubbles": [
+    "Use [Open a store](/signup) to create an account. If you want to sell, continue into the store-creation flow from there."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does NextaStore have an app": {
+   "reply": "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled.",
+   "bubbles": [
+    "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I install NextaStore on my phone": {
+   "reply": "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled.",
+   "bubbles": [
+    "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Is NextaStore a mobile app": {
+   "reply": "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled.",
+   "bubbles": [
+    "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What notifications do I get": {
+   "reply": "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.\n\nPush notifications mirror important ones when enabled.",
+   "bubbles": [
+    "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.",
+    "Push notifications mirror important ones when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do order notifications work": {
+   "reply": "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.\n\nPush notifications mirror important ones when enabled.",
+   "bubbles": [
+    "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.",
+    "Push notifications mirror important ones when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Will I get seller notifications": {
+   "reply": "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.\n\nPush notifications mirror important ones when enabled.",
+   "bubbles": [
+    "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.",
+    "Push notifications mirror important ones when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What are favorites and following": {
+   "reply": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+   "bubbles": [
+    "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I save a product": {
+   "reply": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+   "bubbles": [
+    "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What does following a store do": {
+   "reply": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+   "bubbles": [
+    "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can I customize my store": {
+   "reply": "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page.",
+   "bubbles": [
+    "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I add a logo and banner": {
+   "reply": "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page.",
+   "bubbles": [
+    "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I change my store theme": {
+   "reply": "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page.",
+   "bubbles": [
+    "From the seller dashboard, a store owner can set: Logo and banner image; Store theme and product-grid layout; District/address and detailed directions (useful for local pickup or delivery context); SEO title, description, and keywords for their store page."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I add products": {
+   "reply": "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.\n\nSold counts and stock are tracked per product.",
+   "bubbles": [
+    "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.",
+    "Sold counts and stock are tracked per product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What product fields can I edit": {
+   "reply": "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.\n\nSold counts and stock are tracked per product.",
+   "bubbles": [
+    "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.",
+    "Sold counts and stock are tracked per product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I add product images": {
+   "reply": "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.\n\nSold counts and stock are tracked per product.",
+   "bubbles": [
+    "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.",
+    "Sold counts and stock are tracked per product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I know where a store delivers": {
+   "reply": "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information.",
+   "bubbles": [
+    "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Where do I find a store location": {
+   "reply": "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information.",
+   "bubbles": [
+    "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does NextaStore have one delivery area": {
+   "reply": "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "Stores set their own district, address, and delivery details. Check the specific store page for its location and delivery information.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What should I do before launching": {
+   "reply": "A store name that is easy to say and spell, and a short description of what you sell and where you are.",
+   "bubbles": [
+    "A store name that is easy to say and spell, and a short description of what you sell and where you are."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How can I make my new store trustworthy": {
+   "reply": "Look for a complete store profile: logo, clear description, real location and clear photos.",
+   "bubbles": [
+    "Look for a complete store profile: logo, clear description, real location and clear photos."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What should my first listings look like": {
+   "reply": "a quick checklist: At least 5 listings with clear photos, honest prices and short descriptions. A store with a few good listings looks more trustworthy than one with many unclear ones.",
+   "bubbles": [
+    "a quick checklist: At least 5 listings with clear photos, honest prices and short descriptions. A store with a few good listings looks more trustworthy than one with many unclear ones."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I change an order after placing it": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nA short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "A short reason is required.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I edit an order I already placed": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nA short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "A short reason is required.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I change items after checkout": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nA short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "A short reason is required.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I cancel an order after I have placed it": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nYou can use self-cancellation at most 3 orders in any 30 days.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "You can use self-cancellation at most 3 orders in any 30 days.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I cancel an order I just made": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nYou can use self-cancellation at most 3 orders in any 30 days.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "You can use self-cancellation at most 3 orders in any 30 days.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I cancel my purchase": {
+   "reply": "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.\n\nYou can use self-cancellation at most 3 orders in any 30 days.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "You can cancel from the Orders page only while the order is pending or processing and within 30 minutes of placing it.",
+    "You can use self-cancellation at most 3 orders in any 30 days.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Is Seller Pass refundable": {
+   "reply": "Seller Pass payments are not refundable.",
+   "bubbles": [
+    "Seller Pass payments are not refundable."
+   ],
+   "source": "faq",
+   "faqId": "seller_pass_refund",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Can I get a refund for Seller Pass": {
+   "reply": "Seller Pass payments are not refundable.",
+   "bubbles": [
+    "Seller Pass payments are not refundable."
+   ],
+   "source": "faq",
+   "faqId": "seller_pass_refund",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Will I get my money back if I stop Seller Pass": {
+   "reply": "Seller Pass payments are not refundable.",
+   "bubbles": [
+    "Seller Pass payments are not refundable."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Does Seller Pass renew automatically": {
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Will Seller Pass charge me automatically": {
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Do I need to cancel Seller Pass": {
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What are the password rules": {
+   "reply": "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes. Resetting your password signs you out of every device.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes.",
+    "Resetting your password signs you out of every device.\n\n[Open Login](/login)"
+   ],
+   "source": "faq",
+   "faqId": "password_rules",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How long must my password be": {
+   "reply": "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes. Resetting your password signs you out of every device.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes.",
+    "Resetting your password signs you out of every device.\n\n[Open Login](/login)"
+   ],
+   "source": "faq",
+   "faqId": "password_rules",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "What password should I choose": {
+   "reply": "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes. Resetting your password signs you out of every device.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes.",
+    "Resetting your password signs you out of every device.\n\n[Open Login](/login)"
+   ],
+   "source": "faq",
+   "faqId": "password_rules",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "I did not get my verification email": {
+   "reply": "Sign-up does not send a verification email by itself, and the app does not lock anything until the email is verified.\n\nTo get the email, open the account menu and choose Verify email, which is shown only while the email is not yet verified.\n\nThe app then tells you to check your inbox for a verification link.",
+   "bubbles": [
+    "Sign-up does not send a verification email by itself, and the app does not lock anything until the email is verified.",
+    "To get the email, open the account menu and choose Verify email, which is shown only while the email is not yet verified.",
+    "The app then tells you to check your inbox for a verification link."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "Why have I not received a verification email": {
+   "reply": "Sign-up does not send a verification email by itself, and the app does not lock anything until the email is verified.\n\nTo get the email, open the account menu and choose Verify email, which is shown only while the email is not yet verified.\n\nThe app then tells you to check your inbox for a verification link.",
+   "bubbles": [
+    "Sign-up does not send a verification email by itself, and the app does not lock anything until the email is verified.",
+    "To get the email, open the account menu and choose Verify email, which is shown only while the email is not yet verified.",
+    "The app then tells you to check your inbox for a verification link."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "My password reset email did not arrive": {
+   "reply": "Enter the email address on the account and send the reset link. The page gives the same reply whether or not an account exists with that email: \"If that email exists, a reset link is on its way.\"\n\nOpen the reset link from the email. It opens the same page with a box for a new password that meets the requirements shown on the reset form.\n\nResetting a password logs the account out on every device, so log in again on each one.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Enter the email address on the account and send the reset link. The page gives the same reply whether or not an account exists with that email: \"If that email exists, a reset link is on its way.\"",
+    "Open the reset link from the email. It opens the same page with a box for a new password that meets the requirements shown on the reset form.",
+    "Resetting a password logs the account out on every device, so log in again on each one.",
+    "[Open Login](/login)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "How do I contact support": {
+   "reply": "For help, email support@nextawillstechnologies.com.",
+   "bubbles": [
+    "For help, email support@nextawillstechnologies.com."
+   ],
+   "source": "faq",
+   "faqId": "contact_support",
+   "handoff": {
+    "reason": "user_request"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "Who do I email for help": {
+   "reply": "For help, email support@nextawillstechnologies.com.",
+   "bubbles": [
+    "For help, email support@nextawillstechnologies.com."
+   ],
+   "source": "faq",
+   "faqId": "contact_support",
+   "handoff": {
+    "reason": "user_request"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "How can I reach NextaStore support": {
+   "reply": "For help, email support@nextawillstechnologies.com.",
+   "bubbles": [
+    "For help, email support@nextawillstechnologies.com."
+   ],
+   "source": "faq",
+   "faqId": "contact_support",
+   "handoff": {
+    "reason": "user_request"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "how do I contact support": {
+   "reply": "For help, email support@nextawillstechnologies.com.",
+   "bubbles": [
+    "For help, email support@nextawillstechnologies.com."
+   ],
+   "source": "faq",
+   "faqId": "contact_support",
+   "handoff": {
+    "reason": "user_request"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "how do I share a product on WhatsApp": {
+   "reply": "Share your store link in WhatsApp status and groups, and on social media. Ask friends and family to look, follow your store and share it.\n\n[Open Marketplace](/marketplace)",
+   "bubbles": [
+    "Share your store link in WhatsApp status and groups, and on social media. Ask friends and family to look, follow your store and share it.",
+    "[Open Marketplace](/marketplace)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I talk to someone": {
+   "reply": "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "user_request"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "what is the delivery fee": {
+   "reply": "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess.",
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "is there a warranty": {
+   "reply": "I'm not sure about warranty and guarantees: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about warranty and guarantees: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this.",
+    "You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "can I get a refund": {
+   "reply": "Wrong/damaged/missing item, or a seller who's gone quiet: the first step is always Messages — most things get resolved directly between buyer and seller.",
+   "bubbles": [
+    "Wrong/damaged/missing item, or a seller who's gone quiet: the first step is always Messages — most things get resolved directly between buyer and seller."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how long does delivery take": {
+   "reply": "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess.",
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "do you offer free delivery": {
+   "reply": "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about delivery fees and delivery times: it isn't in the NextaStore guides and I don't want to guess.",
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "what happens if my order never arrives": {
+   "reply": "Wrong/damaged/missing item, or a seller who's gone quiet: the first step is always Messages — most things get resolved directly between buyer and seller.",
+   "bubbles": [
+    "Wrong/damaged/missing item, or a seller who's gone quiet: the first step is always Messages — most things get resolved directly between buyer and seller."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "is there a money back guarantee": {
+   "reply": "I'm not sure about warranty and guarantees: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about warranty and guarantees: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this.",
+    "You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "how much does it cost to sell on NextaStore": {
+   "reply": "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.\n\nKeep discounts honest; only show an original price that was really your price.",
+   "bubbles": [
+    "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.",
+    "Keep discounts honest; only show an original price that was really your price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I price my products?": {
+   "reply": "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.\n\nKeep discounts honest; only show an original price that was really your price.",
+   "bubbles": [
+    "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.",
+    "Keep discounts honest; only show an original price that was really your price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "which products sell fastest in Kampala": {
+   "reply": "Start with items you can buy or make in small quantities.",
+   "bubbles": [
+    "Start with items you can buy or make in small quantities."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I get my first customer": {
+   "reply": "Ask happy buyers to tell others about you.",
+   "bubbles": [
+    "Ask happy buyers to tell others about you."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what photos should I take of my products": {
+   "reply": "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).\n\nKeep your photo style consistent across the store.",
+   "bubbles": [
+    "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).",
+    "Keep your photo style consistent across the store."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I write a good product description": {
+   "reply": "Say what it is, size or measurements, colour, material, condition, what is included, how delivery or pickup works, and who it suits.",
+   "bubbles": [
+    "Say what it is, size or measurements, colour, material, condition, what is included, how delivery or pickup works, and who it suits."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I know a seller is genuine": {
+   "reply": "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price.",
+   "bubbles": [
+    "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I return an item I bought": {
+   "reply": "A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it.\n\nEach buyer can cancel at most 3 orders this way in any 30 days.",
+   "bubbles": [
+    "A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it.",
+    "Each buyer can cancel at most 3 orders this way in any 30 days."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "does NextaStore charge buyers any fee": {
+   "reply": "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription.",
+   "bubbles": [
+    "Browsing and buying has no platform fee charged to the buyer through the app itself. Selling uses the Seller Pass subscription."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how long is the free trial for sellers": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Every new store starts with a free trial of 7 days.",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. Every new store starts with a free trial of 7 days."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what is a verified badge": {
+   "reply": "Verified Seller, Gold Partner, Platinum Partner: A store earns a trust badge from its months of paid Seller Pass coverage: Verified Seller at 6 or more months, Gold Partner at 12 or more months and Platinum Partner at 24 or more months.\n\nThe badge is applied when an admin approves the payment that takes the store to the threshold, and it shows only while the store is paid up.",
+   "bubbles": [
+    "Verified Seller, Gold Partner, Platinum Partner: A store earns a trust badge from its months of paid Seller Pass coverage: Verified Seller at 6 or more months, Gold Partner at 12 or more months and Platinum Partner at 24 or more months.",
+    "The badge is applied when an admin approves the payment that takes the store to the threshold, and it shows only while the store is paid up."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how can I see my store link": {
+   "reply": "Share your store link in WhatsApp status and groups you belong to, and on Facebook, Instagram or TikTok if you use them.",
+   "bubbles": [
+    "Share your store link in WhatsApp status and groups you belong to, and on Facebook, Instagram or TikTok if you use them."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "where can I see my payment status": {
+   "reply": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+   "bubbles": [
+    "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "why was my payment rejected": {
+   "reply": "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.\n\nAn admin reviews and approves the payment.",
+   "bubbles": [
+    "Seller sends the mobile money payment to the code/number shown, then submits the payment reference on the subscription page.",
+    "An admin reviews and approves the payment."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what should I do if a buyer does not pay": {
+   "reply": "NextaStore does not take or process payment from buyers. The buyer also gives a name and a phone number and ticks a box to confirm they understand NextaStore does not process payment.",
+   "bubbles": [
+    "NextaStore does not take or process payment from buyers. The buyer also gives a name and a phone number and ticks a box to confirm they understand NextaStore does not process payment."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I change my store name": {
+   "reply": "I'm not sure about renaming a store or changing its web address: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about renaming a store or changing its web address: it isn't in the NextaStore guides and I don't want to guess.",
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "is my money safe on NextaStore": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I report a scam": {
+   "reply": "Use the Safety page and/or Messages to report a specific user or order.com.\n\n[Open Safety](/safety)",
+   "bubbles": [
+    "Use the Safety page and/or Messages to report a specific user or order.com.",
+    "[Open Safety](/safety)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "who delivers my order": {
+   "reply": "At checkout each store's items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout each store's items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I pay on delivery": {
+   "reply": "For each store in the cart the buyer chooses: Delivery (a delivery address is needed) or Pick up / visit the store (no address needed); An Intended payment method from the list that store accepts, such as Cash, MTN MoMo, Airtel Money or Card, or I'll agree with the seller.\n\nThis is only a note to the seller: no money moves at this step.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "For each store in the cart the buyer chooses: Delivery (a delivery address is needed) or Pick up / visit the store (no address needed); An Intended payment method from the list that store accepts, such as Cash, MTN MoMo, Airtel Money or Card, or I'll agree with the seller.",
+    "This is only a note to the seller: no money moves at this step.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I add more photos to a product": {
+   "reply": "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.\n\nSold counts and stock are tracked per product.",
+   "bubbles": [
+    "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.",
+    "Sold counts and stock are tracked per product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I sell services as well as products": {
+   "reply": "Check what similar stores on the [Marketplace](/marketplace) already offer, then ask how yours could be better: cleaner photos, better service, a more specific niche, or faster replies.",
+   "bubbles": [
+    "Check what similar stores on the [Marketplace](/marketplace) already offer, then ask how yours could be better: cleaner photos, better service, a more specific niche, or faster replies."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I reset my password": {
+   "reply": "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Use the forgot-password flow on the login page. If you suspect the account is compromised, change the password and, where available, log out of other devices.",
+    "[Open Login](/login)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what are the password rules": {
+   "reply": "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes. Resetting your password signs you out of every device.\n\n[Open Login](/login)",
+   "bubbles": [
+    "Choose a strong password that meets a minimum of 8 characters and that you do not use elsewhere. Never share your password or one-time codes.",
+    "Resetting your password signs you out of every device.\n\n[Open Login](/login)"
+   ],
+   "source": "faq",
+   "faqId": "password_rules",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I cancel my order": {
+   "reply": "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "A buyer can cancel from the Orders page only while the order is pending or processing, and only within 30 minutes of placing it. A short reason is required.\n\n[Open Orders](/orders)"
+   ],
+   "source": "faq",
+   "faqId": "cancel_order",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what is Seller Pass": {
+   "reply": "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "\"Seller Pass\" is what keeps a store active on the platform. The seller's subscription page shows how many trial days are left.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how much is Seller Pass": {
+   "reply": "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Seller Pass costs UGX 20,000 per month of coverage. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "are Seller Pass payments refundable": {
+   "reply": "Seller Pass payments are not refundable.",
+   "bubbles": [
+    "Seller Pass payments are not refundable."
+   ],
+   "source": "faq",
+   "faqId": "seller_pass_refund",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what payment methods are available": {
+   "reply": "Available payment methods depend on the store and are shown at checkout.",
+   "bubbles": [
+    "Available payment methods depend on the store and are shown at checkout."
+   ],
+   "source": "faq",
+   "faqId": "payments",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I contact a seller": {
+   "reply": "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.\n\n[Open Messages](/messages)",
+   "bubbles": [
+    "Use Messages to contact the seller. Buyers and sellers can message about a product before buying, an order after buying, or general questions.",
+    "[Open Messages](/messages)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I follow a store": {
+   "reply": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+   "bubbles": [
+    "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I save a product for later": {
+   "reply": "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product.",
+   "bubbles": [
+    "Favorites save individual products for later. Following subscribes you to a store, and followers are notified when that store adds a new product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I install the app on my phone": {
+   "reply": "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled.",
+   "bubbles": [
+    "NextaStore is an installable Progressive Web App. You can add it to a phone’s home screen from the browser, and push notifications are supported when enabled."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I turn on notifications": {
+   "reply": "In-app notifications cover things like: order status changes, new messages, new products from stores a buyer follows, and subscription reminders for sellers (e.g.\n\ntrial ending soon). Push notifications mirror the important ones to the browser/device if the user has enabled push and installed the app (NextaStore works as an installable PWA).",
+   "bubbles": [
+    "In-app notifications cover things like: order status changes, new messages, new products from stores a buyer follows, and subscription reminders for sellers (e.g.",
+    "trial ending soon). Push notifications mirror the important ones to the browser/device if the user has enabled push and installed the app (NextaStore works as an installable PWA)."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what should I sell if I have a small budget": {
+   "reply": "Start with items you can buy or make in small quantities.",
+   "bubbles": [
+    "Start with items you can buy or make in small quantities."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "tips for taking better product photos": {
+   "reply": "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).\n\nKeep your photo style consistent across the store.",
+   "bubbles": [
+    "Take 3 to 5 photos: front, side, close-up of the detail, and one showing size (next to a common object or worn).",
+    "Keep your photo style consistent across the store."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I find a trustworthy seller": {
+   "reply": "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price.",
+   "bubbles": [
+    "Check for seller badges, which are a trust signal. Message the seller before buying to ask about size, condition, delivery time and price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I buy safely": {
+   "reply": "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I open a shop on NextaStore": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what do I need to open a store": {
+   "reply": "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch. Add at least one product before launch. Open the store setup from [Open a store](/signup).",
+   "bubbles": [
+    "Create an account and use the store-creation flow. It covers Store Basics, Branding, Payments, and Review & Launch.",
+    "Add at least one product before launch. Open the store setup from [Open a store](/signup)."
+   ],
+   "source": "faq",
+   "faqId": "store_open",
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "when does my Seller Pass expire": {
+   "reply": "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.\n\nTo cancel a Seller Pass subscription: there is nothing to cancel.",
+   "bubbles": [
+    "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.",
+    "To cancel a Seller Pass subscription: there is nothing to cancel."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I renew my Seller Pass": {
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
+   "bubbles": [
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "tell me about delivery and pickup": {
+   "reply": "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout, store items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how are orders tracked": {
+   "reply": "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.\n\n[Open Orders](/orders)",
+   "bubbles": [
+    "After checkout, the order appears on the buyer’s Orders page. Its status updates as the seller processes it, and notifications can be sent when the status changes.",
+    "[Open Orders](/orders)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what does pending mean on my order": {
+   "reply": "An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled. A new order starts as pending.",
+   "bubbles": [
+    "An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled. A new order starts as pending."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I mark an order as shipped": {
+   "reply": "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.\n\ndelivered and cancelled orders are final and cannot be changed.",
+   "bubbles": [
+    "Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.",
+    "delivered and cancelled orders are final and cannot be changed."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I edit a product": {
+   "reply": "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.\n\nSold counts and stock are tracked per product.",
+   "bubbles": [
+    "Sellers add, edit, and remove products from the dashboard's product form: name, description, price, original/strikethrough price for showing a discount, category, and images.",
+    "Sold counts and stock are tracked per product."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I delete my account": {
+   "reply": "I'm not sure about closing or deleting an account: it isn't in the NextaStore guides and I don't want to guess. I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp.",
+   "bubbles": [
+    "I'm not sure about closing or deleting an account: it isn't in the NextaStore guides and I don't want to guess.",
+    "I need to connect you with a human team member so they can help with this. You can contact our team on WhatsApp."
+   ],
+   "source": "handoff",
+   "faqId": null,
+   "handoff": {
+    "reason": "not_in_context"
+   },
+   "flag": null,
+   "language": "en"
+  },
+  "how do I log in": {
+   "reply": "Sign up, log in, and \"forgot password\" are handled from their own pages.",
+   "bubbles": [
+    "Sign up, log in, and \"forgot password\" are handled from their own pages."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "how do I sign up as a buyer": {
+   "reply": "Anyone can create an account from the Sign up page, and a shopper does not need a store. Tick the box to agree to the Terms of Service and the Privacy Policy.\n\n[Open a store](/signup)",
+   "bubbles": [
+    "Anyone can create an account from the Sign up page, and a shopper does not need a store. Tick the box to agree to the Terms of Service and the Privacy Policy.",
+    "[Open a store](/signup)"
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what is the cart for": {
+   "reply": "Items sit in the cart until checkout. A cart can hold items from more than one store, and each store's seller then gets a separate order.",
+   "bubbles": [
+    "Items sit in the cart until checkout. A cart can hold items from more than one store, and each store's seller then gets a separate order."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "where are my favorites": {
+   "reply": "Favorites save individual products for later — visible on the Favorites page.",
+   "bubbles": [
+    "Favorites save individual products for later — visible on the Favorites page."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "and how long does it last? || How much is Seller Pass? / Seller Pass is how you keep your store active. See the Subscription page for the current price.": {
+   "reply": "The Log in page has a Remember me tick box.",
+   "bubbles": [
+    "The Log in page has a Remember me tick box."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can I get a link to that page? || How much is Seller Pass? / Seller Pass is how you keep your store active. See the Subscription page for the current price.": {
+   "reply": "Opening the link shows a page that says the email is verified, with a Continue button to the Marketplace. If the page says the link is invalid or expired, ask for a new email the same way.",
+   "bubbles": [
+    "Opening the link shows a page that says the email is verified, with a Continue button to the Marketplace. If the page says the link is invalid or expired, ask for a new email the same way."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what about the price? || How much is Seller Pass? / Seller Pass is how you keep your store active. See the Subscription page for the current price.": {
+   "reply": "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.\n\nKeep discounts honest; only show an original price that was really your price.",
+   "bubbles": [
+    "Work out your full cost: what you paid or spent to make the item, packaging, transport, and a fair amount for your time.",
+    "Keep discounts honest; only show an original price that was really your price."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "what is the next step? || How do I open a store? / Sign up as a seller and follow the store setup steps.": {
+   "reply": "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.\n\nA store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.",
+   "bubbles": [
+    "Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.",
+    "A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "can you give me the link? || How do I open a store? / Sign up as a seller and follow the store setup steps.": {
+   "reply": "Enter the email address on the account and send the reset link.\" Open the reset link from the email.",
+   "bubbles": [
+    "Enter the email address on the account and send the reset link.\" Open the reset link from the email."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "why? || How do I pay for my order? / You pay the seller directly when you place the order.": {
+   "reply": "Checkout only sends each seller an order request, and the buyer and the seller agree on how and when the money is paid.\n\nPlacing the order sends a separate order request to each seller, and it appears on the buyer's Orders page with the payment method the buyer chose.",
+   "bubbles": [
+    "Checkout only sends each seller an order request, and the buyer and the seller agree on how and when the money is paid.",
+    "Placing the order sends a separate order request to each seller, and it appears on the buyer's Orders page with the payment method the buyer chose."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "and the delivery? || How do I pay for my order? / You pay the seller directly when you place the order.": {
+   "reply": "At checkout each store's items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.",
+   "bubbles": [
+    "At checkout each store's items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  },
+  "is it safe? || How do I pay for my order? / You pay the seller directly when you place the order.": {
+   "reply": "NextaStore does not process or hold your payment, so agree the price, delivery or pickup details and timing with the seller in NextaStore Messages first, so there is a record.",
+   "bubbles": [
+    "NextaStore does not process or hold your payment, so agree the price, delivery or pickup details and timing with the seller in NextaStore Messages first, so there is a record."
+   ],
+   "source": "model",
+   "faqId": null,
+   "handoff": null,
+   "flag": null,
+   "language": "en"
+  }
+ }
+}

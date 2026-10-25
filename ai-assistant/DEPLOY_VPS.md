@@ -91,10 +91,9 @@ swap barely used. If swap use keeps growing, drop to `qwen2.5:1.5b-instruct` or 
   between the chat model and the Ganda model, which costs seconds. From how Ollama schedules models, a Ganda request
   sent while the English answer is still streaming is expected to wait for the chat request to finish (and then wait
   for the swap), so nothing is gained by starting it early. For that reason Nexi finishes the English answer first
-  and only then translates (`LUGANDA_INTERLEAVE=false`, the default). Setting `LUGANDA_INTERLEAVE=true` translates
-  sentences while English is still streaming; use it only after `OLLAMA_MAX_LOADED_MODELS=2` is set AND the machine
-  has enough RAM for both models. This guide does not claim the 4 GB profile can hold both. Measure on the real
-  machine: `free -m`, `ollama ps` and `npm run bench` (it prints the time to the first Luganda text).
+  and only then translates. Since WIP 92c this is the only mode: the old `LUGANDA_INTERLEAVE` option was retired
+  (an old value in your `.env` is ignored), because a Luganda turn must never show English before the answer has
+  been translated and checked. Measure on the real machine: `free -m`, `ollama ps` and `npm run bench`.
 - **Safety rails:** a sentence is kept in English if the translator changes a number, loses a link or just
   repeats the English. If that happens to part of an answer, a note says some parts are in English.
 - **Limit you should know about:** Ganda Gemma only produces Luganda. It cannot read Luganda questions

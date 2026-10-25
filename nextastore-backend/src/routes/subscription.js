@@ -4,6 +4,7 @@ const { apiError } = require('../utils');
 const { getStoreForUser, subscriptionInfo, getPlatformSettings, SUBSCRIPTION_PRICE_UGX, maybeNotifySubscriptionReminder } = require('../helpers');
 const { requireAuth, requireSeller } = require('../middleware');
 const { validateBody, subscriptionPaymentSchema } = require('../validation');
+const growth = require('../growthInstance');
 
 const router = express.Router();
 
@@ -83,6 +84,8 @@ router.post('/payments', requireAuth, requireSeller, validateBody(subscriptionPa
         const payment = await prisma.subscriptionPayment.create({
             data: { storeId: store.id, amount, method, reference, periodMonths }
         });
+        // NextaStore Circle / Crew: tell the recruiter their store's first payment is waiting (never throws).
+        growth.hooks.safe.onPaymentSubmitted({ payment, store });
         res.status(201).json({ data: serializePayment(payment) });
     } catch (err) { next(err); }
 });

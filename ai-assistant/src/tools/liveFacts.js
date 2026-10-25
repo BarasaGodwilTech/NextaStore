@@ -44,4 +44,20 @@ async function getLivePaymentMethodsContext(userMessage) {
     }
 }
 
-module.exports = { getLivePaymentMethodsContext };
+// WIP 93 Tier 3.2: the admin-set support hours ("Mon-Fri 9am-5pm EAT"), from the same public, allowlisted endpoint the widget uses.
+// Cached for a minute (and a failure is cached for 30 s) so a slow or down backend never delays a handoff by more than one short attempt.
+let hoursCache = { at: 0, value: '', ttl: 0 };
+async function getSupportHoursNote() {
+    const now = Date.now();
+    if (now - hoursCache.at < hoursCache.ttl) return hoursCache.value;
+    let value = '';
+    try {
+        const res = await fetch(`${config.nextastoreApiBase}/assistant/handoff-contact`, { signal: AbortSignal.timeout(1200) });
+        if (res.ok) { const body = await res.json(); value = typeof body?.hoursNote === 'string' ? body.hoursNote.trim().slice(0, 240) : ''; hoursCache = { at: now, value, ttl: 60000 }; return value; }
+    } catch { /* backend not reachable: no hours, the handoff is complete without them */ }
+    hoursCache = { at: now, value: '', ttl: 30000 };
+    return '';
+}
+function resetSupportHoursForTests() { hoursCache = { at: 0, value: '', ttl: 0 }; }
+
+module.exports = { getLivePaymentMethodsContext, getSupportHoursNote, resetSupportHoursForTests };

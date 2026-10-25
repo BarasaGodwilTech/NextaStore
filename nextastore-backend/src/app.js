@@ -45,6 +45,7 @@ const subscriptionRoutes = require('./routes/subscription');
 const pushRoutes = require('./routes/push');
 const presenceRoutes = require('./routes/presence');
 const seoRoutes = require('./routes/seo');
+const growth = require('./growthInstance');
 
 const app = express();
 
@@ -68,6 +69,30 @@ const app = express();
 // the number of hops, or req.ip becomes spoofable by a client-supplied
 // X-Forwarded-For header instead.
 app.set('trust proxy', 1);
+
+// NextaStore Circle / Crew (growth program) host router. It MUST come before helmet() and before every
+// body parser, static file and clean-URL rule: it serves circle.html, crew.html and invite.html (and, in
+// subdomain mode, the circle. and crew. hosts and the main site's redirects). helmet()'s API-wide
+// `default-src 'self'` policy is built for JSON and would break those pages (inline host settings,
+// icon font, map, geolocation), exactly as routes/seo.js documents for storefronts, so the pages get
+// their own small header set here instead. In the default "path" mode it only answers /circle, /crew,
+// /scouts (old name), /invite and /i/CODE; with GROWTH_MODE unset nothing else on the site changes.
+const growthPageLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'Too many requests. Please slow down and try again shortly.' }
+});
+app.use(['/circle', '/crew', '/scouts', '/invite', '/i', '/auth-bridge'], growthPageLimiter);
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), payment=()');   // geolocation stays: Crew visit check-ins ask for it
+    next();
+});
+app.use(growth.hostRouter({ pagesDir: config.frontendDir }));
 
 app.use(helmet());
 app.use(cors({
@@ -100,7 +125,8 @@ app.use(config.isProd ? morgan('combined') : morgan('dev'));
 // anything the first one already handled and only ever applies its 100kb
 // ceiling to the routes that were never meant to need more than that.
 const uploadJsonLimiter = express.json({ limit: '20mb' });
-app.use(['/api/user', '/api/store', '/api/products'], uploadJsonLimiter);
+// /api/growth too: a Crew application carries an ID photo and a visit check-in carries a photo.
+app.use(['/api/user', '/api/store', '/api/products', '/api/growth'], uploadJsonLimiter);
 app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
@@ -192,6 +218,22 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/favorites', favoriteRoutes);
+// NextaStore Circle (affiliate program) and Crew (field team). Partner side and admin side; the
+// admin side is guarded per route by growth.view / .review / .payouts / .settings (see middleware.js).
+// The limiter only guards the write endpoints (join, apply, log a lead, withdraw, ...).
+const growthWriteLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: sharedStore(),
+    message: { message: 'You are doing that too quickly. Please wait a few minutes and try again.' }
+});
+const { requireAuth, requireAdminPermission } = require('./middleware');
+const growthRoutes = growth.routes({ requireAuth, requireAdminPermission, limiter: growthWriteLimiter, sendKyc: growth.sendKyc });
+app.use('/api/growth', growthRoutes.partner);
+app.use('/api/admin/growth', growthRoutes.admin);
+
 app.use('/api/admin', adminRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/push', pushRoutes);

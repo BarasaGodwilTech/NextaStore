@@ -18,6 +18,7 @@ function loadPlaywright() {
   console.error('Playwright is not installed. Run: npm i --no-save playwright && npx playwright install chromium'); process.exit(2);
 }
 const { chromium } = loadPlaywright();
+const nexi = require('./lib/nexi-ready'); // WIP 95: state-based waits (no fixed sleeps)
 const SHOTS = process.env.SHOTS || '';
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 const server = http.createServer((req, res) => {
@@ -71,13 +72,28 @@ async function openPage(browser, port, width, p = '/marketplace.html', height = 
   const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', (e) => errors.push(String(e)));
+  await nexi.track(page);
   await page.route(/^http:\/\/localhost:4000\/.*/, fakeApi);
   await page.route((url) => { const h = new URL(url).host; return h !== `127.0.0.1:${port}` && h !== 'localhost:4000'; }, (r) => r.abort());
   await page.goto(`http://127.0.0.1:${port}${p}`);
   await page.waitForFunction(() => !document.documentElement.classList.contains('nx-loading'), null, { timeout: 15000 });
+  // ready = (hero pages) hero rendered + starters answered + handoff contact resolved, (other pages) the dock is up and starters answered.
+  // The fake API has no /assistant/handoff-contact (401), so the contact resolves to "not enabled": the handoff links settle with no href.
+  const hero = await page.evaluate(() => !!document.getElementById('heroChat'));
+  await nexi.waitReady(page, hero ? { starters: true, contact: 'off' } : { starters: true, dock: true });
   return { ctx, page, errors };
 }
 const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
+// State waits (WIP 95). Each waits, with a bounded timeout, for the state that used to be slept for. None retries an assertion:
+// `until` returns false on timeout and the check that follows reports it as BAD.
+const until = (page, fn, arg) => page.waitForFunction(fn, arg, { timeout: 10000, polling: 'raf' }).then(() => true, () => false);
+const botCount = (page, scope) => page.evaluate((s) => document.querySelectorAll(`${s} .nexi-msg.is-bot`).length, scope);
+const answered = (page, scope, before) => until(page, ([s, b]) => { const send = document.querySelector(`${s} .nexi-send`); return document.querySelectorAll(`${s} .nexi-msg.is-bot`).length > b && !!send && !send.classList.contains('is-busy'); }, [scope, before]); // a new bot message exists and the composer is idle again
+const say = async (page, scope, text) => { const before = await botCount(page, scope); await page.fill(`${scope} textarea`, text); await page.press(`${scope} textarea`, 'Enter'); return answered(page, scope, before); };
+const fabShown = (page) => until(page, () => { const s = document.querySelector('.nexi-fab-slot'); return !!s && !s.classList.contains('is-hidden'); });
+const panelOpened = (page) => until(page, () => { const p = document.getElementById('nexiPanel'); return !!p && p.classList.contains('is-open') && !p.inert && p.contains(document.activeElement); }); // open, and focus has moved into it
+const panelClosed = (page) => until(page, () => { const p = document.getElementById('nexiPanel'); return !!p && !p.classList.contains('is-open') && p.inert; });
+const dockLift = (page, pred) => until(page, (src) => { const v = parseInt(document.documentElement.style.getPropertyValue('--nexi-lift') || '0', 10) || 0; return new Function('v', 'return ' + src)(v); }, pred); // the dock lifts/drops from the widget's own syncAvoid() tick
 
 (async () => {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -89,7 +105,7 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   // ---------- desktop: hero chat ----------
   {
     const { ctx, page, errors } = await openPage(browser, port, 1440);
-    await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)'); await page.waitForTimeout(400);
+    await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)');
     await shot(page, '1-hero-1440');
     check(await page.evaluate(() => document.querySelectorAll('.hero-chat .nexi-chip').length === 6 && !!document.querySelector('.hero-chat .nexi-lang') && !document.querySelector('.nexi-thread:not([hidden])')), 'hero chat shows 6 English starters, a language toggle and no empty thread');
     check(await page.evaluate(() => document.querySelector('.nexi-fab-slot').classList.contains('is-hidden')), 'floating assistant button is hidden while the hero chat is on screen');
@@ -103,23 +119,24 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
     await shot(page, '2-hero-chatting-1440');
 
     // safe rendering
-    await page.fill('.hero-chat textarea', 'XSS test'); await page.press('.hero-chat textarea', 'Enter'); await page.waitForTimeout(500);
+    await say(page, '.hero-chat', 'XSS test');
     const x = await page.evaluate(() => { const b = [...document.querySelectorAll('.hero-chat .nexi-msg.is-bot .nexi-bubble')].pop(); return { pwn: window.__pwn === 1, img: !!b.querySelector('img'), script: !!b.querySelector('script'), links: [...b.querySelectorAll('a')].map((a) => a.getAttribute('href')), text: b.textContent }; });
     check(!x.pwn && !x.img && !x.script && x.links.length === 1 && x.links[0] === '/signup' && /<img/.test(x.text), 'model output is rendered as text: no HTML, no script, non-whitelisted links dropped');
     check(LOG.chat[1].history.length === 2 && LOG.chat[1].history[0].role === 'user' && LOG.chat[1].history[1].role === 'assistant', 'follow-up sends the earlier turns as history (user/assistant roles only)');
 
     // scroll away: FAB appears, back-to-top sits above it
-    await page.evaluate(() => window.scrollTo(0, 1400)); await page.waitForTimeout(500);
+    await page.evaluate(() => window.scrollTo(0, 1400));
+    await fabShown(page); await until(page, () => document.querySelector('.nexi-top').classList.contains('is-visible')); // the scroll handler sets the button and its ring in one frame
     const d = await page.evaluate(() => { const f = document.querySelector('.nexi-fab').getBoundingClientRect(), t = document.querySelector('.nexi-top').getBoundingClientRect(); return { fabShown: !document.querySelector('.nexi-fab-slot').classList.contains('is-hidden'), topShown: document.querySelector('.nexi-top').classList.contains('is-visible'), above: t.bottom <= f.top + 1, sameRight: Math.abs(t.right - f.right) < 2, inView: f.bottom <= innerHeight && f.right <= innerWidth && f.width >= 56, ring: parseFloat(document.querySelector('.nexi-top .bar').style.strokeDashoffset) < 119.4 }; });
     check(d.fabShown && d.topShown && d.above && d.sameRight && d.inView && d.ring, 'after the hero scrolls away: assistant button shows, back-to-top arrow sits above it with a progress ring');
     await shot(page, '3-dock-scrolled-1440');
 
     // panel shares the conversation
-    await page.click('.nexi-fab'); await page.waitForTimeout(300);
+    await page.click('.nexi-fab'); await panelOpened(page);
     const p = await page.evaluate(() => ({ open: document.getElementById('nexiPanel').classList.contains('is-open'), expanded: document.querySelector('.nexi-fab').getAttribute('aria-expanded'), bubbles: document.querySelectorAll('#nexiPanel .nexi-msg:not([hidden])').length, focus: document.activeElement.tagName }));
     check(p.open && p.expanded === 'true' && p.bubbles === 4 && p.focus === 'TEXTAREA', 'opening the panel shows the same conversation (4 messages) and focuses the input');
     await shot(page, '4-panel-1440');
-    await page.keyboard.press('Escape'); await page.waitForTimeout(250);
+    await page.keyboard.press('Escape'); await panelClosed(page);
     check(await page.evaluate(() => !document.getElementById('nexiPanel').classList.contains('is-open') && document.activeElement === document.querySelector('.nexi-fab') && document.getElementById('nexiPanel').inert), 'Escape closes the panel, returns focus to the button and makes the panel inert');
 
     await page.click('.nexi-top'); await page.waitForFunction(() => window.scrollY < 5, null, { timeout: 4000 }).catch(() => {});
@@ -169,26 +186,26 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   // ---------- sticky bar avoidance + phone ----------
   {
     const { ctx, page, errors } = await openPage(browser, port, 375, '/marketplace.html', 700);
-    await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)'); await page.waitForTimeout(400);
+    await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)');
     await shot(page, '6-hero-375');
     const m = await page.evaluate(() => { const row = document.querySelector('.hero-chat .nexi-starters-row'); const cs = getComputedStyle(row); return { scrollX: document.documentElement.scrollWidth > innerWidth + 1, chatFits: document.querySelector('.hero-chat').getBoundingClientRect().right <= innerWidth + 1, wrap: cs.flexWrap, ox: cs.overflowX, scrolls: row.scrollWidth > row.clientWidth + 20, sellLine: getComputedStyle(document.querySelector('.hero-sell-line')).display }; });
     check(!m.scrollX && m.chatFits && m.wrap === 'nowrap' && m.ox === 'auto' && m.scrolls && m.sellLine === 'none', 'phone hero (WIP 56): the starters are ONE swipeable row inside the card, the page itself never scrolls sideways');
     const hs = await page.evaluate(() => { const row = document.querySelector('.hero-chat .nexi-starters-row'); const chips = [...row.querySelectorAll('.nexi-chip')]; const rr = row.getBoundingClientRect(); const f = chips[0].getBoundingClientRect(), n = chips[1].getBoundingClientRect(); return { total: chips.length, firstInside: f.left >= rr.left - 1 && f.right <= rr.right + 1, nextPeeks: n.left < rr.right - 10 && n.right > rr.right, rowH: Math.round(rr.height), more: !!document.querySelector('.hero-chat .nexi-more') }; });
     check(hs.total === 6 && hs.firstInside && hs.nextPeeks && !hs.more && hs.rowH < 90, 'phone hero: all 6 starters are in the row, the first is fully visible, the second peeks in (swipe hint), the row is one short line (' + hs.rowH + 'px), no "More questions" button');
-    await page.evaluate(() => { const row = document.querySelector('.hero-chat .nexi-starters-row'); row.scrollLeft = row.scrollWidth; }); await page.waitForTimeout(200);
+    await page.evaluate(() => { const row = document.querySelector('.hero-chat .nexi-starters-row'); row.scrollLeft = row.scrollWidth; }); await nexi.settle(page); // scroll position + arrows at rest
     check(await page.evaluate(() => { const row = document.querySelector('.hero-chat .nexi-starters-row'); const last = [...row.querySelectorAll('.nexi-chip')].pop().getBoundingClientRect(); const rr = row.getBoundingClientRect(); return last.right <= rr.right + 1 && last.left >= rr.left; }), 'phone hero: swiping to the end brings the last starter fully into view');
-    await page.evaluate(() => window.scrollTo(0, 1500)); await page.waitForTimeout(400);
+    await page.evaluate(() => window.scrollTo(0, 1500)); await fabShown(page);
     await page.evaluate(() => { const b = document.createElement('div'); b.id = 'fakebar'; b.setAttribute('data-dock-avoid', ''); b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:80px;background:#fff;z-index:250;border-top:1px solid #ccc'; document.body.appendChild(b); });
-    await page.waitForTimeout(1400);
+    await dockLift(page, 'v >= 70');
     check(await page.evaluate(() => { const f = document.querySelector('.nexi-fab').getBoundingClientRect(); return f.bottom <= innerHeight - 78; }), 'a sticky bottom bar (Save / Continue) lifts the dock above it');
-    await page.evaluate(() => document.getElementById('fakebar').remove()); await page.waitForTimeout(1400);
+    await page.evaluate(() => document.getElementById('fakebar').remove()); await dockLift(page, 'v === 0');
     check(await page.evaluate(() => document.querySelector('.nexi-fab').getBoundingClientRect().bottom >= innerHeight - 20), 'and the dock drops back when the bar goes away');
 
-    await page.click('.nexi-fab'); await page.waitForTimeout(300);
+    await page.click('.nexi-fab'); await panelOpened(page);
     const pm = await page.evaluate(() => { const r = document.getElementById('nexiPanel').getBoundingClientRect(); return { full: Math.abs(r.width - innerWidth) < 1 && Math.abs(r.height - innerHeight) < 1, lock: document.documentElement.classList.contains('nexi-lock'), modal: document.getElementById('nexiPanel').getAttribute('aria-modal') }; });
     check(pm.full && pm.lock && pm.modal === 'true', 'phone: the panel is a full-screen sheet that locks page scroll');
     await shot(page, '7-panel-375');
-    await page.click('#nexiPanel .nexi-iconbtn[aria-label="Close assistant"]'); await page.waitForTimeout(250);
+    await page.click('#nexiPanel .nexi-iconbtn[aria-label="Close assistant"]'); await panelClosed(page);
     check(await page.evaluate(() => !document.documentElement.classList.contains('nexi-lock') && !document.getElementById('nexiPanel').classList.contains('is-open')), 'closing releases the scroll lock');
     check(!errors.length, 'no page errors on phone' + (errors.length ? ': ' + errors[0] : ''));
     await ctx.close();
@@ -200,9 +217,9 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   const PANEL_PAGES = SIZES.map((sz) => ['/marketplace.html', sz]).concat([['/', [1536, 695]], ['/', [1280, 720]], ['/', [390, 844]], ['/', [360, 640]], ['/', [844, 390]], ['/stores.html', [768, 1024]], ['/cart.html', [390, 844]], ['/privacy.html', [1280, 720]], ['/login.html', [360, 640]], ['/signup.html', [844, 390]], ['/safety.html', [414, 896]]]);
   for (const [pagePath, [w, h]] of PANEL_PAGES) {
     const { ctx, page, errors } = await openPage(browser, port, w, pagePath, h);
-    if (pagePath === '/marketplace.html') { await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)'); await page.waitForTimeout(250); await page.evaluate(() => window.scrollTo(0, 1500)); await page.waitForTimeout(300); }
-    else { await page.waitForSelector('.nexi-dock', { timeout: 8000 }); await page.waitForTimeout(250); }
-    await page.evaluate(() => window.NexiAssistant.open()); await page.waitForTimeout(350);
+    if (pagePath === '/marketplace.html') { await page.waitForSelector('#heroCollage .hero-stall:not(.is-skel)'); await page.evaluate(() => window.scrollTo(0, 1500)); await fabShown(page); }
+    else await page.waitForSelector('.nexi-dock', { timeout: 8000 }); // openPage already waited for the dock + starters
+    await page.evaluate(() => window.NexiAssistant.open()); await panelOpened(page); await nexi.settle(page);
     const r = await page.evaluate(() => {
       const q = (x) => document.querySelector(x); const p = q('#nexiPanel').getBoundingClientRect();
       const title = q('#nexiPanel .nexi-panel-title strong').getBoundingClientRect(); const close = q('#nexiPanel .nexi-iconbtn[aria-label="Close assistant"]').getBoundingClientRect();
@@ -213,14 +230,14 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
       const chips = [...q('#nexiPanel .nexi-starters').querySelectorAll('.nexi-chip')];
       return { headClear, inView: p.top >= 0 && p.left >= 0 && p.right <= innerWidth + 1 && p.bottom <= innerHeight + 1, titleOnTop: !!topAt(title) && !!topAt(title).closest('#nexiPanel'), closeOnTop: !!topAt(close) && !!topAt(close).closest('#nexiPanel'),
         bodyH: Math.round(body.getBoundingClientRect().height), compInside: comp.bottom <= innerHeight + 1 && comp.top >= 0, noOverflowX: body.scrollWidth <= body.clientWidth + 1 && document.documentElement.scrollWidth <= innerWidth + 1,
-        chips: chips.length, chipsInside: (Math.abs(p.width - innerWidth) < 1 ? chips.slice(0, 1) : chips).every((c) => { const b = c.getBoundingClientRect(); return b.left >= p.left - 1 && b.right <= p.right + 1; }), reach: body.scrollHeight - body.clientHeight, sheet: Math.abs(p.width - innerWidth) < 1 && Math.abs(p.height - innerHeight) < 1 };
+        chips: chips.length, chipsInside: (() => { /* WIP 94: starters are a horizontal swipe row (WIP 56/88 redesign): the row itself must sit inside the panel and scroll sideways; the first chip must be visible */ const row = q('#nexiPanel .nexi-starters-row'); const rr = row.getBoundingClientRect(); const first = chips[0].getBoundingClientRect(); const swipe = row.scrollWidth > row.clientWidth && /auto|scroll/.test(getComputedStyle(row).overflowX); const rowIn = rr.left >= p.left - 1 && rr.right <= p.right + 1; return rowIn && first.left >= p.left - 1 && first.right <= p.right + 1 && (swipe || chips.every((c) => { const b = c.getBoundingClientRect(); return b.right <= p.right + 1; })); })(), reach: body.scrollHeight - body.clientHeight, sheet: Math.abs(p.width - innerWidth) < 1 && Math.abs(p.height - innerHeight) < 1 };
     });
     const ok = r.headClear && r.inView && r.titleOnTop && r.closeOnTop && r.bodyH >= 90 && r.compInside && r.noOverflowX && r.chips === 6 && r.chipsInside;
     check(ok, `panel ${pagePath} ${w}x${h}: fits the screen, title + close button not covered, conversation area ${r.bodyH}px, composer visible, 6 starters (list, or a swipe row on the sheet), no sideways scroll` + (ok ? '' : ' ' + JSON.stringify(r)));
     if (SHOTS) await shot(page, `p55-panel-${pagePath.replace(/\W+/g, '') || 'home'}-${w}x${h}`);
     // every starter is reachable by scrolling the panel body
     await page.evaluate(() => { const b = document.querySelector('#nexiPanel .nexi-panel-body'); b.scrollTop = b.scrollHeight; const row = document.querySelector('#nexiPanel .nexi-starters-row'); row.scrollLeft = row.scrollWidth; });
-    check(await page.evaluate(() => { const last = [...document.querySelectorAll('#nexiPanel .nexi-starters .nexi-chip')].pop().getBoundingClientRect(); const b = document.querySelector('#nexiPanel .nexi-panel-body').getBoundingClientRect(); return last.bottom <= b.bottom + 1 && last.top >= b.top - 1 && last.right <= b.right + 1; }), `panel ${pagePath} ${w}x${h}: the last starter question can be scrolled into view`);
+    check(await page.evaluate(() => { const last = [...document.querySelectorAll('#nexiPanel .nexi-starters .nexi-chip')].pop().getBoundingClientRect(); const pn = document.getElementById('nexiPanel').getBoundingClientRect(); const rr = document.querySelector('#nexiPanel .nexi-starters-row').getBoundingClientRect(); /* WIP 94: starters live in the pinned bottom area now (not the scrolling body): the last chip must sit inside the panel, and inside the row once the row is swiped to its end */ return last.bottom <= pn.bottom + 1 && last.top >= pn.top - 1 && last.right <= rr.right + 1 && last.left >= rr.left - 1; }), `panel ${pagePath} ${w}x${h}: the last starter question can be scrolled into view`);
     check(!errors.length, `no page errors at ${pagePath} ${w}x${h}` + (errors.length ? ': ' + errors[0] : ''));
     await ctx.close();
   }
@@ -228,12 +245,12 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   // ---------- WIP 55: long conversation, scrolling, small screens ----------
   {
     const { ctx, page } = await openPage(browser, port, 360, '/stores.html', 640);
-    await page.waitForSelector('.nexi-dock'); await page.click('.nexi-fab'); await page.waitForTimeout(300);
-    for (let i = 0; i < 4; i++) { await page.fill('#nexiPanel textarea', 'question number ' + i); await page.press('#nexiPanel textarea', 'Enter'); await page.waitForTimeout(350); }
+    await page.waitForSelector('.nexi-dock'); await page.click('.nexi-fab'); await panelOpened(page);
+    for (let i = 0; i < 4; i++) await say(page, '#nexiPanel', 'question number ' + i);
     const lc = await page.evaluate(() => { const b = document.querySelector('#nexiPanel .nexi-panel-body'); const p = document.getElementById('nexiPanel').getBoundingClientRect(); const comp = document.querySelector('#nexiPanel .nexi-composer').getBoundingClientRect(); return { scrolls: b.scrollHeight > b.clientHeight, atBottom: b.scrollHeight - b.scrollTop - b.clientHeight < 4, startersHidden: document.querySelector('#nexiPanel .nexi-starters').hidden, compInside: comp.bottom <= innerHeight && comp.top >= 0, headVisible: p.top >= 0 }; });
     check(lc.scrolls && lc.atBottom && lc.startersHidden && lc.compInside && lc.headVisible, 'phone panel, long chat: the conversation scrolls inside the panel, follows the newest answer, header and composer stay on screen' + (lc.scrolls ? '' : ' ' + JSON.stringify(lc)));
     await page.evaluate(() => { document.querySelector('#nexiPanel .nexi-panel-body').scrollTop = 0; });
-    await page.fill('#nexiPanel textarea', 'another one'); await page.press('#nexiPanel textarea', 'Enter'); await page.waitForTimeout(400);
+    await say(page, '#nexiPanel', 'another one');
     check(await page.evaluate(() => document.querySelector('#nexiPanel .nexi-panel-body').scrollTop > 0), 'sending a new message scrolls to it');
     await shot(page, 'p55-long-chat-360');
     await ctx.close();
@@ -248,12 +265,12 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
     let f = await page.evaluate(() => ({ tag: document.querySelector('.hero-chat .nexi-flagtag')?.textContent, flaggedUser: !!document.querySelector('.hero-chat .nexi-msg.is-user.is-flagged'), chips: document.querySelectorAll('.hero-chat .nexi-suggest .nexi-chip').length, newChat: !!document.querySelector('.hero-chat .nexi-newchat') }));
     check(f.tag === 'Not about NextaStore' && f.flaggedUser && f.chips === 3 && !f.newChat, 'off-topic question: tagged "Not about NextaStore", polite reply, 3 suggested questions offered');
     await shot(page, 'p55-flag-390');
-    await page.click('.hero-chat .nexi-suggest .nexi-chip'); await page.waitForTimeout(500);
+    { const before = await botCount(page, '.hero-chat'); await page.click('.hero-chat .nexi-suggest .nexi-chip'); await answered(page, '.hero-chat', before); }
     check(LOG.chat[LOG.chat.length - 1].message === 'How do I start my first store?', 'tapping a suggested question sends it');
-    for (const m of ['OFFTOPIC two', 'OFFTOPIC three']) { await page.fill('.hero-chat textarea', m); await page.press('.hero-chat textarea', 'Enter'); await page.waitForTimeout(500); }
+    for (const m of ['OFFTOPIC two', 'OFFTOPIC three']) await say(page, '.hero-chat', m);
     f = await page.evaluate(() => ({ newChat: !!document.querySelector('.hero-chat .nexi-newchat'), text: [...document.querySelectorAll('.hero-chat .nexi-msg.is-bot .nexi-bubble')].pop().textContent }));
     check(f.newChat && /moved away/.test(f.text), 'three off-topic questions: the conversation is marked as drifting and a "Start a new chat" button is offered');
-    await page.click('.hero-chat .nexi-newchat'); await page.waitForTimeout(200);
+    await page.click('.hero-chat .nexi-newchat'); await until(page, () => document.querySelectorAll('.hero-chat .nexi-msg').length === 0);
     check(await page.evaluate(() => document.querySelectorAll('.hero-chat .nexi-msg').length === 0), '"Start a new chat" clears the conversation');
     await page.reload(); await page.waitForSelector('.hero-chat .nexi-chip');
     await page.fill('.hero-chat textarea', 'SENSITIVE my password is abc'); await page.press('.hero-chat textarea', 'Enter'); await page.waitForSelector('.hero-chat .nexi-msg.is-flag-sensitive', { timeout: 5000 });

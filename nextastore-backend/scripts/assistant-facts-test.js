@@ -51,8 +51,18 @@ check('buyer cancel rule: 30 minutes, 3 per 30 days, reason required', payload.o
 check('period options match what the subscription route accepts', payload.subscription.periodOptionsMonths.join() === '1,3,6,12,24' && /SUBSCRIPTION_PERIOD_OPTIONS/.test(read('nextastore-backend/src/validation.js')));
 
 // ---- privacy ---------------------------------------------------------------
-const flat = JSON.stringify(payload);
-check('payload holds platform rules only: no email, phone, id or token keys', !/"(email|phone|userId|storeId|orderId|token|password|reference|address)"/i.test(flat));
+// WIP 100: the payload carries ONE public block, `support` (the company's own support email and website, the same for every visitor). That block is allowed and nothing
+// else in it is: exactly the keys email + url, an email address that is not a person's session data, an https url. Every other key, at any depth, must still pass the
+// original check: no email, phone, user, store, order, token, password, reference or address keys.
+const FORBIDDEN_KEY = /^(email|phone|userId|storeId|orderId|token|password|reference|address|user|store|order|userEmail|accessToken|refreshToken|secret|session)$/i;
+function forbiddenKeys(node, trail = '') {
+    if (!node || typeof node !== 'object') return [];
+    return Object.keys(node).flatMap((k) => (FORBIDDEN_KEY.test(k) ? [trail + k] : []).concat(forbiddenKeys(node[k], trail + k + '.')));
+}
+const { support: publicSupport, ...rulesOnly } = payload;
+check('payload holds platform rules only: no user, store, order, token or password keys (the public support block is allowed)', forbiddenKeys(rulesOnly).length === 0);
+check('the public support block holds exactly an email and a website', publicSupport && Object.keys(publicSupport).sort().join() === 'email,url' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(publicSupport.email) && /^https:\/\//.test(publicSupport.url));
+check('the checker still catches a user, store, order, token or password key', forbiddenKeys({ a: { userId: 1 } }).join() === 'a.userId' && forbiddenKeys({ token: 'x' }).length === 1 && forbiddenKeys({ x: { password: 1 }, y: { store: {} } }).length === 2 && forbiddenKeys({ support: { email: 'a@b.co' } }).length === 1);
 check('payload is small (under 6 KB)', first.body.length < 6144);
 
 // ---- routes enforce the shared constants -----------------------------------

@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { apiError } = require('./utils');
-const { FULFILLMENT_METHODS, LISTING_TYPES, SUBSCRIPTION_PERIOD_OPTIONS } = require('./platformRules');
+const { FULFILLMENT_METHODS, LISTING_TYPES, SUBSCRIPTION_PERIOD_OPTIONS, PASSWORD_MIN_LENGTH } = require('./platformRules');
 
 // z.coerce.boolean() runs every non-empty value through Boolean(), so the
 // STRING "false" (exactly what a JSON body sends when a client stringifies
@@ -42,11 +42,15 @@ const signupSchema = z.object({
     email: z.string().trim().max(254).email('must be a valid email'),
     // Upper bound: bcrypt only reads the first 72 bytes anyway, and an unbounded
     // string is just a way to make the server carry a huge body around.
-    password: z.string().min(8, 'must be at least 8 characters').max(128, 'must be 128 characters or fewer'),
+    password: z.string().min(PASSWORD_MIN_LENGTH, `must be at least ${PASSWORD_MIN_LENGTH} characters`).max(128, 'must be 128 characters or fewer'),
     // What kind of account this signup creates. Defaults to "buyer" so any
     // caller that doesn't send it (old clients, API scripts) gets the safer,
     // no-store-created behavior rather than silently becoming a seller.
-    accountType: z.enum(['buyer', 'seller']).default('buyer')
+    accountType: z.enum(['buyer', 'seller']).default('buyer'),
+    // NextaStore Circle / Crew referral capture (all optional; see src/growth and js/growth-ref.js).
+    referralCode: z.string().trim().max(24).optional(),
+    referralVia: z.enum(['link', 'code']).optional(),
+    deviceHash: z.string().max(64).optional()
 });
 
 const loginSchema = z.object({
@@ -67,7 +71,7 @@ const updateUserSchema = z.object({
     avatar: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
     cover: z.string().max(IMAGE_FIELD_MAX).nullable().optional(),
     currentPassword: z.string().max(128).optional(),
-    newPassword: z.string().min(8, 'must be at least 8 characters').max(128).optional()
+    newPassword: z.string().min(PASSWORD_MIN_LENGTH, `must be at least ${PASSWORD_MIN_LENGTH} characters`).max(128).optional()
 });
 
 const updateStoreSchema = z.object({
@@ -251,7 +255,7 @@ const replyMessageSchema = z.object({
 
 const resetPasswordSchema = z.object({
     token: z.string().min(1, 'is required'),
-    newPassword: z.string().min(8, 'must be at least 8 characters')
+    newPassword: z.string().min(PASSWORD_MIN_LENGTH, `must be at least ${PASSWORD_MIN_LENGTH} characters`)
 });
 
 const adminUserUpdateSchema = z.object({
@@ -292,13 +296,24 @@ const subscriptionPaymentSchema = z.object({
 // Admin-editable mobile money merchant codes shown to sellers on
 // subscription.html (see routes/admin.js GET/PUT /admin/settings). Every
 // field optional — an admin can update just one code at a time.
+const { normalizeUgandanWhatsapp } = require('./whatsapp-normalizer');
+const ugandanWhatsappSchema = z.string().trim().max(30).transform(normalizeUgandanWhatsapp)
+    .refine(v => v === '' || /^2567\d{8}$/.test(v), 'must be a valid Ugandan mobile number (e.g. 0761789006 or +256 761 789006)');
 const platformSettingsSchema = z.object({
     mtnMomoCode: z.string().trim().max(40).optional(),
     mtnMomoName: z.string().trim().max(60).optional(),
     airtelMoneyCode: z.string().trim().max(40).optional(),
     airtelMoneyName: z.string().trim().max(60).optional(),
     mtnMomoInstructions: z.string().trim().max(240).optional(),
-    airtelMoneyInstructions: z.string().trim().max(240).optional()
+    airtelMoneyInstructions: z.string().trim().max(240).optional(),
+    supportWhatsappNumber: ugandanWhatsappSchema.optional(),
+    supportWhatsappEnabled: z.boolean().optional(),
+    supportContactLabel: z.string().trim().min(1).max(80).optional(),
+    supportHoursNote: z.string().trim().max(240).optional()
+}).superRefine((v, ctx) => {
+    if (v.supportWhatsappNumber === '' && v.supportWhatsappEnabled !== false) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['supportWhatsappNumber'], message: 'may be empty only when WhatsApp support is disabled' });
+    }
 });
 
 // Admin create/update for the payment-method catalog (see prisma schema

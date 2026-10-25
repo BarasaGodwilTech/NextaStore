@@ -10,112 +10,376 @@
     <title>NextaStore — Build Your Online Store</title>
     <meta name="description" content="Launch a mobile-first online store built for East African entrepreneurs. Accept Mobile Money, manage orders, and grow — all in one place.">
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/categories.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* ==========================================================================
+           NextaStore landing page (WIP 109 redesign)
+           Idea: the market stall becomes a shop link. Marketplace line-icon patterns, the
+           brand's own sticker-style category art, and one live phone that builds a
+           store, takes a Mobile Money payment and rings with the order.
+           Page-only styles live here; shared pieces stay in css/main.css.
+           The Featured Stores card rules below are copied by
+           scripts/store-cards-browser-test.js - keep the class names.
+           ========================================================================== */
+        :root {
+            --deep: #062A1F;
+            --cloth: #0F4A37;
+            --gold: #FFB038;
+            --gold-lt: #FFD88A;
+            --cream: #FFF4DD;
+            --mint: #2EDDA2;
+        }
+        html { scroll-padding-top: 76px; }
+        body { overflow-x: clip; }
+        .wrap { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--spacing-xl); }
+        .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+        .art { display: block; flex: none; }
+        .defs-only { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+        /* Keyboard focus must stay visible on the dark bands, where the default ink outline vanishes. */
+        .hero :focus-visible, .tour :focus-visible, .closer :focus-visible, .bento-dark :focus-visible, .bento-green :focus-visible { outline-color: var(--gold); }
+
+        /* ---------- Hero ---------- */
         .hero {
             position: relative;
+            isolation: isolate;
             overflow: hidden;
+            color: #fff;
             background:
-                radial-gradient(circle at 85% 15%, rgba(226, 154, 46, 0.35), transparent 40%),
-                linear-gradient(160deg, var(--secondary) 0%, var(--secondary-dark) 100%);
-            color: white;
-            padding: var(--spacing-3xl) var(--spacing-xl);
+                radial-gradient(60% 70% at 78% 48%, rgba(255, 176, 56, .20), transparent 70%),
+                linear-gradient(165deg, #0B3B2B 0%, var(--deep) 70%);
+            padding: clamp(2.25rem, 5vw, 4.25rem) var(--spacing-xl) clamp(3.5rem, 7vw, 6rem);
         }
-        .hero::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-            mask-image: radial-gradient(circle at 80% 20%, black, transparent 65%);
-            pointer-events: none;
-        }
+        .cloth { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .hero .cloth { -webkit-mask-image: linear-gradient(100deg, transparent 18%, #000 70%); mask-image: linear-gradient(100deg, transparent 18%, #000 70%); }
         .hero-inner {
             max-width: var(--max-width);
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
+            grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
             gap: var(--spacing-2xl);
             align-items: center;
-            position: relative;
-            z-index: 1;
         }
-        /* Hero brand block: app icon with the solid-white wordmark beneath it.
-           The white wordmark asset is the only treatment with enough contrast
-           on the dark hero — the color wordmark renders "Nexta" in dark ink
-           and disappears here. Single canonical rule set for this element. */
-        .hero-brand {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
+        .hero h1 {
+            font-size: clamp(2.5rem, 5.4vw, 4.5rem);
+            line-height: 1.04;
+            letter-spacing: -.035em;
+            font-weight: 700;
+            color: #fff;
+            max-width: 11.5em;
             margin-bottom: var(--spacing-lg);
+            text-wrap: balance;
         }
-        .hero-brand-icon {
-            width: 76px;
-            height: 76px;
-            border-radius: 18px;
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.30);
+        /* Small sticker tiles that sit inside the headline, as if pasted onto the sentence. */
+        .chip {
+            display: inline-grid;
+            place-items: center;
+            width: 1.5em;
+            height: 1.05em;
+            vertical-align: -.1em;
+            margin: 0 .06em;
+            border-radius: .3em;
+            background: var(--gold-lt);
+            transform: rotate(-5deg);
+            box-shadow: 0 .08em 0 rgba(0, 0, 0, .25);
         }
-        .hero-brand-wordmark { width: min(290px, 68vw); height: auto; }
-        .hero-eyebrow { color: var(--primary); }
-        .hero h1 { font-size: 3rem; margin-bottom: var(--spacing-lg); color: white; max-width: 560px; }
-        .hero p.lede { max-width: 480px; margin: 0 0 var(--spacing-xl); color: rgba(255,255,255,0.85); }
+        .chip svg { width: .92em; height: .92em; }
+        .chip.alt { background: var(--mint); transform: rotate(4deg); }
+        .hero .lede { max-width: 31em; margin: 0 0 var(--spacing-xl); color: rgba(255, 255, 255, .84); font-size: 1.1875rem; line-height: 1.65; }
         .hero-buttons { display: flex; gap: var(--spacing-md); flex-wrap: wrap; }
-        .hero-stats { display: flex; gap: var(--spacing-2xl); margin-top: var(--spacing-2xl); flex-wrap: wrap; }
-        .hero-stats div strong { display: block; font-family: var(--font-display); font-size: 1.75rem; color: white; }
-        .hero-stats div span { font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+        .hero-buttons .btn-primary { background: var(--gold); color: var(--ink); box-shadow: 0 .35rem 0 #C98414, 0 1rem 2rem rgba(0, 0, 0, .25); }
+        .hero-buttons .btn-primary:hover:not(:disabled) { background: #FFC262; color: var(--ink); transform: translateY(-2px); }
+        .pay-row { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem .6rem; margin-top: var(--spacing-xl); font-size: .875rem; color: rgba(255, 255, 255, .72); }
+        .pay-pill { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .8rem; border: 1px solid rgba(255, 255, 255, .26); border-radius: 999px; color: #fff; font-weight: 700; font-size: .8125rem; white-space: nowrap; }
+        .pay-pill i { color: var(--gold); }
 
-        /* Phone mockup built with CSS, no stock photography needed */
-        .hero-mock { display: flex; justify-content: center; }
+        /* ---------- Hero stage: the live phone ---------- */
+        /* The stage is one rig: a laptop (the seller's dashboard) behind, the live phone in front, 3D props around.
+           --pw (phone width) is the master unit; the laptop sizes from it, and its text sizes from its own width (cqw). */
+        .stage { --pw: clamp(220px, 19vw, 284px); position: relative; max-width: calc(var(--pw) * 2.5); height: calc(var(--pw) * 2.2); margin: 0 0 0 0; }
+        @media (min-width: 1001px) { .stage { margin-right: calc(-1 * clamp(0px, calc((100vw - 1304px) / 2), 4rem)); } }
+        @media (max-width: 1000px) { .stage { margin-inline: auto; width: 100%; } }
+        .stage::before { content: ''; position: absolute; left: 58%; top: 54%; width: calc(var(--pw) * 1.9); aspect-ratio: 1; border-radius: 50%; background: var(--gold); opacity: .94; transform: translate(-50%, -50%); }
+        .stage::after { content: ''; position: absolute; left: 58%; top: 54%; width: calc(var(--pw) * 1.9 + 34px); aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255, 216, 138, .5); transform: translate(-50%, -50%); }
         .phone {
-            width: 250px;
-            background: var(--ink);
-            border-radius: 34px;
-            padding: 12px;
-            box-shadow: var(--shadow-xl);
-            transform: rotate(3deg);
+            position: absolute;
+            right: 1%;
+            bottom: 0;
+            z-index: 2;
+            width: var(--pw);
+            aspect-ratio: 9 / 18.6;
+            padding: 8px;
+            border-radius: 2.9rem;
+            /* brushed-metal frame, then a black bezel ring, then the glass */
+            background: linear-gradient(145deg, #7b8c85 0%, #1d2b26 16%, #0a1210 48%, #2d3c36 80%, #6b7b75 100%);
+            box-shadow: 0 2.4rem 4rem rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .1), inset 0 0 0 1.5px rgba(255, 255, 255, .22), inset 0 0 0 5px #050807;
+            transform: rotate(2.5deg);
         }
-        .phone-screen { background: var(--paper); border-radius: 24px; overflow: hidden; }
-        .phone-bar { background: white; padding: 0.6rem 0.9rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--gray-200); }
-        .phone-bar .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
-        .phone-bar span { font-size: 0.7rem; font-weight: 700; color: var(--ink); }
-        .phone-banner { height: 70px; background: linear-gradient(120deg, #00B074, #00794F); }
-        .phone-products { padding: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-        .phone-card { background: white; border-radius: 10px; padding: 0.5rem; box-shadow: var(--shadow-sm); }
-        .phone-card .thumb { height: 46px; border-radius: 6px; margin-bottom: 0.4rem; }
-        .phone-card .thumb.a { background: #FBE3DC; }
-        .phone-card .thumb.b { background: var(--secondary-light); }
-        .phone-card .thumb.c { background: var(--primary-light); }
-        .phone-card .thumb.d { background: #E9E4F8; }
-        .phone-card p { font-size: 0.6rem; margin-bottom: 0.15rem; color: var(--ink); font-weight: 600; }
-        .phone-card span { font-size: 0.6rem; color: var(--primary-dark); font-weight: 700; }
+        /* side buttons: action + volume on the left, power on the right */
+        .phone::before { content: ''; position: absolute; left: -3px; top: 16%; width: 3px; height: 3.2%; border-radius: 2px 0 0 2px; background: #56665f; box-shadow: 0 calc(var(--pw) * .1) 0 0 #56665f, 0 calc(var(--pw) * .19) 0 0 #56665f; }
+        .phone::after { content: ''; position: absolute; right: -3px; top: 27%; width: 3px; height: 9%; border-radius: 0 2px 2px 0; background: #56665f; }
+        .ph { position: relative; height: 100%; overflow: hidden; border-radius: calc(2.9rem - 8px); background: #fff; color: var(--ink); font-size: calc(var(--pw) / 23.5); line-height: 1.35; }
+        .ph p { margin: 0; color: inherit; }
+        .ph::before { content: ''; position: absolute; z-index: 4; left: 50%; bottom: .55em; width: 34%; height: .38em; border-radius: 1em; background: rgba(6, 20, 14, .85); transform: translateX(-50%); pointer-events: none; }
+        .ph::after { content: ''; position: absolute; z-index: 5; inset: 0; background: linear-gradient(118deg, rgba(255, 255, 255, .2) 0%, rgba(255, 255, 255, .05) 22%, transparent 38%); pointer-events: none; }
+        .ph-notch { position: absolute; z-index: 3; top: .6em; left: 50%; width: 6.4em; height: 1.55em; border-radius: 1em; background: #0a1a14; transform: translateX(-50%); }
+        .ph-notch::after { content: ''; position: absolute; right: .55em; top: 50%; width: .6em; height: .6em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #35567f, #050b12 62%); transform: translateY(-50%); }
+        .ph-status { display: flex; justify-content: space-between; padding: .9em 1.8em .5em; font-size: .85em; font-weight: 700; }
+        .ph-status span:last-child { display: inline-flex; gap: .4em; }
+        .ph-banner { height: 6.4em; margin: 0 .8em; border-radius: 1.1em; background: radial-gradient(circle at 1.2em 1.2em, rgba(255, 255, 255, .2) .28em, transparent .34em) 0 0 / 2.4em 2.4em, linear-gradient(120deg, #01B075, #008558); }
+        .ph-id { position: relative; display: flex; align-items: center; gap: .65em; margin: -1.6em .8em 0 1.2em; }
+        .ph-av { display: grid; place-items: center; flex: none; width: 3.4em; height: 3.4em; border-radius: 50%; border: .25em solid #fff; background: var(--gold); font-weight: 700; font-size: 1.1em; box-shadow: var(--shadow-sm); }
+        .ph-id b { display: block; font-size: 1.12em; line-height: 1.2; }
+        .ph-id small { display: block; font-size: .8em; color: var(--gray-500); }
+        .ph-id > div:nth-child(2) { margin-top: 1.5em; flex: 1; min-width: 0; }
+        .ph-cart { position: relative; flex: none; display: grid; place-items: center; width: 2.5em; height: 2.5em; margin-top: 1.5em; border-radius: 50%; background: var(--gray-100); }
+        .ph-cart em { position: absolute; top: -.35em; right: -.35em; min-width: 1.5em; height: 1.5em; padding: 0 .3em; display: grid; place-items: center; border-radius: 1em; background: var(--coral); color: #fff; font: 700 .75em var(--font-body); font-style: normal; }
+        .ph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65em; padding: .9em .8em; }
+        .ph-card { position: relative; padding: .5em; border: 1px solid var(--gray-100); border-radius: 1em; background: #fff; box-shadow: var(--shadow-sm); transition: box-shadow .3s ease; }
+        .ph-card .th { display: grid; place-items: center; height: 5.4em; margin-bottom: .45em; border-radius: .75em; }
+        .ph-card .th svg { width: 3.6em; height: 3.6em; }
+        .ph-card p { font-size: .88em; font-weight: 700; }
+        .ph-card span { font-size: .8em; font-weight: 700; color: var(--primary-dark); }
+        .ph-card.tap.on { box-shadow: 0 0 0 .2em var(--primary), var(--shadow-md); }
+        .th.a { background: #FBE3DC; } .th.b { background: var(--secondary-light); } .th.c { background: #FFF1D6; } .th.d { background: #E9E4F8; }
+        .ph-sheet { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; min-height: 17em; padding: 1.1em 1em 1.3em; border-radius: 1.7em 1.7em 0 0; background: #fff; box-shadow: 0 -1em 2em rgba(11, 59, 43, .18); transform: translateY(105%); }
+        .ph-sheet .pay-a { display: grid; gap: .6em; }
+        .ph-sheet h4 { font-size: 1em; margin: 0 0 .1em; }
+        .pay-opt { display: flex; align-items: center; gap: .6em; padding: .65em .8em; border: 1.5px solid var(--gray-200); border-radius: .95em; font-weight: 700; font-size: .92em; }
+        .pay-opt .dot { width: 1.3em; height: 1.3em; border-radius: 50%; }
+        .pay-opt.sel { border-color: var(--primary); background: var(--primary-light); }
+        .pay-opt.sel::after { content: '\f00c'; font: 900 .8em 'Font Awesome 6 Free'; margin-left: auto; color: var(--primary-dark); }
+        .pay-btn { padding: .8em; border-radius: .95em; background: var(--primary); color: #fff; text-align: center; font-weight: 700; font-size: .95em; }
+        .ph-sheet .pay-b { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .35em; text-align: center; opacity: 0; }
+        .pay-b .ok { display: grid; place-items: center; width: 3.8em; height: 3.8em; border-radius: 50%; background: var(--primary); color: #fff; font-size: 1.1em; margin-bottom: .3em; }
+        .pay-b b { font-size: 1.05em; }
+        .pay-b small { color: var(--gray-500); font-size: .85em; }
 
-        .features { padding: var(--spacing-3xl) var(--spacing-xl); background: white; }
-        .section-head { max-width: 560px; margin: 0 auto var(--spacing-2xl); text-align: center; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--spacing-xl); max-width: var(--max-width); margin: 0 auto; }
-        .feature-card { padding: var(--spacing-xl); border: 1px solid var(--gray-100); border-radius: var(--border-radius-lg); }
-        .feature-card .icon-tile { margin-bottom: var(--spacing-lg); }
-        .feature-card h3 { font-family: var(--font-body); font-size: 1.0625rem; }
+        /* ---------- Laptop: the seller's side of the same story ---------- */
+        .laptop { position: absolute; left: -17%; top: 9%; z-index: 1; width: min(calc(117% - var(--pw) * .1), calc(var(--pw) * 2.6)); container-type: inline-size; transform: perspective(1800px) rotateY(5deg) rotateX(1deg); transform-origin: 30% 60%; filter: drop-shadow(0 1.8rem 1.8rem rgba(0, 0, 0, .42)); }
+        .lt-lid, .lt-base { font-size: 9px; font-size: 1.79cqw; }
+        .lt-lid { position: relative; padding: .8em .8em .65em; border-radius: 1.1em 1.1em .2em .2em; background: linear-gradient(160deg, #2a3833, #0b1210); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 0 0 .35em #050807; }
+        .lt-cam { position: absolute; top: .3em; left: 50%; width: .38em; height: .38em; border-radius: 50%; background: #1d2d3a; transform: translateX(-50%); }
+        .lt-screen { display: grid; grid-template-columns: 7.5% 1fr; aspect-ratio: 16 / 10; overflow: hidden; border-radius: .35em; background: #F2F7F4; color: var(--ink); line-height: 1.3; }
+        .lt-side { display: flex; flex-direction: column; align-items: center; gap: 1em; padding: .9em 0; background: #0B3B2B; color: rgba(255, 255, 255, .55); font-size: .85em; }
+        .lt-side i { font-style: normal; }
+        .lt-side .on { padding: .4em; border-radius: .45em; background: rgba(255, 255, 255, .15); color: #fff; }
+        .lt-logo { width: 1.7em; height: 1.7em; margin-bottom: .4em; border-radius: .5em; background: linear-gradient(135deg, #2EDDA2, #008558); }
+        .lt-main { display: flex; flex-direction: column; gap: .7em; min-width: 0; padding: .9em 1em; }
+        .lt-top { display: flex; align-items: center; justify-content: space-between; }
+        .lt-top b { display: block; font-size: 1.2em; letter-spacing: -.01em; }
+        .lt-top small { color: var(--gray-500); font-size: .8em; }
+        .lt-live { display: inline-flex; align-items: center; gap: .4em; padding: .25em .7em; border-radius: 1em; background: var(--primary-light); color: var(--primary-dark); font-size: .8em; font-weight: 700; }
+        .lt-live::before { content: ''; width: .6em; height: .6em; border-radius: 50%; background: var(--store-green, #01B075); }
+        .lt-kpis { display: grid; grid-template-columns: 1.3fr .8fr .8fr; gap: .6em; }
+        .lt-kpi, .lt-card { border-radius: .6em; background: #fff; box-shadow: 0 1px 2px rgba(11, 59, 43, .1); }
+        .lt-kpi { padding: .6em .75em; }
+        .lt-kpi small, .lt-card > small { display: block; color: var(--gray-500); font-size: .78em; font-weight: 700; }
+        .lt-kpi b { display: grid; font-size: 1.3em; line-height: 1.25; letter-spacing: -.01em; }
+        .lt-kpi b span { grid-area: 1 / 1; transition: opacity .4s ease; }
+        .lt-kpi em { font-style: normal; font-size: .75em; font-weight: 700; color: var(--primary-dark); }
+        .lt-kpi .v1 { opacity: 0; }
+        .lt-grid > :nth-child(2) { order: -1; }
+        .lt-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: .6em; flex: 1; min-height: 0; }
+        .lt-card { display: flex; flex-direction: column; gap: .5em; min-height: 0; padding: .65em .75em; overflow: hidden; }
+        .lt-bars { display: flex; align-items: flex-end; gap: .4em; flex: 1; min-height: 0; }
+        .lt-bars i { flex: 1; height: var(--h); border-radius: .25em .25em 0 0; background: #C4EEDC; }
+        .lt-bars .today { height: 80%; background: linear-gradient(#2EDDA2, #01B075); transition: height .7s cubic-bezier(.2, .8, .2, 1); }
+        .lt-list { flex: 1; min-height: 0; margin: 0; padding: 0; overflow: hidden; list-style: none; }
+        .lt-list li { padding-bottom: .8em; }
+        .lt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .6em; font-size: .82em; }
+        .lt-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .lt-row em { font-style: normal; font-weight: 700; }
+        .lt-ok, .lt-wait { padding: .1em .6em; border-radius: 1em; font-size: .85em; font-weight: 700; }
+        .lt-ok { background: var(--primary-light); color: var(--primary-dark); }
+        .lt-wait { background: #FFF1D6; color: #9A5A00; }
+        .lt-base { position: relative; height: 1.2em; margin: 0 -3.5%; border-radius: .1em .1em 1.6em 1.6em / .1em .1em .9em .9em; background: linear-gradient(#EDF2F0, #C5CFCA 55%, #98A6A0); box-shadow: inset 0 1px 0 #fff, 0 .15em 0 #7C8B85; }
+        .lt-base span { position: absolute; top: 0; left: 50%; width: 15%; height: .42em; border-radius: 0 0 .6em .6em; background: linear-gradient(#A9B5AF, #CCD5D1); transform: translateX(-50%); }
 
-        .cta-section { background: var(--gray-50); padding: var(--spacing-3xl) var(--spacing-xl); text-align: center; }
-        .cta-section h2 { max-width: 480px; margin: 0 auto var(--spacing-md); }
+        /* 3D props around the rig */
+        .p3d { position: absolute; z-index: 3; height: auto; max-width: none; pointer-events: none; }
+        .p-tag { left: -13%; top: -9%; width: calc(var(--pw) * .55); }
+        .p-coins { left: 4%; bottom: -3%; width: calc(var(--pw) * .66); }
+        .o-float { animation: stage-float 7s ease-in-out infinite; }
+        @keyframes stage-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(1.5deg); } }
 
-        /* Footer styles live once in css/main.css (.footer) — shared by every page. */
+        /* Laptop follows the phone's story: when the payment lands, the order, the total and today's bar all update.
+           Without .anim (no JS or reduced motion) the finished state shows. */
+        .stage.anim .lt-kpi .v1 { opacity: 1; }
+        .stage.anim .lt-kpi .v2 { opacity: 0; }
+        .stage.anim.s5 .lt-kpi .v1 { opacity: 0; }
+        .stage.anim.s5 .lt-kpi .v2 { opacity: 1; }
+        .stage.anim .lt-bars .today { height: 56%; }
+        .stage.anim.s5 .lt-bars .today { height: 80%; }
+        .stage.anim .lt-new { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .5s ease, opacity .5s ease; }
+        .stage.anim.s5 .lt-new { max-height: 2.4em; opacity: 1; }
+        .stage.anim.reset .lt-new, .stage.anim.reset .lt-bars .today { transition-duration: .3s; }
 
+        /* Notifications that orbit the phone */
+        .fl { position: absolute; z-index: 2; display: flex; align-items: center; gap: .7rem; max-width: 15.5rem; padding: .7rem .95rem .7rem .75rem; border-radius: 1.1rem; background: #fff; color: var(--ink); box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, .3); font-size: .8125rem; line-height: 1.3; }
+        .fl b { display: block; font-size: .875rem; }
+        .fl small { display: block; color: var(--gray-500); font-size: .75rem; overflow-wrap: anywhere; }
+        .fl .ic { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; font-size: 1rem; color: #fff; }
+        .f1 { left: 34%; bottom: 2%; } .f1 .ic { background: #25D366; }
+        .f2 { right: -3%; top: 12%; } .f2 .ic { background: var(--gold); color: var(--ink); }
+        .f3 { right: 0; bottom: 8%; } .f3 .ic { background: var(--primary); }
+
+        /* Animated state: the page script adds .anim, then .s1 ... .s6 in time order. Without JS or with
+           reduced motion the stage simply shows the finished composition. */
+        .stage.anim .rv, .stage.anim .fl { opacity: 0; transform: translateY(.9em) scale(.95); transition: opacity .5s ease, transform .6s cubic-bezier(.2, .9, .3, 1.2); }
+        .stage.anim.s1 .r1, .stage.anim.s2 .r2, .stage.anim.s2 .f1, .stage.anim.s5 .f2, .stage.anim.s6 .f3 { opacity: 1; transform: none; }
+        .stage.anim .ph-card.r2 { transition-delay: calc(var(--i) * .16s); }
+        .stage.anim .ph-sheet { transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+        .stage.anim.s4 .ph-sheet { transform: none; }
+        .stage.anim.s6 .ph-sheet { transform: translateY(105%); }
+        .stage.anim .ph-cart em { transform: scale(0); transition: transform .4s cubic-bezier(.3, 1.8, .5, 1); }
+        .stage.anim.s3 .ph-cart em { transform: scale(1); }
+        .stage .ph-sheet .pay-b { transition: opacity .35s ease; }
+        .stage.anim .pay-a { transition: opacity .3s ease; }
+        .stage.anim.s5 .pay-a { opacity: 0; }
+        .stage.anim.s5 .pay-b { opacity: 1; }
+        .stage.anim .pay-b .ok { transform: scale(.4); transition: transform .5s cubic-bezier(.3, 1.8, .5, 1) .15s; }
+        .stage.anim.s5 .pay-b .ok { transform: none; }
+        .stage:not(.anim) .ph-card.tap { box-shadow: 0 0 0 .2em var(--primary), var(--shadow-md); }
+        .stage.anim .ph-card.tap { box-shadow: var(--shadow-sm); }
+        .stage.anim.s3 .ph-card.tap { box-shadow: 0 0 0 .2em var(--primary), var(--shadow-md); }
+        .stage.anim.reset *, .stage.anim.reset { transition-delay: 0s !important; transition-duration: .3s !important; }
+
+        /* ---------- Sections ---------- */
+        .block { padding: clamp(3.25rem, 7vw, 5.5rem) 0; }
+        .block-head { max-width: 40rem; margin-bottom: var(--spacing-2xl); }
+        .block-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.1; letter-spacing: -.028em; margin-bottom: var(--spacing-md); text-wrap: balance; }
+        .block-head p { font-size: 1.0625rem; color: var(--gray-600); margin-bottom: 0; }
+
+        /* The shelf: category stickers stand on a wooden plank, like goods on a market stall. */
+        .cats { background: var(--paper); padding-bottom: clamp(3rem, 6vw, 4.5rem); }
+        .shelf { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); }
+        .shelf-tile { display: flex; flex-direction: column; align-items: center; color: var(--ink); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+        .shelf-tile:hover { color: var(--ink); }
+        .shelf-art { display: grid; place-items: end center; width: 100%; height: 112px; padding-bottom: 10px; border-bottom: 12px solid var(--gold); background: linear-gradient(to top, rgba(255, 176, 56, .14), transparent 55%); }
+        .shelf-tile:first-child .shelf-art { border-bottom-left-radius: 8px; }
+        .shelf-tile:last-child .shelf-art { border-bottom-right-radius: 8px; }
+        .shelf-art svg { width: 76px; height: 76px; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); transform-origin: 50% 100%; filter: drop-shadow(0 6px 0 rgba(11, 59, 43, .08)); }
+        .shelf-tile:hover .shelf-art svg, .shelf-tile:focus-visible .shelf-art svg { transform: translateY(-8px) rotate(-4deg); }
+        .shelf-tile:focus-visible { outline: none; }
+        .shelf-tile:focus-visible .shelf-label { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+        .shelf-label { margin-top: .75rem; font-size: .875rem; font-weight: 700; text-align: center; }
+        .shelf-tile.all .shelf-label { color: var(--primary-dark); }
+
+        /* How it works: a true sequence, so numbered. */
+        .how { background: #fff; }
+        .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-xl); counter-reset: step; }
+        .step { position: relative; display: flex; flex-direction: column; gap: var(--spacing-lg); }
+        .scene { position: relative; display: grid; place-items: center; height: 280px; border-radius: 28px; overflow: hidden; background: var(--cream); }
+        .scene.g { background: var(--primary-light); } .scene.p { background: #E9E4F8; }
+        .scene .cloth-mini { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .55; }
+        .step-no { position: absolute; z-index: 2; top: 14px; left: 14px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700; font-size: 1.05rem; }
+        .step h3 { font-family: var(--font-body); font-size: 1.3rem; margin-bottom: .35rem; letter-spacing: -.01em; }
+        .step p { margin: 0; color: var(--gray-600); }
+        .ui { position: relative; z-index: 1; width: min(78%, 250px); padding: 1rem; border-radius: 1.2rem; background: #fff; box-shadow: var(--shadow-lg); font-size: .8125rem; color: var(--ink); }
+        .ui label { display: block; margin-bottom: .2rem; font-size: .6875rem; font-weight: 700; color: var(--gray-500); }
+        .ui .field { padding: .55rem .7rem; margin-bottom: .65rem; border: 1.5px solid var(--gray-200); border-radius: .7rem; font-weight: 700; }
+        .ui .field.on { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .ui .field i { color: var(--primary-dark); margin-right: .35rem; }
+        .ui .btn-fake { margin-top: .35rem; padding: .6rem; border-radius: .75rem; background: var(--primary); color: #fff; text-align: center; font-weight: 700; }
+        .scene .sticker { position: absolute; z-index: 2; width: 84px; height: 84px; filter: drop-shadow(0 8px 0 rgba(11, 59, 43, .08)); }
+        .s-a { right: 3%; bottom: 5%; transform: rotate(9deg); } .s-b { left: 6%; bottom: 8%; transform: rotate(-8deg); } .s-c { right: 9%; top: 8%; transform: rotate(7deg); }
+        .ui.prod { width: min(62%, 190px); padding: .6rem; transform: rotate(-3deg); }
+        .ui.prod .ph-img { display: grid; place-items: center; height: 118px; margin-bottom: .6rem; border-radius: .8rem; background: #FBE3DC; }
+        .ui.prod .ph-img svg { width: 84px; height: 84px; }
+        .ui.prod b { display: block; font-size: .9rem; } .ui.prod span { color: var(--primary-dark); font-weight: 700; }
+        .ui.prod .stock { float: right; padding: .1rem .5rem; border-radius: 999px; background: var(--primary-light); color: var(--primary-dark); font-size: .6875rem; font-weight: 700; }
+        .ghost-card { position: absolute; z-index: 0; right: 12%; top: 16%; width: 120px; height: 150px; border-radius: 1rem; background: rgba(255, 255, 255, .6); border: 2px dashed rgba(11, 59, 43, .25); transform: rotate(8deg); }
+        .chat { position: relative; z-index: 1; display: grid; gap: .55rem; width: min(86%, 270px); font-size: .8125rem; }
+        .bub { padding: .6rem .75rem; border-radius: 1rem; background: #fff; box-shadow: var(--shadow-md); color: var(--ink); }
+        .bub.me { justify-self: end; background: #D9F7E6; border-bottom-right-radius: .3rem; }
+        .bub.you { justify-self: start; border-bottom-left-radius: .3rem; }
+        .bub .lp { display: flex; align-items: center; gap: .55rem; margin-top: .35rem; padding: .4rem; border-radius: .7rem; background: rgba(11, 59, 43, .07); }
+        .bub .lp .sw { display: grid; place-items: center; flex: none; width: 2.1rem; height: 2.1rem; border-radius: .55rem; background: var(--primary); color: #fff; }
+        .bub .lp small { display: block; color: var(--gray-500); font-size: .6875rem; overflow-wrap: anywhere; }
+        .paid { justify-self: center; display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .8rem; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 700; font-size: .75rem; }
+        .paid i { color: var(--mint); }
+
+        /* Tour: a real video, with chapters */
+        .tour { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(170deg, var(--deep), #0B3B2B); color: #fff; padding: clamp(3.25rem, 7vw, 5.5rem) 0; }
+        .tour .cloth { opacity: .6; -webkit-mask-image: linear-gradient(90deg, transparent 4%, #000 60%); mask-image: linear-gradient(90deg, transparent 4%, #000 60%); }
+        .closer .cloth { -webkit-mask-image: linear-gradient(100deg, transparent 10%, #000 78%); mask-image: linear-gradient(100deg, transparent 10%, #000 78%); }
+        .tour-inner { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--spacing-2xl); align-items: center; }
+        .tour h2 { color: #fff; font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.1; letter-spacing: -.028em; text-wrap: balance; margin-bottom: var(--spacing-md); }
+        .tour p { color: rgba(255, 255, 255, .8); font-size: 1.0625rem; }
+        .chapters { display: grid; gap: .5rem; margin-top: var(--spacing-lg); padding: 0; list-style: none; }
+        .chapter { display: flex; align-items: center; gap: .85rem; width: 100%; padding: .7rem .9rem; border: 1.5px solid rgba(255, 255, 255, .2); border-radius: 1rem; background: transparent; color: #fff; font: 700 .9375rem var(--font-body); text-align: left; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+        .chapter:hover { background: rgba(255, 255, 255, .08); }
+        .chapter .n { display: grid; place-items: center; flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgba(255, 255, 255, .14); font-size: .8125rem; }
+        .chapter[aria-current="true"] { border-color: var(--gold); background: rgba(255, 176, 56, .12); }
+        .chapter[aria-current="true"] .n { background: var(--gold); color: var(--ink); }
+        .no-video .chapter { cursor: default; }
+        .tour-frame { position: relative; margin: 0; border-radius: 28px; overflow: hidden; background: #08261c; box-shadow: 0 2rem 4rem rgba(0, 0, 0, .4), 0 0 0 1px rgba(255, 255, 255, .12); aspect-ratio: 16 / 9; }
+        .tour-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .tour-play { position: absolute; left: 16px; top: 16px; display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: var(--gold); color: var(--ink); font-size: 1rem; cursor: pointer; box-shadow: 0 .25rem 0 #C98414; }
+        .tour-play .fa-pause { display: none; }
+        .is-playing .tour-play .fa-play { display: none; }
+        .is-playing .tour-play .fa-pause { display: inline; }
+        .no-video .tour-play { display: none; }
+        .tour-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(255, 255, 255, .18); }
+        .tour-bar i { display: block; height: 100%; background: var(--gold); transform: scaleX(0); transform-origin: 0 50%; }
+
+        /* Features: a bento of different-sized tiles, each with its own picture */
+        .features { background: var(--paper); }
+        .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--spacing-md); }
+        .tile { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: .5rem; padding: var(--spacing-xl); border-radius: 26px; background: #fff; border: 1px solid var(--gray-100); }
+        .tile h3 { font-family: var(--font-body); font-size: 1.3rem; letter-spacing: -.012em; margin: 0; }
+        .tile p { margin: 0; font-size: .96875rem; color: var(--gray-600); max-width: 26em; }
+        .tile .icon-tile { margin-bottom: var(--spacing-sm); }
+        .t7 { grid-column: span 7; } .t5 { grid-column: span 5; } .t4 { grid-column: span 4; } .t6 { grid-column: span 6; }
+        .bento-dark { background: var(--ink); border-color: var(--ink); color: #fff; }
+        .bento-dark h3 { color: #fff; } .bento-dark p { color: rgba(255, 255, 255, .78); }
+        .bento-green { background: linear-gradient(150deg, #01B075, #008558); border-color: transparent; color: #fff; }
+        .bento-green h3 { color: #fff; } .bento-green p { color: rgba(255, 255, 255, .9); }
+        .bento-gold { background: var(--gold-lt); border-color: transparent; }
+        .bento-gold p { color: var(--gray-800); }
+        .bento-mint { background: var(--primary-light); border-color: transparent; }
+        .t-pay { min-height: 300px; padding-right: min(46%, 18rem); }
+        .t-pay .pay-demo { position: absolute; right: 24px; top: 24px; bottom: 24px; width: min(40%, 15rem); display: grid; align-content: center; gap: .55rem; }
+        .mini-opt { display: flex; align-items: center; gap: .6rem; padding: .7rem .85rem; border-radius: .95rem; background: rgba(255, 255, 255, .09); border: 1.5px solid rgba(255, 255, 255, .16); font-weight: 700; font-size: .875rem; }
+        .mini-opt .dot { width: 1.1rem; height: 1.1rem; border-radius: 50%; }
+        .mini-opt.sel { background: #fff; color: var(--ink); border-color: #fff; }
+        .mini-ok { display: flex; align-items: center; gap: .6rem; padding: .7rem .85rem; border-radius: .95rem; background: var(--gold); color: var(--ink); font-weight: 700; font-size: .875rem; }
+        .t-share { min-height: 300px; }
+        .share-row { display: flex; gap: .55rem; margin-top: auto; padding-top: var(--spacing-lg); }
+        .share-row span { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; border-radius: 50%; background: rgba(255, 255, 255, .2); font-size: 1.15rem; }
+        .link-pill { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-top: var(--spacing-md); padding: .7rem 1rem; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 700; font-size: .8125rem; overflow-wrap: anywhere; }
+        .link-pill i { color: var(--primary-dark); }
+        .swatches { display: flex; gap: .5rem; margin-top: auto; padding-top: var(--spacing-lg); }
+        .swatch { flex: 1; height: 4.2rem; border-radius: .9rem; border: 1px solid var(--gray-100); padding: .45rem; display: grid; align-content: end; font-size: .6875rem; font-weight: 700; }
+        .swatch.a { background: #E7F8F1; } .swatch.b { background: #FFF4DD; } .swatch.c { background: #E9E4F8; }
+        .bars { display: flex; align-items: flex-end; gap: .45rem; height: 6rem; margin-top: auto; padding-top: var(--spacing-lg); box-sizing: content-box; }
+        .bars i { flex: 1; border-radius: .45rem .45rem .2rem .2rem; background: var(--primary-light); }
+        .bars i:nth-child(1) { height: 32%; } .bars i:nth-child(2) { height: 46%; } .bars i:nth-child(3) { height: 40%; } .bars i:nth-child(4) { height: 62%; } .bars i:nth-child(5) { height: 55%; } .bars i:nth-child(6) { height: 84%; background: var(--primary); } .bars i:nth-child(7) { height: 100%; background: var(--primary-dark); }
+        .devices { display: flex; align-items: flex-end; gap: 1rem; margin-top: auto; padding-top: var(--spacing-lg); color: var(--ink); }
+        .devices i:nth-child(1) { font-size: 3.2rem; } .devices i:nth-child(2) { font-size: 2.4rem; opacity: .55; } .devices i:nth-child(3) { font-size: 2.8rem; opacity: .35; }
+        .checks { display: grid; gap: .45rem; margin: auto 0 0; padding: var(--spacing-lg) 0 0; list-style: none; font-weight: 700; font-size: .875rem; }
+        .checks li { display: flex; align-items: center; gap: .55rem; }
+        .checks i { color: var(--primary-dark); }
+        .talk { display: grid; gap: .5rem; margin-top: auto; padding-top: var(--spacing-lg); font-size: .8125rem; }
+        .talk span { max-width: 80%; padding: .55rem .8rem; border-radius: 1rem; background: var(--gray-100); }
+        .talk span:last-child { justify-self: end; background: var(--primary); color: #fff; border-bottom-right-radius: .3rem; }
+        .talk span:first-child { border-bottom-left-radius: .3rem; }
+
+        /* ---------- Featured stores (card rules are mirrored in store-cards-browser-test.js) ---------- */
         .section-container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--spacing-xl); }
-        .deals-section { background: var(--paper); padding: var(--spacing-3xl) 0; }
-        .deals-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--spacing-xl); flex-wrap: wrap; gap: var(--spacing-sm); }
-        .deals-head h2 { margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .deals-section { background: #fff; padding: clamp(3.25rem, 7vw, 5.5rem) 0; }
+        .deals-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: var(--spacing-xl); flex-wrap: wrap; gap: var(--spacing-sm) var(--spacing-lg); }
+        .deals-head h2 { margin-bottom: .35rem; font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.1; letter-spacing: -.028em; }
         .deals-head p { margin-bottom: 0; color: var(--gray-600); }
-
-        .stores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--spacing-lg); }
-        .store-card { background: white; border-radius: var(--border-radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100); transition: box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; }
-        .store-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+        .stores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--spacing-lg); }
+        .store-card { background: white; border-radius: 22px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100); transition: box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; }
+        .store-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px) rotate(-.4deg); }
         .store-banner { height: 140px; position: relative; background: linear-gradient(120deg, #00B074 0%, #00794F 100%); }
         .store-banner img { width: 100%; height: 100%; object-fit: cover; }
+        /* Stores without a banner photo get a cloth-dot texture over their colour. */
+        .store-banner:not(:has(img))::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 16px 16px, rgba(255, 255, 255, .2) 3px, transparent 4px) 0 0 / 32px 32px; }
         .store-details { padding: var(--spacing-lg); }
         .store-logo { width: 50px; height: 50px; border-radius: 50%; background-color: var(--primary-light); overflow: hidden; color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem; margin-bottom: var(--spacing-sm); }
         .store-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
@@ -130,38 +394,78 @@
         .store-meta span { font-size: 0.8125rem; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
         .store-meta i { color: var(--primary-dark); }
         .store-card .btn { width: 100%; }
-        .deals-cta { text-align: center; padding: var(--spacing-2xl); background: white; border-radius: var(--border-radius-lg); border: 1px solid var(--gray-100); margin-top: var(--spacing-xl); }
-        .deals-cta p { font-size: 1.0625rem; color: var(--gray-600); margin-bottom: var(--spacing-lg); }
+        .deals-cta { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-lg); flex-wrap: wrap; margin-top: var(--spacing-xl); padding: var(--spacing-lg) var(--spacing-xl); border-radius: 22px; background: var(--cream); }
+        .deals-cta p { margin: 0; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
 
-        .promotion-section { background: linear-gradient(150deg, var(--ink) 0%, #33261B 100%); color: white; padding: var(--spacing-3xl) 0; }
-        .promotion-content { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--spacing-xl); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2xl); align-items: center; }
-        .promotion-text h2 { color: white; margin-bottom: var(--spacing-xl); }
-        .promotion-features { list-style: none; margin-bottom: var(--spacing-xl); }
-        .promotion-features li { display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md); font-size: 1rem; }
-        .promotion-features i { color: var(--primary); font-size: 1.1rem; width: 1.2em; }
-        .promotion-buttons { display: flex; gap: var(--spacing-md); flex-wrap: wrap; }
-        .promotion-image { display: grid; gap: var(--spacing-md); }
-        .promo-card { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255,255,255,0.1); padding: var(--spacing-lg) var(--spacing-xl); border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: var(--spacing-lg); }
-        .promo-card i { font-size: 1.5rem; color: var(--primary); flex-shrink: 0; }
-        .promo-card h3 { color: white; margin-bottom: 0.15rem; font-family: var(--font-body); font-size: 1rem; }
-        .promo-card p { color: rgba(255, 255, 255, 0.7); margin-bottom: 0; font-size: 0.875rem; }
+        /* ---------- Earn ---------- */
+        .earn { background: var(--paper); }
+        .earn-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-lg); }
+        .earn-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--spacing-lg); align-items: center; padding: var(--spacing-xl); border-radius: 26px; background: #fff; border: 1px solid var(--gray-100); }
+        .earn-card img { width: 92px; height: 92px; }
+        .earn-card h3 { font-family: var(--font-body); font-size: 1.25rem; margin-bottom: .3rem; }
+        .earn-card p { margin-bottom: var(--spacing-md); color: var(--gray-600); font-size: .96875rem; }
 
-        @media (max-width: 900px) {
-            .hero-inner { grid-template-columns: 1fr; }
-            .hero-mock { order: -1; }
-            .phone { transform: none; margin: 0 auto; }
-            .promotion-content { grid-template-columns: 1fr; }
+        /* ---------- Closing call ---------- */
+        .closer { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: linear-gradient(160deg, #0B3B2B, var(--deep)); padding: clamp(3.5rem, 8vw, 6.5rem) 0; }
+        .closer-inner { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: var(--spacing-2xl); align-items: center; }
+        .closer h2 { color: #fff; font-size: clamp(2.2rem, 4.8vw, 3.9rem); line-height: 1.05; letter-spacing: -.032em; max-width: 12em; margin-bottom: var(--spacing-md); text-wrap: balance; }
+        .closer p { color: rgba(255, 255, 255, .84); font-size: 1.125rem; max-width: 28em; margin-bottom: var(--spacing-xl); }
+        .closer .btn-primary { background: var(--gold); color: var(--ink); box-shadow: 0 .35rem 0 #C98414, 0 1rem 2rem rgba(0, 0, 0, .25); }
+        .closer .btn-primary:hover:not(:disabled) { background: #FFC262; color: var(--ink); transform: translateY(-2px); }
+        .heap { position: relative; display: grid; place-items: center; min-height: 340px; }
+        .heap::before { content: ''; position: absolute; width: min(100%, 360px); aspect-ratio: 1; border-radius: 50%; background: var(--gold); }
+        .heap svg { position: absolute; width: 112px; height: 112px; filter: drop-shadow(0 10px 0 rgba(0, 0, 0, .14)); }
+        .heap .h1 { transform: translate(-96px, -76px) rotate(-10deg); } .heap .h2 { transform: translate(92px, -92px) rotate(8deg); }
+        .heap .h3 { width: 132px; height: 132px; transform: rotate(-3deg); } .heap .h4 { transform: translate(-100px, 84px) rotate(9deg); } .heap .h5 { transform: translate(98px, 80px) rotate(-7deg); }
+
+        @media (max-width: 1000px) {
+            .hero-inner, .tour-inner, .closer-inner { grid-template-columns: 1fr; }
+            .stage { margin-top: var(--spacing-lg); }
+            .shelf { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: .5rem; margin: 0 calc(var(--spacing-xl) * -1); padding-inline: var(--spacing-xl); scrollbar-width: none; }
+            .shelf::-webkit-scrollbar { display: none; }
+            .shelf-tile { flex: 0 0 104px; scroll-snap-align: start; }
+            .shelf-tile:first-child .shelf-art, .shelf-tile:last-child .shelf-art { border-radius: 0; }
+            .steps { grid-template-columns: 1fr; max-width: 34rem; }
+            .t7, .t5, .t4, .t6 { grid-column: span 6; }
+            .heap { min-height: 300px; }
         }
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.1rem; }
-            .hero-stats { gap: var(--spacing-xl); }
-            .features-grid { grid-template-columns: 1fr; }
-            .deals-grid { grid-template-columns: 1fr 1fr; }
-            .promotion-buttons { flex-direction: column; }
-            .promotion-buttons .btn { width: 100%; }
+        @media (max-width: 640px) {
+            .laptop, .p3d { display: none; }
+            .stage { display: grid; place-items: center; height: auto; max-width: none; margin-inline: 0; }
+            .stage::before, .stage::after { left: 50%; top: 52%; }
+            .stage::before { width: calc(var(--pw) * 1.5); }
+            .stage::after { width: calc(var(--pw) * 1.5 + 34px); }
+            .phone { position: relative; right: auto; bottom: auto; }
+            .f1 { left: 0; bottom: 30%; }
         }
-        @media (max-width: 480px) {
-            .deals-grid { grid-template-columns: 1fr; }
+        @media (max-width: 720px) {
+            .hero { padding-left: var(--spacing-md); padding-right: var(--spacing-md); }
+            .wrap, .section-container { padding-left: var(--spacing-md); padding-right: var(--spacing-md); }
+            .shelf { margin: 0 calc(var(--spacing-md) * -1); padding-inline: var(--spacing-md); }
+            .bento { grid-template-columns: 1fr; }
+            .t7, .t5, .t4, .t6 { grid-column: auto; }
+            .t-pay { padding-right: var(--spacing-xl); padding-bottom: 0; }
+            .t-pay .pay-demo { position: static; width: auto; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xl); }
+            .earn-grid { grid-template-columns: 1fr; }
+            .deals-cta { flex-direction: column; align-items: flex-start; }
+            .stage { padding: 2.6rem 0 2.2rem; }
+            .f1 { left: 0; bottom: 30%; } .f2 { right: 0; top: 0; } .f3 { right: 0; bottom: 0; }
+            .fl { gap: .5rem; max-width: 11.5rem; padding: .45rem .75rem .45rem .45rem; }
+            .fl small { display: none; }
+            .fl .ic { width: 1.9rem; height: 1.9rem; font-size: .85rem; }
+            .hero-buttons .btn { flex: 1 1 100%; justify-content: center; }
+        }
+        @media (max-width: 400px) {
+            .stage { --pw: 232px; }
+            .earn-card { grid-template-columns: 1fr; }
+            .heap .h1 { transform: translate(-74px, -76px) rotate(-10deg); } .heap .h2 { transform: translate(72px, -92px) rotate(8deg); }
+            .heap .h4 { transform: translate(-78px, 84px) rotate(9deg); } .heap .h5 { transform: translate(76px, 80px) rotate(-7deg); }
+            .heap svg { width: 96px; height: 96px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .shelf-art svg, .store-card { transition: none; }
+            .o-float { animation: none; }
         }
     </style>
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
@@ -175,6 +479,40 @@
     <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
+    <!-- Marketplace line-icon pattern (cart, tag, parcel, phone, shop...), defined once and painted by every
+         .cloth layer below. Transparent strokes only. Icons: Lucide (ISC licence, https://lucide.dev). The same tile
+         ships as assets/brand/svg/market-line-tile.svg for the CSS-mask uses on the auth pages and the loader. -->
+    <svg class="defs-only" aria-hidden="true" focusable="false">
+        <defs>
+            <g id="mi">
+<g transform="translate(36 36) rotate(-10) scale(1.25) translate(-12 -12)"><path d="m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18"/> <path d="M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25"/> <circle cx="18" cy="20" r="2"/> <circle cx="8" cy="20" r="2"/></g>
+<g transform="translate(108 36) rotate(8) scale(1.25) translate(-12 -12)"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/> <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></g>
+<g transform="translate(180 36) rotate(-6) scale(1.25) translate(-12 -12)"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/> <path d="M12 22V12"/> <polyline points="3.29 7 12 12 20.71 7"/> <path d="m7.5 4.27 9 5.15"/></g>
+<g transform="translate(252 36) rotate(10) scale(1.25) translate(-12 -12)"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/> <path d="M12 18h.01"/></g>
+<g transform="translate(0 108) rotate(6) scale(1.25) translate(-12 -12)"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/> <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/> <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></g>
+<g transform="translate(288 108) rotate(6) scale(1.25) translate(-12 -12)"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/> <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/> <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></g>
+<g transform="translate(72 108) rotate(-9) scale(1.25) translate(-12 -12)"><path d="M12 17V7"/> <path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/> <path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/></g>
+<g transform="translate(144 108) rotate(12) scale(1.25) translate(-12 -12)"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></g>
+<g transform="translate(216 108) rotate(-5) scale(1.25) translate(-12 -12)"><path d="M16 10a4 4 0 0 1-8 0"/> <path d="M3.103 6.034h17.794"/> <path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></g>
+<g transform="translate(36 180) rotate(-8) scale(1.25) translate(-12 -12)"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/> <path d="M15 18H9"/> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/> <circle cx="17" cy="18" r="2"/> <circle cx="7" cy="18" r="2"/></g>
+<g transform="translate(108 180) rotate(5) scale(1.25) translate(-12 -12)"><rect width="20" height="14" x="2" y="5" rx="2"/> <line x1="2" x2="22" y1="10" y2="10"/> <path d="M6 14h2"/></g>
+<g transform="translate(180 180) rotate(-12) scale(1.25) translate(-12 -12)"><path d="M12 7v14"/> <path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/> <path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"/> <rect x="3" y="7" width="18" height="4" rx="1"/></g>
+<g transform="translate(252 180) rotate(8) scale(1.25) translate(-12 -12)"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/> <circle cx="12" cy="10" r="3"/></g>
+<g transform="translate(0 252) rotate(9) scale(1.25) translate(-12 -12)"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></g>
+<g transform="translate(288 252) rotate(9) scale(1.25) translate(-12 -12)"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></g>
+<g transform="translate(72 252) rotate(-6) scale(1.25) translate(-12 -12)"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></g>
+<g transform="translate(144 252) rotate(7) scale(1.25) translate(-12 -12)"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/> <path d="m15 9-6 6"/> <path d="M9 9h.01"/> <path d="M15 15h.01"/></g>
+<g transform="translate(216 252) rotate(-10) scale(1.25) translate(-12 -12)"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></g>
+            </g>
+            <pattern id="kt" width="288" height="288" patternUnits="userSpaceOnUse">
+                <g fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><use href="#mi"/></g>
+            </pattern>
+            <pattern id="kt-lt" width="288" height="288" patternUnits="userSpaceOnUse" patternTransform="scale(.62)">
+                <g fill="none" stroke="#0B3B2B" stroke-opacity=".13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#mi"/></g>
+            </pattern>
+        </defs>
+    </svg>
+
     <nav class="navbar">
         <a href="/" class="navbar-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
         <ul class="navbar-menu">
@@ -184,98 +522,268 @@
         </ul>
     </nav>
 
-    <section class="hero">
+    <main>
+    <section class="hero" aria-labelledby="heroTitle">
+        <svg class="cloth" aria-hidden="true" focusable="false"><rect width="100%" height="100%" fill="url(#kt)"/></svg>
         <div class="hero-inner">
             <div>
-                <div class="hero-brand">
-                    <img class="hero-brand-icon" src="assets/brand/png/icon/icon-512.png" alt="NextaStore app icon" width="76" height="76">
-                    <img class="hero-brand-wordmark" src="assets/brand/png/wordmark/wordmark-white.png" alt="NextaStore">
-                </div>
-                <div class="eyebrow hero-eyebrow"><i class="fas fa-bolt"></i> Built for East African sellers</div>
-                <h1>Your store, live in minutes — not weeks.</h1>
-                <p class="lede">Set up a mobile-first storefront, accept MTN &amp; Airtel Mobile Money, and manage orders from one simple dashboard. No developers, no code.</p>
+                <h1 id="heroTitle">Open your <span class="chip" aria-hidden="true"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></span> shop online in <span class="chip alt" aria-hidden="true"><svg class="nx-cat-icon"><use href="#c-phones"/></svg></span> minutes, not weeks.</h1>
+                <p class="lede">Set up a mobile-first storefront, take MTN and Airtel Mobile Money, and manage every order from one simple dashboard. No developers. No code.</p>
                 <div class="hero-buttons">
-                    <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
-                    <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-play"></i> See How It Works</a>
+                    <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get started free</a>
+                    <a href="#tour" class="btn btn-outline btn-lg"><i class="fas fa-play"></i> Watch the tour</a>
                 </div>
-                <div class="hero-stats">
-                    <div><strong>Mobile-first</strong><span>Built for shoppers on any device</span></div>
-                    <div><strong>Local</strong><span>Made for East African sellers</span></div>
-                    <div><strong>Simple</strong><span>Store, products and orders in one place</span></div>
+                <div class="pay-row">
+                    <span>Customers pay with</span>
+                    <span class="pay-pill"><i class="fas fa-mobile-screen-button"></i> MTN Mobile Money</span>
+                    <span class="pay-pill"><i class="fas fa-mobile-screen-button"></i> Airtel Money</span>
+                    <span class="pay-pill"><i class="fas fa-credit-card"></i> Card</span>
                 </div>
             </div>
-            <div class="hero-mock">
-                <div class="phone">
-                    <div class="phone-screen">
-                        <div class="phone-bar"><div class="dot">A</div><span>Amina's Crafts</span></div>
-                        <div class="phone-banner"></div>
-                        <div class="phone-products">
-                            <div class="phone-card"><div class="thumb a"></div><p>Beaded Necklace</p><span>UGX 12,000</span></div>
-                            <div class="phone-card"><div class="thumb b"></div><p>Kanzu Wear</p><span>UGX 45,000</span></div>
-                            <div class="phone-card"><div class="thumb c"></div><p>Coffee Beans</p><span>UGX 18,000</span></div>
-                            <div class="phone-card"><div class="thumb d"></div><p>Print Dress</p><span>UGX 55,000</span></div>
+
+            <div class="stage" id="heroStage" role="img" aria-label="A phone showing a shop called Amina's Crafts. Products appear, a customer pays with Mobile Money, and the seller gets an order notification.">
+                <div class="laptop" aria-hidden="true">
+                    <div class="lt-lid">
+                        <span class="lt-cam"></span>
+                        <div class="lt-screen">
+                            <div class="lt-side"><i class="lt-logo"></i><i class="on fas fa-house"></i><i class="fas fa-bag-shopping"></i><i class="fas fa-box"></i><i class="fas fa-chart-simple"></i><i class="fas fa-gear"></i></div>
+                            <div class="lt-main">
+                                <div class="lt-top"><div><b>Good morning, Amina</b><small>Amina's Crafts &middot; Today</small></div><span class="lt-live">Live</span></div>
+                                <div class="lt-kpis">
+                                    <div class="lt-kpi"><small>Today's sales</small><b><span class="v1">UGX 200,000</span><span class="v2">UGX 245,000</span></b><em>+12%</em></div>
+                                    <div class="lt-kpi"><small>Orders</small><b><span class="v1">4</span><span class="v2">5</span></b><em>+1 new</em></div>
+                                    <div class="lt-kpi"><small>Visitors</small><b>126</b><em>+8%</em></div>
+                                </div>
+                                <div class="lt-grid">
+                                    <div class="lt-card"><small>Sales this week</small><div class="lt-bars"><i style="--h:42%"></i><i style="--h:58%"></i><i style="--h:36%"></i><i style="--h:66%"></i><i style="--h:50%"></i><i style="--h:72%"></i><i class="today"></i></div></div>
+                                    <div class="lt-card"><small>Recent orders</small>
+                                        <ul class="lt-list">
+                                            <li class="lt-new"><span class="lt-row"><b>Kanzu Wear</b><span class="lt-ok">Paid</span><em>UGX 45,000</em></span></li>
+                                            <li><span class="lt-row"><b>Beaded Necklace</b><span class="lt-ok">Paid</span><em>UGX 12,000</em></span></li>
+                                            <li><span class="lt-row"><b>Coffee Beans</b><span class="lt-ok">Paid</span><em>UGX 36,000</em></span></li>
+                                            <li><span class="lt-row"><b>Leather Sandals</b><span class="lt-wait">Pending</span><em>UGX 55,000</em></span></li>
+                                            <li><span class="lt-row"><b>Woven Basket</b><span class="lt-ok">Paid</span><em>UGX 28,000</em></span></li>
+                                            <li><span class="lt-row"><b>Bark Cloth Bag</b><span class="lt-ok">Paid</span><em>UGX 85,000</em></span></li>
+                                            <li><span class="lt-row"><b>Kawa Coffee 500g</b><span class="lt-ok">Paid</span><em>UGX 18,000</em></span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lt-base"><span></span></div>
+                </div>
+                <img class="p3d p-tag o-float" src="assets/brand/3d/tag.svg" alt="" width="240" height="240" decoding="async">
+                <img class="p3d p-coins" src="assets/brand/3d/coins.svg" alt="" width="240" height="240" decoding="async">
+                <div class="phone" aria-hidden="true">
+                    <div class="ph">
+                        <div class="ph-notch"></div>
+                        <div class="ph-status"><span>9:41</span><span><i class="fas fa-signal"></i><i class="fas fa-battery-three-quarters"></i></span></div>
+                        <div class="ph-banner rv r1"></div>
+                        <div class="ph-id rv r1">
+                            <div class="ph-av">A</div>
+                            <div><b>Amina's Crafts</b><small><i class="fas fa-location-dot"></i> Kampala</small></div>
+                            <div class="ph-cart"><i class="fas fa-bag-shopping"></i><em>1</em></div>
+                        </div>
+                        <div class="ph-grid">
+                            <div class="ph-card rv r2" style="--i:0"><div class="th a"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></div><p>Beaded Necklace</p><span>UGX 12,000</span></div>
+                            <div class="ph-card tap rv r2" style="--i:1"><div class="th b"><svg class="nx-cat-icon"><use href="#c-clothing"/></svg></div><p>Kanzu Wear</p><span>UGX 45,000</span></div>
+                            <div class="ph-card rv r2" style="--i:2"><div class="th c"><svg class="nx-cat-icon"><use href="#c-food"/></svg></div><p>Coffee Beans</p><span>UGX 18,000</span></div>
+                            <div class="ph-card rv r2" style="--i:3"><div class="th d"><svg class="nx-cat-icon"><use href="#c-shoes"/></svg></div><p>Leather Sandals</p><span>UGX 55,000</span></div>
+                        </div>
+                        <div class="ph-sheet">
+                            <div class="pay-a">
+                                <h4>Pay with</h4>
+                                <div class="pay-opt sel"><span class="dot" style="background:#FFCB05"></span> MTN Mobile Money</div>
+                                <div class="pay-opt"><span class="dot" style="background:#E4002B"></span> Airtel Money</div>
+                                <div class="pay-btn">Pay UGX 45,000</div>
+                            </div>
+                            <div class="pay-b"><div class="ok"><i class="fas fa-check"></i></div><b>Payment received</b><small>UGX 45,000 &middot; MTN Mobile Money</small></div>
                         </div>
                     </div>
                 </div>
+                <div class="fl f1" aria-hidden="true"><span class="ic"><i class="fab fa-whatsapp"></i></span><span><b>Shared on WhatsApp</b><small>nextastores.com/amina-crafts</small></span></div>
+                <div class="fl f2" aria-hidden="true"><span class="ic"><i class="fas fa-bag-shopping"></i></span><span><b>New order</b><small>Kanzu Wear &middot; UGX 45,000</small></span></div>
+                <div class="fl f3" aria-hidden="true"><span class="ic"><i class="fas fa-check"></i></span><span><b>Mobile Money received</b><small>Paid in full</small></span></div>
+            </div>
+            <script>document.getElementById('heroStage').classList.add('anim');</script>
+        </div>
+    </section>
+
+    <section class="block cats" aria-labelledby="catsTitle">
+        <div class="wrap">
+            <div class="block-head">
+                <h2 id="catsTitle">Whatever you sell, there's a shelf for it.</h2>
+                <p>Fashion, food, phones, farm produce, repairs and more. Shoppers browse by category, so the right people find your products.</p>
+            </div>
+            <div class="shelf">
+                <a class="shelf-tile" href="/marketplace?category=clothing"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-clothing"/></svg></span><span class="shelf-label">Clothing</span></a>
+                <a class="shelf-tile" href="/marketplace?category=food"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-food"/></svg></span><span class="shelf-label">Food</span></a>
+                <a class="shelf-tile" href="/marketplace?category=phones"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-phones"/></svg></span><span class="shelf-label">Phones</span></a>
+                <a class="shelf-tile" href="/marketplace?category=crafts"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-crafts"/></svg></span><span class="shelf-label">Crafts</span></a>
+                <a class="shelf-tile" href="/marketplace?category=shoes"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-shoes"/></svg></span><span class="shelf-label">Shoes</span></a>
+                <a class="shelf-tile" href="/marketplace?category=beauty"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-beauty"/></svg></span><span class="shelf-label">Beauty</span></a>
+                <a class="shelf-tile" href="/marketplace?category=home"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-home"/></svg></span><span class="shelf-label">Home</span></a>
+                <a class="shelf-tile" href="/marketplace?category=farm"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-farm"/></svg></span><span class="shelf-label">Farm</span></a>
+                <a class="shelf-tile all" href="/marketplace"><span class="shelf-art"><svg class="nx-cat-icon" aria-hidden="true"><use href="#c-all"/></svg></span><span class="shelf-label">Browse all</span></a>
             </div>
         </div>
     </section>
 
-    <section class="features" id="features">
-        <div class="section-head">
-            <div class="eyebrow"><i class="fas fa-layer-group"></i> Everything you need</div>
-            <h2>One platform, from first sale to scale</h2>
-        </div>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="icon-tile tone-primary"><i class="fas fa-wand-magic-sparkles"></i></div>
-                <h3>Easy Store Builder</h3>
-                <p>Pick a theme, add your products, and publish — no technical knowledge required.</p>
+    <section class="block how" id="how" aria-labelledby="howTitle">
+        <div class="wrap">
+            <div class="block-head">
+                <h2 id="howTitle">From your stall to a shop link in three steps.</h2>
+                <p>No developers, no code, no waiting for anyone.</p>
             </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-secondary"><i class="fas fa-mobile-screen"></i></div>
-                <h3>Mobile Optimized</h3>
-                <p>Every storefront is designed mobile-first, since that's how most of your customers will shop.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-coral"><i class="fas fa-credit-card"></i></div>
-                <h3>Local Payments</h3>
-                <p>Accept MTN Mobile Money, Airtel Money, and card payments without extra setup.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-primary"><i class="fas fa-chart-line"></i></div>
-                <h3>Real Analytics</h3>
-                <p>Track orders, revenue, and your best-selling products from a single dashboard.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-secondary"><i class="fas fa-share-nodes"></i></div>
-                <h3>Share Your Store</h3>
-                <p>Easily share your store link via WhatsApp, Facebook, and Twitter to reach more customers.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-coral"><i class="fas fa-headset"></i></div>
-                <h3>24/7 Support</h3>
-                <p>Reach a real person whenever something's not working or you're not sure what to do next.</p>
-            </div>
-            <div class="feature-card">
-                <div class="icon-tile tone-primary"><i class="fas fa-shield-halved"></i></div>
-                <h3>Secure &amp; Reliable</h3>
-                <p>Your store and customer data are protected with enterprise-grade security.</p>
+            <div class="steps">
+                <article class="step">
+                    <div class="scene" aria-hidden="true">
+                        <svg class="cloth-mini"><rect width="100%" height="100%" fill="url(#kt-lt)"/></svg>
+                        <span class="step-no">1</span>
+                        <div class="ui">
+                            <label>Store name</label>
+                            <div class="field on">Amina's Crafts</div>
+                            <label>Where are you?</label>
+                            <div class="field"><i class="fas fa-location-dot"></i>Kampala, Central</div>
+                            <div class="btn-fake">Create my store</div>
+                        </div>
+                        <svg class="sticker s-a nx-cat-icon"><use href="#c-crafts"/></svg>
+                    </div>
+                    <div>
+                        <h3>Create your store</h3>
+                        <p>Pick a name, add your location and say what you sell. Your shop address is ready as soon as you save.</p>
+                    </div>
+                </article>
+                <article class="step">
+                    <div class="scene g" aria-hidden="true">
+                        <svg class="cloth-mini"><rect width="100%" height="100%" fill="url(#kt-lt)"/></svg>
+                        <span class="step-no">2</span>
+                        <div class="ghost-card"></div>
+                        <div class="ui prod">
+                            <div class="ph-img"><svg class="nx-cat-icon"><use href="#c-clothing"/></svg></div>
+                            <b>Kanzu Wear</b>
+                            <span>UGX 45,000</span><span class="stock">12 in stock</span>
+                        </div>
+                        <svg class="sticker s-b nx-cat-icon"><use href="#c-food"/></svg>
+                    </div>
+                    <div>
+                        <h3>Add your products</h3>
+                        <p>Upload a photo, set the price and stock. Add as many products as you like, straight from your phone.</p>
+                    </div>
+                </article>
+                <article class="step">
+                    <div class="scene p" aria-hidden="true">
+                        <svg class="cloth-mini"><rect width="100%" height="100%" fill="url(#kt-lt)"/></svg>
+                        <span class="step-no">3</span>
+                        <div class="chat">
+                            <div class="bub me">My shop is open. Come and see:
+                                <div class="lp"><span class="sw"><i class="fas fa-store"></i></span><span><b>Amina's Crafts</b><small>nextastores.com/amina-crafts</small></span></div>
+                            </div>
+                            <div class="bub you">I'll take the kanzu.</div>
+                            <div class="paid"><i class="fas fa-circle-check"></i> UGX 45,000 received</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Share it and get paid</h3>
+                        <p>Send your link on WhatsApp. Customers order and pay with Mobile Money, and every order lands in your dashboard.</p>
+                    </div>
+                </article>
             </div>
         </div>
     </section>
 
-    <section class="cta-section">
-        <h2>Ready to start selling?</h2>
-        <p class="lede" style="margin: 0 auto var(--spacing-xl);">Join thousands of entrepreneurs already trading on NextaStore.</p>
-        <a href="/signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Create Your Store Now</a>
+    <section class="tour" id="tour" aria-labelledby="tourTitle">
+        <svg class="cloth" aria-hidden="true" focusable="false"><rect width="100%" height="100%" fill="url(#kt)"/></svg>
+        <div class="wrap tour-inner">
+            <div>
+                <h2 id="tourTitle">Watch a shop go from empty to first sale.</h2>
+                <p>A 26-second walk-through: set up the store, add products, share the link, and get paid with Mobile Money.</p>
+                <ol class="chapters">
+                    <li><button type="button" class="chapter" data-seek="0"><span class="n">1</span> Set up your store</button></li>
+                    <li><button type="button" class="chapter" data-seek="5.6"><span class="n">2</span> Add your products</button></li>
+                    <li><button type="button" class="chapter" data-seek="11.2"><span class="n">3</span> Share it on WhatsApp</button></li>
+                    <li><button type="button" class="chapter" data-seek="16.8"><span class="n">4</span> Get paid with Mobile Money</button></li>
+                </ol>
+            </div>
+            <figure class="tour-frame" id="tourFrame">
+                <video id="tourVideo" muted loop playsinline preload="none" poster="assets/landing/tour-poster.jpg" aria-describedby="tourDesc">
+                    <source src="assets/landing/nextastore-tour.mp4" type="video/mp4">
+                    <source src="assets/landing/nextastore-tour.webm" type="video/webm">
+                </video>
+                <button type="button" class="tour-play" id="tourPlay" aria-label="Play video"><i class="fas fa-play"></i><i class="fas fa-pause"></i></button>
+                <div class="tour-bar" aria-hidden="true"><i id="tourBar"></i></div>
+                <figcaption class="visually-hidden" id="tourDesc">A silent animated walk-through with on-screen captions. A seller names a store and picks a location, adds products with prices, shares the shop link on WhatsApp, and a customer pays with Mobile Money. The seller sees the order and the money arrive.</figcaption>
+            </figure>
+        </div>
     </section>
 
-    <section class="deals-section" id="deals">
+    <section class="block features" id="features" aria-labelledby="featTitle">
+        <div class="wrap">
+            <div class="block-head">
+                <h2 id="featTitle">One platform, from first sale to scale.</h2>
+                <p>The tools a shop needs, in one place and built for the phone in your hand.</p>
+            </div>
+            <div class="bento">
+                <article class="tile bento-dark t7 t-pay">
+                    <div class="icon-tile tone-primary"><i class="fas fa-credit-card"></i></div>
+                    <h3>Local payments</h3>
+                    <p>Accept MTN Mobile Money, Airtel Money, and card payments without extra setup.</p>
+                    <div class="pay-demo" aria-hidden="true">
+                        <div class="mini-opt sel"><span class="dot" style="background:#FFCB05"></span> MTN Mobile Money</div>
+                        <div class="mini-opt"><span class="dot" style="background:#E4002B"></span> Airtel Money</div>
+                        <div class="mini-opt"><i class="fas fa-credit-card"></i> Card</div>
+                        <div class="mini-ok"><i class="fas fa-circle-check"></i> UGX 45,000 received</div>
+                    </div>
+                </article>
+                <article class="tile bento-green t5 t-share">
+                    <div class="icon-tile" style="background:rgba(255,255,255,.2);color:#fff"><i class="fas fa-share-nodes"></i></div>
+                    <h3>Share your store</h3>
+                    <p>Easily share your store link via WhatsApp, Facebook, and Twitter to reach more customers.</p>
+                    <div class="link-pill"><span>nextastores.com/amina-crafts</span><i class="fas fa-copy"></i></div>
+                    <div class="share-row" aria-hidden="true"><span><i class="fab fa-whatsapp"></i></span><span><i class="fab fa-facebook-f"></i></span><span><i class="fab fa-x-twitter"></i></span></div>
+                </article>
+                <article class="tile t4">
+                    <div class="icon-tile tone-primary"><i class="fas fa-wand-magic-sparkles"></i></div>
+                    <h3>Easy store builder</h3>
+                    <p>Pick a theme, add your products, and publish. No technical knowledge required.</p>
+                    <div class="swatches" aria-hidden="true"><div class="swatch a">Fresh</div><div class="swatch b">Warm</div><div class="swatch c">Calm</div></div>
+                </article>
+                <article class="tile t4">
+                    <div class="icon-tile tone-secondary"><i class="fas fa-chart-line"></i></div>
+                    <h3>Real analytics</h3>
+                    <p>Track orders, revenue, and your best-selling products from a single dashboard.</p>
+                    <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                </article>
+                <article class="tile bento-gold t4">
+                    <div class="icon-tile" style="background:#fff;color:var(--ink)"><i class="fas fa-mobile-screen"></i></div>
+                    <h3>Mobile optimized</h3>
+                    <p>Every storefront is designed mobile-first, since that's how most of your customers will shop.</p>
+                    <div class="devices" aria-hidden="true"><i class="fas fa-mobile-screen"></i><i class="fas fa-tablet-screen-button"></i><i class="fas fa-laptop"></i></div>
+                </article>
+                <article class="tile bento-mint t6">
+                    <div class="icon-tile" style="background:#fff;color:var(--primary-dark)"><i class="fas fa-shield-halved"></i></div>
+                    <h3>Secure and reliable</h3>
+                    <p>Your store and customer data are protected with enterprise-grade security.</p>
+                    <ul class="checks"><li><i class="fas fa-circle-check"></i> Protected sign-in</li><li><i class="fas fa-circle-check"></i> Your customers' details stay private</li><li><i class="fas fa-circle-check"></i> Built to stay up when shoppers show up</li></ul>
+                </article>
+                <article class="tile t6">
+                    <div class="icon-tile tone-coral"><i class="fas fa-headset"></i></div>
+                    <h3>24/7 support</h3>
+                    <p>Reach a real person whenever something's not working or you're not sure what to do next.</p>
+                    <div class="talk" aria-hidden="true"><span>My payment is still pending.</span><span>We're checking it now.</span></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="deals-section" id="deals" aria-labelledby="dealsTitle">
         <div class="section-container">
             <div class="deals-head">
-                <h2><i class="fas fa-fire" style="color: var(--coral);"></i> Featured Stores</h2>
-                <p>Discover amazing stores from sellers across the marketplace</p>
+                <div>
+                    <h2 id="dealsTitle">Featured stores</h2>
+                    <p>Shops from sellers across the marketplace.</p>
+                </div>
                 <a href="/stores" class="btn-link">View all stores</a>
             </div>
             <!-- Loading State -->
@@ -335,35 +843,57 @@
                 </div>
             </div>
             <div class="deals-cta">
-                <p>Explore our full marketplace with hundreds of stores and thousands of products</p>
-                <a href="/marketplace" class="btn btn-primary"><i class="fas fa-store"></i> Visit Marketplace</a>
+                <p>Browse every store and product on the marketplace.</p>
+                <a href="/marketplace" class="btn btn-primary"><i class="fas fa-store"></i> Visit marketplace</a>
             </div>
         </div>
     </section>
 
-    <section class="promotion-section">
-        <div class="promotion-content">
-            <div class="promotion-text">
-                <h2>Why sellers choose NextaStore</h2>
-                <ul class="promotion-features">
-                    <li><i class="fas fa-circle-check"></i> <strong>Easy setup</strong> — launch your store in minutes</li>
-                    <li><i class="fas fa-circle-check"></i> <strong>Local payments</strong> — MTN MoMo &amp; Airtel Money</li>
-                    <li><i class="fas fa-circle-check"></i> <strong>Mobile first</strong> — optimized for African markets</li>
-                    <li><i class="fas fa-circle-check"></i> <strong>24/7 support</strong> — dedicated help whenever you need it</li>
-                    <li><i class="fas fa-circle-check"></i> <strong>Secure</strong> — enterprise-grade protection</li>
-                </ul>
-                <div class="promotion-buttons">
-                    <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get Started Free</a>
-                    <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-circle-info"></i> Learn More</a>
-                </div>
+    <section class="block earn" aria-labelledby="earnTitle">
+        <div class="wrap">
+            <div class="block-head">
+                <h2 id="earnTitle">Don't have a shop? You can still earn.</h2>
+                <p>Help other sellers get online and earn when they do.</p>
             </div>
-            <div class="promotion-image">
-                <div class="promo-card"><i class="fas fa-chart-line"></i><div><h3>Track your growth</h3><p>Monitor sales, visitors, and conversions from one dashboard.</p></div></div>
-                <div class="promo-card"><i class="fas fa-mobile-screen-button"></i><div><h3>Mobile optimized</h3><p>Your store looks great on any device, phone to desktop.</p></div></div>
-                <div class="promo-card"><i class="fas fa-money-bill-wave"></i><div><h3>Easy payments</h3><p>Accept Mobile Money and card payments seamlessly.</p></div></div>
+            <div class="earn-grid">
+                <article class="earn-card">
+                    <img src="assets/growth-brand/png/mark-circle-1024.png" alt="" width="92" height="92" loading="lazy">
+                    <div>
+                        <h3>NextaStore Circle</h3>
+                        <p>Add a store to your circle. Earn when it pays for its Seller Pass.</p>
+                        <a href="/about-circle" class="btn btn-outline btn-sm">About Circle</a>
+                    </div>
+                </article>
+                <article class="earn-card">
+                    <img src="assets/growth-brand/png/mark-crew-1024.png" alt="" width="92" height="92" loading="lazy">
+                    <div>
+                        <h3>NextaStore Crew</h3>
+                        <p>Join the field team: find stores, help them launch, earn when they pay.</p>
+                        <a href="/about-crew" class="btn btn-outline btn-sm">About Crew</a>
+                    </div>
+                </article>
             </div>
         </div>
     </section>
+
+    <section class="closer" aria-labelledby="closerTitle">
+        <svg class="cloth" aria-hidden="true" focusable="false"><rect width="100%" height="100%" fill="url(#kt)"/></svg>
+        <div class="wrap closer-inner">
+            <div>
+                <h2 id="closerTitle">Your customers are on their phones. Open where they are.</h2>
+                <p>Create your store, add a product and share the link, all from your phone.</p>
+                <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Create your store free</a>
+            </div>
+            <div class="heap" aria-hidden="true">
+                <svg class="h1 nx-cat-icon"><use href="#c-food"/></svg>
+                <svg class="h2 nx-cat-icon"><use href="#c-shoes"/></svg>
+                <svg class="h3 nx-cat-icon"><use href="#c-crafts"/></svg>
+                <svg class="h4 nx-cat-icon"><use href="#c-clothing"/></svg>
+                <svg class="h5 nx-cat-icon"><use href="#c-phones"/></svg>
+            </div>
+        </div>
+    </section>
+    </main>
 
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
@@ -372,6 +902,8 @@
             <a href="/marketplace">Marketplace</a>
             <a href="/signup" data-auth-aware-link>Create account</a>
             <a href="/marketplace">Shop</a>
+            <a href="/about-circle">Earn with NextaStore</a>
+            <a href="/about-crew">Join the Crew</a>
             <a href="https://nextawillstechnologies.com" target="_blank">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank">Nextawills Technologies</a></p>
@@ -379,9 +911,87 @@
         <a href="/terms" class="footer-safety-link">Terms</a>
         <a href="/privacy" class="footer-safety-link">Privacy</a></footer>
 
+    <script src="js/growth-ref.js"></script>
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/push.js"></script><script src="js/push-prompt.js"></script><script src="js/ui-overlays.js"></script><script src="js/presence.js"></script>
     <script src="js/store-banner.js"></script>
+    <script src="js/category-sprite.js"></script><script src="js/categories.js"></script>
+    <script>
+        /* Hero phone: a looping story told with classes. The stage starts in its finished state (no JS, or
+           reduced motion, shows that); the script adds .anim, then .s1 ... .s6 in order, and loops. */
+        (function () {
+            var stage = document.getElementById('heroStage');
+            if (!stage) return;
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) { stage.classList.remove('anim'); return; }
+            var steps = [[350, 's1'], [1300, 's2'], [3600, 's3'], [5300, 's4'], [7500, 's5'], [8800, 's6']];
+            var LOOP = 13400, timers = [], visible = true;
+            function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+            function clear() { timers.forEach(clearTimeout); timers = []; }
+            function play() {
+                clear();
+                stage.classList.remove('reset', 's1', 's2', 's3', 's4', 's5', 's6');
+                steps.forEach(function (s) { later(function () { stage.classList.add(s[1]); }, s[0]); });
+                later(function () {
+                    stage.classList.add('reset');
+                    stage.classList.remove('s1', 's2', 's3', 's4', 's5', 's6');
+                }, LOOP - 900);
+                later(play, LOOP);
+            }
+            function sync() { if (visible && !document.hidden) play(); else clear(); }
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; sync(); }, { threshold: 0.15 }).observe(stage);
+            } else { sync(); }
+            document.addEventListener('visibilitychange', sync);
+        })();
+
+        /* Tour video: plays while it is on screen, pauses when it is not, and the chapter buttons seek. */
+        (function () {
+            var v = document.getElementById('tourVideo');
+            if (!v) return;
+            var frame = document.getElementById('tourFrame'), btn = document.getElementById('tourPlay'), bar = document.getElementById('tourBar');
+            var chapters = [].slice.call(document.querySelectorAll('.chapter'));
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var saveData = navigator.connection && navigator.connection.saveData;
+            var userPaused = reduce || !!saveData;
+            var section = document.getElementById('tour');
+            function markChapter(t) {
+                var cur = 0;
+                chapters.forEach(function (c, i) { if (parseFloat(c.dataset.seek) <= t + 0.05) cur = i; });
+                chapters.forEach(function (c, i) { c.setAttribute('aria-current', i === cur ? 'true' : 'false'); });
+            }
+            function state() {
+                frame.classList.toggle('is-playing', !v.paused);
+                btn.setAttribute('aria-label', v.paused ? 'Play video' : 'Pause video');
+            }
+            function start() { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+            markChapter(0);
+            v.addEventListener('play', state);
+            v.addEventListener('pause', state);
+            v.addEventListener('timeupdate', function () {
+                bar.style.transform = 'scaleX(' + (v.duration ? v.currentTime / v.duration : 0) + ')';
+                markChapter(v.currentTime);
+            });
+            btn.addEventListener('click', function () {
+                if (v.paused) { userPaused = false; start(); } else { userPaused = true; v.pause(); }
+            });
+            chapters.forEach(function (c) {
+                c.addEventListener('click', function () {
+                    if (section.classList.contains('no-video')) return;
+                    userPaused = false;
+                    v.currentTime = parseFloat(c.dataset.seek);
+                    start();
+                });
+            });
+            var srcs = v.querySelectorAll('source');   /* only the last source's error means nothing could play */
+            if (srcs.length) srcs[srcs.length - 1].addEventListener('error', function () { section.classList.add('no-video'); });
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(function (entries) {
+                    if (entries[0].isIntersecting) { if (!userPaused) start(); } else { v.pause(); }
+                }, { threshold: 0.45 }).observe(frame);
+            }
+        })();
+    </script>
     <script>
         async function loadFeaturedStores() {
             const storesGrid = document.getElementById('featuredStoresGrid');

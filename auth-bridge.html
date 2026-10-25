@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="/js/clean-url.js"></script>
+<title>Signing you in…</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<style>body{font:15px/1.5 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;color:#0B3B2B;background:#F4FBF8}</style>
+<!--NEXTA_HOSTS-->
+</head>
+<body><p id="m">One moment…</p>
+<noscript>This page needs JavaScript to sign you in. <a href="/login">Sign in on NextaStore</a>.</noscript>
+<script>
+/*
+ * The session hand-off, main-site side. Lives at /auth-bridge on the MAIN host only.
+ * It only ever talks to the two origins the SERVER wrote into window.NEXTA_HOSTS (never to anything taken
+ * from the address), so it cannot be used to send a sign-in to a stranger's site.
+ *   ?to=<url>                 redirect mode: send the visitor back to <url>#nxs=<session> (or on to /login)
+ *   ?mode=check&parent=<origin>   framed mode: tell the parent page whether this is still the same session
+ */
+(function () {
+    'use strict';
+    var cfg = window.NEXTA_HOSTS || {};
+    var allowed = [cfg.circle, cfg.crew].filter(Boolean).map(function (o) { return String(o).replace(/\/+$/, ''); });
+    var K = ['nextastore_token', 'nextastore_user', 'nextastore_remember'];
+    var q = new URLSearchParams(location.search);
+    function home() { location.replace('/'); }
+    function b64uDecode(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); }
+    function b64uEncode(s) { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+    function tokenOk(t) {
+        if (!t) return false; var p = t.split('.'); if (p.length !== 3) return false;
+        try { var exp = JSON.parse(b64uDecode(p[1])).exp; return !exp || exp * 1000 > Date.now() + 10000; } catch (e) { return false; }
+    }
+    function hash(t) { var h = 5381; for (var i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0; return h.toString(16); }
+    var token = null, user = null, remember = null;
+    try { token = localStorage.getItem(K[0]); user = localStorage.getItem(K[1]); remember = localStorage.getItem(K[2]); } catch (e) { /* ignore */ }
+    if (!tokenOk(token)) token = null;
+
+    if (q.get('mode') === 'check') {
+        var parent = String(q.get('parent') || '').replace(/\/+$/, '');
+        if (allowed.indexOf(parent) < 0 || window.parent === window) return home();
+        window.parent.postMessage({ type: 'nx-session', has: !!token, sig: token ? hash(token) : '' }, parent);   // target origin = that one host, nobody else
+        return;
+    }
+
+    var to; try { to = new URL(q.get('to')); } catch (e) { to = null; }
+    if (!to || allowed.indexOf(to.origin) < 0 || to.username || to.password) return home();
+    if (!token) {
+        // Signed out on the main site too. Someone just landing on a program's home reads about the program first;
+        // the Join button there comes back with ?go=1, which goes on to sign-in.
+        var HS = window.NEXTA_HOSTS || {}, about = to.origin === HS.crew ? '/about-crew' : to.origin === HS.circle ? '/about-circle' : '';
+        if (about && (to.pathname === '/' || to.pathname === '') && to.searchParams.get('go') !== '1') { location.replace(about); return; }
+        location.replace('/login?next=' + encodeURIComponent(to.href)); return;
+    }
+    var payload = b64uEncode(JSON.stringify({ t: token, u: user, r: remember }));
+    location.replace(to.origin + to.pathname + to.search + '#nxs=' + payload);
+})();
+</script>
+</body>
+</html>

@@ -7,8 +7,8 @@ const { BM25, terms } = require('../rag/bm25');
 const { expand, readFacts } = require('../knowledge/factsValues');
 
 const FAQ_PATH = path.join(config.knowledgeDir, 'faq-instant.json');
-const MATCH_THRESHOLD = 6.0;
-const MATCH_MARGIN = 0.65;
+const MATCH_THRESHOLD = 7.5;
+const MATCH_MARGIN = 1.0;
 
 let state = null;
 let stamp = '';
@@ -64,6 +64,8 @@ function match(message, { audience = 'guest' } = {}) {
     const entry = st.entries[best.index];
     return {
         id: entry.id,
+        direct: entry.direct === true,
+        questions: entry.questions,
         answer: expand(entry.answer, readFacts()),
         audience: entry.audience,
         score: best.score,

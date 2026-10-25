@@ -15,7 +15,12 @@ const ADMIN_PERMISSIONS = Object.freeze({
     SUBSCRIPTIONS_REVIEW: 'subscriptions.review',
     SETTINGS_MANAGE: 'settings.manage',
     FOLLOWUPS_MANAGE: 'followups.manage',
-    AUDIT_VIEW: 'audit.view'
+    AUDIT_VIEW: 'audit.view',
+    // NextaStore Circle / Crew (growth program). Keep review and payouts on different people.
+    GROWTH_VIEW: 'growth.view',
+    GROWTH_REVIEW: 'growth.review',
+    GROWTH_PAYOUTS: 'growth.payouts',
+    GROWTH_SETTINGS: 'growth.settings'
 });
 
 // Only HS256 is ever issued (see signSessionToken). Pinning it on verify means a

@@ -30,12 +30,13 @@ body[data-admin-required]{
 .admin-nav{position:sticky;top:calc(var(--a-topbar) + var(--a-s4));display:flex;flex-direction:column;gap:var(--a-s4);max-height:calc(100dvh - var(--a-topbar) - var(--a-s5));overflow-y:auto;padding:var(--a-s3);background:var(--a-surface);border:1px solid var(--a-line);border-radius:var(--a-radius)}
 .admin-nav-group{display:flex;flex-direction:column;gap:2px}
 .admin-nav-label{padding:var(--a-s1) var(--a-s3);font-size:.6875rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--a-muted)}
-.admin-nav button{display:flex;align-items:center;gap:var(--a-s3);width:100%;min-height:44px;padding:0 var(--a-s3);border:0;border-radius:10px;background:transparent;color:var(--a-text);font:inherit;font-size:.875rem;font-weight:600;text-align:left;cursor:pointer;white-space:nowrap}
-.admin-nav button i{width:18px;text-align:center;color:var(--a-muted);font-size:.9rem}
-.admin-nav button:hover{background:var(--a-line-soft)}
+.admin-nav a{text-decoration:none;box-sizing:border-box}
+.admin-nav button,.admin-nav a{display:flex;align-items:center;gap:var(--a-s3);width:100%;min-height:44px;padding:0 var(--a-s3);border:0;border-radius:10px;background:transparent;color:var(--a-text);font:inherit;font-size:.875rem;font-weight:600;text-align:left;cursor:pointer;white-space:nowrap}
+.admin-nav button i,.admin-nav a i{width:18px;text-align:center;color:var(--a-muted);font-size:.9rem}
+.admin-nav button:hover,.admin-nav a:hover{background:var(--a-line-soft)}
 .admin-nav button.is-active{background:var(--a-brand-soft);color:var(--a-brand)}
 .admin-nav button.is-active i{color:var(--a-brand)}
-.admin-nav button:focus-visible{outline:2px solid var(--a-brand);outline-offset:-2px}
+.admin-nav button:focus-visible,.admin-nav a:focus-visible{outline:2px solid var(--a-brand);outline-offset:-2px}
 
 /* ---- Page head + stats --------------------------------------------------- */
 .admin-welcome{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--a-s4);margin-bottom:var(--a-s5)}
@@ -187,7 +188,7 @@ body[data-admin-required]{
   .admin-nav::-webkit-scrollbar{display:none}
   .admin-nav-group{display:contents}
   .admin-nav-label{display:none}
-  .admin-nav button{width:auto;flex:0 0 auto;padding:0 var(--a-s4)}
+  .admin-nav button,.admin-nav a{width:auto;flex:0 0 auto;padding:0 var(--a-s4)}
   .admin-nav button.is-active{background:var(--a-brand);color:#fff}
   .admin-nav button.is-active i{color:#fff}
   .admin-welcome{margin-top:var(--a-s2)}

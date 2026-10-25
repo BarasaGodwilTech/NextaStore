@@ -2,6 +2,7 @@ const app = require('./src/app');
 const config = require('./src/config');
 const prisma = require('./src/prisma');
 const presence = require('./src/presence');
+const growth = require('./src/growthInstance');
 
 // Note: there is no db.load()/auto-seed here anymore. Schema changes go
 // through `npm run migrate:deploy` (prisma migrate deploy) as an explicit,
@@ -20,6 +21,18 @@ const server = app.listen(config.port, () => {
         console.warn('  WARNING: JWT_SECRET is unset, using the development fallback. Every restart that changes this value invalidates all existing sessions.');
     }
 });
+
+// NextaStore Circle / Crew hourly sweep: releases earnings whose clearance window has passed, lapses stale
+// sign-ups and leads, sends the daily "recruits need you" digest and freezes unhealthy partners. It is
+// idempotent, so a missed or doubled run is harmless. Running more than one backend instance? Set
+// GROWTH_SWEEP=off on all but one of them.
+let growthSweepTimer = null;
+if (String(process.env.GROWTH_SWEEP || 'on').toLowerCase() !== 'off') {
+    const runGrowthSweep = () => growth.sweep().catch((err) => console.error('[growth] sweep failed:', err && err.message));
+    setTimeout(runGrowthSweep, 60 * 1000).unref();   // once, a minute after boot (not during the deploy rush)
+    growthSweepTimer = setInterval(runGrowthSweep, 60 * 60 * 1000);
+    growthSweepTimer.unref();
+}
 
 async function shutdown(signal) {
     console.log(`${signal} received, shutting down...`);

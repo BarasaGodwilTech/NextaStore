@@ -511,3 +511,10 @@ Enquiry stays available alongside booking, so a seller can offer both.
 `/api/assistant/*` forwards to the separate assistant service (`../ai-assistant`). Set `ASSISTANT_URL` (default `http://127.0.0.1:4100`) and optionally
 `ASSISTANT_TIMEOUT_MS` (default 120000; use 150000 if the assistant runs on a small CPU-only server with Luganda replies on) and `ASSISTANT_TOKEN` (shared secret, must match the assistant's own `ASSISTANT_TOKEN`; required if the assistant is on another machine). Limits: 12 chats/minute and 100/hour per IP, on top of the general API limit. Keep the assistant service private.
 Test without a database: `node scripts/assistant-proxy-test.js`; browser: `npm run test:assistant-browser`.
+
+
+### Nexi live facts environment settings
+
+- `SUPPORT_EMAIL`: public support email included in Nexi live facts. If unset, the current site address `support@nextawillstechnologies.com` is used as a fallback; set this in production to the monitored support address.
+- `SUPPORT_URL`: public support page URL included in Nexi live facts. If unset, `https://nextawillstechnologies.com` is used as a fallback; set this in production to the intended support page.
+- `SMTP_HOST` and `SMTP_FROM`: configure production e-mail delivery. Nexi exposes only a yes/no e-mail-enabled signal derived from whether `SMTP_HOST` is set; it never exposes SMTP credentials or configuration values. Production should set both `SMTP_HOST` and `SMTP_FROM`.

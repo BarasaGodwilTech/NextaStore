@@ -12,6 +12,8 @@
 
 // ---- Seller Pass -----------------------------------------------------------
 const SUBSCRIPTION_PRICE_UGX = 20000; // per month of coverage
+const PASSWORD_MIN_LENGTH = 8;
+const SELLER_PASS_REFUNDABLE = false;
 const TRIAL_DAYS = 7;
 // Month-blocks a seller can buy in one payment (validation.js and the facts endpoint both read this).
 const SUBSCRIPTION_PERIOD_OPTIONS = [1, 3, 6, 12, 24];
@@ -106,6 +108,7 @@ function buildFacts() {
         schemaVersion: 1,
         subscription: {
             currency: 'UGX',
+            refundable: SELLER_PASS_REFUNDABLE,
             pricePerMonth: SUBSCRIPTION_PRICE_UGX,
             trialDays: TRIAL_DAYS,
             periodOptionsMonths: SUBSCRIPTION_PERIOD_OPTIONS.slice(),
@@ -135,12 +138,16 @@ function buildFacts() {
         },
         listingTypes: LISTING_TYPES.slice(),
         onboardingSteps: ONBOARDING_STEPS.slice(),
-        launchNeedsProduct: ONBOARDING_LAUNCH_NEEDS_PRODUCT
+        launchNeedsProduct: ONBOARDING_LAUNCH_NEEDS_PRODUCT,
+        account: { passwordMinLength: PASSWORD_MIN_LENGTH, emailDeliveryConfigured: Boolean(process.env.SMTP_HOST) },
+        support: { email: process.env.SUPPORT_EMAIL || 'support@nextawillstechnologies.com', url: process.env.SUPPORT_URL || 'https://nextawillstechnologies.com' }
     };
 }
 
 module.exports = {
     SUBSCRIPTION_PRICE_UGX,
+    PASSWORD_MIN_LENGTH,
+    SELLER_PASS_REFUNDABLE,
     TRIAL_DAYS,
     SUBSCRIPTION_PERIOD_OPTIONS,
     TIER_MIN_MONTHS,

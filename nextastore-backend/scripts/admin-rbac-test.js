@@ -24,7 +24,8 @@
 const path = require('path');
 const Module = require('module');
 const SRC = path.resolve(__dirname, '..', 'src');
-const jwtShim = require(path.join(__dirname, 'auth-browser-tests', 'shims', 'packages', 'jsonwebtoken'));
+// the real jsonwebtoken wins; the project's fallback (auth-browser-tests/shims) is used only if the package itself is missing
+const jwtShim = (() => { try { return require('jsonwebtoken'); } catch (e) { if (e && e.code === 'MODULE_NOT_FOUND' && /jsonwebtoken/.test(String(e.message).split('\n')[0])) return require(path.join(__dirname, 'auth-browser-tests', 'shims', 'packages', 'jsonwebtoken')); throw e; } })();
 const results = [];
 console.error = () => {}; // the reset route logs its (deliberately failing) test mail
 const check = (name, ok, detail = '') => results.push({ name, ok: !!ok, detail });
@@ -162,6 +163,7 @@ const NEEDS = {
     'POST /follow-ups': ['followups.manage'],
     'PUT /follow-ups/:id': ['followups.manage'],
     'GET /audit': ['audit.view'],
+    'GET /nexi-handoffs': ['followups.manage'], // WIP 93
     'GET /reports': ['reports.review'],
     'PUT /reports/:id/review': ['reports.review'],
     'GET /subscription-payments': ['subscriptions.review'],
@@ -340,6 +342,38 @@ const NEEDS = {
         o.status === 200 && o.body.data.pendingPayments === null && o.body.data.admins === null && o.body.data.openReports !== null, JSON.stringify(o.body));
     o = await call('GET', '/overview', 'only_users.view');
     check('an admin without dashboard.view gets no overview at all (403)', o.status === 403, JSON.stringify(o));
+
+    // WIP 93: "Nexi handoffs" list: read-only, one GET route, guarded by followups.manage (also covered by the 17-caller matrix above).
+    {
+        const nexi = routes.filter((r) => r.path === '/nexi-handoffs');
+        check('Nexi handoffs list is a single read-only GET route (no write method exists for it)', nexi.length === 1 && nexi[0].method === 'GET');
+        const adminSrc = require('fs').readFileSync(path.join(SRC, 'routes', 'admin.js'), 'utf8');
+        check('Nexi handoffs list requires sign-in AND followups.manage, and only forwards to the assistant proxy handler', /router\.get\('\/nexi-handoffs', requireAuth, requireAdminPermission\(ADMIN_PERMISSIONS\.FOLLOWUPS_MANAGE\), \(req, res\) => require\('\.\.\/assistantProxy'\)\.handoffs\(req, res\)\)/.test(adminSrc));
+        const noAuth = await call('GET', '/nexi-handoffs', null);
+        const buyer = await call('GET', '/nexi-handoffs', 'buyer');
+        const noPerm = await call('GET', '/nexi-handoffs', 'only_users.view');
+        check('signed out -> 401; a buyer -> 403; an admin without followups.manage -> 403', noAuth.status === 401 && buyer.status === 403 && noPerm.status === 403, JSON.stringify([noAuth.status, buyer.status, noPerm.status]));
+    }
+
+    // WIP 92b support-contact regressions (dependency-free helper and source contracts).
+    const wa = require(path.join(SRC, 'whatsapp-normalizer'));
+    check('support WhatsApp default normalises to international digits', wa.normalizeUgandanWhatsapp('0761789006') === '256761789006');
+    check('international WhatsApp number accepts plus, spaces and dashes', wa.normalizeUgandanWhatsapp('+256 761-789006') === '256761789006');
+    check('invalid Ugandan WhatsApp number is rejected by validator contract', !wa.validUgandanWhatsapp('0123456789'));
+    const validationText = require('fs').readFileSync(path.join(SRC, 'validation.js'), 'utf8');
+    check('support contact settings remain optional for payment-only PUT compatibility', /supportWhatsappNumber:\s*ugandanWhatsappSchema\.optional\(\)/.test(validationText) && /supportContactLabel:\s*z\.string\(\).*?\.optional\(\)/.test(validationText));
+    const contactRouteText = require('fs').readFileSync(path.join(SRC, 'routes', 'assistant.js'), 'utf8');
+    check('public handoff endpoint allowlists exactly five response properties', /res\.json\(\{ enabled, whatsappDigits: enabled \? digits : '', displayNumber: enabled \? \('\+' \+ digits\) : '', label: String\(s\.supportContactLabel[\s\S]*?hoursNote: String\(s\.supportHoursNote/.test(contactRouteText));
+    const adminHtml = require('fs').readFileSync(path.resolve(__dirname, '../../admin.html'), 'utf8');
+    check('support contact card is present separately in admin UI', /Support contact/i.test(adminHtml));
+
+    // NextaStore Circle / Crew admin routes live in src/growth/routes.js (mounted at /api/admin/growth), so the
+    // table above does not see them. Same promise, checked on the source: every one needs a growth permission.
+    const growthRoutesText = require('fs').readFileSync(path.join(SRC, 'growth', 'routes.js'), 'utf8');
+    const admLines = growthRoutesText.split('\n').filter((l) => /^\s*adm\.(get|post|put|patch|delete)\(/.test(l));
+    check(`growth admin routes: all ${admLines.length} are behind a growth permission`, admLines.length >= 20 && admLines.every((l) => /\.\.\.need\(P\.(VIEW|REVIEW|PAYOUTS|SETTINGS)\)/.test(l)), admLines.filter((l) => !/\.\.\.need\(/.test(l)).join(' | '));
+    check('growth permissions exist and payouts are separate from review', ['growth.view', 'growth.review', 'growth.payouts', 'growth.settings'].every((p) => ALL.includes(p)) && /P\.PAYOUTS/.test(growthRoutesText) && !/withdrawals\.(approve|markPaid|reject)[^\n]*need\(P\.REVIEW\)/.test(growthRoutesText));
+    check('admin sidebar only shows Circle & Crew with growth.view', /data-admin-link="growth"/.test(adminHtml) && /growth:\s*this\.can\('growth\.view'\)/.test(require('fs').readFileSync(path.resolve(__dirname, '../../js/admin.js'), 'utf8')));
 
     // ---- report ----------------------------------------------------------------
     let failed = 0;

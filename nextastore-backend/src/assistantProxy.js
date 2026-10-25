@@ -150,4 +150,15 @@ async function starters(req, res) {
     }
 }
 
-module.exports = { chat, chatStream, starters, cleanBody, _visitorKey: visitorKey, _resetStartersCache: () => { startersCache = { at: 0, body: null }; } };
+/** WIP 93 Tier 3.3: GET the assistant's last-50 handoff list (scrubbed questions). Read-only; mounted ONLY behind admin permission (routes/admin.js). */
+async function handoffs(req, res) {
+    try {
+        const up = await callUpstream('/api/assistant/handoffs', {}, AbortSignal.timeout(5000));
+        const text = await up.text();
+        res.statusCode = up.status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); res.end(text);
+    } catch (err) {
+        unavailable(res, err);
+    }
+}
+
+module.exports = { chat, chatStream, starters, handoffs, cleanBody, _visitorKey: visitorKey, _resetStartersCache: () => { startersCache = { at: 0, body: null }; } };

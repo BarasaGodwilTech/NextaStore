@@ -670,11 +670,26 @@ class StoreDetailManager {
         if (this.store.address) {
             location.push(this.store.address);
         }
+        const dir = this.directionsTarget();
         if (location.length > 0) {
             const locEl = document.getElementById('storeLocation');
             locEl.textContent = location.join(', ');
             locEl.title = location.join(', ');
             locEl.parentElement.style.display = 'flex';
+            // With a saved pin, tapping the location opens the in-app directions
+            // modal (live location, route, distance, time) instead of leaving the site.
+            const metaItem = locEl.parentElement;
+            if (dir && window.NextaStoreDirections) {
+                metaItem.classList.add('is-action');
+                metaItem.setAttribute('role', 'button');
+                metaItem.setAttribute('tabindex', '0');
+                metaItem.setAttribute('aria-label', `Get directions to ${this.store.name || 'this store'}`);
+                metaItem.setAttribute('data-nsd-open', '');
+                Object.entries(dir.attrs).forEach(([k, v]) => metaItem.setAttribute(k, v));
+            } else {
+                metaItem.classList.remove('is-action');
+                ['role', 'tabindex', 'aria-label', 'data-nsd-open', ...Object.keys(dir ? dir.attrs : {})].forEach(a => metaItem.removeAttribute(a));
+            }
         } else {
             document.getElementById('storeLocation').parentElement.style.display = 'none';
         }
@@ -694,7 +709,9 @@ class StoreDetailManager {
             const productCount = this.store.productCount || 0;
             infoRows.push(`<div class="info-row"><i class="fas fa-box"></i><span>${productCount.toLocaleString()} ${productCount === 1 ? 'product' : 'products'} listed</span></div>`);
             if (location.length) {
-                infoRows.push(`<div class="info-row"><i class="fas fa-location-dot"></i><span>${app.escapeHtml(location.join(', '))}</span></div>`);
+                infoRows.push(dir && window.NextaStoreDirections
+                    ? `<button type="button" class="info-row info-row--action" data-nsd-open ${dir.attrString} aria-label="Get directions to ${app.escapeHtml(this.store.name || 'this store')}"><i class="fas fa-location-dot"></i><span>${app.escapeHtml(location.join(', '))}</span><span class="info-row-go"><i class="fas fa-route" aria-hidden="true"></i> Directions</span></button>`
+                    : `<div class="info-row"><i class="fas fa-location-dot"></i><span>${app.escapeHtml(location.join(', '))}</span></div>`);
             }
             // Free-text directions from the seller can run long — clamped
             // to a few lines with its own Show more toggle.
@@ -741,20 +758,37 @@ class StoreDetailManager {
 
     /** Map preview under the About card, sized to the space it's actually
      *  in (sidebar on desktop, full width below the products on mobile). */
+    /** Where "Get directions" goes: the store's saved pin, with its name, address
+     *  and the seller's own written directions. Null when no pin was saved (a
+     *  district alone can't be routed to). `attrs`/`attrString` are the
+     *  data-nsd-open attributes for markup that should open the modal. */
+    directionsTarget() {
+        const coords = this.store && this.store.mapCoordinates;
+        const [lat, lng] = coords ? String(coords).split(',').map(Number) : [NaN, NaN];
+        if (!(Number.isFinite(lat) && Number.isFinite(lng))) return null;
+        const label = this.store.name || '';
+        const address = [this.store.district, this.store.address].filter(Boolean).join(', ');
+        const notes = this.store.detailedDirections ? String(this.store.detailedDirections).trim() : '';
+        const attrs = { 'data-lat': String(lat), 'data-lng': String(lng), 'data-label': label, 'data-address': address, 'data-notes': notes };
+        const attrString = Object.entries(attrs).map(([k, v]) => `${k}="${app.escapeHtml(v)}"`).join(' ');
+        return { lat, lng, label, address, notes, attrs, attrString };
+    }
+
+    /** Map preview under the About card, drawn at the width of the slot it is
+     *  really in and redrawn when that changes (sidebar on desktop, full width
+     *  below the products on mobile) - map-preview.js does the re-fitting. */
     renderStoreMap() {
         const mapPreview = document.getElementById('storeMapPreview');
         if (!mapPreview || !this.store) return;
-        const coords = this.store.mapCoordinates;
-        const [lat, lng] = coords ? String(coords).split(',').map(Number) : [NaN, NaN];
-        if (!(Number.isFinite(lat) && Number.isFinite(lng))) { mapPreview.style.display = 'none'; return; }
+        const dir = this.directionsTarget();
+        if (!dir) { mapPreview.style.display = 'none'; return; }
         mapPreview.style.display = 'block';
         mapPreview.innerHTML = '';
-        // Measure the slot itself (not its padded parent card, which made the
-        // frame wider than the space it sits in and clip on desktop).
-        const width = Math.max(200, Math.min(Math.round(mapPreview.getBoundingClientRect().width) || 260, 560));
+        const width = Math.round(mapPreview.getBoundingClientRect().width) || 260;
         window.NextaStoreMapPreview?.render(mapPreview, {
-            lat, lng, width, height: width > 400 ? 200 : 140,
-            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords)}`
+            lat: dir.lat, lng: dir.lng, width, height: width > 400 ? 220 : 150,
+            directions: { label: dir.label, address: dir.address, notes: dir.notes },
+            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.store.mapCoordinates)}`
         });
     }
 

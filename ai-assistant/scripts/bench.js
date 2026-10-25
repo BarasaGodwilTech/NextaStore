@@ -28,7 +28,7 @@ async function timed(label, message, lang, firstLabel = 'first words') {
 }
 
 (async () => {
-    console.log(`Chat model: ${config.chatModel} | Luganda: ${JSON.stringify(translator.describe())} | LUGANDA_INTERLEAVE: ${config.lugandaInterleave}\n`);
+    console.log(`Chat model: ${config.chatModel} | Luganda: ${JSON.stringify(translator.describe())}\n`);
 
     const t0 = Date.now();
     const r = await fetch(`${config.ollamaHost}/api/chat`, {

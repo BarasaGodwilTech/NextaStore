@@ -6,9 +6,9 @@ const translator = require('../lang/translator');
 const { sanitizeChatBody } = require('../chat/sanitize');
 const { createLimiter } = require('../chat/limiter');
 const fallback = require('../chat/fallback');
+const { LG_HANDOFF, effectiveLang } = require('../lang/lgGuard');
 const { isSmallTalk } = require('../chat/smalltalk');
 const { matchPhrasebook } = require('../lang/phrasebook');
-const { detectLanguage } = require('../lang/detect');
 const faqMatch = require('../chat/faqMatch');
 const answerCache = require('../chat/answerCache');
 const { createDelivery } = require('../chat/deliver');
@@ -24,7 +24,13 @@ function visitorKey(req) { return String(req.headers?.['x-nexi-visitor-key'] || 
 /** GET /api/assistant/health - is Ollama up, are the right models pulled. */
 router.get('/health', async (req, res) => {
     const health = await ollama.checkHealth();
-    res.status(health.reachable ? 200 : 503).json({ ...health, luganda: translator.describe(), queue: limiter.stats() });
+    res.status(health.reachable ? 200 : 503).json({ ...health, luganda: translator.describe(), queue: limiter.stats(), nexi: require('../chat/stats').snapshot() });
+});
+
+/** GET /api/assistant/handoffs - last 50 handoffs (time, reason, language, scrubbed question). Read-only; empty unless LOG_FLAGGED_MESSAGES is on. Same token gate as every assistant route. */
+router.get('/handoffs', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json({ enabled: Boolean(config.logFlagged), handoffs: require('../chat/flagLog').readHandoffs(50) });
 });
 
 /** GET /api/assistant/starters - conversation starters (English + Luganda). */
@@ -40,7 +46,8 @@ router.get('/starters', handleStarters);
 function instantPath(body) {
     const message = body.message;
     if (isSmallTalk(message)) return true;
-    const lang = body.lang || detectLanguage(message).code;
+    // WIP 92d: one language resolver everywhere (explicit toggle, then the message, then the conversation).
+    const lang = effectiveLang(body.lang, message, body.history);
     if (lang === 'lg' && matchPhrasebook(message)) return true;
     if (faqMatch.match(message, { audience: body.context?.audience || 'guest' })) return true;
     const key = answerCache.keyOf(message, lang, body.context?.audience || 'guest');
@@ -67,14 +74,16 @@ function makeStreamOut(res) {
 
 /** Load is never exposed to the visitor: when capacity is tight we answer from local knowledge. */
 async function sendFallback(res, body, { stream = false, signal } = {}) {
-    const result = await fallback.build(body.message, { audience: body.context?.audience || 'guest' });
+    const langCode = effectiveLang(body.lang, body.message, body.history);
+    const isLg = langCode === 'lg';
+    const result = isLg ? { reply: LG_HANDOFF, source: 'handoff', retrieved: [], handoff: { reason: 'language_guard' }, needs_review: true } : await fallback.build(body.message, { audience: body.context?.audience || 'guest' });
     if (!stream) {
         const delivery = createDelivery({ signal });
         result.bubbles = await delivery.instant(result.reply, 'fallback');
         return res.json(result);
     }
     const out = makeStreamOut(res);
-    out.send({ type: 'meta', language: { code: body.lang || 'en' }, source: 'fallback', retrieved: result.retrieved || [] });
+    out.send({ type: 'meta', language: { code: langCode }, source: result.source || 'fallback', retrieved: result.retrieved || [], ...(result.handoff ? { handoff: result.handoff, needs_review: true } : {}) });
     const delivery = createDelivery({
         onToken: out.hooks.onToken,
         onBreak: out.hooks.onBreak,
@@ -202,7 +211,7 @@ async function handleChatStream(req, res) {
                 await sendFallback(res, parsed.value, { stream: true, signal: ac.signal });
             } catch (fallbackErr) {
                 console.error('[assistant] fallback error:', fallbackErr.message);
-                out.done({ reply: 'I can help with NextaStore buying, selling, orders, payments, and starting a store.', source: 'fallback', retrieved: [], bubbles: ['I can help with NextaStore buying, selling, orders, payments, and starting a store.'] });
+                const isLg = effectiveLang(parsed.value.lang, parsed.value.message, parsed.value.history) === 'lg'; const lastReply = isLg ? LG_HANDOFF : 'I can help with NextaStore buying, selling, orders, payments, and starting a store.'; out.done({ reply: lastReply, source: isLg ? 'handoff' : 'fallback', retrieved: [], bubbles: [lastReply], ...(isLg ? { handoff: { reason: 'language_guard' }, needs_review: true } : {}) });
             }
         }
     } finally {

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NextaStore tour reel (source for assets/landing/nextastore-tour.mp4)</title>
+<!--
+  Source of the landing-page tour video. 1280x720, 26 seconds, no audio.
+  Everything is a plain CSS animation with a fixed delay, so the file also plays live in a browser,
+  and reel-src/render.py can step it frame by frame to produce the MP4 and the poster.
+  Scene starts (seconds): 0 setup, 5.6 products, 11.2 WhatsApp, 16.8 payment, 22.4 end card.
+  If you change a scene start, change the data-seek values in index.html (.chapter buttons) to match.
+-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@font-face{font-family:Poppins;src:url('../../brand/fonts/Poppins-Regular.ttf') format('truetype');font-weight:400}
+@font-face{font-family:Poppins;src:url('../../brand/fonts/Poppins-Bold.ttf') format('truetype');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0B3B2B;--deep:#062A1F;--green:#01B075;--gd:#008558;--gold:#FFB038;--gl:#FFD88A;--mint:#2EDDA2;--g100:#EAF0ED;--g200:#D9E3DF;--g500:#6E7C76;--g700:#33413B}
+html,body{background:#000}
+body{font-family:Poppins,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.reel{position:relative;width:1280px;height:720px;overflow:hidden;color:#fff;background:radial-gradient(55% 80% at 76% 50%,rgba(255,176,56,.16),transparent 70%),linear-gradient(165deg,#0B3B2B,var(--deep) 75%)}
+.cloth{position:absolute;inset:0;width:100%;height:100%;-webkit-mask-image:linear-gradient(100deg,transparent 22%,#000 78%);mask-image:linear-gradient(100deg,transparent 22%,#000 78%)}
+.defs{position:absolute;width:0;height:0}
+.sc1{--s:0s}.sc2{--s:5.6s}.sc3{--s:11.2s}.sc4{--s:16.8s}
+.main{position:absolute;inset:0;animation:mainout .6s ease both;animation-delay:22.1s}
+@keyframes mainout{to{opacity:0;transform:scale(.97)}}
+
+/* ----- captions ----- */
+.cap{position:absolute;left:96px;top:0;bottom:0;width:580px;display:flex;flex-direction:column;justify-content:center;gap:22px;opacity:0;animation:capio 5.6s ease both;animation-delay:var(--s)}
+@keyframes capio{0%{opacity:0;transform:translateY(26px)}7%{opacity:1;transform:none}90%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-18px)}}
+.tag{display:inline-flex;align-items:center;gap:12px;align-self:flex-start;padding:7px 18px 7px 8px;border-radius:999px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.22);font-weight:700;font-size:20px}
+.tag b{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:18px}
+.cap h2{font-size:62px;line-height:1.06;letter-spacing:-.03em;font-weight:700}
+.cap p{font-size:26px;line-height:1.45;color:rgba(255,255,255,.82);max-width:30ch}
+.segs{position:absolute;left:96px;bottom:56px;display:flex;gap:10px}
+.segs i{display:block;width:92px;height:6px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.segs i::after{content:'';display:block;height:100%;background:var(--gold);transform:scaleX(0);transform-origin:0 50%;animation:fill 5.6s linear both}
+.segs i:nth-child(1)::after{animation-delay:0s}.segs i:nth-child(2)::after{animation-delay:5.6s}.segs i:nth-child(3)::after{animation-delay:11.2s}.segs i:nth-child(4)::after{animation-delay:16.8s}
+@keyframes fill{to{transform:scaleX(1)}}
+
+/* ----- sun + phone ----- */
+.sun{position:absolute;left:736px;top:100px;width:520px;height:520px;border-radius:50%;background:var(--gold)}
+.ring{position:absolute;left:712px;top:76px;width:568px;height:568px;border-radius:50%;border:3px dashed rgba(255,216,138,.5)}
+.phone{position:absolute;left:838px;top:40px;width:316px;height:640px;padding:10px;border-radius:50px;background:#0a1a14;box-shadow:0 40px 70px rgba(0,0,0,.5),inset 0 0 0 2px #17352a,0 0 0 1px rgba(255,255,255,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:#fff;color:var(--ink)}
+.notch{position:absolute;z-index:9;top:11px;left:50%;width:100px;height:26px;border-radius:14px;background:#0a1a14;transform:translateX(-50%)}
+.scr{position:absolute;inset:0;opacity:0;animation:scrio 5.6s ease both;animation-delay:var(--s)}
+@keyframes scrio{0%{opacity:0}4%{opacity:1}96%{opacity:1}100%{opacity:0}}
+.sb{display:flex;justify-content:space-between;padding:16px 28px 6px;font-size:13px;font-weight:700}
+.pop{opacity:0;animation:popin .55s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes popin{0%{opacity:0;transform:translateY(16px) scale(.92)}100%{opacity:1;transform:none}}
+.at{animation-delay:calc(var(--s) + var(--t))}
+
+/* scene 1 */
+.hd{display:flex;align-items:center;gap:12px;padding:10px 20px 12px;font-weight:700;font-size:20px}
+.hd i{color:var(--g500);font-size:16px}
+.fld{margin:0 20px 14px}
+.fld label{display:block;font-size:12px;font-weight:700;color:var(--g500);margin-bottom:5px}
+.inp{display:flex;align-items:center;height:50px;padding:0 14px;border:2px solid var(--g200);border-radius:14px;font-weight:700;font-size:18px;white-space:nowrap}
+.inp.on{border-color:var(--green);box-shadow:0 0 0 4px #E7F8F1}
+.typed{display:inline-block;clip-path:inset(0 100% 0 0);animation:type 1.4s steps(14,end) both;animation-delay:calc(var(--s) + .7s)}
+@keyframes type{to{clip-path:inset(0 0 0 0)}}
+.caret{width:2px;height:22px;margin-left:2px;background:var(--ink);animation:caret 2.1s steps(1,end) both;animation-delay:calc(var(--s) + .3s)}
+@keyframes caret{0%,99%{opacity:1}100%{opacity:0}}
+.inp i{color:var(--gd);margin-right:9px}
+.map{position:relative;height:96px;margin:0 20px 14px;border-radius:14px;overflow:hidden;background:#E8EFE0;background-image:linear-gradient(90deg,transparent 48%,#fff 48%,#fff 54%,transparent 54%),linear-gradient(0deg,transparent 40%,#fff 40%,#fff 47%,transparent 47%),linear-gradient(60deg,transparent 55%,#F6E7C1 55%,#F6E7C1 62%,transparent 62%)}
+.map .pin{position:absolute;left:46%;top:18px;font-size:34px;color:#D9534F;animation:drop .7s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(var(--s) + 2.8s);filter:drop-shadow(0 4px 0 rgba(0,0,0,.15))}
+@keyframes drop{0%{opacity:0;transform:translateY(-60px)}100%{opacity:1;transform:none}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 20px}
+.chip{padding:8px 14px;border-radius:999px;border:2px solid var(--g200);font-weight:700;font-size:14px}
+.chip.sel{animation:selchip .3s ease both;animation-delay:calc(var(--s) + var(--t))}
+@keyframes selchip{to{background:var(--green);border-color:var(--green);color:#fff}}
+.cta{position:absolute;left:20px;right:20px;bottom:24px;height:54px;border-radius:16px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;animation:press .3s ease both;animation-delay:calc(var(--s) + 4.2s)}
+@keyframes press{0%,100%{transform:none}50%{transform:scale(.94)}}
+.done{position:absolute;inset:0;z-index:5;display:grid;place-content:center;justify-items:center;gap:14px;background:#fff;text-align:center;opacity:0;animation:fadein .4s ease both;animation-delay:calc(var(--s) + 4.5s)}
+@keyframes fadein{to{opacity:1}}
+.big-ok{display:grid;place-items:center;width:88px;height:88px;border-radius:50%;background:var(--green);color:#fff;font-size:40px;animation:okpop .6s cubic-bezier(.3,1.7,.5,1) both;animation-delay:calc(var(--s) + 4.6s)}
+@keyframes okpop{0%{transform:scale(.3)}100%{transform:none}}
+.done b{font-size:24px}
+.url{padding:8px 16px;border-radius:999px;background:var(--g100);font-weight:700;font-size:13px}
+
+/* scene 2 */
+.banner{height:80px;margin:0 14px;border-radius:18px;background:radial-gradient(circle at 18px 18px,rgba(255,255,255,.22) 4px,transparent 5px) 0 0/36px 36px,linear-gradient(120deg,#01B075,#008558)}
+.idrow{display:flex;align-items:center;gap:12px;margin:-24px 20px 0}
+.av{display:grid;place-items:center;flex:none;width:54px;height:54px;border-radius:50%;border:4px solid #fff;background:var(--gold);font-weight:700;font-size:20px}
+.idrow b{display:block;margin-top:24px;font-size:18px;line-height:1.2}
+.idrow small{display:block;font-size:12px;color:var(--g500);font-weight:400}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
+.card{padding:8px;border:1px solid var(--g100);border-radius:16px;background:#fff;box-shadow:0 2px 6px rgba(11,59,43,.08)}
+.card .th{display:grid;place-items:center;height:78px;margin-bottom:7px;border-radius:12px}
+.card .th svg{width:54px;height:54px}
+.card p{font-size:14px;font-weight:700;line-height:1.3}
+.card span{font-size:13px;font-weight:700;color:var(--gd)}
+.th.a{background:#FBE3DC}.th.b{background:#E7F5EF}.th.c{background:#FFF1D6}.th.d{background:#E9E4F8}
+.toast{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);white-space:nowrap;padding:12px 20px;border-radius:999px;background:var(--ink);color:#fff;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.toast i{color:var(--mint);margin-right:8px}
+.fab{position:absolute;right:18px;bottom:84px;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:22px;box-shadow:0 6px 0 #C98414}
+
+/* scene 3 */
+.chat{background:#EEF3F0;height:100%}
+.chead{display:flex;align-items:center;gap:12px;padding:44px 18px 14px;background:var(--ink);color:#fff}
+.chead .av2{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--gl);color:var(--ink);font-weight:700}
+.chead b{display:block;font-size:16px;line-height:1.1}.chead small{font-size:12px;opacity:.75}
+.msgs{display:flex;flex-direction:column;gap:12px;padding:18px 14px}
+.b{max-width:84%;padding:10px 12px;border-radius:16px;font-size:15px;line-height:1.35;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.b.me{align-self:flex-end;background:#D9F7E6;border-bottom-right-radius:5px}
+.b.you{align-self:flex-start;background:#fff;border-bottom-left-radius:5px}
+.lp{display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px;border-radius:12px;background:rgba(11,59,43,.08)}
+.lp .sw{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:11px;background:var(--green);color:#fff;font-size:18px}
+.lp b{font-size:14px;display:block}.lp small{display:block;font-size:11px;color:var(--g500);overflow-wrap:anywhere}
+.ticks{display:block;text-align:right;margin-top:4px;font-size:12px;color:#9AA7A1;animation:blue .3s ease both;animation-delay:calc(var(--s) + 2s)}
+@keyframes blue{to{color:#34A0F0}}
+.typing{align-self:flex-start;display:flex;gap:5px;padding:13px 15px;border-radius:16px;border-bottom-left-radius:5px;background:#fff;opacity:0;animation:blink1 1.1s ease both;animation-delay:calc(var(--s) + 2.4s)}
+@keyframes blink1{0%{opacity:0}6%{opacity:1}94%{opacity:1}100%{opacity:0}}
+.typing i{width:8px;height:8px;border-radius:50%;background:#9AA7A1;animation:bounce .55s ease-in-out 2 both;animation-delay:calc(var(--s) + 2.4s)}
+.typing i:nth-child(2){animation-delay:calc(var(--s) + 2.52s)}.typing i:nth-child(3){animation-delay:calc(var(--s) + 2.64s)}
+@keyframes bounce{50%{transform:translateY(-6px)}}
+
+/* scene 4 */
+.shead{padding:10px 20px 6px;font-weight:700;font-size:20px}
+.prow{display:flex;align-items:center;gap:12px;margin:8px 20px 14px;padding:10px;border-radius:16px;background:#E7F5EF}
+.prow .th{display:grid;place-items:center;width:56px;height:56px;border-radius:12px;background:#fff}.prow .th svg{width:40px;height:40px}
+.prow b{display:block;font-size:15px}.prow span{font-size:14px;font-weight:700;color:var(--gd)}
+.opt{display:flex;align-items:center;gap:10px;margin:0 20px 10px;padding:12px 14px;border:2px solid var(--g200);border-radius:14px;font-weight:700;font-size:15px}
+.opt.sel{border-color:var(--green);background:#E7F8F1}
+.opt .dot{width:18px;height:18px;border-radius:50%}
+.opt.sel::after{content:'\f00c';font:900 13px 'Font Awesome 6 Free';margin-left:auto;color:var(--gd)}
+.pbtn{position:absolute;left:20px;right:20px;bottom:24px;height:54px;border-radius:16px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;animation:press .3s ease both;animation-delay:calc(var(--s) + 1.7s)}
+.spin{position:absolute;inset:0;z-index:5;display:grid;place-content:center;justify-items:center;gap:16px;background:rgba(255,255,255,.96);opacity:0;animation:blink1 1.2s ease both;animation-delay:calc(var(--s) + 2s);font-weight:700;font-size:17px}
+.ring2{width:60px;height:60px;border-radius:50%;border:6px solid var(--g100);border-top-color:var(--green);animation:spin 1.2s linear both;animation-delay:calc(var(--s) + 2s)}
+@keyframes spin{to{transform:rotate(720deg)}}
+.paid{position:absolute;inset:0;z-index:6;display:grid;place-content:center;justify-items:center;gap:12px;background:#fff;text-align:center;opacity:0;animation:fadein .35s ease both;animation-delay:calc(var(--s) + 3.2s)}
+.paid b{font-size:24px}.paid small{color:var(--g500);font-size:14px}
+.paid .big-ok{animation-delay:calc(var(--s) + 3.3s)}
+
+/* floating cards beside the phone */
+.fl{position:absolute;display:flex;align-items:center;gap:14px;padding:14px 20px 14px 14px;border-radius:20px;background:#fff;color:var(--ink);box-shadow:0 22px 40px rgba(0,0,0,.35)}
+.fl .ic{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:50%;font-size:20px;color:#fff}
+.fl b{display:block;font-size:17px;line-height:1.2}.fl small{display:block;font-size:13px;color:var(--g500)}
+.fl.f-order{left:716px;top:150px}.fl.f-order .ic{background:var(--gold);color:var(--ink)}
+.fl.f-money{left:732px;top:520px}.fl.f-money .ic{background:var(--green)}
+
+/* end card */
+.end{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:22px;text-align:center;opacity:0;animation:fadein .7s ease both;animation-delay:22.5s}
+.end img{width:360px}
+.end h2{font-size:78px;line-height:1.05;letter-spacing:-.035em}
+.end .u{padding:12px 30px;border-radius:999px;background:var(--gold);color:var(--ink);font-weight:700;font-size:26px;box-shadow:0 6px 0 #C98414}
+.stk{position:absolute;width:120px;height:120px;filter:drop-shadow(0 10px 0 rgba(0,0,0,.18))}
+.prog{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.12)}
+.prog i{display:block;height:100%;background:var(--gold);transform-origin:0 50%;animation:fill 26s linear both}
+</style>
+</head>
+<body>
+<svg class="defs" aria-hidden="true"><defs>
+ <pattern id="kt" width="104" height="104" patternUnits="userSpaceOnUse">
+  <circle cx="52" cy="52" r="9" fill="none" stroke="#2EDDA2" stroke-opacity=".2" stroke-width="2"/>
+  <circle cx="52" cy="52" r="20" fill="none" stroke="#2EDDA2" stroke-opacity=".14" stroke-width="2"/>
+  <circle cx="52" cy="52" r="31" fill="none" stroke="#FFD88A" stroke-opacity=".2" stroke-width="2" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <path d="M0 -9 L9 0 L0 9 L-9 0Z M104 -9 L113 0 L104 9 L95 0Z M0 95 L9 104 L0 113 L-9 104Z M104 95 L113 104 L104 113 L95 104Z" fill="#FFB038" fill-opacity=".26"/>
+  <circle cx="52" cy="0" r="3" fill="#FFB038" fill-opacity=".3"/><circle cx="52" cy="104" r="3" fill="#FFB038" fill-opacity=".3"/>
+  <circle cx="0" cy="52" r="3" fill="#FFB038" fill-opacity=".3"/><circle cx="104" cy="52" r="3" fill="#FFB038" fill-opacity=".3"/>
+ </pattern></defs></svg>
+<div class="reel" id="reel">
+ <svg class="cloth" aria-hidden="true"><rect width="100%" height="100%" fill="url(#kt)"/></svg>
+
+ <div class="main">
+  <!-- captions -->
+  <div class="cap sc1"><span class="tag"><b>1</b>Set up your store</span><h2>Name your shop. Pick your spot.</h2><p>Your shop address is ready as soon as you save.</p></div>
+  <div class="cap sc2"><span class="tag"><b>2</b>Add your products</span><h2>A photo, a price, and it's on the shelf.</h2><p>Set stock and prices from your phone.</p></div>
+  <div class="cap sc3"><span class="tag"><b>3</b>Share it on WhatsApp</span><h2>One link is all your customers need.</h2><p>They open your shop straight from the chat.</p></div>
+  <div class="cap sc4"><span class="tag"><b>4</b>Get paid with Mobile Money</span><h2>Paid in seconds, orders in your dashboard.</h2><p>MTN and Airtel Mobile Money at checkout.</p></div>
+  <div class="segs"><i></i><i></i><i></i><i></i></div>
+
+  <div class="sun"></div><div class="ring"></div>
+  <div class="phone"><div class="screen"><div class="notch"></div>
+
+   <!-- scene 1: set up -->
+   <div class="scr sc1">
+    <div class="sb"><span>9:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-battery-three-quarters"></i></span></div>
+    <div class="hd"><i class="fas fa-arrow-left"></i>Create your store</div>
+    <div class="fld"><label>Store name</label><div class="inp on"><span class="typed">Amina's Crafts</span><span class="caret"></span></div></div>
+    <div class="fld pop at" style="--t:2.3s"><label>Where are you?</label><div class="inp"><i class="fas fa-location-dot"></i>Kampala, Central</div></div>
+    <div class="map pop at" style="--t:2.5s"><i class="fas fa-location-dot pin"></i></div>
+    <div class="fld" style="margin-bottom:8px"><label>What do you sell?</label></div>
+    <div class="chips"><span class="chip sel" style="--t:3.3s">Crafts</span><span class="chip sel" style="--t:3.6s">Clothing</span><span class="chip">Food</span><span class="chip">Phones</span></div>
+    <div class="cta">Create my store</div>
+    <div class="done"><div class="big-ok"><i class="fas fa-check"></i></div><b>Your shop is live</b><span class="url">nextastores.com/amina-crafts</span></div>
+   </div>
+
+   <!-- scene 2: products -->
+   <div class="scr sc2">
+    <div class="sb"><span>9:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-battery-three-quarters"></i></span></div>
+    <div class="banner"></div>
+    <div class="idrow"><div class="av">A</div><div><b>Amina's Crafts</b><small><i class="fas fa-location-dot"></i> Kampala</small></div></div>
+    <div class="grid">
+     <div class="card pop at" style="--t:.6s"><div class="th a"><svg><use href="#c-crafts"/></svg></div><p>Beaded Necklace</p><span>UGX 12,000</span></div>
+     <div class="card pop at" style="--t:1.2s"><div class="th b"><svg><use href="#c-clothing"/></svg></div><p>Kanzu Wear</p><span>UGX 45,000</span></div>
+     <div class="card pop at" style="--t:1.8s"><div class="th c"><svg><use href="#c-food"/></svg></div><p>Coffee Beans</p><span>UGX 18,000</span></div>
+     <div class="card pop at" style="--t:2.4s"><div class="th d"><svg><use href="#c-shoes"/></svg></div><p>Leather Sandals</p><span>UGX 55,000</span></div>
+    </div>
+    <div class="toast pop at" style="--t:3.6s"><i class="fas fa-circle-check"></i>4 products live</div>
+   </div>
+
+   <!-- scene 3: whatsapp -->
+   <div class="scr sc3"><div class="chat">
+    <div class="chead"><div class="av2">S</div><div><b>Sarah</b><small>online</small></div></div>
+    <div class="msgs">
+     <div class="b me pop at" style="--t:.5s">My shop is open. Come and see:
+      <div class="lp"><span class="sw"><i class="fas fa-store"></i></span><span><b>Amina's Crafts</b><small>nextastores.com/amina-crafts</small></span></div>
+      <span class="ticks"><i class="fas fa-check-double"></i></span></div>
+     <div class="typing"><i></i><i></i><i></i></div>
+     <div class="b you pop at" style="--t:3.5s">Beautiful! I'll take the kanzu.</div>
+     <div class="b you pop at" style="--t:4.4s">Sending Mobile Money now.</div>
+    </div></div></div>
+
+   <!-- scene 4: pay -->
+   <div class="scr sc4">
+    <div class="sb"><span>9:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-battery-three-quarters"></i></span></div>
+    <div class="shead">Checkout</div>
+    <div class="prow pop at" style="--t:.3s"><div class="th"><svg><use href="#c-clothing"/></svg></div><div><b>Kanzu Wear</b><span>UGX 45,000</span></div></div>
+    <div class="shead" style="font-size:15px;padding-top:0">Pay with</div>
+    <div class="opt sel pop at" style="--t:.7s"><span class="dot" style="background:#FFCB05"></span>MTN Mobile Money</div>
+    <div class="opt pop at" style="--t:.9s"><span class="dot" style="background:#E4002B"></span>Airtel Money</div>
+    <div class="opt pop at" style="--t:1.1s"><i class="fas fa-mobile-screen-button"></i>0772 ••• 481</div>
+    <div class="pbtn">Pay UGX 45,000</div>
+    <div class="spin"><div class="ring2"></div>Waiting for approval</div>
+    <div class="paid"><div class="big-ok"><i class="fas fa-check"></i></div><b>Payment received</b><small>UGX 45,000 &middot; MTN Mobile Money</small></div>
+   </div>
+  </div></div>
+
+  <div class="fl f-order pop at sc4" style="--t:4s"><span class="ic"><i class="fas fa-bag-shopping"></i></span><span><b>New order</b><small>Kanzu Wear &middot; UGX 45,000</small></span></div>
+  <div class="fl f-money pop at sc4" style="--t:4.6s"><span class="ic"><i class="fas fa-check"></i></span><span><b>Mobile Money received</b><small>Paid in full</small></span></div>
+ </div>
+
+ <!-- end card -->
+ <div class="end">
+  <svg class="stk" style="left:210px;top:120px;transform:rotate(-10deg)"><use href="#c-food"/></svg>
+  <svg class="stk" style="left:960px;top:110px;transform:rotate(9deg)"><use href="#c-shoes"/></svg>
+  <svg class="stk" style="left:150px;top:470px;transform:rotate(8deg)"><use href="#c-clothing"/></svg>
+  <svg class="stk" style="left:1010px;top:480px;transform:rotate(-8deg)"><use href="#c-phones"/></svg>
+  <img src="../../brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore">
+  <h2>Open your shop today.</h2>
+  <span class="u">nextastores.com</span>
+ </div>
+ <div class="prog"><i></i></div>
+</div>
+<script src="../../../js/category-sprite.js"></script>
+<script>
+  document.body.insertAdjacentHTML('afterbegin', window.NX_CATEGORY_SPRITE || '');
+</script>
+</body>
+</html>

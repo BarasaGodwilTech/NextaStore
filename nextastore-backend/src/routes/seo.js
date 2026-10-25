@@ -44,8 +44,11 @@ function sendHtml(res, status, html, { cacheable }) {
     // that arrives without a Referer ("Access blocked" image). Send the origin
     // only, and only cross-origin - never a full URL.
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    // Nothing on a storefront needs camera/mic/etc.; say so explicitly.
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+    // Nothing on a storefront needs camera/mic/etc.; say so explicitly. Location is the exception:
+    // the in-app directions modal (js/map-directions.js) asks for the visitor's position, and
+    // `geolocation=()` made Chrome refuse that instantly - no prompt, and no entry in the site's
+    // blocked list - so "Directions" always said "Location access is off". Allow it for this page only.
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', cacheable ? `public, max-age=${PAGE_TTL_SECONDS}, s-maxage=${PAGE_TTL_SECONDS}` : 'no-store');
     res.send(html);
@@ -176,7 +179,7 @@ router.get('/:storeSlug/:productSlug', async (req, res, next) => {
                 store: { deletedAt: null, OR: [{ slug: storeKey }, { id: rawStore }] }
             },
             select: {
-                id: true, name: true, description: true, price: true, stock: true,
+                id: true, name: true, description: true, price: true, stock: true, listingType: true,
                 image: true, images: true, thumbnails: true,
                 store: { select: { id: true, slug: true, name: true, logo: true, district: true, seo: true, isPublished: true, deletedAt: true, trialEndsAt: true, subscriptionPaidUntil: true } }
             }
@@ -283,7 +286,7 @@ router.get('/:slug', async (req, res, next) => {
                 where: { storeId: store.id, deletedAt: null },
                 orderBy: [{ sold: 'desc' }, { createdAt: 'desc' }],
                 take: 24,
-                select: { id: true, name: true, description: true, price: true, category: true, stock: true, image: true, images: true, thumbnails: true }
+                select: { id: true, name: true, description: true, price: true, category: true, stock: true, listingType: true, image: true, images: true, thumbnails: true }
             }),
             prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
             getActivePaymentMethods().catch(() => [])

@@ -28,9 +28,13 @@ const RESERVED_SLUGS = new Set([
     'product-detail', 'product-form', 'safety', 'signup', 'store', 'store-detail',
     'stores', 'subscription', 'terms', 'verify-email',
     'nextastore-loading-everyone', 'nextastore-loading-seller',
+    // NextaStore Circle / Crew (growth program) pages and short links
+    'circle', 'crew', 'scouts', 'invite', 'i', 'admin-growth', 'auth-bridge', 'about-circle', 'about-crew',
     // folders and files served from the site root
     'api', 'assets', 'css', 'js', 'errors', 'uploads', 'sitemap', 'robots', 'manifest',
     'service-worker', 'favicon', 'static', 'public', 'health', 's', 'p',
+    // the Nexi assistant service lives in its own folder at the project root
+    'ai-assistant',
     // routes the site may grow into, and words that would look official
     'home', 'about', 'contact', 'help', 'support', 'pricing', 'blog', 'docs', 'status',
     'search', 'shop', 'sell', 'seller', 'sellers', 'buyer', 'account', 'settings',

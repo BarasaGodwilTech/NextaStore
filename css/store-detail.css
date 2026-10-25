@@ -1193,7 +1193,28 @@
 }
 .info-directions-toggle:hover { text-decoration: underline; }
 .info-directions-toggle[hidden] { display: none; }
-.store-map-preview { margin-top: var(--spacing-md, 12px); max-width: 100%; overflow: hidden; border-radius: var(--border-radius-md); }
+.store-map-preview { margin-top: var(--spacing-md, 12px); width: 100%; max-width: 100%; overflow: hidden; border-radius: var(--border-radius-md); }
+
+/* A saved pin makes the location tappable: it opens the in-app directions modal. */
+.info-row--action {
+    width: 100%;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+.info-row--action > span:first-of-type { flex: 1; min-width: 0; }
+.info-row--action .info-row-go { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; font-weight: 700; color: var(--secondary); white-space: nowrap; }
+.info-row--action .info-row-go i { width: auto; margin: 0; }
+.info-row--action:hover > span:first-of-type { text-decoration: underline; text-underline-offset: 2px; }
+.info-row--action:focus-visible, .meta-item.is-action:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; border-radius: 6px; }
+.meta-item.is-action { cursor: pointer; }
+.meta-item.is-action:hover span { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Below the products on narrow screens, About is its own card */
 .store-info-standalone {

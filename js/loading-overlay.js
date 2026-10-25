@@ -47,6 +47,19 @@
     var pipEl = document.getElementById('nxPip');
     var skipEl = document.getElementById('nxSkip');
 
+    // Progress bar under the logo (WIP 111). Built here so the ~20 pages that carry the loader markup
+    // need no change; the percentage label moves in under the status line.
+    var barEl = null;
+    if (wrapEl && wrapEl.parentNode) {
+        var bar = document.createElement('div');
+        bar.className = 'nx-loader-bar';
+        bar.setAttribute('aria-hidden', 'true');
+        bar.innerHTML = '<i></i>';
+        wrapEl.parentNode.insertBefore(bar, wrapEl.nextSibling);
+        barEl = bar.firstChild;
+        if (pctEl && statusEl && statusEl.parentNode === wrapEl.parentNode) statusEl.parentNode.insertBefore(pctEl, statusEl.nextSibling);
+    }
+
     var pending = {};
     waitKeys.forEach(function (k) { pending[k] = true; });
 
@@ -109,6 +122,7 @@
         if (waveEl) waveEl.setAttribute('d', fillPath(pts));
         if (menEl) menEl.setAttribute('d', linePath(pts));
         if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+        if (barEl) barEl.style.transform = 'scaleX(' + (pct / 100) + ')';
         setTimeout(function () { requestAnimationFrame(tick); }, 45);
     }
     requestAnimationFrame(tick);
@@ -138,6 +152,7 @@
         if (waveEl) waveEl.setAttribute('d', fillPath(flat));
         if (menEl) menEl.setAttribute('d', linePath(flat));
         if (pctEl) pctEl.textContent = '100%';
+        if (barEl) barEl.style.transform = 'scaleX(1)';
         if (wrapEl) wrapEl.classList.add('is-complete');
         if (pipEl) pipEl.classList.add('is-pop');
 

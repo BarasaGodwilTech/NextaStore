@@ -6,6 +6,7 @@ const { apiError } = require('../utils');
 const { issueToken } = require('../verification');
 const { sendMail } = require('../mailer');
 const { requireAuth, requireAdminPermission, requireAnyAdminPermission, hasAdminPermission, isSuperAdmin, ADMIN_PERMISSIONS } = require('../middleware');
+const growth = require('../growthInstance');
 const { createNotification, getPlatformSettings, recordAdminAudit, subscriptionInfo, SUBSCRIPTION_PRICE_UGX } = require('../helpers');
 const { removeAllSubscriptionsForUser } = require('../push');
 const presence = require('../presence');
@@ -352,6 +353,10 @@ router.put('/follow-ups/:id', requireAuth, requireAdminPermission(ADMIN_PERMISSI
     } catch (err) { next(err); }
 });
 
+// WIP 93: "Nexi handoffs" - the last 50 times Nexi passed a visitor to a person (time, reason, language, SCRUBBED question). Read-only.
+// Permission: followups.manage (it is a support follow-up list). Empty unless the assistant runs with LOG_FLAGGED_MESSAGES=true.
+router.get('/nexi-handoffs', requireAuth, requireAdminPermission(ADMIN_PERMISSIONS.FOLLOWUPS_MANAGE), (req, res) => require('../assistantProxy').handoffs(req, res));
+
 router.get('/audit', requireAuth, requireAdminPermission(ADMIN_PERMISSIONS.AUDIT_VIEW), async (req, res, next) => {
     try {
         const rows = await prisma.adminAuditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 200, include: { actor: { select: { id: true, name: true, email: true } }, targetUser: { select: { id: true, name: true, email: true } } } });
@@ -427,6 +432,14 @@ router.put('/subscription-payments/:id/approve', requireAuth, requireAdminPermis
             });
         }
 
+        // NextaStore Circle / Crew: the money moment. Creates the recruiter's earning (held for the clearance
+        // window) and runs the fraud checks. Awaited-free and never throws (hooks.safe): a growth-program
+        // problem can never make an approved payment look failed. `existingPaidUntil` lets the stay bonus
+        // know when coverage had ended.
+        growth.hooks.safe.onPaymentApproved({
+            payment, store: { ...payment.store, name: payment.store.name }, adminId: req.user.id, previousPaidUntil: existingPaidUntil
+        });
+
         res.json({ data: { success: true, subscriptionPaidUntil: updatedStore.subscriptionPaidUntil, commitmentMonths, badgeEligible } });
     } catch (err) { next(err); }
 });
@@ -440,6 +453,7 @@ router.put('/subscription-payments/:id/reject', requireAuth, requireAdminPermiss
         const payment = await prisma.subscriptionPayment.update({ where: { id: req.params.id }, data: { status: 'rejected', reviewedAt: new Date(), reviewedBy: req.user.id, note } });
         await recordAdminAudit({ actorId: req.user.id, action: 'subscription_payment.rejected', targetType: 'subscription_payment', targetId: payment.id, targetUserId: existing.store.ownerId, metadata: { note: note || null } });
         if (existing.store.ownerId) await createNotification({ userId: existing.store.ownerId, type: 'subscription', title: 'Payment needs attention', body: note || 'We could not confirm that transaction reference. Please check the mobile-money receipt and submit it again.', link: '/subscription' });
+        growth.hooks.safe.onPaymentRejected({ payment, store: existing.store });
         res.json({ data: serializePayment(payment) });
     } catch (err) { next(err); }
 });

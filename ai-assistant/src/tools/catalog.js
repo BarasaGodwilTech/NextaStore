@@ -62,6 +62,7 @@ function detectCatalogIntent(message) {
     const text = String(message || '').trim();
     if (!text || /[^\x00-\x7F]/.test(text)) return null;
     if (FAQ_EXCLUSIONS.some((re) => re.test(text))) return null;
+    if (require('../rag/normalise').platformConcept(text)) return null;   // WIP 98: discount, voucher, shipping, warranty, rider ... are platform concepts, not products
 
     for (const re of STORE_TRIGGERS) {
         const m = text.match(re);

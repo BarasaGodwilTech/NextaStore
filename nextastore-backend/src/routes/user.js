@@ -5,6 +5,7 @@ const { apiError, saveImageIfDataUrl, storeSlugFrom, deleteImageIfReplaced } = r
 const { publicUser, starterStoreData } = require('../helpers');
 const { removeAllSubscriptionsForUser } = require('../push');
 const presence = require('../presence');
+const growth = require('../growthInstance');
 const { requireAuth, signSessionToken } = require('../middleware');
 const { validateBody, updateUserSchema } = require('../validation');
 
@@ -31,7 +32,7 @@ router.post('/become-seller', requireAuth, async (req, res, next) => {
             slug = `${storeSlugFrom(`${req.user.name}-store`)}-${attempt + 1}`;
         }
 
-        const [user] = await prisma.$transaction([
+        const [user, store] = await prisma.$transaction([
             prisma.user.update({ where: { id: req.user.id }, data: { role: 'seller' } }),
             prisma.store.create({
                 data: {
@@ -40,6 +41,9 @@ router.post('/become-seller', requireAuth, async (req, res, next) => {
                 }
             })
         ]);
+
+        // NextaStore Circle / Crew: a buyer who becomes a seller may match a Crew lead (never throws).
+        growth.hooks.safe.onStoreCreated({ user, store });
 
         res.json({ data: publicUser(user) });
     } catch (err) {

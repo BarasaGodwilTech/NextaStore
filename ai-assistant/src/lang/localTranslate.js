@@ -101,7 +101,7 @@ async function modelTranslate(sentence, signal) {
     if (signal) { if (signal.aborted) ac.abort(); else signal.addEventListener('abort', onAbort, { once: true }); }
     try {
         const out = await ollama.chat(
-            [{ role: 'user', content: `Translate to Luganda:\n${sentence}` }],
+            [{ role: 'user', content: `Translate to Luganda. Glossary: assistant/helper = omuyambi; guide (when referring to Nexi) = omuyambi, never leader; store = edduuka; order = oda. Keep the meaning, punctuation and all numbers.\n${sentence}` }],
             {
                 model: config.gandaModel,
                 temperature: 0.1,
@@ -116,12 +116,15 @@ async function modelTranslate(sentence, signal) {
     }
 }
 
+/** True when a piece has real words to translate (not just digits, ⟦n⟧ link tokens or punctuation). */
+function hasTranslatableText(text) { return /[A-Za-z]{2,}/.test(String(text || '').replace(/⟦\d+⟧/g, '')); }
+
 /** Translate ONE sentence (links already tokenised). Returns Luganda, or null to keep English. */
 async function translateSentence(sentence, signal) {
     const key = norm(sentence);
     const mem = loadMemory();
-    if (mem.has(key)) return mem.get(key);
-    if (cache.has(key)) return cache.get(key);
+    if (mem.has(key)) return { text: mem.get(key), approved: true };   // reviewed wording: served exactly
+    if (cache.has(key)) return { text: cache.get(key), approved: false };
     // Nothing to translate: only tokens, digits or punctuation.
     if (!/[A-Za-z]{2,}/.test(sentence.replace(/⟦\d+⟧/g, ''))) return null;
 
@@ -133,40 +136,44 @@ async function translateSentence(sentence, signal) {
     }
     if (!out) return null;
     if (looksEnglish(out)) return null;                       // model echoed English
+    if (norm(out) === key) return null;                       // WIP 93: an identical echo is never a translation (looksEnglish misses short English sentences)
     if (!sameNumbers(sentence, out)) return null;             // changed a figure: not safe
     const tokens = sentence.match(/⟦\d+⟧/g) || [];
     if (tokens.some((t) => !out.includes(t))) return null;    // lost a link token
     remember(key, out);
-    return out;
+    return { text: out, approved: false };
 }
 
 /**
  * @param {string} text English answer (markdown-lite)
  * @param {{signal?: AbortSignal, onChunk?: (s: string) => void}} [hooks] onChunk gets each finished piece
- * @returns {Promise<{text: string, translated: number, total: number}|null>} null when nothing could be translated
+ * @returns {Promise<{text: string, translated: number, total: number, approved: number}|null>} approved = sentences served from translation-memory.json null when nothing could be translated
  */
 async function translate(text, hooks = {}) {
     if (!enabled() || !text || !text.trim()) return null;
     const { signal, onChunk } = hooks;
     const { out: protectedText, links } = protectLinks(text);
     const pieces = splitPieces(protectedText);
-    let translated = 0, total = 0, result = '';
+    let translated = 0, total = 0, approved = 0, result = '';
 
     for (const p of pieces) {
         let piece;
         if (!p.text) {
             piece = p.suffix;
+        } else if (!hasTranslatableText(p.text)) {
+            piece = p.prefix + p.text + p.suffix; // only digits, link tokens or punctuation: nothing to translate, nothing to count
         } else {
             total += 1;
-            const lg = await translateSentence(p.text, signal);
-            if (lg) translated += 1;
+            const hit = await translateSentence(p.text, signal);
+            const lg = hit && hit.text;
+            if (lg) { translated += 1; if (hit.approved) approved += 1; }
             piece = p.prefix + (lg || p.text) + p.suffix;
         }
         result += piece;
         if (onChunk) onChunk(inlineLinks(piece, links));
     }
     if (!translated) return null;
-    return { text: restoreLinks(result, links), translated, total };
+    return { text: restoreLinks(result, links), translated, total, approved };
 }
 
-module.exports = { translate, enabled, addMemory, resetForTests, splitPieces, numbersOf, sameNumbers, cleanOutput };
+module.exports = { translate, enabled, addMemory, resetForTests, splitPieces, numbersOf, sameNumbers, cleanOutput, hasTranslatableText, norm };

@@ -10,6 +10,8 @@
 const config = require('../config');
 const local = require('./localTranslate');
 
+function normaliseSentenceSpacing(text) { return String(text || '').replace(/([.!?])(?=[A-Za-zÀ-ÖØ-öø-ÿĀ-ž])/g, '$1 '); }
+
 function provider() {
     const want = config.lugandaProvider;
     if (want === 'off') return 'off';
@@ -22,7 +24,7 @@ function provider() {
  */
 async function toLuganda(text, hooks = {}) {
     if (provider() !== 'local') return null;
-    return local.translate(text, hooks);
+    return local.translate(normaliseSentenceSpacing(text), hooks);
 }
 
 /**
@@ -37,6 +39,7 @@ function createStreaming({ signal, onChunk, onProgress, hold = false } = {}) {
     let result = '';
     let translated = 0;
     let total = 0;
+    let approved = 0;
     let started = false;
     let queue = Promise.resolve();
     let queuedError = null;
@@ -50,13 +53,14 @@ function createStreaming({ signal, onChunk, onProgress, hold = false } = {}) {
             if (signal?.aborted) throw Object.assign(new Error('Request cancelled.'), { code: 'cancelled', status: 499 });
             if (!started) { started = true; if (onProgress) onProgress(); }
             const t = await toLuganda(piece, { signal });
-            const count = local.splitPieces(piece).filter((p) => p.text).length;
-            total += count;
             if (t) {
+                total += t.total || 0;
                 translated += t.translated || 0;
+                approved += t.approved || 0;
                 result += t.text;
                 if (onChunk) onChunk(t.text);
             } else {
+                total += local.splitPieces(piece).filter((p) => p.text && local.hasTranslatableText(p.text)).length;
                 result += piece;
                 if (onChunk) onChunk(piece);
             }
@@ -79,19 +83,24 @@ function createStreaming({ signal, onChunk, onProgress, hold = false } = {}) {
         return complete;
     };
 
+    let cancelled = false;
     return {
+        /** Drop everything held and stop (the answer was discarded, e.g. a [HANDOFF] marker): no translation request is made. */
+        cancel() { cancelled = true; held.length = 0; buffer = ''; released = false; },
         push(chunk) {
+            if (cancelled) return;
             buffer += String(chunk || '');
             let complete;
             while ((complete = takeComplete())) enqueue(complete);
         },
         async end() {
+            if (cancelled) return null;
             released = true;
             while (held.length) enqueue(held.shift());
             if (buffer) enqueue(buffer);
             await queue;
             if (queuedError) throw queuedError;
-            return total ? { text: result, translated, total } : null;
+            return total ? { text: result, translated, total, approved } : null;
         },
     };
 }
@@ -102,4 +111,4 @@ function describe() {
     return { provider: p, model: p === 'local' ? config.gandaModel : null, understandsLugandaInput: false };
 }
 
-module.exports = { provider, toLuganda, createStreaming, describe };
+module.exports = { provider, toLuganda, createStreaming, describe, normaliseSentenceSpacing };

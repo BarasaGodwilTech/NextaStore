@@ -101,6 +101,13 @@ function firstImage(product) {
 }
 
 /** Everything a page needs that is derived from the store's own settings. */
+// Stock only applies to physical listings. Services and digital items keep the
+// column at its default of 0, so they must never be described as out of stock
+// (in search-result markup or in the text a shared link shows).
+function isAvailable(p) {
+    return (p.listingType || 'physical') !== 'physical' || Number(p.stock) > 0;
+}
+
 function buildStoreSeo({ store, products = [], productCount = 0, siteUrl, appUrl, paymentLabels = [] }) {
     const district = titleCase(store.district);
     const seo = store.seo || {};
@@ -164,7 +171,7 @@ function buildStoreSeo({ store, products = [], productCount = 0, siteUrl, appUrl
                             '@type': 'Offer',
                             price: Number(p.price),
                             priceCurrency: 'UGX',
-                            availability: Number(p.stock) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                            availability: isAvailable(p) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                             url: productUrl,
                             seller: { '@id': `${canonical}#store` }
                         }
@@ -285,7 +292,7 @@ function buildProductShare({ product, store, siteUrl, appUrl }) {
     const title = `${clip(name, 70 - priceSuffix.length)}${priceSuffix}`;
 
     const district = titleCase(store.district);
-    const inStock = Number(product.stock) > 0;
+    const inStock = isAvailable(product);
     const lead = `Sold by ${store.name}${district ? ` in ${district}` : ''} on NextaStore.${inStock ? '' : ' Currently out of stock.'}`;
     const description = clip(`${lead} ${collapse(product.description)}`, 160);
 

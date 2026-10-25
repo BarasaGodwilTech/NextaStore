@@ -180,12 +180,17 @@ const call = async (handler, req) => { const res = { code: 200, body: null, stat
   const code = (f) => fsr.readFileSync(path.join(SRC, f), 'utf8').split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
   const orderings = ['routes/store.js', 'routes/products.js'].map(code).join('\n');
   // Only the ordering expressions themselves (a `select` that merely reads the badge for display is fine).
-  const orderExprs = [...(orderings.match(/orderBy:\s*\[[^\]]*\]/g) || []), ...(orderings.match(/const orderBy\s*=[^;]*;/g) || [])];
+  // The store directory keeps its sort options in a named map (DIRECTORY_SORTS); read each entry as an ordering too.
+  const sortMap = (orderings.match(/const DIRECTORY_SORTS\s*=\s*\{[\s\S]*?\n\};/) || [''])[0];
+  const mapExprs = [...sortMap.matchAll(/^\s*\w+:\s*(\[.*\]),?\s*$/gm)].map(m => 'orderBy: ' + m[1]);
+  const orderExprs = [...(orderings.match(/orderBy:\s*\[[^\]]*\]/g) || []), ...mapExprs, ...(orderings.match(/const orderBy\s*=[^;]*;/g) || [])];
   check('found the ordering expressions to inspect (guard is not vacuous)', orderExprs.length >= 4, String(orderExprs.length));
   check('no ordering ranks one tier above another (badgeCommitmentMonths is never an ordering key)',
     !orderExprs.some(e => /badgeCommitmentMonths/.test(e)), orderExprs.filter(e => /badgeCommitmentMonths/.test(e)).join(' ; '));
-  const storeOrders = orderExprs.filter(e => /^orderBy:\s*\[\{\s*(verified|createdAt)/.test(e) && !/sold|price/.test(e));
-  check('store lists and search: badged first, then newest', storeOrders.length >= 2 && storeOrders.every(e => /^orderBy:\s*\[\{ verified: 'desc' \}, \{ createdAt: 'desc' \}\]$/.test(e.replace(/\s+/g, ' '))), storeOrders.join(' ; '));
+  // Every ordering that puts badge holders first must then go newest-first (an `id` tie-breaker for stable paging is fine).
+  // The plain "newest" and "name" sorts do not mention the badge at all, so they are not in this list.
+  const storeOrders = orderExprs.filter(e => /^orderBy:\s*\[\{\s*verified/.test(e) && !/sold|price/.test(e));
+  check('store lists and search: badged first, then newest', storeOrders.length >= 2 && storeOrders.every(e => /^orderBy:\s*\[\{ verified: 'desc' \}, \{ createdAt: 'desc' \}(, \{ id: 'asc' \})?\]$/.test(e.replace(/\s+/g, ' '))), storeOrders.join(' ; '));
   const popular = orderExprs.find(e => /sold: 'desc'/.test(e) && /verified/.test(e)) || '';
   check('"popular" products: real sales always come before the badge', /sold: 'desc'[^\]]*verified/.test(popular.replace(/\s+/g, ' ')), popular);
   const perkText = Object.values(helpers.TIER_PERKS || {}).flatMap(t => t.perks).join(' | ');

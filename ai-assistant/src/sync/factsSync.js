@@ -1,5 +1,5 @@
 /**
- * Self-updating platform facts (WIP 60, Layer A of WIP_NEXI_PLAN_v2.md).
+ * Self-updating platform facts (WIP 60).
  *
  * Every few minutes Nexi asks the real backend for the rules the code enforces
  * (GET /api/assistant/facts: Seller Pass price, trial length, cancel rule, order
@@ -42,6 +42,8 @@ function validateFacts(f) {
     const c = o.buyerCancel;
     if (!isNum(c.windowMinutes) || !isNum(c.limit) || !isNum(c.limitWindowDays) || !isStrArr(c.allowedStatuses)) return 'orders.buyerCancel is malformed';
     if (!isStrArr(o.fulfillmentMethods) || !isStrArr(f.listingTypes) || !isStrArr(f.onboardingSteps)) return 'fulfilment, listing types or onboarding steps are malformed';
+    // New blocks are optional for compatibility with older backend versions.
+    // Malformed optional blocks are ignored by rendering rather than rejecting the payload.
     return null;
 }
 
@@ -55,6 +57,99 @@ function orList(arr) {
     if (arr.length <= 1) return arr.join('');
     return `${arr.slice(0, -1).join(', ')} or ${arr[arr.length - 1]}`;
 }
+// WIP 97: how people phrase the questions each generated section answers. Written into the file as `aliases:` lines
+// (indexed at a lower weight by rag/chunk.js) so a live sync never loses them. Edit here, not in the generated file.
+const FACT_ALIASES = {
+    "Seller Pass price, cost, fee and free trial": [
+        "how the amount for several months is worked out",
+        "how much is seller pass",
+        "price of seller pass per month",
+        "seller pass price per month",
+        "what does a month of coverage cost",
+        "how long is the free trial",
+        "price of subscription",
+        "cost for 3 months",
+        "is seller pass refundable",
+        "can i get my seller pass money back",
+        "refund for subscription",
+        "how many days free",
+        "number of trial days for new stores",
+        "how many trial days",
+        "what are the coverage blocks",
+        "how many months can i buy at a time",
+        "coverage block sizes"
+    ],
+    "Account, passwords and sign-in e-mails": [
+        "minimum password length",
+        "password requirements",
+        "what makes a good password here"
+    ],
+    "Contact and support": [
+        "how do i contact support",
+        "support email",
+        "who do i call for help",
+        "customer care",
+        "where is the support page",
+        "talk to the team",
+        "help desk",
+        "get help from nextastore"
+    ],
+    "Seller badge tiers: Verified Seller, Gold Partner, Platinum Partner": [
+        "how many months for verified seller",
+        "what does gold partner need",
+        "platinum partner requirements",
+        "badge ladder",
+        "how long to get a badge",
+        "what do badges give"
+    ],
+    "Order statuses and what buyers see": [
+        "order status names",
+        "what does placed mean",
+        "what does shipped mean",
+        "what do i see for a completed order",
+        "statuses buyers see",
+        "my order status explained"
+    ],
+    "How a seller moves an order along": [
+        "how do i confirm an order as a seller",
+        "how do i mark an order completed",
+        "what buttons move an order",
+        "seller order actions"
+    ],
+    "Can a buyer cancel an order? The cancellation rule": [
+        "can a buyer cancel",
+        "time limit to cancel an order",
+        "how many cancellations allowed",
+        "cancellation window",
+        "cancel within thirty minutes"
+    ],
+    "Delivery, pickup and listing types": [
+        "does the store deliver",
+        "do i need an address",
+        "pickup or delivery",
+        "what is a service listing",
+        "what is a digital listing",
+        "what types of listings exist",
+        "how do service orders work",
+        "do i need an address for pickup",
+        "collect it myself from the seller",
+        "what is the difference between delivery and pickup"
+    ],
+    "Store setup steps": [
+        "cannot launch my store",
+        "what stops a store from opening to the public",
+        "is a listing required before going live",
+        "going live with zero items",
+        "store onboarding steps",
+        "what are the four steps",
+        "what comes after store basics",
+        "launch requirements",
+        "what happens when i press launch"
+    ]
+};
+
+function aliasLine(heading) { const a = FACT_ALIASES[heading]; return a && a.length ? `aliases: ${a.join(' | ')}` : null; }
+
 function plural(n, word) { return `${n} ${word}${n === 1 ? '' : 's'}`; }
 
 /**
@@ -70,12 +165,31 @@ function renderFactsMarkdown(f) {
     const opts = s.periodOptionsMonths;
     const example = opts.find((m) => m > 1) || opts[0];
     out.push('## Seller Pass price, cost, fee and free trial');
+    { const al = aliasLine('Seller Pass price, cost, fee and free trial'); if (al) out.push(al); }
     out.push(`Seller Pass costs ${ugx(s.pricePerMonth, cur)} per month of coverage. Every new store starts with a free trial of ${plural(s.trialDays, 'day')}.`);
     out.push(`Coverage is bought in blocks of ${orList(opts.map(String))} months at a time. The amount for a block is the monthly price times the number of months (for example ${example} month${example === 1 ? '' : 's'} is ${ugx(s.pricePerMonth * example, cur)}), and the amount entered on the subscription page must match exactly.`);
+    if (typeof s.refundable === 'boolean') out.push(s.refundable ? 'Seller Pass payments can be refunded.' : 'Seller Pass payments are not refundable.');
     out.push('');
+
+    // Account and support facts are optional for older backend payloads.
+    if (f.account && typeof f.account === 'object' && typeof f.account.passwordMinLength === 'number' && Number.isFinite(f.account.passwordMinLength) && f.account.passwordMinLength > 0) {
+        out.push('## Account, passwords and sign-in e-mails');
+        { const al = aliasLine('Account, passwords and sign-in e-mails'); if (al) out.push(al); }
+        out.push(`A password must be at least ${f.account.passwordMinLength} characters.`);
+        if (f.account.emailDeliveryConfigured === true) out.push('Verification and password-reset e-mails are sent by NextaStore.');
+        out.push('');
+    }
+    if (f.support && typeof f.support === 'object' && (typeof f.support.email === 'string' && f.support.email.trim() || typeof f.support.url === 'string' && f.support.url.trim())) {
+        out.push('## Contact and support');
+        { const al = aliasLine('Contact and support'); if (al) out.push(al); }
+        if (typeof f.support.email === 'string' && f.support.email.trim()) out.push(`For support, email ${f.support.email.trim()}.`);
+        if (typeof f.support.url === 'string' && f.support.url.trim()) out.push(`The Support page is ${f.support.url.trim()}.`);
+        out.push('');
+    }
 
     // Badges
     out.push('## Seller badge tiers: Verified Seller, Gold Partner, Platinum Partner');
+    { const al = aliasLine('Seller badge tiers: Verified Seller, Gold Partner, Platinum Partner'); if (al) out.push(al); }
     out.push(`A store earns a trust badge from its months of paid Seller Pass coverage: ${list(f.badgeTiers.map((t) => `${t.label} at ${t.minMonths} or more months`))}.`);
     if (f.subscription.badgeCountsContinuousCoverage) {
         out.push('The months count continuous paid coverage: payments made while the store is still covered add up toward the next tier, and if coverage lapses the count starts again from the next payment.');
@@ -88,10 +202,12 @@ function renderFactsMarkdown(f) {
     const o = f.orders;
     const labelOf = (st) => (o.statusLabels && o.statusLabels[st]) || st;
     out.push('## Order statuses and what buyers see');
+    { const al = aliasLine('Order statuses and what buyers see'); if (al) out.push(al); }
     out.push(`An order is always in one of these statuses: ${list(o.statuses)}. A new order starts as ${o.statuses[0]}.`);
     out.push(`Buyers see friendlier labels on the Orders page: ${list(o.statuses.map((st) => `${st} is shown as "${labelOf(st)}"`))}.`);
     out.push('');
     out.push('## How a seller moves an order along');
+    { const al = aliasLine('How a seller moves an order along'); if (al) out.push(al); }
     const moves = Object.entries(o.sellerTransitions).filter(([, to]) => to.length);
     out.push(`Sellers move orders along from the dashboard: ${list(moves.map(([from, to]) => `${from} to ${orList(to)}`))}.`);
     const finals = Object.entries(o.sellerTransitions).filter(([, to]) => !to.length).map(([st]) => st);
@@ -106,18 +222,21 @@ function renderFactsMarkdown(f) {
     const c = o.buyerCancel;
     const sellerCancel = Object.entries(o.sellerTransitions).filter(([, to]) => to.includes('cancelled')).map(([st]) => st);
     out.push('## Can a buyer cancel an order? The cancellation rule');
+    { const al = aliasLine('Can a buyer cancel an order? The cancellation rule'); if (al) out.push(al); }
     out.push(`A buyer can cancel an order from the Orders page only while it is ${orList(c.allowedStatuses)}, and only within ${plural(c.windowMinutes, 'minute')} of placing it. A short reason is required${c.reasonRequired ? '' : ' (optional)'}.`);
     out.push(`Each buyer can cancel at most ${plural(c.limit, 'order')} this way in any ${plural(c.limitWindowDays, 'day')}. After the ${c.windowMinutes}-minute window, or once the limit is used, the buyer should message the seller to ask for the cancellation.${sellerCancel.length ? ` A seller can cancel ${orList(sellerCancel.map((st) => `a ${st} order`))} at any time (for example when an item is out of stock).` : ''}`);
     out.push('');
 
     // Fulfilment and listings
     out.push('## Delivery, pickup and listing types');
+    { const al = aliasLine('Delivery, pickup and listing types'); if (al) out.push(al); }
     out.push(`At checkout each store's items are fulfilled by ${orList(o.fulfillmentMethods)}.${o.deliveryNeedsAddress ? ' Delivery needs a delivery address; pickup does not.' : ''}`);
     out.push(`A listing can be one of these types: ${orList(f.listingTypes)}. Physical listings use the cart and stock; service and digital listings work by shoppers sending an enquiry through Messages.`);
     out.push('');
 
     // Onboarding
     out.push('## Store setup steps');
+    { const al = aliasLine('Store setup steps'); if (al) out.push(al); }
     out.push(`Opening a store has ${f.onboardingSteps.length} steps, in this order: ${f.onboardingSteps.map((x, i) => `${i + 1}. ${x}`).join(', ')}.`);
     if (f.launchNeedsProduct) out.push('A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.');
     out.push('');
@@ -129,6 +248,9 @@ function renderFactsMarkdown(f) {
 let lastEtag = null;
 let lastOutcome = null;     // 'updated' | 'unchanged' | 'not-modified' | 'failed'
 let timer = null;
+let retryTimer = null;
+let retryAttempt = 0;
+let connected = false;
 
 function factsPath() { return config.factsFile; }
 
@@ -149,7 +271,12 @@ async function syncOnce(opts = {}) {
     try {
         const headers = { Accept: 'application/json' };
         if (lastEtag && fs.existsSync(target)) headers['If-None-Match'] = lastEtag;
-        const res = await fetchImpl(`${apiBase}/assistant/facts`, { headers, signal: AbortSignal.timeout(4000) });
+        let res;
+        try { res = await fetchImpl(`${apiBase}/assistant/facts`, { headers, signal: AbortSignal.timeout(4000) }); } catch (err) {
+            if (/localhost/i.test(apiBase) && err && err.cause && err.cause.code === 'ECONNREFUSED') {
+                try { res = await fetchImpl(`${apiBase.replace(/localhost/ig, '127.0.0.1')}/assistant/facts`, { headers, signal: AbortSignal.timeout(4000) }); } catch (retryErr) { throw retryErr; }
+            } else throw err;
+        }
         if (res.status === 304) return report('not-modified');
         if (!res.ok) return report('failed', `backend answered ${res.status}`);
 
@@ -162,11 +289,15 @@ async function syncOnce(opts = {}) {
         let current = null;
         try { current = fs.readFileSync(target, 'utf8'); } catch (e) { /* first run */ }
         lastEtag = (res.headers && res.headers.get && res.headers.get('etag')) || null;
-        if (current === text) return report('unchanged');
+        if (current === text) { report('unchanged'); markConnected(); return { outcome: 'unchanged' }; }
         writeAtomically(target, text);
+        markConnected();
         return report('updated');
     } catch (err) {
-        return report('failed', err && err.message ? err.message : String(err));
+        const cause = err && err.cause && err.cause.code ? ` ${err.cause.code}` : '';
+        const result = report('failed', `${err && err.message ? err.message : String(err)}${cause}`);
+        scheduleRetry(apiBase);
+        return result;
     }
 }
 
@@ -178,16 +309,31 @@ function report(outcome, detail) {
     return { outcome, detail };
 }
 
+function markConnected() {
+    retryAttempt = 0;
+    if (retryTimer) clearTimeout(retryTimer); retryTimer = null;
+    if (!connected) console.log('[assistant] Facts sync connected.');
+    connected = true;
+}
+function scheduleRetry(apiBase) {
+    if (retryTimer || connected) return;
+    retryAttempt += 1;
+    const seconds = retryAttempt <= 3 ? [10, 20, 40][retryAttempt - 1] : Math.ceil(config.factsSyncMs / 1000);
+    console.warn(`[assistant] Backend not reachable at ${apiBase} yet (is the backend running on that port?). Using saved facts, retrying in ${seconds} s.`);
+    retryTimer = setTimeout(async () => { retryTimer = null; await syncOnce(); }, seconds * 1000);
+    if (retryTimer.unref) retryTimer.unref();
+}
+
 /** Sync now, then every FACTS_SYNC_MS. Does nothing when FACTS_SYNC_MS=0. */
 function start() {
     if (!config.factsSyncMs) return null;
     syncOnce();
-    timer = setInterval(syncOnce, config.factsSyncMs);
+    timer = setInterval(() => { if (connected && !retryTimer) syncOnce(); }, config.factsSyncMs);
     if (timer.unref) timer.unref();
     return timer;
 }
 
-function stop() { if (timer) clearInterval(timer); timer = null; }
+function stop() { if (timer) clearInterval(timer); if (retryTimer) clearTimeout(retryTimer); timer = null; retryTimer = null; connected = false; retryAttempt = 0; }
 
 /** For start-up output and the selftest. */
 function describe() {

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6BEFBF"/><stop offset=".45" stop-color="#16C48A"/><stop offset="1" stop-color="#008558"/></linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0A9A68"/><stop offset="1" stop-color="#00583B"/></linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#075E42"/><stop offset="1" stop-color="#0B8059"/></linearGradient>
+    <linearGradient id="cream" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="0" y2="175"><stop offset="0" stop-color="#FFFBF1"/><stop offset="1" stop-color="#F0D9AC"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE29A"/><stop offset="1" stop-color="#F29A12"/></linearGradient>
+    <linearGradient id="goldTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFEFC4"/><stop offset="1" stop-color="#FFC95A"/></linearGradient>
+    <radialGradient id="wheel" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#2F7A60"/><stop offset="1" stop-color="#062A1F"/></radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <filter id="blur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    <clipPath id="faceClip"><path d="M70 72H210L192 150H88Z"/></clipPath>
+  </defs>
+  <ellipse cx="128" cy="222" rx="82" ry="9" fill="#000" opacity=".3" filter="url(#blur)"/>
+  <!-- frame -->
+  <path d="M22 46H50L78 160H190" fill="none" stroke="#C9AE7E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 3)"/>
+  <path d="M22 46H50L78 160H190" fill="none" stroke="url(#cream)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M104 160V178M176 160V178" stroke="url(#cream)" stroke-width="9" stroke-linecap="round"/>
+  <!-- wheels -->
+  <circle cx="104" cy="192" r="16" fill="url(#wheel)"/><circle cx="104" cy="192" r="6.5" fill="url(#cream)"/><ellipse cx="98" cy="185" rx="5" ry="3" fill="#fff" opacity=".35" transform="rotate(-30 98 185)"/>
+  <circle cx="176" cy="192" r="16" fill="url(#wheel)"/><circle cx="176" cy="192" r="6.5" fill="url(#cream)"/><ellipse cx="170" cy="185" rx="5" ry="3" fill="#fff" opacity=".35" transform="rotate(-30 170 185)"/>
+  <!-- basket: interior, items, side, front -->
+  <path d="M70 72H210L226 54H86Z" fill="url(#inner)"/>
+  <g>
+    <path d="M100 66V40a5 5 0 0 1 5-5h34a5 5 0 0 1 5 5V66Z" fill="url(#gold)"/>
+    <path d="M100 40a5 5 0 0 1 5-5h34a5 5 0 0 1 5 5l-6 8H106Z" fill="url(#goldTop)"/>
+    <rect x="119" y="35" width="8" height="31" fill="#FFF4DD" opacity=".9"/>
+    <path d="M158 66V50a6 6 0 0 1 6-6h22a6 6 0 0 1 6 6V66Z" fill="#FF7A66"/>
+    <path d="M158 50a6 6 0 0 1 6-6h22a6 6 0 0 1 6 6l-4 6h-26Z" fill="#FFB1A4"/>
+  </g>
+  <path d="M210 72L226 54L208 132L192 150Z" fill="url(#side)"/>
+  <path d="M70 72H210L192 150H88Z" fill="url(#face)" stroke="url(#face)" stroke-width="14" stroke-linejoin="round"/>
+  <g clip-path="url(#faceClip)"><path d="M60 62H210L120 160H60Z" fill="url(#gloss)"/></g>
+  <g fill="#064D36">
+    <rect x="106" y="90" width="15" height="46" rx="7.5"/><rect x="136" y="90" width="15" height="46" rx="7.5"/><rect x="166" y="90" width="15" height="46" rx="7.5"/>
+  </g>
+  <g fill="#fff" opacity=".28"><rect x="108" y="92" width="4" height="40" rx="2"/><rect x="138" y="92" width="4" height="40" rx="2"/><rect x="168" y="92" width="4" height="40" rx="2"/></g>
+  <!-- rim -->
+  <path d="M64 72H214" stroke="#C9AE7E" stroke-width="13" stroke-linecap="round" transform="translate(0 2.5)"/>
+  <path d="M64 72H214" stroke="url(#cream)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M226 54L212 72" stroke="url(#cream)" stroke-width="9" stroke-linecap="round"/>
+</svg>

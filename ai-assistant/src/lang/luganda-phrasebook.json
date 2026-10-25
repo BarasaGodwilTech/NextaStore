@@ -245,7 +245,7 @@
     },
     {
       "id": "starter_buy_safely",
-      "en_reference": "Buying safely: keep payment and communication on NextaStore where there is a record; be cautious if someone pushes payment or communication off-platform; never share passwords or OTP codes; use Trust and Safety if something feels wrong.",
+      "en_reference": "Buying safely: NextaStore does not process or hold your payment. Agree on the price and delivery or pickup in NextaStore Messages so there is a record. Be careful with anyone pushing you to leave Messages or rush payment. Never share passwords or one-time codes. Use Trust and Safety if something feels wrong.",
       "patterns": [
         "nnyinza ntya okugula mu ngeri etaliimu bulabe",
         "nnyinza ntya okugula nga ndi safe ku NextaStore",
@@ -255,7 +255,9 @@
         "okugula mu bukuumi ku NextaStore"
       ],
       "lg_answer": "Okugula mu bukuumi ku NextaStore, ssaawo okusasula n'emboozi zonna ku platform awali record. Beera mwegendereza omuntu akukaka okusasula oba okwogera ebweru wa NextaStore nga oda tennatwalibwa oba okukakasibwa. Towa muntu yenna password yo oba OTP. Bw'oba olaba ekitali kituufu, kebera 'Trust and Safety' oba tuukirira obuyambi bwa NextaStore.",
-      "needs_review": true
+      "needs_review": true,
+      "disabled": true,
+      "disabled_reason": "The Luganda answer teaches advice that no longer matches the Terms and needs a Luganda speaker to rewrite it from the corrected English."
     }
   ]
 }

@@ -754,6 +754,7 @@ class NextaStoreApp {
      *  hand the page back only to the SAME person, never to whoever happens
      *  to sign in next. */
     redirectToLogin(reason = null) {
+        if (window.__nxAbout) return;   // a signed-out visitor is already on their way to the Circle/Crew about page
         // One page name (`cart`), a store (`amina-crafts`), or a product's own
         // address (`amina-crafts/blue-sofa-x7k2m9ab`: both parts are needed).
         const parts = window.location.pathname.replace(/\.html$/i, '').split('/').filter(Boolean);
@@ -999,6 +1000,9 @@ class NextaStoreApp {
             : (role === 'seller' ? `<a href="/onboarding" class="account-menu-item"><i class="fas fa-store"></i> Finish setting up your store</a>` : '');
         const admin = role === 'admin'
             ? `<a href="/admin" class="account-menu-item"><i class="fas fa-gauge-high"></i> Admin console</a>` : '';
+        // NextaStore Circle (earn by inviting sellers). Admins run the program instead of joining it.
+        const earn = role !== 'admin'
+            ? `<a href="/circle" class="account-menu-item"><i class="fas fa-handshake"></i> Earn with NextaStore</a>` : '';
         const becomeSeller = role === 'buyer'
             ? `<button type="button" class="account-menu-item is-divider-top" data-account-action="seller"><i class="fas fa-store"></i> Become a seller</button>` : '';
 
@@ -1037,6 +1041,7 @@ class NextaStoreApp {
                         <a href="/favorites" class="account-menu-item"><i class="fas fa-heart"></i> Favorites</a>
                         <a href="/following" class="account-menu-item"><i class="fas fa-store"></i> Following</a>
                         <a href="/messages" class="account-menu-item"><i class="fas fa-message"></i> Messages <span class="unread-badge hidden" data-unread-badge></span></a>
+                        ${earn}
                         ${becomeSeller}
                     </div>
                     <button type="button" class="account-menu-item account-menu-logout" data-account-action="logout"><i class="fas fa-right-from-bracket"></i> Log out</button>
@@ -1182,7 +1187,7 @@ class NextaStoreApp {
        notification the server already creates for every conversation).
        Messages live in Messages; the bell just points at them. */
     notificationIcon(type) {
-        return { new_order: 'fa-bag-shopping', new_message: 'fa-message', low_stock: 'fa-box-open', subscription: 'fa-credit-card', new_product: 'fa-tags', store_live: 'fa-store' }[type] || 'fa-bell';
+        return { new_order: 'fa-bag-shopping', new_message: 'fa-message', low_stock: 'fa-box-open', subscription: 'fa-credit-card', new_product: 'fa-tags', store_live: 'fa-store', growth: 'fa-handshake' }[type] || 'fa-bell';
     }
 
     /* Notification links come from the API, but they end up in an href — so

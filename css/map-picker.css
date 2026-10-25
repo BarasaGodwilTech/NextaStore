@@ -305,6 +305,8 @@
 }
 .mp-locate-btn:hover { background: var(--primary-light) !important; color: var(--primary) !important; }
 .mp-locate-btn.is-loading { color: var(--secondary); pointer-events: none; }
+/* Directions modal: once we have the person's position the button turns blue like their dot. */
+.mp-locate-btn.is-active { color: #2563eb !important; }
 
 /* Feedback for "Use my location" — same slot/style as .map-guidance
  * (only one of the two is ever shown at a time) so a permission-denied or
@@ -742,7 +744,9 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--border-radius-md, 8px);
-    background: var(--gray-100, #f1f1f1);
+    /* A map-coloured base (OSM's land tone), not near-white: if a frame is ever a
+       few pixels narrower than its slot the gap reads as map, not as a blank strip. */
+    background: #e9e5dc;
     max-width: 100%;
 }
 
@@ -750,6 +754,13 @@
     position: absolute;
     width: 256px;
     height: 256px;
+    /* Tiles must stay exactly 256px. The site-wide `img { max-width: 100% }` reset
+       (main.css) shrinks a tile whenever its frame is narrower than 256px - which is
+       the case in the desktop sidebar (~214px) - and the squashed tiles leave a blank
+       vertical bar through the middle of the map. Phones never hit it (slot > 256px). */
+    max-width: none;
+    max-height: none;
+    min-width: 0;
     display: block;
     pointer-events: none;
 }
@@ -778,6 +789,39 @@
     position: absolute;
     inset: 0;
 }
+/* The tap target is a <button> when it opens the in-app directions modal. */
+button.map-preview-overlay-link {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+button.map-preview-overlay-link:focus-visible { outline: 3px solid var(--secondary, #008558); outline-offset: -3px; }
+.map-preview-hint {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--secondary-dark, #062A1F);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.22);
+    pointer-events: none;
+    transition: background 0.15s, color 0.15s;
+}
+.map-preview-hint i { color: var(--secondary, #008558); }
+.map-preview-frame:hover .map-preview-hint { background: var(--secondary, #008558); color: #fff; }
+.map-preview-frame:hover .map-preview-hint i { color: #fff; }
 
 /* City/district-only preview: no pin, just the general area softly shaded. */
 .map-preview-area {
@@ -844,3 +888,176 @@ body.map-picker-open {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 .map-preview-attribution a { color: inherit; text-decoration: none; position: relative; z-index: 2; }
+
+
+/* ==========================================================================
+   Directions modal (js/map-directions.js)
+   ==========================================================================
+   One wide modal for "how do I get there from where I am": opened by tapping a
+   shared location in Messages, the store's map or address, a pickup location
+   in an order. Same family as the map picker's modal above (rounded white
+   panel on a dimmed backdrop), but wide: a summary side panel next to a big
+   map on desktop, a full-height sheet with the map on top on a phone. */
+body.nsd-open { overflow: hidden; overscroll-behavior: none; }
+
+.nsd-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg, 1.25rem);
+    background: rgba(11, 59, 43, 0.55);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    overscroll-behavior: contain;
+}
+.nsd-panel {
+    width: min(1080px, 100%);
+    height: min(86vh, 740px);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: var(--border-radius-xl, 20px);
+    box-shadow: var(--shadow-xl, 0 24px 60px rgba(0, 0, 0, 0.3));
+    overflow: hidden;
+    animation: nsdIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes nsdIn { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .nsd-panel { animation: none; } }
+
+.nsd-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--gray-200, #e5e7eb);
+    flex-shrink: 0;
+}
+.nsd-head-text { min-width: 0; }
+.nsd-head h3 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: var(--ink, #0b3b2b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nsd-head p { margin: 0.1rem 0 0; font-size: 0.8125rem; color: var(--gray-500, #6b7280); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nsd-close {
+    flex-shrink: 0;
+    width: 44px; height: 44px; min-height: 0;   /* 44px: the tap size used across the site */
+    display: grid; place-items: center;
+    border: 0; border-radius: 50%;
+    background: var(--gray-100, #f1f1f1);
+    color: var(--gray-600, #4b5563);
+    font-size: 1.25rem; line-height: 1;
+    cursor: pointer;
+}
+.nsd-close:hover { background: var(--gray-200, #e5e7eb); color: var(--ink, #0b3b2b); }
+
+.nsd-body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+}
+.nsd-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-right: 1px solid var(--gray-200, #e5e7eb);
+    overflow-y: auto;
+    min-height: 0;
+}
+.nsd-map {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    background: #e9e5dc;
+    overflow: hidden;
+}
+.nsd-map .leaflet-container { width: 100%; height: 100%; font-family: inherit; background: #e9e5dc; }
+.nsd-map .map-preview-frame { border-radius: 0; }
+
+/* Summary card: the numbers people actually want */
+.nsd-summary { border-radius: var(--border-radius-lg, 14px); background: var(--secondary-light, #e8f6ef); border: 1px solid rgba(0, 133, 88, 0.25); padding: 1rem; }
+.nsd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.nsd-stat small { display: block; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500, #6b7280); }
+.nsd-stat strong { display: block; margin-top: 0.15rem; font-size: 1.5rem; line-height: 1.15; font-weight: 800; color: var(--secondary-dark, #062a1f); }
+.nsd-alt { margin: 0.75rem 0 0; padding-top: 0.7rem; border-top: 1px dashed rgba(0, 133, 88, 0.3); font-size: 0.8125rem; color: var(--gray-600, #4b5563); display: flex; align-items: center; gap: 0.5rem; }
+.nsd-alt i { color: var(--secondary, #008558); }
+.nsd-note { margin: 0.6rem 0 0; font-size: 0.75rem; color: var(--gray-500, #6b7280); line-height: 1.45; }
+
+.nsd-status { display: flex; align-items: flex-start; gap: 0.7rem; }
+.nsd-status > i { margin-top: 0.15rem; font-size: 1.1rem; color: var(--secondary, #008558); }
+.nsd-status strong { display: block; font-size: 0.9375rem; color: var(--secondary-dark, #062a1f); }
+.nsd-status span { display: block; margin-top: 0.15rem; font-size: 0.8125rem; color: var(--gray-600, #4b5563); line-height: 1.45; }
+.nsd-status .btn { margin-top: 0.65rem; }
+.nsd-summary.is-problem { background: #fff7ed; border-color: #fed7aa; }
+.nsd-summary.is-problem .nsd-status > i { color: #c2410c; }
+.nsd-spin { animation: nsdSpin 0.9s linear infinite; }
+@keyframes nsdSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .nsd-spin { animation: none; } }
+
+/* From / To rows with a connecting line */
+.nsd-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.85rem; position: relative; }
+.nsd-points::before { content: ""; position: absolute; left: 11px; top: 24px; bottom: 24px; border-left: 2px dotted var(--gray-300, #d1d5db); }
+.nsd-points li { display: flex; gap: 0.7rem; align-items: flex-start; position: relative; min-width: 0; }
+.nsd-dot { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.7rem; color: #fff; }
+.nsd-dot.from { background: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18); }
+.nsd-dot.to { background: #e0342c; box-shadow: 0 0 0 4px rgba(224, 52, 44, 0.16); }
+.nsd-points small { display: block; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500, #6b7280); }
+.nsd-points strong { display: block; font-size: 0.9375rem; color: var(--ink, #0b3b2b); overflow-wrap: anywhere; }
+.nsd-points span.nsd-addr { display: block; font-size: 0.8125rem; color: var(--gray-600, #4b5563); overflow-wrap: anywhere; }
+.nsd-seller-note { font-size: 0.8125rem; color: var(--gray-700, #374151); background: var(--gray-50, #f9fafb); border: 1px solid var(--gray-200, #e5e7eb); border-radius: var(--border-radius-md, 10px); padding: 0.65rem 0.8rem; line-height: 1.45; overflow-wrap: anywhere; }
+.nsd-seller-note b { display: block; margin-bottom: 0.15rem; font-size: 0.6875rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-500, #6b7280); }
+
+.nsd-actions { margin-top: auto; display: flex; flex-direction: column; gap: 0.55rem; }
+.nsd-actions .btn { width: 100%; justify-content: center; }
+
+/* Map markers (Leaflet divIcons) */
+.nsd-pin { color: #e0342c; font-size: 2rem; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); display: grid; place-items: end center; width: 32px; height: 38px; }
+.nsd-me { position: relative; width: 20px; height: 20px; }
+.nsd-me::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4); }
+.nsd-me::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; background: rgba(37, 99, 235, 0.22); animation: nsdPulse 2s ease-out infinite; }
+@keyframes nsdPulse { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .nsd-me::after { animation: none; } }
+
+/* Phone: full-width sheet, map on top, summary underneath */
+@media (max-width: 760px) {
+    .nsd-overlay { padding: 0; align-items: flex-end; }
+    .nsd-panel { width: 100%; height: 94vh; height: 94dvh; border-radius: 20px 20px 0 0; }
+    .nsd-body { grid-template-columns: 1fr; grid-template-rows: minmax(180px, 1fr) auto; }
+    .nsd-map { order: 1; }
+    .nsd-side { order: 2; border-right: 0; border-top: 1px solid var(--gray-200, #e5e7eb); max-height: 52vh; max-height: 52dvh; /* of the screen, not of its own row: a % here resolves against the auto-sized row and chops the card to half its height */ padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom, 0px)); gap: 0.8rem; }
+    .nsd-points, .nsd-seller-note { display: none; }
+    .nsd-actions { flex-direction: row; }
+    /* .btn is nowrap: without min-width:0 + wrapping, two buttons side by side push the second off the screen edge */
+    .nsd-actions .btn { flex: 1 1 0; min-width: 0; width: auto; padding: 0.6rem 0.5rem; white-space: normal; line-height: 1.2; text-align: center; font-size: 0.875rem; }
+    .nsd-stat strong { font-size: 1.3rem; }
+}
+
+/* Phone on its side (short and wide): stacking map over summary leaves the summary a 100px
+   sliver, so put them side by side like the desktop layout - summary left, map right. */
+@media (max-width: 760px) and (max-height: 480px) {
+    .nsd-panel { height: 100%; border-radius: 0; }
+    .nsd-head { padding: 0.5rem 1rem; }
+    .nsd-body { grid-template-columns: minmax(250px, 42%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+    .nsd-side { order: 1; max-height: none; border-top: 0; border-right: 1px solid var(--gray-200, #e5e7eb); }
+    .nsd-map { order: 2; }
+    .nsd-actions .btn { font-size: 0.8125rem; }
+}
+
+/* A text-link style button that opens the directions modal (order views). */
+.nsd-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.2rem 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 700;
+    color: var(--secondary, #008558);
+    cursor: pointer;
+}
+.nsd-link-btn:hover { text-decoration: underline; text-underline-offset: 2px; }
+.nsd-link-btn:focus-visible { outline: 2px solid var(--secondary, #008558); outline-offset: 2px; border-radius: 4px; }

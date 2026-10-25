@@ -1,0 +1,52 @@
+/* Public "about" pages for NextaStore Circle and Crew. Uses growth.css tokens (loaded first); every class is ga- prefixed. */
+.ga-wrap { max-width: 1060px; margin: 0 auto; padding: 0 5%; }
+.ga-hero { background: var(--gp-hero); color: #fff; padding: clamp(2.6rem, 7vw, 4.8rem) 0; }
+.ga-hero .ga-wrap { display: grid; grid-template-columns: 1.4fr .6fr; gap: 2rem; align-items: center; }
+.ga-kicker { display: inline-flex; gap: .5rem; align-items: center; background: var(--gp-kicker-bg); padding: .35rem .8rem; border-radius: 999px; font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+.ga-hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.12; margin: .9rem 0 .7rem; }
+.ga-hero p { font-size: 1.05rem; line-height: 1.6; max-width: 36rem; opacity: .92; margin: 0 0 1.4rem; }
+.ga-hero img { width: min(220px, 60%); justify-self: center; filter: drop-shadow(0 12px 30px rgba(0,0,0,.3)); }
+.ga-btn { display: inline-flex; align-items: center; gap: .55rem; padding: .85rem 1.4rem; border-radius: 12px; font-weight: 800; font-size: .95rem; text-decoration: none; background: var(--gp-btn); color: var(--gp-btn-text); border: 2px solid var(--gp-btn); }
+.ga-btn:hover { background: var(--gp-btn-hover); border-color: var(--gp-btn-hover); }
+.ga-btn.is-ghost { background: transparent; color: inherit; border-color: currentColor; }
+.ga-btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
+.ga-note { display: block; margin-top: .8rem; font-size: .82rem; opacity: .85; }
+.ga-status { font-weight: 800; }
+.ga-sec { padding: clamp(2rem, 5vw, 3.4rem) 0; }
+.ga-sec.is-alt { background: #fff; border-block: 1px solid var(--gp-line); }
+.ga-sec h2 { font-size: clamp(1.4rem, 3.2vw, 1.9rem); color: var(--gp-ink); margin: 0 0 .5rem; }
+.ga-lead { color: var(--gp-muted); max-width: 44rem; line-height: 1.65; margin: 0 0 1.6rem; }
+.ga-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.ga-card { background: #fff; border: 1px solid var(--gp-line); border-radius: var(--gp-radius); padding: 1.3rem; box-shadow: var(--gp-shadow); }
+.ga-sec.is-alt .ga-card { background: var(--gp-bg); box-shadow: none; }
+.ga-card i.ga-ic { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--gp-accent-soft); color: var(--gp-accent-ink); margin-bottom: .8rem; }
+.ga-card h3 { margin: 0 0 .35rem; font-size: 1.02rem; color: var(--gp-ink); }
+.ga-card p { margin: 0; color: var(--gp-muted); font-size: .92rem; line-height: 1.6; }
+.ga-big { font-size: 2rem; font-weight: 800; color: var(--gp-accent-ink); line-height: 1.1; }
+.ga-steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.ga-steps li { counter-increment: s; background: #fff; border: 1px solid var(--gp-line); border-radius: var(--gp-radius); padding: 1.3rem; position: relative; }
+.ga-steps li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--gp-btn); color: var(--gp-btn-text); font-weight: 800; margin-bottom: .7rem; }
+.ga-steps b { display: block; color: var(--gp-ink); margin-bottom: .25rem; }
+.ga-steps span { color: var(--gp-muted); font-size: .9rem; line-height: 1.55; }
+.ga-table-wrap { overflow-x: auto; border: 1px solid var(--gp-line); border-radius: var(--gp-radius); background: #fff; }
+.ga-table { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 460px; }
+.ga-table th, .ga-table td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid var(--gp-line); }
+.ga-table th { background: var(--gp-soft); color: var(--gp-ink); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.ga-table tr:last-child td { border-bottom: 0; }
+.ga-table td:last-child { font-weight: 800; color: var(--gp-accent-ink); }
+.ga-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .65rem; }
+.ga-list li { display: flex; gap: .7rem; line-height: 1.55; color: var(--gp-text); }
+.ga-list i { color: var(--gp-green); margin-top: .3rem; }
+.ga-faq details { background: #fff; border: 1px solid var(--gp-line); border-radius: 14px; padding: 0 1.1rem; margin-bottom: .6rem; }
+.ga-faq summary { cursor: pointer; padding: 1rem 0; font-weight: 700; color: var(--gp-ink); }
+.ga-faq details p { margin: 0 0 1rem; color: var(--gp-muted); line-height: 1.65; }
+.ga-cta { text-align: center; background: var(--gp-hero); color: #fff; padding: clamp(2.2rem, 5vw, 3.4rem) 5%; }
+.ga-cta h2 { color: #fff; margin: 0 0 .5rem; }
+.ga-cta p { margin: 0 auto 1.3rem; max-width: 34rem; opacity: .9; line-height: 1.6; }
+.ga-other { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--gp-accent-soft); border-radius: var(--gp-radius); padding: 1.2rem 1.4rem; }
+.ga-other p { margin: 0; color: var(--gp-text); line-height: 1.55; max-width: 40rem; }
+@media (max-width: 760px) { .ga-hero .ga-wrap { grid-template-columns: 1fr; } .ga-hero img { display: none; } }
+/* The site-wide heading/paragraph colours would otherwise win over inherited white on the dark bands. */
+.ga-hero, .ga-hero h1, .ga-hero p, .ga-hero .ga-kicker, .ga-hero .ga-note, .ga-cta h2, .ga-cta p, .ga-cta .ga-note { color: #fff; }
+.ga-hero .ga-btn, .ga-cta .ga-btn { color: var(--gp-btn-text); }
+.ga-grid { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }

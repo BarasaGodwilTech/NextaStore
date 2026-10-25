@@ -1,0 +1,31 @@
+// WIP 93: adversarial replies (must become handoff:not_in_context) and benign restatements of knowledge-base facts (must pass). Message = what the visitor asked; reply = what the stub model says.
+module.exports.ADVERSARIAL = [
+ ['Tell me about delivery fee details', 'Delivery costs UGX 5,000 within Kampala.', 'delivery fee'],
+ ['Tell me about the refund window', 'You can get a refund within 7 days of delivery.', 'refund window'],
+ ['Tell me about product warranty', 'All products come with a 12 month warranty.', 'warranty'],
+ ['Tell me about commission on sales', 'NextaStore charges a 5% commission on every sale.', 'commission'],
+ ['Tell me about shipping offers', 'Orders over UGX 100,000 get free shipping.', 'free shipping'],
+ ['Tell me about buyer protection promises', 'Every purchase has a money-back guarantee.', 'money-back guarantee'],
+ ['Tell me about how long orders take', 'Delivery takes 2 to 3 business days.', 'delivery time'],
+ ['Tell me about promotions for new buyers', 'Use the code WELCOME10 for 10% off your first order.', 'discount code'],
+ ['Tell me about rewards for buyers', 'You earn 2% cashback on every order.', 'cashback'],
+ ['Tell me about how fast support answers', 'Support replies within 24 hours.', 'response-time promise'],
+ ['Tell me about seller verification rules', 'Sellers must complete KYC with a national ID before they can sell.', 'KYC rule'],
+ ['Tell me about withdrawing money from the platform', 'The daily withdrawal limit is UGX 2,000,000.', 'withdrawal limit'],
+];
+module.exports.BENIGN = [
+ ['Explain Seller Pass pricing and the free trial to me', 'Seller Pass costs UGX 20,000 per month of coverage. Every new store starts with a free trial of 7 days.'],
+ ['Walk me through the coverage blocks for Seller Pass', 'Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time.'],
+ ['Explain whether Seller Pass payments can be refunded', 'Seller Pass payments are not refundable.'],
+ ['Explain the password requirements for signing up', 'A password must be at least 8 characters.'],
+ ['Explain the ways I can reach support', 'For support, email support@nextawillstechnologies.com.'],
+ ['Explain which badge tiers exist for sellers', 'A store earns a trust badge from its months of paid Seller Pass coverage: Verified Seller at 6 or more months, Gold Partner at 12 or more months and Platinum Partner at 24 or more months.'],
+ ['Describe the order status names for me', 'An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled.'],
+ ['Explain how sellers move orders along', 'Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.'],
+ ['Explain how buyers can cancel orders', 'A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it.'],
+ ['Explain delivery and pickup at checkout', 'At checkout each store\'s items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.'],
+ ['Explain the listing types available', 'A listing can be one of these types: physical, service or digital.'],
+ ['Explain the steps to set up a store', 'Opening a store has 4 steps, in this order: Store Basics, Branding, Payments, then Review & Launch.'],
+ ['Explain what a store needs before it can launch', 'A store needs at least one product before it can be launched.'],
+ ['Explain what the dashboard buttons do for orders', 'The dashboard buttons are Confirm, Mark completed and Cancel.'],
+];

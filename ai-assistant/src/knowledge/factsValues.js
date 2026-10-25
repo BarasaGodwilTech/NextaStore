@@ -29,6 +29,11 @@ function readFacts() {
     const fulfillment = ((text.match(/At checkout each store's items are fulfilled by ([^.]+)\./) || [])[1] || '').trim();
     const listingTypes = ((text.match(/A listing can be one of these types: ([^.]+)\./) || [])[1] || '').trim();
     const setup = text.match(/Opening a store has (\d+) steps, in this order: ([^.]+)\./);
+    const passwordMin = text.match(/A password must be at least (\d+) characters\./);
+    const supportEmail = text.match(/For support, email ([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\./);
+    const supportUrl = text.match(/The Support page is (https?:\/\/[^\s.]+(?:\.[^\s.]+)*)\./);
+    const emailSending = /Verification and password-reset e-mails are sent by NextaStore\./.test(text);
+    const refund = text.match(/(Seller Pass payments (?:are not refundable|can be refunded)\.)/);
 
     return {
         SUBSCRIPTION_PRICE_UGX: price,
@@ -59,6 +64,12 @@ function readFacts() {
         LISTING_TYPES: listingTypes,
         ONBOARDING_STEP_COUNT: setup ? Number(setup[1]) : null,
         ONBOARDING_STEPS: setup ? setup[2] : '',
+        PASSWORD_MIN_LENGTH: passwordMin ? `a minimum of ${Number(passwordMin[1])} characters` : 'the requirements shown on the sign-up form',
+        SUPPORT_EMAIL: supportEmail ? supportEmail[1] : '',
+        SUPPORT_URL: supportUrl ? supportUrl[1] : '',
+        EMAIL_SENDING: emailSending ? 'yes' : 'no',
+        SELLER_PASS_REFUND_SENTENCE: refund ? refund[1] : 'Check the Seller Pass terms for refund details.',
+        SUPPORT_CONTACT: supportEmail ? `email ${supportEmail[1]}` : supportUrl ? `use the Support link at ${supportUrl[1]}` : 'use the Support link at the bottom of any page',
     };
 }
 

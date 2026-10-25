@@ -14,7 +14,7 @@
 // data-admin-required attributes in the HTML (npm run qa:static checks this).
 const AUTH_PAGES = ['/login', '/signup', '/forgot-password', '/verify-email'];
 const SELLER_ONLY_PAGES = ['/dashboard', '/product-form', '/onboarding', '/subscription'];
-const ADMIN_ONLY_PAGES = ['/admin'];
+const ADMIN_ONLY_PAGES = ['/admin', '/admin-growth'];
 // Three shapes: a page in the site root (`cart.html?x=1`), a store's own
 // address, which is a bare slug (`amina-crafts`, opened as /amina-crafts), or a
 // product's own address, a store slug and a product part
@@ -205,12 +205,24 @@ class AuthManager {
 
         const accountType = document.querySelector('input[name="accountType"]:checked')?.value || 'buyer';
 
+        // NextaStore Circle / Crew: an invite code, if the person has one (from a link they opened,
+        // remembered for 30 days by growth-ref.js, or typed by hand). Optional; never blocks signup.
+        const referralInput = document.getElementById('referralCode');
+        const typedRef = referralInput ? referralInput.value.trim() : '';
+        const ref = (typeof NextaRef !== 'undefined') ? NextaRef.get() : null;
+        const referral = {};
+        if (typedRef) {
+            referral.referralCode = typedRef.slice(0, 24);
+            referral.referralVia = ref && ref.code === typedRef.toUpperCase() ? 'link' : 'code';
+        }
+
         try {
             this.setLoading(true);
             const response = await app.apiRequest('/auth/signup', {
                 method: 'POST',
-                body: JSON.stringify({ name, email, password, accountType })
+                body: JSON.stringify({ name, email, password, accountType, ...referral })
             });
+            try { if (typeof NextaRef !== 'undefined') NextaRef.clear(); } catch (e) { /* ignore */ }
 
             // No "Remember me" control on signup, so this matches an
             // unticked login: sessionStorage, cleared when the browser

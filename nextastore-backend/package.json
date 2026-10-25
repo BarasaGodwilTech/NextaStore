@@ -14,9 +14,12 @@
     "seed:dev": "node scripts/seed-dev.js",
     "generate:vapid-keys": "node scripts/generate-vapid-keys.js",
     "qa:static": "node scripts/qa-static.js",
+    "sw-assets-hash": "node scripts/sw-assets-hash.js --write",
     "test:assistant-proxy": "node scripts/assistant-proxy-test.js",
     "test:assistant-facts": "node scripts/assistant-facts-test.js",
     "test:seo": "node scripts/seo-test.js",
+    "test:growth": "node scripts/growth-test.js && node scripts/growth-flow-test.js && node scripts/growth-hosts-test.js && python3 scripts/growth-qr-test.py",
+    "test:growth-browser": "node scripts/growth-browser-test.js && node scripts/growth-subdomain-browser-test.js",
     "test:push": "node scripts/push-sw-test.js && node scripts/push-backend-test.js && node scripts/push-page-test.js && node scripts/push-prompt-test.js",
     "test:push-prompt": "node scripts/push-prompt-test.js",
     "test:push-browser": "node scripts/push-sw-browser-test.js",
@@ -41,6 +44,7 @@
     "test:store-cards-browser": "node scripts/store-cards-browser-test.js",
     "test:marketplace-browser": "node scripts/marketplace-browser-test.js",
     "test:assistant-browser": "node scripts/assistant-browser-test.js",
+    "test:assistant-ui": "node scripts/assistant-ui-browser-test.js",
     "test:mobile-drawer-browser": "node scripts/mobile-drawer-browser-test.js",
     "test:dashboard-overview-browser": "node scripts/dashboard-overview-browser-test.js",
     "test:admin-rbac": "node scripts/admin-rbac-test.js",
@@ -48,7 +52,9 @@
     "test:dialogs-back-browser": "node scripts/dialogs-back-browser-test.js",
     "test:product-share": "node scripts/product-share-test.js",
     "test:product-url": "node scripts/product-url-test.js",
-    "test:product-address-browser": "node scripts/product-address-browser-test.js"
+    "test:product-address-browser": "node scripts/product-address-browser-test.js",
+    "test:directions-browser": "node scripts/directions-browser-test.js",
+    "test:assistant-layout": "node scripts/assistant-panel-layout-test.js"
   },
   "engines": {
     "node": ">=18"

@@ -14,6 +14,7 @@ const { validateBody, signupSchema, loginSchema, forgotPasswordSchema, resetPass
 const cache = require('../cache');
 const { removeAllSubscriptionsForUser } = require('../push');
 const presence = require('../presence');
+const growth = require('../growthInstance');
 
 const router = express.Router();
 
@@ -128,6 +129,18 @@ router.post('/signup', authLimiter, validateBody(signupSchema), async (req, res,
                     : {})
             }
         });
+
+        // NextaStore Circle / Crew: remember who invited this person (if anyone) and, for a seller,
+        // match the new store to a Crew lead by phone. Never awaited and never throws (hooks.safe):
+        // a growth-program problem must not delay or break a signup.
+        if (isSeller) {
+            prisma.store.findUnique({ where: { ownerId: user.id } })
+                .then((store) => growth.hooks.safe.onSignup({ user, code: req.body.referralCode, via: req.body.referralVia, ip: req.ip, deviceHash: req.body.deviceHash, phone: '' })
+                    .then(() => store && growth.hooks.safe.onStoreCreated({ user, store })))
+                .catch(() => {});
+        } else {
+            growth.hooks.safe.onSignup({ user, code: req.body.referralCode, via: req.body.referralVia, ip: req.ip, deviceHash: req.body.deviceHash, phone: '' });
+        }
 
         // Signup has no "Remember me" control, so a new account gets the
         // short (sliding) session — same rule as an unticked login.

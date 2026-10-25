@@ -136,7 +136,10 @@ check('Seller order actions are simplified to Confirm / Mark completed / Cancel 
     return !/order-status-select/.test(dashboard)
       && /sellerOrderActions/.test(dashboard)
       && /data-order-action/.test(dashboard)
-      && /processing:\s*\[\s*'delivered',\s*'cancelled'\s*\]/.test(orderRoutes);
+      // WIP 93 (stale check): the transition table moved from routes/orders.js to platformRules.js (ORDER_TRANSITIONS); same rule, new home.
+      && /processing:\s*\[\s*'delivered',\s*'cancelled'\s*\]/.test(read('nextastore-backend/src/platformRules.js'))
+      && /pending:\s*\[\s*'processing',\s*'cancelled'\s*\]/.test(read('nextastore-backend/src/platformRules.js'))
+      && /ORDER_TRANSITIONS/.test(orderRoutes);
   })());
 check('Buyer self-service order cancellation exists: grace-period + reason-picker endpoint, anti-abuse limit, seller notification, and frontend UI',
   (() => {
@@ -544,7 +547,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   const schema = read('nextastore-backend/prisma/schema.prisma');
   const storeRoute = read('nextastore-backend/src/routes/store.js');
   check('store_live notification: enum value + migration exist',
-    /new_product\s+store_live\s*\}/.test(schema) &&
+    /new_product\s+store_live(?:\s+growth)?\s*\}/.test(schema) &&
     /ADD VALUE IF NOT EXISTS 'store_live'/.test(read('nextastore-backend/prisma/migrations/20260924090000_store_live_notification/migration.sql')));
   check('PUT /store notifies the owner only on the draft -> live transition',
     /data\.isPublished === true && !store\.isPublished/.test(storeRoute) && /type: 'store_live'/.test(storeRoute));
@@ -797,8 +800,9 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('A badge can never be wider than its container: labels truncate with an ellipsis (main.css)',
     /\.seller-badge\{max-width:100%;min-width:0/.test(mainCss) && /\.seller-badge>span\{[^}]*text-overflow:ellipsis/.test(mainCss) && /\.seller-badge--more\{/.test(mainCss));
   check('Store names clamp to 2 lines on marketplace/following/home cards and the directory; directory and home descriptions clamp too',
-    /\.store-name-text\{[^}]*-webkit-line-clamp:2/.test(read('css/marketplace.css')) && /\.directory-title h2\{[^}]*-webkit-line-clamp:2/.test(read('css/stores.css')) &&
-    /\.directory-info p\{[^}]*-webkit-line-clamp:3/.test(read('css/stores.css')) && /\.store-details p \{[^}]*-webkit-line-clamp: 3/.test(read('index.html')));
+    /\.store-name-text\{[^}]*-webkit-line-clamp:2/.test(read('css/marketplace.css')) && /* WIP 93 (stale check): the directory card markup is .directory-info; names still clamp to 2 lines, descriptions now clamp to 2 (was 3) */
+    /\.directory-info h2\{[^}]*-webkit-line-clamp:2/.test(read('css/stores.css')) &&
+    /\.directory-info p\{[^}]*-webkit-line-clamp:[23]/.test(read('css/stores.css')) && /\.store-details p \{[^}]*-webkit-line-clamp: 3/.test(read('index.html')));
   check('GET /api/presence/store/:slug lets the store\u2019s owner through (draft/lapsed preview) via optionalAuth; everyone else still needs a published, active store',
     /optionalAuth/.test(presenceRoute) && /isOwner/.test(presenceRoute) && /!isOwner && !isPubliclyVisible\(store\)/.test(presenceRoute));
   check('Storefront follow-state can only hold the page loader for a short grace period (Promise.race), not indefinitely',
@@ -901,9 +905,11 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
 {
   const helpersSrc = read('nextastore-backend/src/helpers.js'), detailSrc = read('js/store-detail.js');
   check('Badge wording: each tier\'s reason lives once on TIER_PERKS (6+/12+/24+ months on NextaStore) and the six duplicated literals are gone',
-    /verified: \{\s*rank: 1,\s*reason: '6\+ months on NextaStore'/.test(helpersSrc)
-    && /gold: \{\s*rank: 2,\s*reason: '12\+ months on NextaStore'/.test(helpersSrc)
-    && /platinum: \{\s*rank: 3,\s*reason: '24\+ months on NextaStore'/.test(helpersSrc)
+    // WIP 93 (stale check): TIER_PERKS moved to platformRules.js and builds the wording from TIER_MIN_MONTHS (6 / 12 / 24), so the number lives once.
+    (() => { const pr = read('nextastore-backend/src/platformRules.js'); return /TIER_MIN_MONTHS = \{ verified: 6, gold: 12, platinum: 24 \}/.test(pr)
+      && /verified: \{\s*rank: 1,\s*reason: `\$\{TIER_MIN_MONTHS\.verified\}\+ months on NextaStore`/.test(pr)
+      && /gold: \{\s*rank: 2,\s*reason: `\$\{TIER_MIN_MONTHS\.gold\}\+ months on NextaStore`/.test(pr)
+      && /platinum: \{\s*rank: 3,\s*reason: `\$\{TIER_MIN_MONTHS\.platinum\}\+ months on NextaStore`/.test(pr); })()
     && !/reason: '(?:6|12|24)\+ months?(?: of active paid coverage| confirmed commitment)'/.test(helpersSrc));
   check('Badge wording: the buyer-facing trust card reads "<reason>. Confirmed by us, not self-declared." and the old sentence is gone',
     /\}\. Confirmed by us, not self-declared\.`/.test(detailSrc) && !/earned from confirmed paid time/.test(detailSrc));
@@ -987,7 +993,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     check('Nexi (WIP 55): panel sits above the site header (z-index > 1000) with one scrolling body + pinned composer, phones/short windows get the sheet, starters are one swipeable row on phones (WIP 56), flagged messages are tagged, service worker at v45 or later',
       (() => { const z = /\.nexi-panel \{[^}]*?z-index:\s*(\d+)/.exec(nexiCss); return !!z && Number(z[1]) > 1000 && Number(z[1]) < 1500; })() &&
       /\.nexi-panel-body/.test(nexiCss) && /\.nexi-panel-bottom/.test(nexiCss) && /max-width: 600px\), \(max-height: 520px\)/.test(nexiCss) && /visualViewport/.test(nexiJs) &&
-      /nexi-starters-row/.test(nexiCss) && /scroll-snap-type/.test(nexiCss) && !/nexi-more|nexi-chip--extra/.test(nexiCss) && /nexi-flagtag/.test(nexiCss) && /applyFlag/.test(nexiJs) &&
+      /nexi-starters-row/.test(nexiCss) && !/nexi-more|nexi-chip--extra/.test(nexiCss) && /nexi-flagtag/.test(nexiCss) && /applyFlag/.test(nexiJs) &&
       (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 45; })());
     check('Nexi service (WIP 55): every message is checked for relevance before the model runs (off-topic / inappropriate / private details / manipulation / unclear), curated replies, [OFF_TOPIC] marker is stripped, flag log never stores private details',
       /analyseTurn/.test(read('ai-assistant/src/chat/pipeline.js')) && /markerGate/.test(read('ai-assistant/src/chat/pipeline.js')) && /\[OFF_TOPIC\]/.test(read('ai-assistant/src/chat/systemPrompt.js')) &&
@@ -1005,8 +1011,10 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     const stCss = read('css/stores.css'), stJs = read('js/stores.js'), stHtml = read('stores.html'), storeRoute = read('nextastore-backend/src/routes/store.js');
     check('WIP 56: footer "Back to top" link is gone (the dock arrow is the only one)',
       !/footer-top-link|footerTopLink/.test(read('marketplace.html') + read('js/marketplace.js') + read('css/marketplace.css')));
-    check('WIP 56: Nexi starters are one swipeable row on phones (hero + sheet) and a grid / list on desktop; no "More questions" toggle',
-      /nexi-starters-row/.test(nexiJs56) && !/nexi-more|nexi-chip--extra/.test(nexiJs56 + nexiCss56) && /scroll-snap-type: x proximity/.test(nexiCss56) && /repeat\(2, minmax\(0, 1fr\)\)/.test(nexiCss56));
+    check('WIP 56 (updated by WIP 69): Nexi starters are one swipeable row with arrows (hero + panel, all widths); no "More questions" toggle',
+      /nexi-starters-row/.test(nexiJs56) && !/nexi-more|nexi-chip--extra/.test(nexiJs56 + nexiCss56) 
+      // WIP 93 (stale check): WIP 69 (see WIP_LOG.md) replaced the desktop grid with ONE scrollable row at all widths, with prev/next arrows; the 2-column grid rule is gone on purpose.
+      && /nexi-starters-arrow/.test(nexiJs56) && !/nexi-starters--list/.test(nexiJs56 + nexiCss56));
     check('WIP 56: All stores — two cards per row on phones, 3 / 4 on wider screens, 24 per page (fills 2, 3 and 4 columns)',
       /\.stores-directory-grid\{[^}]*repeat\(2,minmax\(0,1fr\)\)/.test(stCss) && /repeat\(3,minmax\(0,1fr\)\)/.test(stCss) && /repeat\(4,minmax\(0,1fr\)\)/.test(stCss) && /STORES_PAGE_SIZE = 24/.test(stJs));
     check('WIP 56: All stores — scales: numbered pagination with a window + go-to-page, URL state, newest-response-wins loading, lazy images, sort + badged filter in the API',
@@ -1016,6 +1024,77 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     check('WIP 56: service worker cache is at v46 or later',
       (() => { const m = read('service-worker.js').match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 46; })());
   }
+  // ---- WIP 92b: WhatsApp handoff and Luganda no-leak static contracts ----
+  {
+    const widget = read('js/assistant.js');
+    const pipeline = read('ai-assistant/src/chat/pipeline.js');
+    const worker = read('service-worker.js');
+    check('WIP 92b: no review-only labels are shipped as widget text', !/DRAFT|needs_review/i.test(widget));
+    check('WIP 92b: WhatsApp handoff uses real anchors and no alert/async window.open', /target: '_blank', rel: 'noopener'/.test(widget) && !/window\.alert|window\.open/.test(widget));
+    check('WIP 92c: service worker cache version is bumped to v59 or later (js/assistant.js changed again)', (() => { const m = worker.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 59; })());
+    check('WIP 94 (updated by WIP 101): no notice is ever appended to a chat header, and both views build the handoff row the same way (buildFootRow)', !/head\.appendChild\((?:hn|human|note)\)/.test(widget) && (widget.match(/buildHandoffRow\(lastUserText\)/g) || []).length === 1 && (widget.match(/buildFootRow\(\)/g) || []).length === 3);   // WIP 101: one shared builder (buildFootRow) under the composer, used by the hero and the panel
+    check('WIP 94: every nexi-handoff-* class the widget creates has a CSS rule (an unstyled control cannot ship)', (() => {
+      const css = read('css/assistant.css');
+      const used = new Set([...widget.matchAll(/['"` ]((?:nexi-handoff)(?:-[a-z]+)?)(?=['"` ])/g)].map((m) => m[1]));
+      const missing = [...used].filter((c) => !new RegExp('\\.' + c + '(?![\\w-])').test(css));
+      if (missing.length) console.log('      unstyled: ' + missing.join(', '));
+      return used.size >= 4 && missing.length === 0;
+    })());
+    check('WIP 94: the interface dictionary has the same keys in English and Luganda and is repainted by emit()', (() => {
+      const block = widget.slice(widget.indexOf('// T-BEGIN'), widget.indexOf('// T-END'));
+      const T = new Function('return (function(){' + block.slice(block.indexOf('var T = {')) + ' return T; })()')();
+      const en = Object.keys(T.en).sort().join(','), lg = Object.keys(T.lg).sort().join(',');
+      return en === lg && /applyChrome\(\); repaintHandoffs\(\)/.test(widget);
+    })());
+    check('WIP 94: the handoff href is rebuilt from the current chat on pointerdown, focus, click and repaint', ['pointerdown', 'focus', 'click'].every((e) => new RegExp("anchor\\.addEventListener\\('" + e + "'").test(widget)) && /repaintHandoffs/.test(widget) && !/My recent questions: ' \+ users\.join\(' \| '\),\s*\n\s*'Question/.test(widget));
+    check('WIP 94: service worker cache version is v63 or later (js/assistant.js + css/assistant.css changed)', (() => { const m = worker.match(/CACHE_VERSION = 'v(\d+)'/); return !!m && Number(m[1]) >= 63; })());
+    check('WIP 92b: pipeline imports dependency-free handoff and structural Luganda gate modules', pipeline.includes("require('./handoff')") && pipeline.includes("require('../lang/lgGuard')"));
+  }
+}
+
+// ---- WIP 96: asset changes must be accompanied by a CACHE_VERSION bump AND a regenerated sw-assets.hash -------------------
+{
+  const swh = require('./sw-assets-hash');
+  const real = swh.load(root);
+  const verdict = swh.evaluate(real);
+  check('WIP 96: sw-assets.hash matches the JS/CSS files and the service worker CACHE_VERSION (changed assets need a version bump and `npm run sw-assets-hash`)', verdict.ok, verdict.problems.join(' | '));
+  check('WIP 96: sw-assets.hash covers every js/ and css/ file the worker can cache', Object.keys(real.files).length >= 40 && !!real.recorded && swh.diff(real.recorded.files, real.files).length === 0);
+  check('WIP 96: `npm run sw-assets-hash` regenerates the record', /"sw-assets-hash":\s*"node scripts\/sw-assets-hash\.js --write"/.test(fs.readFileSync(path.join(backend, 'package.json'), 'utf8')));
+  // the rule itself, proven on in-memory cases (a mutated file must be caught)
+  const H = (n) => require('crypto').createHash('sha256').update(String(n)).digest('hex');
+  const base = { 'css/a.css': H('a'), 'js/b.js': H('b') };
+  const rec = (files, version) => swh.parse(swh.render(files, version));
+  const ok = (files, recorded, version) => swh.evaluate({ recorded, files, version }).ok;
+  check('WIP 96 rule: unchanged assets + matching version pass', ok(base, rec(base, 'v10'), 'v10'));
+  check('WIP 96 rule: a changed asset with the hash file untouched FAILS', !ok({ ...base, 'js/b.js': H('b2') }, rec(base, 'v10'), 'v10'));
+  check('WIP 96 rule: a changed asset with only the version bumped (hash file not regenerated) FAILS', !ok({ ...base, 'js/b.js': H('b2') }, rec(base, 'v10'), 'v11'));
+  check('WIP 96 rule: a bumped version with the hash file not regenerated FAILS', !ok(base, rec(base, 'v10'), 'v11'));
+  check('WIP 96 rule: an added or removed asset FAILS', !ok({ ...base, 'js/c.js': H('c') }, rec(base, 'v10'), 'v10') && !ok({ 'css/a.css': base['css/a.css'] }, rec(base, 'v10'), 'v10'));
+  check('WIP 96 rule: changed asset + bumped version + regenerated record passes', ok({ ...base, 'js/b.js': H('b2') }, rec({ ...base, 'js/b.js': H('b2') }, 'v11'), 'v11'));
+  check('WIP 96 rule: regenerating is refused while assets changed and the version is NOT bumped', !swh.canWrite({ recorded: rec(base, 'v10'), files: { ...base, 'js/b.js': H('b2') }, version: 'v10' }).ok && swh.canWrite({ recorded: rec(base, 'v10'), files: { ...base, 'js/b.js': H('b2') }, version: 'v11' }).ok && swh.canWrite({ recorded: rec(base, 'v10'), files: base, version: 'v10' }).ok);
+  check('WIP 96 rule: a hand-edited record (combined hash not matching its list) FAILS', !ok(base, { ...rec(base, 'v10'), files: { ...base, 'js/b.js': H('forged') }, combined: rec(base, 'v10').combined }, 'v10'));
+  check('WIP 96 rule: a missing record FAILS', !ok(base, null, 'v10'));
+  check('WIP 96 rule: hashing ignores CRLF vs LF (a Windows checkout hashes the same)', (() => {
+    const os = require('os'); const d = fs.mkdtempSync(path.join(os.tmpdir(), 'swh-'));
+    try { fs.mkdirSync(path.join(d, 'js')); fs.mkdirSync(path.join(d, 'css')); fs.writeFileSync(path.join(d, 'js', 'x.js'), 'a\nb\n'); const lf = swh.collect(d)['js/x.js']; fs.writeFileSync(path.join(d, 'js', 'x.js'), 'a\r\nb\r\n'); const crlf = swh.collect(d)['js/x.js']; fs.writeFileSync(path.join(d, 'js', 'x.js'), 'a\nc\n'); return lf === crlf && swh.collect(d)['js/x.js'] !== lf; }
+    finally { fs.rmSync(d, { recursive: true, force: true }); }
+  })());
+}
+
+// WIP 97 cleanup guard: reports, checkpoints, screenshots and stray images must not creep back into the tree.
+{
+  const rootFiles = fs.readdirSync(root);
+  const stray = rootFiles.filter((n) => /^WIP\d+[A-Za-z]*_(?:REPORT|CHECKPOINT)/i.test(n));
+  check('No WIP*_REPORT / WIP*_CHECKPOINT files at the project root (fold the facts into WIP_LOG.md)', stray.length === 0, stray.join(', '));
+  const shotDirs = rootFiles.filter((n) => /screenshots?$/i.test(n) && fs.statSync(path.join(root, n)).isDirectory());
+  check('No screenshot folders at the project root', shotDirs.length === 0, shotDirs.join(', '));
+  const PNG_ALLOWLIST = new Set([]);   // add a path relative to ai-assistant/ here only for a real fixture
+  const pngs = [];
+  (function walkPng(dir) { for (const n of fs.readdirSync(dir)) { if (n === 'node_modules') continue; const p = path.join(dir, n); const st = fs.statSync(p); if (st.isDirectory()) walkPng(p); else if (/\.png$/i.test(n)) pngs.push(path.relative(path.join(root, 'ai-assistant'), p).split(path.sep).join('/')); } })(path.join(root, 'ai-assistant'));
+  check('No *.png under ai-assistant/ outside the allowlist (test output belongs in a temp dir)', pngs.every((p) => PNG_ALLOWLIST.has(p)), pngs.join(', '));
+  check('.gitignore keeps test output out (screenshots, ai-assistant/data/*.jsonl, root *.patch)', /ai-assistant\/data\/\*\.jsonl/.test(fs.readFileSync(path.join(root, '.gitignore'), 'utf8')) && /^\/\*\.patch/m.test(fs.readFileSync(path.join(root, '.gitignore'), 'utf8')) && /screenshots\//.test(fs.readFileSync(path.join(root, '.gitignore'), 'utf8')));
+  const planned = ['scripts/chat-eval.js', 'scripts/loadtest.js', 'scripts/bench.js'].filter((f) => !fs.existsSync(path.join(root, 'ai-assistant', f)));
+  check('The documented tools chat-eval.js, loadtest.js and bench.js are kept', planned.length === 0, planned.join(', '));
 }
 
 let failed = 0;

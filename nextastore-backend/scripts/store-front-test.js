@@ -83,7 +83,7 @@ const api = (store) => (ep) => {
 
   // 4. Owner of a lapsed store
   s = await scenario('lapsed-owner', api({ ...baseStore, preview: { state: 'lapsed', endedAt: new Date().toISOString(), hadPaidPlan: false } }));
-  check('lapsed owner: status strip with a Renew link to subscription.html', s.doc.querySelector('#storePreviewStrip.preview-strip--lapsed a')?.getAttribute('href') === 'subscription.html');
+  check('lapsed owner: status strip with a Renew link to /subscription', s.doc.querySelector('#storePreviewStrip.preview-strip--lapsed a')?.getAttribute('href') === '/subscription');
   check('lapsed owner: says it is the free TRIAL that ended', /free trial has ended/i.test(s.doc.getElementById('storePreviewStrip')?.textContent || ''));
   check('lapsed owner: shutter drawn over the banner and body flagged', !!s.doc.querySelector('#storeBanner .banner-shutter') && s.doc.body.classList.contains('store-lapsed'));
   check('lapsed owner: sees the real store, NOT the shoppers\' closed screen', !s.doc.getElementById('closedShopScreen') && !s.doc.body.classList.contains('store-closed-public'));
@@ -101,7 +101,7 @@ const api = (store) => (ep) => {
   check('closed: page is marked noindex', s.doc.querySelector('meta[name=robots]')?.content === 'noindex, nofollow');
   check('closed: no product grid content leaks', !s.doc.querySelector('#productsGrid .product-card'));
   check('closed: the shopfront is a full-screen layer on <body>, not inside the product panel', s.doc.getElementById('closedShopScreen')?.parentElement === s.doc.body && s.doc.body.classList.contains('store-closed-public') && !s.doc.querySelector('#productsGrid #closedShopScreen'));
-  check('closed: a way out to the marketplace', [...s.doc.querySelectorAll('#closedShopScreen a')].some(a => a.getAttribute('href') === 'marketplace.html' && /Browse Other Stores/.test(a.textContent)));
+  check('closed: a way out to the marketplace', [...s.doc.querySelectorAll('#closedShopScreen a')].some(a => a.getAttribute('href') === '/marketplace' && /Browse Other Stores/.test(a.textContent)));
   s = await scenario('closed-hostile', closed({ name: '<img src=x onerror=alert(1)>', bannerColor: 'red;} body{display:none', logo: 'x") ; background:url(//evil' }));
   check('closed hostile: name as text only', !s.doc.querySelector('#closedShopScreen img') && s.doc.getElementById('closedShopName')?.textContent.includes('<img'));
   check('closed hostile: non-hex colour replaced by the default', /#0B3B2B/i.test(s.doc.getElementById('closedShopScreen')?.getAttribute('style') || '') && !/display/.test(s.doc.getElementById('closedShopScreen')?.getAttribute('style') || ''));

@@ -4,10 +4,22 @@
 > These values are the authority for prices, limits and status names. Other knowledge files must not repeat them.
 
 ## Seller Pass price, cost, fee and free trial
+aliases: how the amount for several months is worked out | how much is seller pass | price of seller pass per month | seller pass price per month | what does a month of coverage cost | how long is the free trial | price of subscription | cost for 3 months | is seller pass refundable | can i get my seller pass money back | refund for subscription | how many days free | number of trial days for new stores | how many trial days | what are the coverage blocks | how many months can i buy at a time | coverage block sizes
 Seller Pass costs UGX 20,000 per month of coverage. Every new store starts with a free trial of 7 days.
 Coverage is bought in blocks of 1, 3, 6, 12 or 24 months at a time. The amount for a block is the monthly price times the number of months (for example 3 months is UGX 60,000), and the amount entered on the subscription page must match exactly.
+Seller Pass payments are not refundable.
+
+## Account, passwords and sign-in e-mails
+aliases: minimum password length | password requirements | what makes a good password here
+A password must be at least 8 characters.
+
+## Contact and support
+aliases: how do i contact support | support email | who do i call for help | customer care | where is the support page | talk to the team | help desk | get help from nextastore
+For support, email support@nextawillstechnologies.com.
+The Support page is https://nextawillstechnologies.com.
 
 ## Seller badge tiers: Verified Seller, Gold Partner, Platinum Partner
+aliases: how many months for verified seller | what does gold partner need | platinum partner requirements | badge ladder | how long to get a badge | what do badges give
 A store earns a trust badge from its months of paid Seller Pass coverage: Verified Seller at 6 or more months, Gold Partner at 12 or more months and Platinum Partner at 24 or more months.
 The months count continuous paid coverage: payments made while the store is still covered add up toward the next tier, and if coverage lapses the count starts again from the next payment.
 The badge is applied when an admin approves the payment that takes the store to the threshold, and it shows only while the store is paid up.
@@ -16,22 +28,27 @@ The badge is applied when an admin approves the payment that takes the store to 
 - Platinum Partner (24+ months): Everything in Gold Partner; A platinum spotlight sheen on your banner; Platinum trust marks on your products.
 
 ## Order statuses and what buyers see
+aliases: order status names | what does placed mean | what does shipped mean | what do i see for a completed order | statuses buyers see | my order status explained
 An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled. A new order starts as pending.
 Buyers see friendlier labels on the Orders page: pending is shown as "Placed", processing is shown as "Confirmed", shipped is shown as "Shipped / ready", delivered is shown as "Completed" and cancelled is shown as "Cancelled".
 
 ## How a seller moves an order along
+aliases: how do i confirm an order as a seller | how do i mark an order completed | what buttons move an order | seller order actions
 Sellers move orders along from the dashboard: pending to processing or cancelled, processing to delivered or cancelled and shipped to delivered.
 delivered and cancelled orders are final and cannot be changed.
 The dashboard buttons are "Confirm" (processing), "Mark completed" (delivered) and "Cancel" (cancelled).
 
 ## Can a buyer cancel an order? The cancellation rule
+aliases: can a buyer cancel | time limit to cancel an order | how many cancellations allowed | cancellation window | cancel within thirty minutes
 A buyer can cancel an order from the Orders page only while it is pending or processing, and only within 30 minutes of placing it. A short reason is required.
 Each buyer can cancel at most 3 orders this way in any 30 days. After the 30-minute window, or once the limit is used, the buyer should message the seller to ask for the cancellation. A seller can cancel a pending order or a processing order at any time (for example when an item is out of stock).
 
 ## Delivery, pickup and listing types
+aliases: does the store deliver | do i need an address | pickup or delivery | what is a service listing | what is a digital listing | what types of listings exist | how do service orders work | do i need an address for pickup | collect it myself from the seller | what is the difference between delivery and pickup
 At checkout each store's items are fulfilled by delivery or pickup. Delivery needs a delivery address; pickup does not.
 A listing can be one of these types: physical, service or digital. Physical listings use the cart and stock; service and digital listings work by shoppers sending an enquiry through Messages.
 
 ## Store setup steps
+aliases: cannot launch my store | what stops a store from opening to the public | is a listing required before going live | going live with zero items | store onboarding steps | what are the four steps | what comes after store basics | launch requirements | what happens when i press launch
 Opening a store has 4 steps, in this order: 1. Store Basics, 2. Branding, 3. Payments, 4. Review & Launch.
 A store needs at least one product before it can be launched; the last step sends a store with no products to the product form first.

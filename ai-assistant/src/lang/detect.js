@@ -17,7 +17,7 @@ const LUGANDA_WORDS = [
     'ensimbi', 'ebirowoozo', 'ebintu', 'mpa', 'mbuulira', 'nsobola', 'osobola',
     'tonnasasula', 'okusasula', 'omutunzi', 'abatunzi', 'ekiragiro', 'ebiragiro',
 ];
-const LUGANDA_PHRASES = ['oli otya', 'wasuze otya', 'osiibye otya', 'ki kati'];
+const LUGANDA_PHRASES = ['oli otya', 'wasuze otya', 'osiibye otya', 'ki kati', 'oliwawa', 'bakuyita ani', 'gwe ani', 'oli ani', 'oli mukulembeze', 'oli muntu', 'mu luganda', 'nsaba omuyambi', 'ndi ani'];
 
 const SWAHILI_WORDS = [
     'habari', 'asante', 'karibu', 'ndiyo', 'hapana', 'pesa', 'duka',
@@ -52,6 +52,7 @@ function looksEnglish(text) {
 function detectLanguage(text) {
     const toks = tokens(text);
     const joined = ` ${toks.join(' ')} `;
+    if (/^(?:luganda|mu luganda|oliwawa|bakuyita ani|gwe ani|oli ani|oli mukulembeze|oli muntu|nsaba omuyambi|ndi ani)$/i.test(String(text || '').trim())) return { code: 'lg', label: 'Luganda', confidence: 'medium' };
     const lg = countHits(toks, joined, LUGANDA_WORDS, LUGANDA_PHRASES);
     const sw = countHits(toks, joined, SWAHILI_WORDS);
     if (lg > 0 && lg >= sw) return { code: 'lg', label: 'Luganda', confidence: lg >= 2 ? 'medium' : 'low' };

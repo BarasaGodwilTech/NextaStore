@@ -1,0 +1,4 @@
+:root { --font-body: 'Poppins', system-ui, sans-serif; --primary: #01B075; --ink: #0B3B2B; }
+body { margin: 0; font-family: var(--font-body); }
+h1, h2, h3 { color: #222; }
+.account-nav-slot a, .account-nav-slot button { font: 600 13px var(--font-body); margin-left: 8px; }

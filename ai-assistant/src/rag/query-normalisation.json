@@ -1,0 +1,2677 @@
+{
+  "_readme": "Edit this file to teach Nexi how people really write. No code needed. Keep every word lowercase. After saving, the next question uses the change (the file is re-read automatically).",
+  "_fillers_note": "Words that carry no meaning for search. They are dropped from the question before matching.",
+  "fillers": [
+    "pls",
+    "plz",
+    "please",
+    "kindly",
+    "pliz",
+    "plss",
+    "hi",
+    "hello",
+    "hey",
+    "dear",
+    "sir",
+    "madam",
+    "bro",
+    "sis",
+    "abeg",
+    "ok",
+    "okay",
+    "lol",
+    "thanks",
+    "thank",
+    "ba",
+    "eh",
+    "yeah",
+    "ya",
+    "just",
+    "actually",
+    "like",
+    "so",
+    "then",
+    "assist",
+    "help",
+    "wanna",
+    "gonna"
+  ],
+  "_slang_note": "Short forms, text-speak and common misspellings -> the proper word. One word in, one or more words out.",
+  "slang": {
+    "u": "you",
+    "ur": "your",
+    "r": "are",
+    "y": "why",
+    "wat": "what",
+    "wht": "what",
+    "wot": "what",
+    "wats": "what is",
+    "whats": "what is",
+    "hw": "how",
+    "hows": "how is",
+    "hou": "how",
+    "hv": "have",
+    "cn": "can",
+    "cud": "could",
+    "shud": "should",
+    "wud": "would",
+    "dnt": "dont",
+    "cant": "cannot",
+    "cannt": "cannot",
+    "wit": "with",
+    "wid": "with",
+    "wth": "with",
+    "abt": "about",
+    "bt": "but",
+    "btw": "between",
+    "btn": "between",
+    "b4": "before",
+    "lyk": "like",
+    "fone": "phone",
+    "fon": "phone",
+    "phones": "phone",
+    "acc": "account",
+    "acct": "account",
+    "pwd": "password",
+    "pswd": "password",
+    "passwrd": "password",
+    "passwod": "password",
+    "pw": "password",
+    "otp": "otp",
+    "info": "information",
+    "msg": "message",
+    "msgs": "messages",
+    "mesage": "message",
+    "mesages": "messages",
+    "meassage": "message",
+    "tx": "transaction",
+    "ordr": "order",
+    "oda": "order",
+    "pic": "picture",
+    "pics": "pictures",
+    "photo": "picture",
+    "photos": "pictures",
+    "img": "picture",
+    "imgs": "pictures",
+    "prod": "product",
+    "prods": "products",
+    "prdct": "product",
+    "shopp": "shop",
+    "sellr": "seller",
+    "buyr": "buyer",
+    "stor": "store",
+    "stoer": "store",
+    "storr": "store",
+    "emial": "email",
+    "emal": "email",
+    "mail": "email",
+    "e-mail": "email",
+    "gmail": "email",
+    "loging": "login",
+    "logn": "login",
+    "login": "login",
+    "logon": "login",
+    "signin": "login",
+    "signup": "signup",
+    "regester": "register",
+    "registar": "register",
+    "registr": "register",
+    "verfy": "verify",
+    "verifcation": "verification",
+    "verificaton": "verification",
+    "recieve": "receive",
+    "recieved": "received",
+    "recive": "receive",
+    "didnt": "did not",
+    "doesnt": "does not",
+    "isnt": "is not",
+    "wont": "will not",
+    "wasnt": "was not",
+    "aint": "is not",
+    "dont": "do not",
+    "cos": "because",
+    "coz": "because",
+    "cuz": "because",
+    "bcoz": "because",
+    "tho": "though",
+    "pple": "people",
+    "ppl": "people",
+    "gud": "good",
+    "gd": "good",
+    "nyc": "nice",
+    "tym": "time",
+    "tyme": "time",
+    "wen": "when",
+    "whn": "when",
+    "wer": "where",
+    "wher": "where",
+    "whr": "where",
+    "wch": "which",
+    "wich": "which",
+    "whch": "which",
+    "hu": "who",
+    "whos": "who is",
+    "momo": "mtn mobile money",
+    "mtn": "mtn",
+    "airtel": "airtel",
+    "shs": "ugx",
+    "ugshs": "ugx",
+    "ush": "ugx",
+    "ugsh": "ugx",
+    "sh": "ugx",
+    "wanted": "want",
+    "wants": "want",
+    "wana": "want",
+    "gonna": "going",
+    "pls": "please",
+    "dey": "they",
+    "jst": "just",
+    "alr": "already",
+    "alrdy": "already",
+    "pending": "pending"
+  },
+  "_curated_words_note": "Correct spellings the typo-fixer may use even if they are not in the help guides yet. Add platform words here.",
+  "curated_words": [
+    "nextastore",
+    "seller",
+    "buyer",
+    "marketplace",
+    "checkout",
+    "delivery",
+    "pickup",
+    "refund",
+    "return",
+    "subscription",
+    "verified",
+    "badge",
+    "favorite",
+    "favorites",
+    "follow",
+    "following",
+    "notification",
+    "notifications",
+    "password",
+    "email",
+    "account",
+    "message",
+    "messages",
+    "inbox",
+    "product",
+    "products",
+    "store",
+    "shop",
+    "order",
+    "orders",
+    "payment",
+    "payments",
+    "mobile",
+    "money",
+    "momo",
+    "airtel",
+    "mtn",
+    "card",
+    "cash",
+    "cancel",
+    "cancelled",
+    "support",
+    "contact",
+    "report",
+    "scam",
+    "fraud",
+    "fake",
+    "safe",
+    "safety",
+    "trust",
+    "price",
+    "pricing",
+    "discount",
+    "photo",
+    "photos",
+    "picture",
+    "pictures",
+    "description",
+    "category",
+    "categories",
+    "customer",
+    "customers",
+    "capital",
+    "profit",
+    "district",
+    "location",
+    "phone",
+    "logout",
+    "login",
+    "signup",
+    "register",
+    "renew",
+    "expire",
+    "expires",
+    "trial",
+    "free",
+    "dashboard",
+    "settings",
+    "profile",
+    "banner",
+    "logo",
+    "theme",
+    "wrong",
+    "number",
+    "delete",
+    "remove",
+    "edit",
+    "change",
+    "rename",
+    "update",
+    "upload",
+    "images",
+    "image",
+    "stock",
+    "digital",
+    "service",
+    "services",
+    "tailoring",
+    "gift",
+    "gifts",
+    "budget",
+    "idea",
+    "ideas",
+    "mistakes",
+    "launch",
+    "approve",
+    "approved",
+    "admin",
+    "devices",
+    "device",
+    "otp",
+    "whatsapp"
+  ],
+  "_synonyms_note": "A word people use -> words the guides use. The original word is kept; the extra words are added (slightly lower weight). Use this when two words mean the same on NextaStore.",
+  "synonyms": {
+    "shop": [
+      "store"
+    ],
+    "shops": [
+      "store"
+    ],
+    "business": [
+      "store"
+    ],
+    "stall": [
+      "store"
+    ],
+    "vendor": [
+      "seller"
+    ],
+    "merchant": [
+      "seller"
+    ],
+    "trader": [
+      "seller"
+    ],
+    "customer": [
+      "buyer"
+    ],
+    "customers": [
+      "buyer"
+    ],
+    "client": [
+      "buyer"
+    ],
+    "clients": [
+      "buyer"
+    ],
+    "shopper": [
+      "buyer"
+    ],
+    "shoppers": [
+      "buyer"
+    ],
+    "things": [
+      "product"
+    ],
+    "items": [
+      "product"
+    ],
+    "item": [
+      "product"
+    ],
+    "goods": [
+      "product"
+    ],
+    "stuff": [
+      "product"
+    ],
+    "listing": [
+      "product"
+    ],
+    "listings": [
+      "product"
+    ],
+    "money": [
+      "payment"
+    ],
+    "pay": [
+      "payment"
+    ],
+    "paying": [
+      "payment"
+    ],
+    "paid": [
+      "payment"
+    ],
+    "charge": [
+      "payment",
+      "fee"
+    ],
+    "fee": [
+      "payment",
+      "free"
+    ],
+    "fees": [
+      "payment",
+      "free"
+    ],
+    "cost": [
+      "price",
+      "payment"
+    ],
+    "costs": [
+      "price",
+      "payment"
+    ],
+    "much": [
+      "price",
+      "cost"
+    ],
+    "price": [
+      "cost"
+    ],
+    "subscription": [
+      "seller",
+      "pass"
+    ],
+    "subscribe": [
+      "seller",
+      "pass"
+    ],
+    "plan": [
+      "seller",
+      "pass"
+    ],
+    "disappear": [
+      "problem",
+      "report"
+    ],
+    "disappears": [
+      "problem",
+      "report"
+    ],
+    "vanish": [
+      "problem",
+      "report"
+    ],
+    "scam": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "scammed": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "fraud": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "fake": [
+      "report",
+      "trustworthy",
+      "safety"
+    ],
+    "cheat": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "cheated": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "stolen": [
+      "problem",
+      "report",
+      "safety"
+    ],
+    "refund": [
+      "cancel",
+      "payment"
+    ],
+    "return": [
+      "cancel",
+      "problem"
+    ],
+    "returned": [
+      "cancel",
+      "problem"
+    ],
+    "exchange": [
+      "problem",
+      "cancel"
+    ],
+    "inbox": [
+      "message"
+    ],
+    "chat": [
+      "message"
+    ],
+    "chats": [
+      "message"
+    ],
+    "dm": [
+      "message"
+    ],
+    "talk": [
+      "message"
+    ],
+    "contact": [
+      "message"
+    ],
+    "reach": [
+      "delivery"
+    ],
+    "verify": [
+      "verification"
+    ],
+    "signup": [
+      "create",
+      "account",
+      "register"
+    ],
+    "register": [
+      "create",
+      "account",
+      "signup"
+    ],
+    "join": [
+      "create",
+      "account",
+      "signup"
+    ],
+    "login": [
+      "account"
+    ],
+    "logout": [
+      "account"
+    ],
+    "signin": [
+      "account",
+      "login"
+    ],
+    "start": [
+      "open",
+      "create"
+    ],
+    "begin": [
+      "open",
+      "create"
+    ],
+    "starting": [
+      "open",
+      "create"
+    ],
+    "forgot": [
+      "reset"
+    ],
+    "forget": [
+      "reset"
+    ],
+    "forgotten": [
+      "reset"
+    ],
+    "lost": [
+      "reset"
+    ],
+    "recover": [
+      "reset"
+    ],
+    "recovery": [
+      "reset"
+    ],
+    "delete": [
+      "remove",
+      "edit"
+    ],
+    "remove": [
+      "delete",
+      "edit"
+    ],
+    "rename": [
+      "edit",
+      "change"
+    ],
+    "change": [
+      "edit"
+    ],
+    "edit": [
+      "change"
+    ],
+    "modify": [
+      "edit",
+      "change"
+    ],
+    "update": [
+      "edit",
+      "change"
+    ],
+    "photo": [
+      "picture",
+      "image"
+    ],
+    "picture": [
+      "photo",
+      "image"
+    ],
+    "pictures": [
+      "photo",
+      "image"
+    ],
+    "image": [
+      "photo",
+      "picture"
+    ],
+    "images": [
+      "photo",
+      "picture"
+    ],
+    "upload": [
+      "add",
+      "image"
+    ],
+    "tracking": [
+      "status",
+      "order"
+    ],
+    "track": [
+      "status",
+      "order"
+    ],
+    "status": [
+      "order"
+    ],
+    "pending": [
+      "status",
+      "order"
+    ],
+    "capital": [
+      "budget",
+      "small"
+    ],
+    "budget": [
+      "small",
+      "capital"
+    ],
+    "cheap": [
+      "budget",
+      "small"
+    ],
+    "gift": [
+      "gift"
+    ],
+    "district": [
+      "location",
+      "delivery"
+    ],
+    "town": [
+      "location",
+      "delivery"
+    ],
+    "area": [
+      "location",
+      "delivery"
+    ],
+    "arrive": [
+      "delivery"
+    ],
+    "arrives": [
+      "delivery"
+    ],
+    "deliver": [
+      "delivery"
+    ],
+    "delivers": [
+      "delivery"
+    ],
+    "shipping": [
+      "delivery"
+    ],
+    "shipped": [
+      "delivery",
+      "status"
+    ],
+    "notify": [
+      "notification"
+    ],
+    "alert": [
+      "notification"
+    ],
+    "alerts": [
+      "notification"
+    ],
+    "slow": [
+      "problem"
+    ],
+    "stuck": [
+      "problem"
+    ],
+    "broken": [
+      "problem"
+    ],
+    "error": [
+      "problem"
+    ],
+    "bug": [
+      "problem"
+    ],
+    "helpline": [
+      "support",
+      "contact"
+    ],
+    "complain": [
+      "report",
+      "support"
+    ],
+    "complaint": [
+      "report",
+      "support"
+    ],
+    "put": [
+      "add",
+      "upload"
+    ],
+    "finish": [
+      "end",
+      "ended"
+    ],
+    "finished": [
+      "end",
+      "ended"
+    ],
+    "finishes": [
+      "end",
+      "ended"
+    ],
+    "ends": [
+      "end",
+      "ended"
+    ],
+    "ended": [
+      "end"
+    ],
+    "over": [
+      "end",
+      "ended"
+    ],
+    "live": [
+      "launch"
+    ],
+    "launched": [
+      "launch"
+    ],
+    "launching": [
+      "launch"
+    ],
+    "stops": [
+      "end"
+    ],
+    "collect": [
+      "pickup"
+    ],
+    "myself": [
+      "pickup"
+    ],
+    "danger": [
+      "safety",
+      "risk"
+    ],
+    "dangerous": [
+      "safety",
+      "risk"
+    ],
+    "risk": [
+      "safety"
+    ],
+    "risky": [
+      "safety"
+    ]
+  },
+  "_intents_note": "Whole-phrase meanings. If ALL words of any phrase in 'when' appear in the question (any order, within the same question), the 'add' words are added. Use for ways of asking that single-word synonyms cannot catch.",
+  "intents": [
+    {
+      "when": [
+        [
+          "sell",
+          "my",
+          "things"
+        ],
+        [
+          "sell",
+          "my",
+          "stuff"
+        ],
+        [
+          "sell",
+          "my",
+          "products"
+        ],
+        [
+          "sell",
+          "here"
+        ],
+        [
+          "start",
+          "selling"
+        ],
+        [
+          "want",
+          "sell"
+        ],
+        [
+          "sell",
+          "nextastore"
+        ],
+        [
+          "become",
+          "seller"
+        ],
+        [
+          "be",
+          "seller"
+        ],
+        [
+          "open",
+          "shop"
+        ],
+        [
+          "open",
+          "store"
+        ]
+      ],
+      "add": "open store create account sell simple path"
+    },
+    {
+      "when": [
+        [
+          "new",
+          "here"
+        ],
+        [
+          "am",
+          "new"
+        ],
+        [
+          "first",
+          "time"
+        ],
+        [
+          "where",
+          "start"
+        ],
+        [
+          "where",
+          "begin"
+        ],
+        [
+          "just",
+          "joined"
+        ]
+      ],
+      "add": "what nextastore main areas simple path"
+    },
+    {
+      "when": [
+        [
+          "return",
+          "item"
+        ],
+        [
+          "return",
+          "product"
+        ],
+        [
+          "send",
+          "back"
+        ],
+        [
+          "take",
+          "back"
+        ],
+        [
+          "money",
+          "back"
+        ],
+        [
+          "get",
+          "refund"
+        ],
+        [
+          "bought",
+          "wrong"
+        ]
+      ],
+      "add": "cancel order problem seller messages"
+    },
+    {
+      "when": [
+        [
+          "not",
+          "send"
+        ],
+        [
+          "didnt",
+          "send"
+        ],
+        [
+          "never",
+          "send"
+        ],
+        [
+          "not",
+          "deliver"
+        ],
+        [
+          "never",
+          "arrive"
+        ],
+        [
+          "not",
+          "arrive"
+        ],
+        [
+          "not",
+          "reach"
+        ],
+        [
+          "no",
+          "delivery"
+        ],
+        [
+          "seller",
+          "disappear"
+        ],
+        [
+          "seller",
+          "gone"
+        ],
+        [
+          "seller",
+          "quiet"
+        ],
+        [
+          "seller",
+          "silent"
+        ],
+        [
+          "seller",
+          "blocked"
+        ]
+      ],
+      "add": "something goes wrong order problem report messages support"
+    },
+    {
+      "when": [
+        [
+          "see",
+          "messages"
+        ],
+        [
+          "see",
+          "my",
+          "messages"
+        ],
+        [
+          "read",
+          "messages"
+        ],
+        [
+          "find",
+          "messages"
+        ],
+        [
+          "check",
+          "messages"
+        ],
+        [
+          "where",
+          "chat"
+        ],
+        [
+          "open",
+          "chat"
+        ]
+      ],
+      "add": "messages messaging notifications inbox"
+    },
+    {
+      "when": [
+        [
+          "change",
+          "shop",
+          "name"
+        ],
+        [
+          "change",
+          "store",
+          "name"
+        ],
+        [
+          "rename",
+          "store"
+        ],
+        [
+          "rename",
+          "shop"
+        ],
+        [
+          "edit",
+          "store",
+          "name"
+        ],
+        [
+          "store",
+          "name"
+        ]
+      ],
+      "add": "customizing store settings dashboard edit"
+    },
+    {
+      "when": [
+        [
+          "contact",
+          "seller"
+        ],
+        [
+          "talk",
+          "seller"
+        ],
+        [
+          "ask",
+          "seller"
+        ],
+        [
+          "message",
+          "seller"
+        ],
+        [
+          "chat",
+          "seller"
+        ],
+        [
+          "chat",
+          "with",
+          "seller"
+        ]
+      ],
+      "add": "messaging messages product detail page message seller"
+    },
+    {
+      "when": [
+        [
+          "save",
+          "item"
+        ],
+        [
+          "save",
+          "product"
+        ],
+        [
+          "like",
+          "product"
+        ],
+        [
+          "liked",
+          "products"
+        ],
+        [
+          "wishlist"
+        ],
+        [
+          "bookmark"
+        ]
+      ],
+      "add": "favorites following saved"
+    },
+    {
+      "when": [
+        [
+          "look",
+          "good"
+        ],
+        [
+          "look",
+          "nice"
+        ],
+        [
+          "look",
+          "professional"
+        ],
+        [
+          "make",
+          "attractive"
+        ],
+        [
+          "decorate",
+          "store"
+        ],
+        [
+          "design",
+          "store"
+        ],
+        [
+          "improve",
+          "store"
+        ]
+      ],
+      "add": "customizing store logo banner theme photos description"
+    },
+    {
+      "when": [
+        [
+          "real",
+          "seller"
+        ],
+        [
+          "seller",
+          "real"
+        ],
+        [
+          "genuine",
+          "seller"
+        ],
+        [
+          "trust",
+          "seller"
+        ],
+        [
+          "seller",
+          "trust"
+        ],
+        [
+          "fake",
+          "seller"
+        ],
+        [
+          "legit"
+        ]
+      ],
+      "add": "trustworthy seller safety badge verified"
+    },
+    {
+      "when": [
+        [
+          "safe",
+          "buy"
+        ],
+        [
+          "buying",
+          "safe"
+        ],
+        [
+          "safe",
+          "buying"
+        ],
+        [
+          "safe",
+          "shop"
+        ],
+        [
+          "avoid",
+          "scam"
+        ]
+      ],
+      "add": "safety while buying general safety staying safe messages"
+    },
+    {
+      "when": [
+        [
+          "pay",
+          "delivery"
+        ],
+        [
+          "paying",
+          "delivery"
+        ],
+        [
+          "pay",
+          "reach"
+        ],
+        [
+          "pay",
+          "arrive"
+        ],
+        [
+          "pay",
+          "pick"
+        ],
+        [
+          "cash",
+          "delivery"
+        ],
+        [
+          "pay",
+          "after"
+        ],
+        [
+          "pay",
+          "when"
+        ]
+      ],
+      "add": "paying order checkout payment method agree seller delivery pickup"
+    },
+    {
+      "when": [
+        [
+          "how",
+          "paid"
+        ],
+        [
+          "receive",
+          "money"
+        ],
+        [
+          "get",
+          "paid"
+        ],
+        [
+          "customers",
+          "pay"
+        ],
+        [
+          "buyers",
+          "pay"
+        ]
+      ],
+      "add": "paying order checkout payment methods seller accept"
+    },
+    {
+      "when": [
+        [
+          "not",
+          "showing"
+        ],
+        [
+          "not",
+          "appearing"
+        ],
+        [
+          "not",
+          "visible"
+        ],
+        [
+          "cant",
+          "see",
+          "product"
+        ],
+        [
+          "product",
+          "missing"
+        ]
+      ],
+      "add": "managing products store launch coverage listing"
+    },
+    {
+      "when": [
+        [
+          "how",
+          "many",
+          "pictures"
+        ],
+        [
+          "how",
+          "many",
+          "photos"
+        ],
+        [
+          "how",
+          "many",
+          "images"
+        ],
+        [
+          "number",
+          "photos"
+        ],
+        [
+          "number",
+          "pictures"
+        ]
+      ],
+      "add": "managing products images photos"
+    },
+    {
+      "when": [
+        [
+          "verify",
+          "badge"
+        ],
+        [
+          "verified",
+          "badge"
+        ],
+        [
+          "blue",
+          "tick"
+        ],
+        [
+          "get",
+          "badge"
+        ],
+        [
+          "badge",
+          "store"
+        ]
+      ],
+      "add": "seller badge tiers months coverage"
+    },
+    {
+      "when": [
+        [
+          "is",
+          "active"
+        ],
+        [
+          "still",
+          "active"
+        ],
+        [
+          "subscription",
+          "active"
+        ],
+        [
+          "still",
+          "valid"
+        ],
+        [
+          "days",
+          "left"
+        ]
+      ],
+      "add": "subscription coverage trial seller pass status"
+    },
+    {
+      "when": [
+        [
+          "free",
+          "join"
+        ],
+        [
+          "free",
+          "sign"
+        ],
+        [
+          "charged",
+          "join"
+        ],
+        [
+          "pay",
+          "join"
+        ],
+        [
+          "cost",
+          "join"
+        ],
+        [
+          "pay",
+          "register"
+        ]
+      ],
+      "add": "free buyer seller pass price"
+    },
+    {
+      "when": [
+        [
+          "pay",
+          "any",
+          "fee"
+        ],
+        [
+          "any",
+          "fee"
+        ],
+        [
+          "buyers",
+          "pay"
+        ],
+        [
+          "service",
+          "fee"
+        ],
+        [
+          "charges"
+        ]
+      ],
+      "add": "free buyer fee platform"
+    },
+    {
+      "when": [
+        [
+          "without",
+          "account"
+        ],
+        [
+          "no",
+          "account"
+        ],
+        [
+          "guest",
+          "checkout"
+        ],
+        [
+          "buy",
+          "without"
+        ]
+      ],
+      "add": "sign up account checkout"
+    },
+    {
+      "when": [
+        [
+          "how",
+          "much",
+          "trial"
+        ],
+        [
+          "trial",
+          "long"
+        ],
+        [
+          "trial",
+          "days"
+        ],
+        [
+          "free",
+          "days"
+        ],
+        [
+          "how",
+          "long",
+          "trial"
+        ]
+      ],
+      "add": "seller pass free trial days price"
+    },
+    {
+      "when": [
+        [
+          "seller",
+          "pass"
+        ],
+        [
+          "sellerpass"
+        ]
+      ],
+      "add": "seller pass subscription"
+    },
+    {
+      "when": [
+        [
+          "wrong",
+          "number"
+        ],
+        [
+          "wrong",
+          "person"
+        ],
+        [
+          "sent",
+          "wrong"
+        ],
+        [
+          "mistake",
+          "payment"
+        ]
+      ],
+      "add": "payment problem support report messages safety"
+    },
+    {
+      "when": [
+        [
+          "answer",
+          "customers"
+        ],
+        [
+          "reply",
+          "customers"
+        ],
+        [
+          "reply",
+          "buyers"
+        ],
+        [
+          "respond",
+          "customers"
+        ],
+        [
+          "answer",
+          "buyers"
+        ],
+        [
+          "customers",
+          "fast"
+        ]
+      ],
+      "add": "handling orders messages reply trust fast"
+    },
+    {
+      "when": [
+        [
+          "description",
+          "product"
+        ],
+        [
+          "describe",
+          "product"
+        ],
+        [
+          "write",
+          "description"
+        ],
+        [
+          "product",
+          "description"
+        ]
+      ],
+      "add": "writing good description"
+    },
+    {
+      "when": [
+        [
+          "price",
+          "fair"
+        ],
+        [
+          "fair",
+          "price"
+        ],
+        [
+          "compare",
+          "price"
+        ],
+        [
+          "compare",
+          "prices"
+        ],
+        [
+          "cheaper",
+          "store"
+        ],
+        [
+          "best",
+          "price"
+        ]
+      ],
+      "add": "comparing fairly price stores"
+    },
+    {
+      "when": [
+        [
+          "set",
+          "price"
+        ],
+        [
+          "decide",
+          "price"
+        ],
+        [
+          "how",
+          "price"
+        ],
+        [
+          "pricing"
+        ],
+        [
+          "price",
+          "items"
+        ],
+        [
+          "price",
+          "products"
+        ],
+        [
+          "price",
+          "my"
+        ]
+      ],
+      "add": "how to price your products cost profit"
+    },
+    {
+      "when": [
+        [
+          "what",
+          "sell"
+        ],
+        [
+          "sell",
+          "small"
+        ],
+        [
+          "best",
+          "sell"
+        ],
+        [
+          "things",
+          "sell"
+        ],
+        [
+          "products",
+          "sell"
+        ],
+        [
+          "idea",
+          "sell"
+        ],
+        [
+          "which",
+          "category"
+        ],
+        [
+          "what",
+          "should",
+          "sell"
+        ]
+      ],
+      "add": "what to sell ideas pick product idea small budget"
+    },
+    {
+      "when": [
+        [
+          "know",
+          "when"
+        ],
+        [
+          "get",
+          "notified"
+        ],
+        [
+          "be",
+          "notified"
+        ],
+        [
+          "alert",
+          "when"
+        ],
+        [
+          "tell",
+          "when"
+        ],
+        [
+          "told",
+          "when"
+        ],
+        [
+          "notify",
+          "me"
+        ]
+      ],
+      "add": "notifications push alerts bell messages"
+    },
+    {
+      "when": [
+        [
+          "go",
+          "live"
+        ],
+        [
+          "went",
+          "live"
+        ],
+        [
+          "gone",
+          "live"
+        ],
+        [
+          "store",
+          "live"
+        ],
+        [
+          "after",
+          "launch"
+        ],
+        [
+          "after",
+          "launching"
+        ]
+      ],
+      "add": "first week after launch share link followers"
+    },
+    {
+      "when": [
+        [
+          "pass",
+          "active"
+        ],
+        [
+          "pass",
+          "not",
+          "active"
+        ],
+        [
+          "subscription",
+          "not",
+          "active"
+        ],
+        [
+          "money",
+          "gone"
+        ],
+        [
+          "paid",
+          "not",
+          "active"
+        ]
+      ],
+      "add": "seller pass paying coverage payment pending approval admin submitted reference"
+    },
+    {
+      "when": [
+        [
+          "edit",
+          "product"
+        ],
+        [
+          "change",
+          "product"
+        ],
+        [
+          "edit",
+          "item"
+        ],
+        [
+          "edit",
+          "listing"
+        ],
+        [
+          "update",
+          "product"
+        ],
+        [
+          "update",
+          "item"
+        ],
+        [
+          "modify",
+          "product"
+        ]
+      ],
+      "add": "managing products edit product dashboard"
+    },
+    {
+      "when": [
+        [
+          "wrong",
+          "price"
+        ],
+        [
+          "fix",
+          "price"
+        ],
+        [
+          "change",
+          "price"
+        ],
+        [
+          "edit",
+          "price"
+        ],
+        [
+          "update",
+          "price"
+        ],
+        [
+          "correct",
+          "price"
+        ],
+        [
+          "mistake",
+          "price"
+        ]
+      ],
+      "add": "managing products edit product price dashboard"
+    },
+    {
+      "when": [
+        [
+          "see",
+          "bought"
+        ],
+        [
+          "check",
+          "bought"
+        ],
+        [
+          "what",
+          "bought"
+        ],
+        [
+          "things",
+          "bought"
+        ],
+        [
+          "items",
+          "bought"
+        ],
+        [
+          "my",
+          "purchases"
+        ],
+        [
+          "purchased"
+        ],
+        [
+          "bought",
+          "before"
+        ]
+      ],
+      "add": "orders page placing tracking order status buyer"
+    },
+    {
+      "when": [
+        [
+          "time",
+          "post"
+        ],
+        [
+          "when",
+          "post"
+        ],
+        [
+          "time",
+          "upload"
+        ],
+        [
+          "when",
+          "upload"
+        ],
+        [
+          "time",
+          "list"
+        ],
+        [
+          "when",
+          "list"
+        ],
+        [
+          "day",
+          "post"
+        ]
+      ],
+      "add": "growing steadily new listing regularly followers fresh first week"
+    },
+    {"when": [["buy", "many", "seller"], ["buy", "several", "seller"], ["buy", "multiple", "seller"], ["buy", "different", "seller"], ["buy", "two", "seller"], ["buy", "more", "seller"], ["buy", "various", "seller"], ["buy", "many", "store"], ["buy", "several", "store"], ["buy", "multiple", "store"], ["buy", "different", "store"], ["buy", "two", "store"], ["buy", "more", "store"], ["buy", "various", "store"], ["buy", "many", "shop"], ["buy", "several", "shop"], ["buy", "multiple", "shop"], ["buy", "different", "shop"], ["buy", "two", "shop"], ["buy", "more", "shop"], ["buy", "various", "shop"], ["order", "many", "seller"], ["order", "several", "seller"], ["order", "multiple", "seller"], ["order", "different", "seller"], ["order", "two", "seller"], ["order", "more", "seller"], ["order", "various", "seller"], ["order", "many", "store"], ["order", "several", "store"], ["order", "multiple", "store"], ["order", "different", "store"], ["order", "two", "store"], ["order", "more", "store"], ["order", "various", "store"], ["order", "many", "shop"], ["order", "several", "shop"], ["order", "multiple", "shop"], ["order", "different", "shop"], ["order", "two", "shop"], ["order", "more", "shop"], ["order", "various", "shop"], ["buy", "seller", "same", "time"], ["order", "seller", "same", "time"], ["buy", "store", "same", "time"], ["order", "store", "same", "time"], ["one", "cart", "seller"], ["one", "checkout", "seller"], ["one", "order", "seller"], ["many", "seller", "cart"], ["several", "seller", "cart"], ["multiple", "seller", "cart"], ["different", "seller", "cart"], ["two", "seller", "cart"], ["more", "seller", "cart"], ["various", "seller", "cart"], ["many", "store", "cart"], ["several", "store", "cart"], ["multiple", "store", "cart"], ["different", "store", "cart"], ["two", "store", "cart"], ["more", "store", "cart"], ["various", "store", "cart"], ["many", "shop", "cart"], ["several", "shop", "cart"], ["multiple", "shop", "cart"], ["different", "shop", "cart"], ["two", "shop", "cart"], ["more", "shop", "cart"], ["various", "shop", "cart"]], "add": "cart checkout separate order request each seller more than one store"}
+  ],
+  "_stop_expansion_note": "Words that must never be treated as typos of other words.",
+  "never_fix": [
+    "nexi",
+    "nextastore",
+    "ugx",
+    "otp",
+    "pwa",
+    "momo",
+    "mtn",
+    "airtel",
+    "lg",
+    "luganda",
+    "whatsapp",
+    "tiktok",
+    "instagram",
+    "facebook",
+    "kampala"
+  ],
+  "phrases": {
+    "pick up": "pickup",
+    "e mail": "email",
+    "log in": "login",
+    "log on": "login",
+    "sign in": "login",
+    "sign up": "signup",
+    "log out": "logout",
+    "sign out": "logout",
+    "check out": "checkout",
+    "e books": "ebooks",
+    "how come": "why",
+    "wont": "will not",
+    "can not": "cannot",
+    "order reach": "order arrive",
+    "orders reach": "orders arrive",
+    "item reach": "item arrive",
+    "items reach": "items arrive",
+    "parcel reach": "parcel arrive",
+    "goods reach": "goods arrive",
+    "reach me": "arrive",
+    "reach home": "arrive",
+    "reached me": "arrived",
+    "reach my": "arrive"
+  },
+  "_phrases_note": "Multi-word spellings joined into one word before anything else (so 'sign up' and 'signup' are the same).",
+  "weak_words": {
+    "see": 0.35,
+    "know": 0.35,
+    "make": 0.4,
+    "use": 0.5,
+    "work": 0.5,
+    "works": 0.5,
+    "way": 0.35,
+    "ways": 0.35,
+    "want": 0.3,
+    "show": 0.4,
+    "tell": 0.3,
+    "mean": 0.4,
+    "means": 0.4,
+    "happen": 0.5,
+    "happens": 0.5,
+    "thing": 0.4,
+    "time": 0.5,
+    "here": 0.3,
+    "site": 0.3,
+    "website": 0.3,
+    "platform": 0.5,
+    "nextastore": 0.3,
+    "new": 0.6,
+    "good": 0.6,
+    "best": 0.6,
+    "able": 0.4,
+    "possible": 0.4,
+    "going": 0.3,
+    "try": 0.4,
+    "people": 0.5,
+    "person": 0.5,
+    "someone": 0.5,
+    "anyone": 0.4,
+    "everything": 0.4,
+    "anything": 0.4,
+    "something": 0.4,
+    "tip": 0.3,
+    "tips": 0.3,
+    "advice": 0.4,
+    "better": 0.3,
+    "taking": 0.3,
+    "take": 0.4,
+    "takes": 0.4,
+    "getting": 0.4,
+    "give": 0.4,
+    "giving": 0.4,
+    "looking": 0.4,
+    "look": 0.5,
+    "need": 0.4,
+    "needs": 0.4,
+    "should": 0.3,
+    "would": 0.3,
+    "could": 0.3,
+    "really": 0.3,
+    "very": 0.3,
+    "much": 0.5,
+    "lot": 0.3,
+    "kind": 0.3,
+    "sort": 0.3,
+    "fast": 0.6,
+    "quick": 0.6,
+    "quickly": 0.6,
+    "another": 0.4,
+    "other": 0.4,
+    "first": 0.7,
+    "again": 0.4,
+    "still": 0.4,
+    "around": 0.3,
+    "inside": 0.4,
+    "put": 0.5,
+    "setting": 0.6,
+    "wife": 0.4,
+    "husband": 0.4,
+    "mother": 0.4,
+    "mum": 0.4,
+    "mom": 0.4,
+    "dad": 0.4,
+    "father": 0.4,
+    "friend": 0.4,
+    "brother": 0.4,
+    "sister": 0.4,
+    "son": 0.4,
+    "daughter": 0.4,
+    "boss": 0.4,
+    "boyfriend": 0.4,
+    "girlfriend": 0.4,
+    "walk": 0.3,
+    "through": 0.3,
+    "explain": 0.3,
+    "describe": 0.3,
+    "multi": 0.3,
+    "extra": 0.3,
+    "semi": 0.3,
+    "non": 0.3,
+    "pre": 0.3,
+    "post": 0.3,
+    "together": 0.3,
+    "altogether": 0.3,
+    "same": 0.3,
+    "both": 0.3,
+    "also": 0.3,
+    "many": 0.3,
+    "different": 0.3,
+    "several": 0.3,
+    "various": 0.3,
+    "multiple": 0.3,
+    "simultaneously": 0.3,
+    "each": 0.3,
+    "every": 0.3,
+    "whole": 0.3,
+    "all": 0.3,
+    "plenty": 0.3,
+    "lots": 0.3,
+    "few": 0.3,
+    "some": 0.3,
+    "certain": 0.3,
+    "particular": 0.3,
+    "specific": 0.3,
+    "else": 0.3,
+    "too": 0.3,
+    "either": 0.3,
+    "once": 0.3
+  },
+  "_weak_words_note": "Words that are in almost every question but say little about the topic. They still count, just much less (1 = full weight).",
+  "_gaps_note": "Platform-specific facts the help guides do NOT contain (fees, delivery times, warranty, account deletion...). If ALL words of any phrase appear in the question and no guide section has those words in its heading or aliases, Nexi says it is not sure and offers the team, instead of guessing from a loosely related section. The moment a section about the topic is added to the guides, the gap closes by itself. Add or remove topics freely.",
+  "gaps": [
+    {
+      "topic": "delivery fees and delivery times",
+      "when": [
+        [
+          "delivery",
+          "fee"
+        ],
+        [
+          "delivery",
+          "cost"
+        ],
+        [
+          "delivery",
+          "charge"
+        ],
+        [
+          "delivery",
+          "price"
+        ],
+        [
+          "delivery",
+          "time"
+        ],
+        [
+          "delivery",
+          "take"
+        ],
+        [
+          "delivery",
+          "long"
+        ],
+        [
+          "delivery",
+          "days"
+        ],
+        [
+          "shipping",
+          "fee"
+        ],
+        [
+          "shipping",
+          "cost"
+        ],
+        [
+          "free",
+          "delivery"
+        ],
+        [
+          "courier"
+        ],
+        [
+          "delivery",
+          "company"
+        ],
+        [
+          "day",
+          "delivery"
+        ],
+        [
+          "express",
+          "delivery"
+        ],
+        [
+          "fast",
+          "delivery"
+        ],
+        [
+          "quick",
+          "delivery"
+        ],
+        [
+          "delivery",
+          "speed"
+        ]
+      ]
+    },
+    {
+      "topic": "warranty and guarantees",
+      "when": [
+        [
+          "warranty"
+        ],
+        [
+          "guarantee"
+        ],
+        [
+          "guaranteed"
+        ]
+      ]
+    },
+    {
+      "topic": "refund timelines and return policy",
+      "when": [
+        [
+          "refund",
+          "days"
+        ],
+        [
+          "refund",
+          "long"
+        ],
+        [
+          "refund",
+          "take"
+        ],
+        [
+          "refund",
+          "time"
+        ],
+        [
+          "return",
+          "policy"
+        ],
+        [
+          "refund",
+          "policy"
+        ]
+      ]
+    },
+    {
+      "topic": "closing or deleting an account",
+      "when": [
+        [
+          "delete",
+          "account"
+        ],
+        [
+          "close",
+          "account"
+        ],
+        [
+          "deactivate",
+          "account"
+        ],
+        [
+          "remove",
+          "account"
+        ],
+        [
+          "delete",
+          "my",
+          "account"
+        ]
+      ]
+    },
+    {
+      "topic": "discount codes and promotions",
+      "when": [
+        [
+          "discount",
+          "code"
+        ],
+        [
+          "coupon"
+        ],
+        [
+          "coupons"
+        ],
+        [
+          "promo",
+          "code"
+        ],
+        [
+          "voucher"
+        ],
+        [
+          "promotion",
+          "code"
+        ]
+      ]
+    },
+    {
+      "topic": "platform commission, tax and fees per sale",
+      "when": [
+        [
+          "commission"
+        ],
+        [
+          "tax"
+        ],
+        [
+          "vat"
+        ],
+        [
+          "fee",
+          "per",
+          "sale"
+        ],
+        [
+          "fee",
+          "each",
+          "sale"
+        ],
+        [
+          "percent",
+          "sale"
+        ],
+        [
+          "percentage"
+        ]
+      ]
+    },
+    {
+      "topic": "extra account features",
+      "when": [
+        [
+          "username"
+        ],
+        [
+          "two",
+          "factor"
+        ],
+        [
+          "2fa"
+        ],
+        [
+          "authenticator"
+        ],
+        [
+          "change",
+          "phone",
+          "number"
+        ],
+        [
+          "change",
+          "name"
+        ],
+        [
+          "change",
+          "email"
+        ],
+        [
+          "update",
+          "email"
+        ],
+        [
+          "edit",
+          "email"
+        ],
+        [
+          "change",
+          "email",
+          "address"
+        ]
+      ]
+    },
+    {
+      "topic": "payment ways that are not built in",
+      "when": [
+        [
+          "paypal"
+        ],
+        [
+          "bitcoin"
+        ],
+        [
+          "crypto"
+        ],
+        [
+          "cryptocurrency"
+        ],
+        [
+          "dollar"
+        ],
+        [
+          "exchange",
+          "rate"
+        ],
+        [
+          "western",
+          "union"
+        ],
+        [
+          "bank",
+          "transfer"
+        ]
+      ]
+    },
+    {
+      "topic": "loans, media advertising and partnerships",
+      "when": [
+        [
+          "loan"
+        ],
+        [
+          "loans"
+        ],
+        [
+          "sponsor"
+        ],
+        [
+          "partnership"
+        ],
+        [
+          "tv"
+        ],
+        [
+          "radio"
+        ],
+        [
+          "billboard"
+        ],
+        [
+          "newspaper"
+        ]
+      ]
+    },
+    {
+      "topic": "company details",
+      "when": [
+        [
+          "office"
+        ],
+        [
+          "who",
+          "owns"
+        ],
+        [
+          "owner"
+        ],
+        [
+          "founder"
+        ],
+        [
+          "founded"
+        ],
+        [
+          "ceo"
+        ],
+        [
+          "how",
+          "many",
+          "sellers"
+        ],
+        [
+          "how",
+          "many",
+          "users"
+        ],
+        [
+          "how",
+          "many",
+          "stores"
+        ],
+        [
+          "head",
+          "office"
+        ],
+        [
+          "stock",
+          "market"
+        ],
+        [
+          "shares"
+        ],
+        [
+          "investor"
+        ],
+        [
+          "investors"
+        ],
+        [
+          "valuation"
+        ],
+        [
+          "registered",
+          "company"
+        ]
+      ]
+    },
+    {
+      "topic": "admin or staff roles",
+      "when": [
+        [
+          "become",
+          "admin"
+        ],
+        [
+          "become",
+          "moderator"
+        ],
+        [
+          "work",
+          "nextastore"
+        ],
+        [
+          "job",
+          "nextastore"
+        ],
+        [
+          "vacancy"
+        ],
+        [
+          "vacancies"
+        ]
+      ]
+    },
+    {
+      "topic": "selling in other countries",
+      "when": [
+        [
+          "kenya"
+        ],
+        [
+          "tanzania"
+        ],
+        [
+          "rwanda"
+        ],
+        [
+          "abroad"
+        ],
+        [
+          "outside",
+          "uganda"
+        ],
+        [
+          "international"
+        ]
+      ]
+    },
+    {
+      "topic": "whether NextaStore itself stocks a specific product",
+      "when": [
+        [
+          "you",
+          "sell"
+        ],
+        [
+          "do",
+          "you",
+          "stock"
+        ]
+      ]
+    },
+    {
+      "topic": "renaming a store or changing its web address",
+      "when": [
+        [
+          "change",
+          "store",
+          "name"
+        ],
+        [
+          "change",
+          "shop",
+          "name"
+        ],
+        [
+          "rename",
+          "store"
+        ],
+        [
+          "rename",
+          "shop"
+        ],
+        [
+          "change",
+          "store",
+          "link"
+        ],
+        [
+          "change",
+          "store",
+          "url"
+        ],
+        [
+          "edit",
+          "store",
+          "name"
+        ],
+        [
+          "edit",
+          "shop",
+          "name"
+        ]
+      ]
+    },
+    {
+      "topic": "scheduled or timed features",
+      "when": [
+        [
+          "schedule"
+        ],
+        [
+          "scheduled"
+        ],
+        [
+          "scheduling"
+        ],
+        [
+          "schedule",
+          "product"
+        ]
+      ]
+    }
+  ],
+  "_platform_concepts_note": "Platform concept nouns: things a shop or platform may OFFER (discounts, shipping, warranty, riders, loyalty...). They are never product searches (no catalog cards), and a question that asks whether NextaStore offers one of them is answered 'not in the guides' unless a guide section is ABOUT it (its heading or aliases name it). Lowercase, one word or a short phrase per entry.",
+  "platform_concepts": [
+    "discount",
+    "discounts",
+    "voucher",
+    "vouchers",
+    "coupon",
+    "coupons",
+    "promo",
+    "promotion",
+    "promotions",
+    "cashback",
+    "cash back",
+    "shipping",
+    "delivery fee",
+    "warranty",
+    "guarantee",
+    "insurance",
+    "rider",
+    "riders",
+    "loyalty",
+    "points",
+    "reward",
+    "rewards",
+    "bonus",
+    "referral",
+    "affiliate",
+    "commission",
+    "invoice",
+    "invoices",
+    "receipt",
+    "receipts",
+    "installment",
+    "installments",
+    "gift card",
+    "gift cards",
+    "api",
+    "membership",
+    "premium",
+    "subscription plan",
+    "tax",
+    "vat",
+    "free shipping",
+    "free delivery",
+    "insure",
+    "insured",
+    "insures",
+    "licence",
+    "license",
+    "licensed",
+    "free returns",
+    "free return",
+    "return policy",
+    "returns",
+    "sim card",
+    "sim cards",
+    "airtime",
+    "gift voucher",
+    "buy now pay later",
+    "bnpl",
+    "wishlist",
+    "gift wrap",
+    "gift wrapping"
+  ],
+  "_scaffold_words_note": "Words that frame a question but are not what it is about (offer, have, get, minimum ...). They are ignored when the 'is this in the guides?' check looks for the thing being asked about.",
+  "scaffold_words": [
+    "offer",
+    "give",
+    "provide",
+    "have",
+    "get",
+    "become",
+    "accept",
+    "take",
+    "stock",
+    "allow",
+    "able",
+    "possible",
+    "available",
+    "today",
+    "week",
+    "next",
+    "use",
+    "used",
+    "want",
+    "find",
+    "sell",
+    "buy",
+    "pay",
+    "open",
+    "time",
+    "free",
+    "much",
+    "long",
+    "many",
+    "old",
+    "go",
+    "live",
+    "minimum",
+    "maximum",
+    "min",
+    "max",
+    "shortest",
+    "shorter",
+    "longest",
+    "longer",
+    "smallest",
+    "smaller",
+    "largest",
+    "larger",
+    "biggest",
+    "bigger",
+    "lowest",
+    "highest",
+    "least",
+    "most",
+    "fewest",
+    "limit",
+    "limits",
+    "any",
+    "there",
+    "exist",
+    "kampala",
+    "uganda",
+    "here",
+    "site",
+    "website",
+    "platform"
+  ],
+  "_fact_asks_note": "Ways of asking about a PLATFORM FACT (does it offer / have / cost / allow something). Regular expressions, lowercase. Only these questions are checked for 'is the thing asked about in the guides at all?'. General selling or shopping advice is never a gap.",
+  "fact_asks": [
+    "\\b(?:do|does|did)\\s+(?:you|u|nextastore|nexta|the\\s+(?:site|platform|website|app))\\s+(?:have|has|offer|offers|provide|give|sell|stock|support|accept|allow|take|do|work|run|open|close|insure|cover|guarantee|compensate|ship|deliver|charge|reward|refund|pay|hire|verify|pick|install)\\b",
+    "\\bis\\s+there\\b",
+    "\\bare\\s+there\\b",
+    "\\b(?:can|could|may)\\s+(?:i|we|one)\\s+(?:get|have|buy|become|join|see|track|use|put|list|post|open|apply|pay|sell|upload)\\b",
+    "\\bhow\\s+(?:much|many|long|old)\\b",
+    "\\bwhat\\s+time\\b",
+    "\\bwhat\\s+(?:is|are)\\s+(?:the|your)\\b",
+    "\\b(?:minimum|maximum|limit|hours|opening|closing|age|rate|rates|price|prices|fee|fees|cost)\\b",
+    "\\bwhen\\s+(?:do|does|is|are)\\s+(?:you|u|nextastore|support|the)\\b",
+    "\\bhow\\s+(?:do|can|to)\\s+(?:i\\s+)?become\\b",
+    "\\b(?:tell\\s+me\\s+(?:more\\s+)?about|info(?:rmation)?\\s+(?:on|about)|details\\s+(?:on|about)|what\\s+about)\\b",
+    "\\b(?:is|are)\\s+(?:nextastore|nexta|the\\s+(?:site|platform|website|app)|returns?)\\b",
+    "\\b(?:is|are)\\s+(?:my|our|your)\\s+(?:money|payment|order|data|information|account)\\s+(?:safe|secure|protected|insured|covered)\\b",
+    "\\b(?:can|could|may)\\s+(?:i|we|one)\\s+(?:hire|ask|request|order|book|change|edit|update|withdraw|cancel|download|install|contact|speak|talk|call|message|chat)\\b.*\\b(?:nextastore|nexta|support|team|staff|photographers?|account|number|email|name)\\b"
+  ],
+  "_fact_kinds_note": "Kinds of platform fact asked in a way no single noun shows (opening hours ...). 'when' = regular expressions; 'needs' = words a guide section must have in its heading or aliases for the topic to count as covered.",
+  "fact_kinds": [
+    {
+      "topic": "support opening hours and availability",
+      "when": [
+        "\\bwhat\\s+time\\b.*\\b(?:open|close|available|start|end)\\b",
+        "\\b(?:opening|closing|working|office|support)\\s+hours\\b",
+        "\\bopen\\s+on\\s+(?:sundays?|saturdays?|weekends?|holidays?|public)\\b",
+        "\\b(?:work|working|open)\\b.*\\b(?:sundays?|weekends?|public\\s+holidays?)\\b",
+        "\\bwhen\\s+(?:do|does|is|are|will)\\s+(?:you|u|nextastore|nexta|support|the\\s+(?:team|office|support))\\b.*\\b(?:open|close|available|start|end)\\b"
+      ],
+      "needs": [
+        "hours"
+      ]
+    },
+    {
+      "topic": "a minimum order amount",
+      "when": [
+        "\\bmin(?:imum)?\\s+(?:order|purchase|spend|basket|cart)\\b",
+        "\\b(?:order|purchase)\\s+(?:minimum|min)\\b"
+      ],
+      "needs": [
+        "order",
+        "minimum"
+      ]
+    },
+    {
+      "topic": "limits on listings or uploads",
+      "when": [
+        "\\bhow\\s+many\\s+(?:products?|items?|listings?|stores?|shops?|categories|variations?)\\b.*\\b(?:can|allowed|max|limit|at\\s+a\\s+time)\\b",
+        "\\b(?:biggest|largest|maximum|max)\\s+(?:picture|photo|image|file|upload|video)\\s+size\\b",
+        "\\b(?:picture|photo|image|file|video)\\s+size\\s+limit\\b",
+        "\\b(?:biggest|largest|maximum|max)\\s+(?:picture|photo|image|file|video)\\b"
+      ],
+      "needs": [
+        "limit",
+        "upload"
+      ]
+    },
+    {
+      "topic": "licensing or regulation",
+      "when": [
+        "\\b(?:licen[sc]ed|regulated|regulator|central\\s+bank|registered\\s+company|legal\\s+company)\\b"
+      ],
+      "needs": [
+        "licence",
+        "license"
+      ]
+    }
+  ]
+}

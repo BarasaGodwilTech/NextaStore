@@ -180,23 +180,71 @@ separated here:
 - **Product cards have no favourite heart** on the marketplace (store pages and favorites.html do). Not added: needs the favorites state wiring.
 - **Needs a real look:** open `/marketplace` on a phone with real data, and with a logged-in seller account (hero button, header).
 
-## From WIP 53 (Nexi, added 2026-10-03)
-- **Needs a live environment:** run Ollama + `ai-assistant` + backend together and ask the six starters in English; check answer quality, first-token time and total time on the real
-  machine (CPU-only can take 20-60 s; consider a smaller model or a GPU). Run `npm run reindex` (four new knowledge files).
-- **Add to your real `nextastore-backend/.env.example`** (it was not in the zip I received): `ASSISTANT_URL=http://127.0.0.1:4100` and optionally `ASSISTANT_TIMEOUT_MS=120000`.
-- **Luganda:** get a Sunbird API key, then `npm run translate:starters`. Check Sunbird's price / limits / terms and add the third-party disclosure to the privacy policy.
-  Until then the Luganda starters are drafts and Luganda questions get English answers plus a note. Have one Luganda speaker spot-check money / safety answers once.
-- **Production:** keep port 4100 private; if the backend runs on a different machine set `ASSISTANT_URL` to its private address. The proxy limits are per IP (needs the existing `trust proxy` setting to be right).
-- **Knowledge accuracy:** `ai-assistant/src/knowledge/02-selling-and-stores.md` and `04-...seller-pass.md` were written before WIP 27/28 (badge ladder, Seller Pass plans); re-read them against
-  the live platform so Nexi doesn't state old facts. New files 08-11 deliberately avoid fees and badge rules.
-- **Design follow-ups (optional):** the hero chat could remember a "sell vs buy" choice; a typing/answer-time estimate; admin view of which questions Nexi couldn't answer.
+## Nexi launch checklist (final, WIP 101: Nexi is frozen)
 
+This ONE list replaces the Nexi launch items that were spread over the WIP 53, 54, 87, 93, 97 and 100 sections. There is no more Nexi feature work: what is left is owner-only checking, deciding and deploying. How to run everything is in `ai-assistant/README.md`, "Operating Nexi".
 
-## From WIP 54 (Luganda on the server + VPS, added 2026-10-03)
-- **Needs a live environment:** run `npm run bench` on your own machine before paying for the VPS, then `deploy/setup-vps.sh` on the real server. Check `free -h` / `ollama ps` with all three models loaded
-  (plan: about 6 to 6.5 GB used of 8) and that swap stays quiet. If an English answer takes more than about 20 s, use a smaller chat model or a bigger plan.
-- **Luganda quality:** have one Luganda speaker read real answers from Ganda Gemma (especially money, fees, safety) and put approved wording in `ai-assistant/src/lang/translation-memory.json`.
-  Its published score is modest (BLEU about 7, chrF++ about 40 on English -> Luganda), so treat it as a helper, not a final authority. The phrasebook entries are still unreviewed drafts.
-- **Not built:** reading Luganda *questions* into English locally (needs NLLB, a Python service and more RAM). Sunbird does it if you accept sending those chats to them.
-- **Privacy policy:** with `LOG_LUGANDA_MISSES=true`, Luganda question text (first 300 characters, no account or IP) is stored on the server; mention it. Local Luganda sends nothing to third parties.
-- **Backend `.env`:** add `ASSISTANT_TOKEN` (same as the assistant's) and `ASSISTANT_TIMEOUT_MS=150000`. The backend `.env.example` was not in the zip, so it was not edited.
+**Done (covered by tests; re-run them, do not redo them)**
+- [x] Luganda never shows English (handoff instead); hallucination guard; the assertion-support guard (a yes / no / figure needs one supporting sentence); distress and safety questions are answered, never a menu; clarify chips never repeat a task.
+- [x] Handoff to WhatsApp (real anchors, keyboard reachable, summary built from the current chat); the person link sits under the composer in both views.
+- [x] Retrieval, calibration and the answer-change check; weekly traffic review with abusive / injection / private rows counted and never listed.
+- [x] Design system: one token block, one-row header, cards and handoff button as thread children, 160 ms entrance (off under reduced motion), jump-to-latest, 44 px targets, AA contrast at 320 / 390 / 1280 in English and Luganda (`design-audit` 61/0 including the starter-chip clipping check, `ui-audit` 39/0).
+- [x] Suites as listed in the README table; service-worker cache v70 with `sw-assets.hash`.
+
+**Owner-only**
+- [ ] **Real dependencies.** `cd ai-assistant && npm ci`, then every suite in the README table. The sandbox had no network: `selftest` and `wip93-test` ran against small stand-ins for `express`, `cors` and `dotenv`, so expect the same numbers but confirm them once.
+- [ ] **Live model.** Ollama with `CHAT_MODEL` set, assistant running, `npm run eval:chat`; ask the six starters in English; record first-token and total times (CPU-only can take 20-60 s: a smaller model or a GPU if slow). Optionally compare `qwen2.5:1.5b-instruct` with `qwen2.5:3b-instruct`. Then stop Ollama and ask `how do I pay for my seller pass`, `how do I get a seller badge`, `how do I open a store`, `how long is the free trial`, `how do I track my order`, `how do I sign up`: each fallback answer must carry the right real numbers and link, in complete sentences, with no file name or "knowledge base" wording.
+- [ ] **Real phones** (Android Chrome and iOS Safari): open the hero chat and the floating panel with WhatsApp contact ON and OFF; the title, EN / LG toggle, "Need a person? Chat on WhatsApp" and the cards must all be visible and not overflow; watch an answer stream (no half `[Open` link or `**` flashing); scroll up and use "Jump to latest"; keyboard open: the panel takes focus and Escape returns it.
+- [ ] **Backend and deployment.** In `nextastore-backend/.env`: `ASSISTANT_URL`, `ASSISTANT_TOKEN` (same as the assistant's), `ASSISTANT_TIMEOUT_MS` (about 150000 for a CPU server), `SUPPORT_EMAIL`, `SUPPORT_URL`, `SMTP_HOST`, `SMTP_FROM`. Keep port 4100 private. `npx prisma migrate deploy` against the real database. Deploy with service-worker cache `v70`.
+- [ ] **VPS** (if using the 8 GB plan): `npm run bench`, then `deploy/setup-vps.sh`; check `free -h` and `ollama ps` with the models loaded (about 6 to 6.5 GB of 8) and that swap stays quiet.
+- [ ] **Luganda.** A Luganda speaker reviews `lg-review/NEXI_LUGANDA_REVIEW.csv` (money, fees and safety first; includes the WIP 101 strings `need_person`, `handoff_hint`, `jump_latest`) and the question cues in `assertionGuard.js`, marks rows `approved`, then `npm run lg:review:import -- <file>`. Free-form Luganda needs `GANDA_MODEL`. Re-enable the three disabled phrasebook entries (`cancel_order`, `seller_badge`, `starter_buy_safely`) only after rewrite and review.
+- [ ] **Policy and legal.** Add the Seller Pass non-refundable rule to `terms.html` and `subscription.html` (Nexi already states it from the live facts). Approve the three English sentences added in WIP 93 (password-to-support FAQ, the "Support hours:" suffix, the neutral Seller Pass payment wording). Privacy policy: mention the scrubbed question log (`LOG_FLAGGED_MESSAGES`, `LOG_LUGANDA_MISSES`) and, if used, outside-world web queries (`WEB_SEARCH_URL`).
+- [ ] **Facts and web search.** Change one backend fact in a test environment and confirm Nexi's answer follows within one sync interval (no guide edit). Web search stays OFF unless `WEB_SEARCH_URL` points to a private SearXNG-compatible endpoint; if you turn it on, also set `WEB_ALLOWED_DOMAINS`, `WEB_TIMEOUT_MS`, `WEB_CACHE_MINUTES`, `WEB_MAX_CHARS`.
+- [ ] **Weekly from launch:** `npm run review:traffic -- --days 7` and paste useful alias lines (README).
+
+**Decisions for the owner (not launch blockers)**
+- `oos-15` is 14/15 (93%) on the strict ruler because "do you sell iphones" shows an honest catalog reply instead of a handoff; `scripts/oos-eval.js` also reports a third ruler that counts it. Leave it (correct when the catalog is up) or route "do you sell <product>" to a one-line marketplace answer.
+- Clarify and catalog-cards turns can still answer a fact question without the guides (1 of 25 in `oos-25b`, 6 of 30 in `oos-25c`); the reply-level guard cannot reach them.
+- Folding the review-side insult / injection patterns of `traffic-review.js` into the live classifier ("you are a useless stupid bot" is not flagged live today).
+- `blind-4` false handoff is 5% (2 of 40) and the `wip97` p95 overhead margin is thin (about 22-25 ms against 25 ms).
+- Parked ideas: hero remembers a sell / buy choice, an answer-time estimate, an admin page for unanswered questions, reading Luganda questions locally.
+
+## Found in WIP 95, FIXED in WIP 96
+
+- **Panel did not take focus when the composer's `visibility` transition was still running.** `open()` called
+  `textarea.focus()` once from a 60 ms timer; if that fired while `.nexi-panel-bottom` still computed `visibility:hidden`
+  the call was a silent no-op and focus stayed on the floating button (5 of 24 Chromium runs on the WIP 95 tree).
+  Fixed: the first attempt is unchanged, then `focus()` is retried per frame (max 30) only while focus is still on `<body>` or
+  the floating button.
+- **A focused starter arrow that hid itself dropped focus to `<body>`.** Fixed in `update()` of `wireStarterRow`: the focused
+  element is noted BEFORE the `hidden` flags change (the browser blurs it synchronously), then focus goes to the other arrow if
+  it is showing, otherwise to the first enabled starter chip. Covered by the "arrows 320" section of assistant-ui-browser-test.
+
+## Service-worker cache discipline (WIP 96)
+
+`sw-assets.hash` (project root) records a content hash of every `js/**/*.js` and `css/**/*.css` file plus the CACHE_VERSION
+that shipped with it. qa-static fails if those files change without BOTH a CACHE_VERSION bump and a regenerated record.
+Workflow after touching any JS/CSS: bump `CACHE_VERSION` in `service-worker.js`, then `npm run sw-assets-hash`
+(in nextastore-backend). The tool refuses to regenerate while the assets changed and the version did not.
+Known limit: it cannot tell a hand-written record (with matching hashes) from a regenerated one; it catches the honest
+mistakes (forgot to bump, forgot to regenerate, hand-edited the combined hash).
+
+## NextaStore Circle and Crew (WIP 103): to do before turning it on
+
+- [ ] `npm run migrate:deploy` (new tables and the `growth` notification type; hand-written, never run on real Postgres), then `npm run test:growth`.
+- [ ] Check no existing store already uses a newly reserved slug (`circle`, `crew`, `scouts`, `invite`, `i`, `admin-growth`, `auth-bridge`).
+- [ ] Create a private R2 bucket (public access off) and set `R2_PRIVATE_BUCKET_NAME`. Until then Crew applications answer "uploads are not set up".
+- [ ] Give the right admins `growth.view` / `growth.review` / `growth.payouts` / `growth.settings` (keep review and payouts on different people).
+- [ ] Both programs start closed. In the admin (Circle & Crew > settings) open Circle first, run one real signup > store > first payment > approval > earning > withdrawal, then open Crew.
+- [ ] Path mode serves `/circle`, `/crew`, `/invite` from static files if your proxy's `try_files` finds them first. The pages work either way, but link previews only get their placeholders filled when the request reaches Node. Route those paths (and `/i/*`) to the API if previews matter.
+- [ ] Optional: subdomains (`GROWTH_MODE=subdomain`, DNS and proxy for `circle.` and `crew.` pointing at the Node app, `/api` answered on both).
+- [ ] Optional: send the payer's phone number with subscription payments (guide step 8) so Crew can match a store by phone.
+- [ ] Nexi knowledge for Circle/Crew was not added (Nexi is frozen). If wanted, copy the guide's knowledge entries in a separate WIP.
+- [ ] Real devices: Crew install-to-home-screen, camera/QR, geolocation check-in, offline lead logging.
+
+## Nexi polish (WIP 104): to check on real devices
+
+- [ ] Run `python3 scripts/starter-row-test.py` and `widget-test.py` in `ai-assistant/` on a machine with Playwright Chromium for Python.
+- [ ] Look at the hero and the floating panel on a real small phone (320-360px) in English and Luganda, idle and mid-conversation: full words in the language slider, full subtitle, both slider buttons, nothing cut.
+- [ ] On a real desktop, check the two-questions-at-a-time starter row and that the previous / next buttons scroll it.
+- [ ] Luganda wording is still unreviewed by a speaker (see the lg-review notes); this WIP changed layout only.

@@ -171,39 +171,9 @@ function analyseTurn({ message, history = [] }) {
 }
 
 const MODEL_MARKER = '[OFF_TOPIC]';
-const MARKER_RE = /^\s*\[OFF_TOPIC\]\s*/;
-function stripMarker(text) {
-    const s = String(text || '');
-    return MARKER_RE.test(s) ? { text: s.replace(MARKER_RE, ''), marked: true } : { text: s, marked: false };
-}
-
-/**
- * Wraps a token callback so a leading [OFF_TOPIC] marker from the model is removed from the
- * stream (it is never shown). Holds back at most the first few characters.
- */
-function markerGate(onToken) {
-    let buf = '';
-    let decided = false;
-    let marked = false;
-    const emit = (t) => { if (t && onToken) onToken(t); };
-    function decide() {
-        decided = true;
-        const { text, marked: m } = stripMarker(buf);
-        marked = m;
-        emit(text);
-        buf = '';
-    }
-    return {
-        push(t) {
-            if (decided) { emit(t); return; }
-            buf += t;
-            const lead = buf.replace(/^\s+/, '');
-            if (lead.length < MODEL_MARKER.length && MODEL_MARKER.startsWith(lead)) return; // could still become the marker
-            decide();
-        },
-        end() { if (!decided && buf) decide(); },
-        get marked() { return marked; },
-    };
-}
+// WIP 92c: the marker gate lives in markers.js and handles BOTH [OFF_TOPIC] and [HANDOFF] with separate flags.
+const { createMarkerGate, stripMarkers } = require('./markers');
+function stripMarker(text) { const r = stripMarkers(text); return { text: r.text, marked: r.off_topic, off_topic: r.off_topic, handoff: r.handoff }; }
+function markerGate(onToken) { return createMarkerGate(onToken); }
 
 module.exports = { FLAG_TYPES, DRIFT_WINDOW, DRIFT_THRESHOLD, MODEL_MARKER, classifyMessage, analyseTurn, hasOnTopic, stripMarker, markerGate };

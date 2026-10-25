@@ -16,7 +16,7 @@
 // mismatched old-file/new-file combo across separately-cached scripts is
 // exactly what produces a "<something> is not defined" error like the
 // TokenStorage one that motivated this comment.
-const CACHE_VERSION = 'v54';
+const CACHE_VERSION = 'v80';
 const CACHE_NAME = `nextastore-cache-${CACHE_VERSION}`;
 // Clean address, not /offline.html: the web server 301s every *.html to its
 // clean form, and a worker must never hand a page a redirected response for a
