@@ -21,8 +21,8 @@ ok('subdomain mode with nothing configured is refused with a clear message', /GR
 ok('an origin with a path is refused', /no path/.test(throws(() => createHosts({ mode: 'subdomain', main: 'https://a.com/x', circle: 'https://c.a.com', crew: 'https://s.a.com' }))));
 ok('the same host twice is refused', /three different/.test(throws(() => createHosts({ mode: 'subdomain', main: 'https://a.com', circle: 'https://a.com', crew: 'https://s.a.com' }))));
 const path_ = createHosts({});
-ok('the default is path mode, which behaves exactly like v1 to v3', path_.mode === 'path' && path_.programUrl('scout') === '/crew' && path_.programUrl('circle') === '/circle' && path_.inviteUrl('circle-abcde') === '/invite?ref=CIRCLE-ABCDE' && path_.mainUrl('/login') === '/login');
-ok('subdomain links are absolute', sub.programUrl('scout') === 'https://crew.nextastore.com/' && sub.inviteUrl('crew-4htr9') === 'https://circle.nextastore.com/i/CREW-4HTR9' && sub.mainUrl('/login') === 'https://nextastore.com/login');
+ok('the default is path mode, which behaves exactly like v1 to v3', path_.mode === 'path' && path_.programUrl('crew') === '/crew' && path_.programUrl('circle') === '/circle' && path_.inviteUrl('circle-abcde') === '/invite?ref=CIRCLE-ABCDE' && path_.mainUrl('/login') === '/login');
+ok('subdomain links are absolute', sub.programUrl('crew') === 'https://crew.nextastore.com/' && sub.inviteUrl('crew-4htr9') === 'https://circle.nextastore.com/i/CREW-4HTR9' && sub.mainUrl('/login') === 'https://nextastore.com/login');
 ok('the host a request came in on is recognised (with its port)', createHosts({ mode: 'subdomain', main: 'http://x.test:4000', circle: 'http://c.x.test:4000', crew: 'http://s.x.test:4000' }).kindOfHost('C.X.test:4000') === 'circle' && sub.kindOfHost('evil.com') === null);
 
 console.log('The hand-off never sends anyone to a stranger');
@@ -37,9 +37,9 @@ const cfg = sub.publicConfig();
 const b = NextaHosts.create(cfg, loc('https://crew.nextastore.com/'));
 ok('the browser derives the same settings from the address alone (no configuration)', JSON.stringify(NextaHosts.create(undefined, loc('https://crew.nextastore.com/')).publicConfig()) === JSON.stringify(cfg));
 ok('invite links match, character for character', b.invite('crew-4htr9') === sub.inviteUrl('crew-4htr9'));
-ok('program and main links match', b.program('scout', '/x') === sub.programUrl('scout', '/x') && b.program('circle') === sub.programUrl('circle') && b.main('/login') === sub.mainUrl('/login'));
+ok('program and main links match', b.program('crew', '/x') === sub.programUrl('crew', '/x') && b.program('circle') === sub.programUrl('circle') && b.main('/login') === sub.mainUrl('/login'));
 ok('the browser knows which host it is on', b.kind === 'crew' && b.isProgramHost && NextaHosts.create(cfg, loc('https://nextastore.com/')).kind === 'main');
-ok('path mode agrees too (localhost is never mistaken for subdomain mode)', NextaHosts.create(undefined, loc('http://localhost:4000/')).mode === 'path' && NextaHosts.create(undefined, loc('http://localhost:4000/')).program('scout') === path_.programUrl('scout'));
+ok('path mode agrees too (localhost is never mistaken for subdomain mode)', NextaHosts.create(undefined, loc('http://localhost:4000/')).mode === 'path' && NextaHosts.create(undefined, loc('http://localhost:4000/')).program('crew') === path_.programUrl('crew'));
 ok('links on a program host: main-site pages are rewritten, program assets and home stay', b.resolve('/marketplace?x=1') === 'https://nextastore.com/marketplace?x=1' && b.resolve('/css/growth.css') === '/css/growth.css' && b.resolve('/') === '/' && b.resolve('/circle') === 'https://circle.nextastore.com/' && b.resolve('/i/ABC') === 'https://circle.nextastore.com/i/ABC' && b.resolve('//evil.com') === '//evil.com' && b.resolve('https://x.com') === 'https://x.com');
 
 
@@ -61,6 +61,11 @@ ok('every file the code builds a name for at run time exists (marks, lockups, fa
 const stale = growthSources.filter((f) => /growth-brand\/[^"' )`]*scouts|\/favicon\/scouts/.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(FE, f));
 ok('no page or script still points at the old Scouts brand files', stale.length === 0, stale.join(' '));
 const textLeft = growthSources.filter((f) => /Nexta Scouts|Nexta Circle|NextaScouts/.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(FE, f));
+// The old name is gone from everything that ships: no code, page, style, comment or schema line says "scout".
+const shipped = sources.filter((f) => /\.(html|js|css|prisma)$/.test(f) && !/[\\/](node_modules|scripts|ai-assistant|changelog-archive|preview)[\\/]/.test(f));
+const scoutLeft = [];
+for (const f of shipped) { const ls = fs.readFileSync(f, 'utf8').split('\n'); ls.forEach((l, i) => { if (/scout/i.test(l)) scoutLeft.push(`${path.relative(FE, f)}:${i + 1}`); }); }
+ok('the old name "scout" appears nowhere in shipped code', scoutLeft.length === 0, scoutLeft.slice(0, 8).join(' '));
 ok('no page or script still shows the old names "Nexta Scouts" / "Nexta Circle"', textLeft.length === 0, textLeft.join(' '));
 const pages = ['circle.html', 'crew.html'].map((f) => fs.readFileSync(path.join(FE, f), 'utf8'));
 ok('each program page names itself in full (NextaStore Circle / NextaStore Crew) and carries its descriptor', pages[0].includes('<title>NextaStore Circle · Affiliate Program</title>') && pages[1].includes('<title>NextaStore Crew · Field Team</title>') && pages[1].includes('alt="NextaStore Crew, field team"') && pages[0].includes('alt="NextaStore Circle, affiliate program"'));
@@ -97,19 +102,13 @@ function call(host, url, { method = 'GET', headers = {} } = {}) {
     ok('doubled slashes do not dodge the redirect, and never become a host', r.status === 302 && r.headers.location.startsWith('https://circle.nextastore.com/'), r.headers && r.headers.location);
     r = await call('circle.nextastore.com', '//evil.com/x');
     ok('a request line like //evil.com/x stays a path: it is sent to OUR main site, not to evil.com', r.status === 302 && r.headers.location === 'https://nextastore.com/evil.com/x', r.headers && r.headers.location);
-    r = await call('nextastore.com', '/scouts?x=1');
-    ok('the old /scouts address still works: it moves to the Crew subdomain', r.status === 302 && r.headers.location === 'https://crew.nextastore.com/?x=1', r.headers && r.headers.location);
-    r = await call('crew.nextastore.com', '/scouts');
-    ok('and so does the old name typed on the Crew host', r.status === 302 && r.headers.location === 'https://crew.nextastore.com/');
     r = await call('circle.nextastore.com', '/crew');
     ok('/crew on the Circle host goes to the Crew host', r.status === 302 && r.headers.location === 'https://crew.nextastore.com/');
-    ok('the Crew host settings are legacy-tolerant: an old SCOUTS_ORIGIN still works', createHosts({ mode: 'subdomain', main: 'https://a.com', circle: 'https://c.a.com', scouts: 'https://s.a.com' }).origins.crew === 'https://s.a.com' && createHosts({ mode: 'subdomain', rootDomain: 'a.com' }).origins.crew === 'https://crew.a.com');
+    ok('the Crew host can be set explicitly, and defaults to crew.<root domain>', createHosts({ mode: 'subdomain', main: 'https://a.com', circle: 'https://c.a.com', crew: 'https://s.a.com' }).origins.crew === 'https://s.a.com' && createHosts({ mode: 'subdomain', rootDomain: 'a.com' }).origins.crew === 'https://crew.a.com');
     r = await call('circle.nextastore.com', '/');
     ok('the Circle page carries the Circle preview image and no unreplaced markers', r.body.includes('https://circle.nextastore.com/assets/growth-brand/social/circle-og-1200x630.png') && !/\{\{|<!--NEXTA_HOSTS-->/.test(r.body));
     const pathRouter = createHostRouter({ hosts: path_, pagesDir: path.join(__dirname, '..', '..'), cache: false });
     const pr = await new Promise((resolve) => { const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(body) { resolve({ status: this.statusCode, body: String(body) }); } }; pathRouter({ url: '/invite?ref=x', method: 'GET', headers: { host: 'localhost:4000' }, socket: {} }, res, () => resolve({ next: true })); });
-    const pr2 = await new Promise((resolve) => { const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, end() { resolve({ status: this.statusCode, headers: this.headers }); } }; pathRouter({ url: '/scouts', method: 'GET', headers: { host: 'localhost:4000' }, socket: {} }, res, () => resolve({ next: true })); });
-    ok('path mode: the old /scouts address redirects (permanently) to /crew', pr2.status === 301 && pr2.headers.location === '/crew');
     ok('path mode serves /invite itself, with an absolute preview image on the same host', pr.status === 200 && pr.body.includes('content="http://localhost:4000/assets/growth-brand/social/circle-og-1200x630.png"'));
 
     console.log('Bug fixes that came with this round');

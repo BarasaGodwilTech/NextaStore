@@ -47,7 +47,7 @@ router.post('/public', requireAuth, validateBody(publicOrderSchema), async (req,
         const order = await prisma.$transaction(async (tx) => {
             const productIds = payload.items.map(i => i.productId);
             const products = await tx.product.findMany({
-                where: { id: { in: productIds }, storeId: store.id, deletedAt: null }
+                where: { id: { in: productIds }, storeId: store.id, deletedAt: null, moderationStatus: 'ok' }
             });
             const byId = new Map(products.map(p => [p.id, p]));
 
@@ -185,7 +185,7 @@ router.post('/batch', requireAuth, validateBody(batchOrderSchema), async (req, r
                 if(group.fulfillmentMethod==='delivery'&&!payload.deliveryAddress) throw apiError('A delivery address is required for delivery orders.',400);
                 const accepted=store.payments||{};
                 if(group.paymentMethod){const key=Object.keys(labels).find(k=>k===group.paymentMethod||labels[k].toLowerCase()===String(group.paymentMethod).toLowerCase());if(!key||!accepted[key])throw apiError(`That store does not advertise ${labels[key]||group.paymentMethod} as an accepted payment method.`,400);}
-                const ids=group.items.map(i=>i.productId); const products=await tx.product.findMany({where:{id:{in:ids},storeId:store.id,deletedAt:null}}); const byId=new Map(products.map(p=>[p.id,p])); let total=new Prisma.Decimal(0); const itemsData=[];
+                const ids=group.items.map(i=>i.productId); const products=await tx.product.findMany({where:{id:{in:ids},storeId:store.id,deletedAt:null,moderationStatus:'ok'}}); const byId=new Map(products.map(p=>[p.id,p])); let total=new Prisma.Decimal(0); const itemsData=[];
                 for(const line of group.items){const product=byId.get(line.productId);if(!product)throw apiError('One of the items in your cart is no longer available.',409);if(product.listingType&&product.listingType!=='physical')throw apiError(`"${product.name}" is a ${product.listingType} listing, so it can't be added to an order. Message the seller to arrange it.`,409);const result=await tx.product.updateMany({where:{id:product.id,stock:{gte:line.quantity}},data:{stock:{decrement:line.quantity},sold:{increment:line.quantity}}});if(!result.count){const fresh=await tx.product.findUnique({where:{id:product.id}});throw apiError(`Only ${fresh?fresh.stock:0} left of "${product.name}".`,409);}total=total.plus(product.price.times(line.quantity));itemsData.push({productId:product.id,productName:product.name,quantity:line.quantity,unitPrice:product.price});}
                 created.push(await tx.order.create({data:{id:generateOrderCode(),storeId:store.id,buyerId:req.user.id,customerName:payload.customerName,customerPhone:payload.customerPhone,deliveryAddress:group.fulfillmentMethod==='delivery'?payload.deliveryAddress:'',fulfillmentMethod:group.fulfillmentMethod,paymentMethod:group.paymentMethod||null,paymentStatus:'unpaid',status:'pending',total,items:{create:itemsData}},include:{items:true,store:{select:{id:true,slug:true,name:true,logo:true,address:true,district:true,detailedDirections:true,mapCoordinates:true,verified:true,badgeCommitmentMonths:true}}}}));
             } return created;

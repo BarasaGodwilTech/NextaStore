@@ -37,6 +37,17 @@ function validateBody(schema) {
 // A data-URL image field (8 MB of image is ~11 MB of base64) - see utils.js.
 const IMAGE_FIELD_MAX = 12_000_000;
 
+// "Continue with Google": the signed ID token Google gave the page, plus the same optional extras a normal signup carries.
+// accountType only matters when this turns out to be a brand-new person; it never changes an existing account.
+const googleSchema = z.object({
+    credential: z.string().min(20, 'is required').max(8192),
+    accountType: z.enum(['buyer', 'seller']).default('buyer'),
+    rememberMe: z.boolean().optional(),
+    referralCode: z.string().trim().max(24).optional(),
+    referralVia: z.enum(['link', 'code']).optional(),
+    deviceHash: z.string().max(64).optional()
+});
+
 const signupSchema = z.object({
     name: z.string().trim().min(1, 'is required').max(80, 'must be 80 characters or fewer'),
     email: z.string().trim().max(254).email('must be a valid email'),
@@ -258,21 +269,6 @@ const resetPasswordSchema = z.object({
     newPassword: z.string().min(PASSWORD_MIN_LENGTH, `must be at least ${PASSWORD_MIN_LENGTH} characters`)
 });
 
-const adminUserUpdateSchema = z.object({
-    name: z.string().trim().min(1).optional(),
-    email: z.string().trim().email().optional(),
-    role: z.enum(['buyer', 'seller', 'admin']).optional(),
-    accountStatus: z.enum(['active', 'suspended']).optional(),
-    adminLevel: z.enum(['standard', 'super_admin']).optional(),
-    adminRoleId: z.string().nullable().optional()
-});
-
-const adminRoleSchema = z.object({
-    name: z.string().trim().min(2).max(60),
-    description: z.string().trim().max(240).optional().default(''),
-    permissions: z.array(z.string().min(1)).max(50).default([])
-});
-
 const followUpSchema = z.object({
     title: z.string().trim().min(2).max(120),
     note: z.string().trim().max(1000).optional().default(''),
@@ -294,7 +290,7 @@ const subscriptionPaymentSchema = z.object({
 });
 
 // Admin-editable mobile money merchant codes shown to sellers on
-// subscription.html (see routes/admin.js GET/PUT /admin/settings). Every
+// subscription.html (see staff/routes/finance.js GET/PUT /settings). Every
 // field optional — an admin can update just one code at a time.
 const { normalizeUgandanWhatsapp } = require('./whatsapp-normalizer');
 const ugandanWhatsappSchema = z.string().trim().max(30).transform(normalizeUgandanWhatsapp)
@@ -350,7 +346,7 @@ const pushUnsubscribeSchema = z.object({
 
 module.exports = {
     validateBody,
-    signupSchema,
+    signupSchema, googleSchema,
     loginSchema,
     forgotPasswordSchema,
     updateUserSchema,
@@ -370,8 +366,6 @@ module.exports = {
     platformSettingsSchema,
     paymentMethodCreateSchema,
     paymentMethodUpdateSchema,
-    adminUserUpdateSchema,
-    adminRoleSchema,
     followUpSchema,
     pushSubscribeSchema,
     pushUnsubscribeSchema

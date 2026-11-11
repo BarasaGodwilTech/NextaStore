@@ -56,12 +56,6 @@
     <div class="auth-container">
         <aside class="auth-side">
             <div class="auth-awning" aria-hidden="true"></div>
-            <div class="auth-3d auth-3d--login" aria-hidden="true">
-                <img class="o-cart" src="assets/brand/3d/cart.svg" alt="" width="240" height="240" decoding="async">
-                <img class="o-bag o-float" src="assets/brand/3d/bag-lock.svg" alt="" width="240" height="240" decoding="async">
-                <img class="o-tag o-float late" src="assets/brand/3d/tag.svg" alt="" width="240" height="240" decoding="async">
-                <img class="o-coins" src="assets/brand/3d/coins.svg" alt="" width="240" height="240" decoding="async">
-            </div>
             <div class="auth-side-inner">
                 <a href="/" class="auth-side-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></a>
                 <div class="auth-side-content">
@@ -69,25 +63,30 @@
                     <p>Sign in to check your orders, manage your shop, or pick up shopping where you left off.</p>
                     <ul class="auth-side-points">
                         <li><i class="fas fa-circle-check"></i> Orders and messages in one place</li>
-                        <li><i class="fas fa-circle-check"></i> Mobile Money built in</li>
+                        <li><i class="fas fa-circle-check"></i> Agree how to pay, directly with sellers</li>
                         <li><i class="fas fa-circle-check"></i> Your favorites, saved</li>
                     </ul>
                 </div>
-            <div class="auth-showcase" aria-hidden="true">
-                    <div class="showcase-card">
-                        <div class="showcase-head">
-                            <span class="showcase-logo">A</span>
-                            <div><strong>Amina's Crafts</strong><small><i class="fas fa-location-dot"></i> Kampala</small></div>
+                <div class="auth-scene auth-scene--login" aria-hidden="true">
+                    <span class="scene-disc"></span>
+                    <img class="sc-hero" src="assets/brand/3d/basket.svg" alt="" width="240" height="240" decoding="async">
+                    <img class="sc-g" src="assets/brand/3d/bag-lock.svg" alt="" width="240" height="240" decoding="async">
+                    <img class="sc-b sc-float late" src="assets/brand/3d/chat.svg" alt="" width="240" height="240" decoding="async">
+                    <div class="auth-store" aria-hidden="true">
+                        <div class="showcase-card">
+                            <div class="showcase-head">
+                                <span class="showcase-logo">G</span>
+                                <div><strong>Grace's Crafts</strong><small><i class="fas fa-location-dot"></i> Kampala</small></div>
+                            </div>
+                            <div class="showcase-grid">
+                                <div class="showcase-tile"><div class="tile-art tile-art--green"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></div><b>Woven basket</b><small>UGX 45,000</small></div>
+                                <div class="showcase-tile"><div class="tile-art tile-art--gold"><svg class="nx-cat-icon"><use href="#c-clothing"/></svg></div><b>Bark cloth bag</b><small>UGX 85,000</small></div>
+                                <div class="showcase-tile"><div class="tile-art tile-art--coral"><svg class="nx-cat-icon"><use href="#c-food"/></svg></div><b>Kawa coffee 500g</b><small>UGX 18,000</small></div>
+                            </div>
+                            <div class="showcase-note"><i class="fas fa-comments"></i> Message the seller to agree how to pay</div>
                         </div>
-                        <div class="showcase-grid">
-                            <div class="showcase-tile"><div class="tile-art tile-art--green"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></div><b>Woven basket</b><small>UGX 45,000</small></div>
-                            <div class="showcase-tile"><div class="tile-art tile-art--gold"><svg class="nx-cat-icon"><use href="#c-clothing"/></svg></div><b>Bark cloth bag</b><small>UGX 85,000</small></div>
-                            <div class="showcase-tile"><div class="tile-art tile-art--coral"><svg class="nx-cat-icon"><use href="#c-food"/></svg></div><b>Kawa coffee 500g</b><small>UGX 18,000</small></div>
-                        </div>
-                        <div class="showcase-pay"><span>MTN MoMo</span><span>Airtel Money</span></div>
+                        <div class="showcase-toast showcase-toast--money"><i class="fas fa-comment-dots"></i><div><b>Message from a buyer</b><small>&ldquo;Can I pay on delivery?&rdquo;</small></div></div>
                     </div>
-                    <div class="showcase-toast"><i class="fas fa-bag-shopping"></i><div><b>New order</b><small>UGX 90,000 &middot; Airtel Money</small></div></div>
-                    <div class="showcase-toast showcase-toast--money"><i class="fas fa-check"></i><div><b>Mobile Money received</b><small>Paid in full</small></div></div>
                 </div>
                 <p class="auth-side-quote">Your stall, open online.</p>
             </div>
@@ -96,53 +95,83 @@
         <div class="auth-form-side">
             <div class="auth-awning auth-awning--mobile" aria-hidden="true"></div>
             <div class="auth-form-main">
-                <a href="/" class="auth-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to home</a>
-                <div class="auth-card">
+                <div class="auth-topbar">
+                    <a href="/" class="auth-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to home</a>
+                    <span class="auth-switch">New here? <a href="/signup">Create account</a></span>
+                    <img class="auth-topbar-art" src="assets/brand/3d/basket.svg" alt="" width="56" height="56" decoding="async" aria-hidden="true">
+                </div>
+                <div class="auth-card" data-auth-card>
                     <div class="auth-header">
                         <a href="/" class="auth-logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a>
-                        <h1>Welcome back</h1>
-                        <p>Sign in to manage your store or keep shopping.</p>
+                        <h1 id="authHeadline">Welcome back</h1>
+                        <p id="authSubline">Sign in to manage your store or keep shopping.</p>
                     </div>
 
                     <p id="sessionNotice" class="auth-notice" role="status" hidden></p>
 
-                    <form id="loginForm" data-validate novalidate>
-                        <div class="form-group">
-                            <label for="email" class="form-label">Email address</label>
-                            <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" inputmode="email" required>
-                            <div class="form-error"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="password-input-wrapper">
-                                <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
-                                <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                    <div id="authMain">
+                        <!-- Step 1: Google, or just an email address. Nothing else is asked yet. -->
+                        <section class="auth-step" data-step="email" aria-label="Sign in">
+                            <div class="auth-google auth-google--top" data-google-wrap hidden>
+                                <div class="auth-google-btn" data-google-signin data-mode="login" hidden></div>
+                                <div class="auth-divider"><span>or</span></div>
                             </div>
-                            <div class="caps-hint" id="capsHint" role="status" hidden><i class="fas fa-arrow-up"></i> Caps Lock is on</div>
-                            <div class="form-error"></div>
-                        </div>
+                            <form id="emailForm" novalidate>
+                                <div class="form-group">
+                                    <label for="email" class="form-label">Email address</label>
+                                    <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="username email" inputmode="email" autocapitalize="none" spellcheck="false" required>
+                                    <div class="form-error" role="alert"></div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block btn-lg" id="emailContinueBtn">Continue <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                                <label class="auth-keep"><input type="checkbox" id="rememberMe"> <span>Keep me signed in on this device</span></label>
+                            </form>
+                            <p class="auth-consent" data-google-wrap hidden>By continuing with Google you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+                        </section>
 
-                        <div class="form-group checkbox-row">
-                            <label class="form-checkbox"><input type="checkbox" id="rememberMe"> Remember me</label>
-                            <a href="/forgot-password" class="forgot-link">Forgot password?</a>
-                        </div>
+                        <!-- Step 2: the password, for the address typed above. -->
+                        <form id="loginForm" class="auth-step" data-step="next" data-validate novalidate hidden>
+                            <button type="button" class="auth-chip" data-change-email aria-label="Change email address">
+                                <span class="auth-chip-avatar" data-chip-avatar aria-hidden="true"></span>
+                                <span class="auth-chip-email" data-chip-email></span>
+                                <span class="auth-chip-edit">Change</span>
+                            </button>
+                            <div class="form-group">
+                                <div class="auth-label-row">
+                                    <label for="password" class="form-label">Password</label>
+                                    <a href="/forgot-password" class="forgot-link" data-forgot-link>Forgot password?</a>
+                                </div>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye"></i></button>
+                                </div>
+                                <div class="caps-hint" id="capsHint" role="status" hidden><i class="fas fa-arrow-up"></i> Caps Lock is on</div>
+                                <div class="form-error" role="alert"></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmitBtn">Sign in</button>
+                        </form>
+                    </div>
 
-                        <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-arrow-right-to-bracket"></i> Sign in</button>
-                    </form>
-
-                    <div class="auth-switch">
-                        <p>New to NextaStore?</p>
-                        <div class="auth-switch-actions">
-                            <a href="/signup" class="btn btn-outline btn-sm">Start shopping</a>
-                            <a href="/signup?type=seller" class="btn btn-outline btn-sm">Open a shop</a>
-                        </div>
+                    <div class="auth-check" id="checkEmail" hidden role="status" aria-live="polite">
+                        <div class="auth-check-icon" aria-hidden="true"><i class="fas fa-envelope-circle-check"></i></div>
+                        <h2 id="checkEmailTitle">Check your inbox</h2>
+                        <p id="checkEmailIntro"></p>
+                        <p class="auth-check-addr"><span data-check-email></span></p>
+                        <p class="auth-check-sub">It can take a minute to arrive. If you do not see it, look in your spam folder.</p>
+                        <p class="auth-check-dev" id="checkEmailDev" hidden>Development only (no email service is set up here): <a id="checkEmailDevLink" href="#">open the confirmation link</a></p>
+                        <button type="button" class="btn btn-primary btn-block btn-lg" id="resendBtn" disabled>Resend email</button>
+                        <button type="button" class="btn btn-outline btn-block" id="changeEmailBtn">Use a different email</button>
+                        <button type="button" class="btn btn-outline btn-block" id="googleInsteadBtn" data-google-wrap hidden><i class="fab fa-google" aria-hidden="true"></i> Continue with Google instead</button>
                     </div>
 
                     <div class="auth-footer">
+                        <p>New to NextaStore? <a href="/signup">Create an account</a></p>
+                        <p class="auth-footer-alt">Want to sell? <a href="/signup?type=seller">Open a shop</a></p>
                         <p class="powered-by">Powered by <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
                     </div>
                 </div>
+                <nav class="auth-legal" aria-label="Legal">
+                    <a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/safety">Safety tips</a>
+                </nav>
             </div>
         </div>
     </div>
@@ -152,23 +181,43 @@
     <script src="js/api.js"></script>
     <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/google-signin.js"></script>
     <script>
         function togglePassword() {
             const input = document.getElementById('password');
             const icon = document.querySelector('.password-toggle i');
+            const btn = document.querySelector('.password-toggle');
             const show = input.type === 'password';
             input.type = show ? 'text' : 'password';
             icon.classList.toggle('fa-eye', !show);
             icon.classList.toggle('fa-eye-slash', show);
+            btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
         }
         (function () {
-            var pw = document.getElementById('password'), hint = document.getElementById('capsHint');
+            // The headline follows the step: email first, then password.
+            const COPY = {
+                email: ['Welcome back', 'Sign in to manage your store or keep shopping.'],
+                next: ['Enter your password', 'Almost there. Type your password to sign in.']
+            };
+            document.addEventListener('nx:authstep', function (e) {
+                const c = COPY[e.detail.step] || COPY.email;
+                document.getElementById('authHeadline').textContent = c[0];
+                document.getElementById('authSubline').textContent = c[1];
+            });
+
+            const pw = document.getElementById('password'), hint = document.getElementById('capsHint');
             function caps(e) { if (e.getModifierState) hint.hidden = !e.getModifierState('CapsLock'); }
             pw.addEventListener('keydown', caps); pw.addEventListener('keyup', caps);
             pw.addEventListener('blur', function () { hint.hidden = true; });
+            pw.addEventListener('input', function () { window.app && app.clearFieldError(pw); });
+
+            // /login?email=you@example.com (from "Sign in instead" on the sign-up page) fills the address in.
+            var email = document.getElementById('email');
+            var preset = new URLSearchParams(window.location.search).get('email');
+            if (preset && /^[^\s@]+@[^\s@]+$/.test(preset)) email.value = preset.slice(0, 254);
+
             // Keyboard-first on desktop; on phones the keyboard would cover the form, so no autofocus there.
             if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
-                var email = document.getElementById('email');
                 if (email && !document.querySelector('.auth-notice:not([hidden])')) setTimeout(function () { email.focus(); }, 50);
             }
         })();

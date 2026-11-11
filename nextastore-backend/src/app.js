@@ -40,11 +40,14 @@ const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payments');
 const assistantRoutes = require('./routes/assistant');
 const favoriteRoutes = require('./routes/favorites');
-const adminRoutes = require('./routes/admin');
+const supportRoutes = require('./routes/support');
+const { buildStaffRouter } = require('./staff');
+const staffAuth = require('./staff/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const pushRoutes = require('./routes/push');
 const presenceRoutes = require('./routes/presence');
 const seoRoutes = require('./routes/seo');
+const mediaRoutes = require('./routes/media');
 const growth = require('./growthInstance');
 
 const app = express();
@@ -76,7 +79,7 @@ app.set('trust proxy', 1);
 // `default-src 'self'` policy is built for JSON and would break those pages (inline host settings,
 // icon font, map, geolocation), exactly as routes/seo.js documents for storefronts, so the pages get
 // their own small header set here instead. In the default "path" mode it only answers /circle, /crew,
-// /scouts (old name), /invite and /i/CODE; with GROWTH_MODE unset nothing else on the site changes.
+// /invite and /i/CODE; with GROWTH_MODE unset nothing else on the site changes.
 const growthPageLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,
@@ -85,7 +88,7 @@ const growthPageLimiter = rateLimit({
     store: sharedStore(),
     message: { message: 'Too many requests. Please slow down and try again shortly.' }
 });
-app.use(['/circle', '/crew', '/scouts', '/invite', '/i', '/auth-bridge'], growthPageLimiter);
+app.use(['/circle', '/crew', '/invite', '/i', '/auth-bridge', '/about-circle', '/about-crew', '/crew-apply', '/apply'], growthPageLimiter);
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -95,13 +98,23 @@ app.use((req, res, next) => {
 app.use(growth.hostRouter({ pagesDir: config.frontendDir }));
 
 app.use(helmet());
-app.use(cors({
+const platformCors = cors({
     origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',').map(o => o.trim()),
     // Without this the browser strips X-Session-Token from cross-origin
     // responses and the sliding-expiry renewal silently never reaches the
     // frontend — sessions would then still die at the hard cap.
     exposedHeaders: ['X-Session-Token']
-}));
+});
+// The Staff Console API is the one place cookies cross origins, so it gets its own, strict CORS: only the listed console origins
+// (config.staff.origins), with credentials, and never '*'. The shopper API above never allows credentials.
+const staffCors = cors({
+    origin: (origin, cb) => cb(null, !origin || config.staff.origins.includes(origin)),
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Background-Poll'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    maxAge: 600
+});
+app.use((req, res, next) => (req.path === '/api/staff' || req.path.startsWith('/api/staff/') ? staffCors(req, res, next) : platformCors(req, res, next)));
 // Gzip/brotli-negotiated compression for every JSON response. Paginated
 // list endpoints already cap how many rows come back, but the payload for
 // even one page (product grids with descriptions, order histories with
@@ -218,6 +231,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/support', supportRoutes.router);
+app.use('/api/announcements', supportRoutes.announcementsRouter);
 // NextaStore Circle (affiliate program) and Crew (field team). Partner side and admin side; the
 // admin side is guarded per route by growth.view / .review / .payouts / .settings (see middleware.js).
 // The limiter only guards the write endpoints (join, apply, log a lead, withdraw, ...).
@@ -229,15 +244,21 @@ const growthWriteLimiter = rateLimit({
     store: sharedStore(),
     message: { message: 'You are doing that too quickly. Please wait a few minutes and try again.' }
 });
-const { requireAuth, requireAdminPermission } = require('./middleware');
-const growthRoutes = growth.routes({ requireAuth, requireAdminPermission, limiter: growthWriteLimiter, sendKyc: growth.sendKyc });
+const { requireAuth } = require('./middleware');
+// Shopper side (Circle members and Crew) uses the ordinary shopper login.
+const growthRoutes = growth.routes({ requireAuth, requireAdminPermission: () => (req, res, next) => next(), limiter: growthWriteLimiter, sendKyc: growth.sendKyc });
 app.use('/api/growth', growthRoutes.partner);
-app.use('/api/admin/growth', growthRoutes.admin);
-
-app.use('/api/admin', adminRoutes);
+// Staff side: the Circle / Crew admin tools live INSIDE the Staff Console API (/api/staff/growth/*), behind a staff session and the
+// growth.* permissions. requireAuth is a no-op there because the staff router has already required a full staff session.
+const growthStaffRoutes = growth.routes({ requireAuth: (req, res, next) => next(), requireAdminPermission: staffAuth.requirePermission, limiter: growthWriteLimiter, sendKyc: growth.sendKyc });
+app.use('/api/staff', buildStaffRouter({ growthAdminRouter: growthStaffRoutes.admin }));
+// The old shared-login admin API is gone. Say so plainly instead of leaving a dead 404 for old bookmarks and scripts.
+app.use('/api/admin', (req, res) => res.status(410).json({ message: 'The admin API has moved to the separate Staff Console and is no longer available here.', code: 'GONE' }));
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/presence', presenceRoutes);
+// Image fallback for the Promote studio: our own R2 bucket only (see routes/media.js). Tighter than the general limit.
+app.use('/api/media', rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false, store: sharedStore(), message: { message: 'Too many requests. Please slow down and try again shortly.' } }), mediaRoutes);
 
 // Public storefront surface: /<store-slug> (the store's own address),
 // /<store-slug>/<product> (a product's own address), the old /s/<slug> redirect,

@@ -42,7 +42,8 @@ function createHooks(ctx, partnersApi) {
         const activeLead = cleanPhone ? await prisma.growthReferral.findFirst({ where: { stage: 'lead', leadPhone: cleanPhone, leadLockExpiresAt: { gt: t } } }) : null;
         let partner = null;
         if (clean) {
-            partner = await prisma.growthPartner.findUnique({ where: { code: clean } });
+            // Current code OR a code they used before moving from Circle to Crew: both find the same person.
+            partner = await partnersApi.findByCode(clean);
             if (partner && !['active', 'frozen'].includes(partner.status)) partner = null;
         }
         if (partner && partner.userId === user.id) {
@@ -60,6 +61,9 @@ function createHooks(ctx, partnersApi) {
         const evidence = { signupIpPrefix: K.ipPrefix(ip), deviceHash: String(deviceHash || '').slice(0, 64) };
         const mergeLead = activeLead && activeLead.partnerId === partner.id;
         const data = {
+            // Fixed here, once: the program this partner is in RIGHT NOW. Every payment for this person is later worked out under this
+            // program, whatever the partner does afterwards (such as moving from Circle to Crew).
+            program: partner.program,
             stage: 'signed_up', recruitUserId: user.id, signedUpAt: t, qualifyBy: addDays(t, R.ATTRIBUTION.qualifyingWindowDays),
             source: mergeLead ? 'lead' : via, leadLockExpiresAt: null, ...evidence,
             ...(partner.status === 'frozen' ? { riskDecision: 'review' } : {})
@@ -67,7 +71,7 @@ function createHooks(ctx, partnersApi) {
         const referral = mergeLead
             ? await prisma.growthReferral.update({ where: { id: activeLead.id }, data })
             : await prisma.growthReferral.create({ data: { partnerId: partner.id, ...data } });
-        await notify(partner.userId, 'Someone signed up with your code', 'We will show you how they get on, so you can help them along.', partner.program === 'scout' ? '/crew' : '/circle');
+        await notify(partner.userId, 'Someone signed up with your code', 'We will show you how they get on, so you can help them along.', partner.program === 'crew' ? '/crew' : '/circle');
         return referral;
     }
 
@@ -94,7 +98,7 @@ function createHooks(ctx, partnersApi) {
     async function onStoreCreated({ user, store }) {
         let referral = await prisma.growthReferral.findUnique({ where: { recruitUserId: user.id } });
         if (!referral && store.phoneNumber) {
-            // No code was used, but a Scout may already hold a lead on this phone number.
+            // No code was used, but a Crew member may already hold a lead on this phone number.
             referral = await onSignup({ user, code: '', phone: store.phoneNumber });
         }
         if (!referral) return null;
@@ -108,7 +112,7 @@ function createHooks(ctx, partnersApi) {
         const updated = await prisma.growthReferral.update({ where: { id: referral.id }, data: { stage: 'store_live', storeLiveAt: now() } });
         const partner = await prisma.growthPartner.findUnique({ where: { id: referral.partnerId } });
         const store = await prisma.store.findUnique({ where: { id: storeId }, select: { name: true } });
-        if (partner) await notify(partner.userId, `${store?.name || 'A store'} is live`, 'Their store just launched. A friendly nudge about the Seller Pass now can make the difference.', partner.program === 'scout' ? '/crew' : '/circle');
+        if (partner) await notify(partner.userId, `${store?.name || 'A store'} is live`, 'Their store just launched. A friendly nudge about the Seller Pass now can make the difference.', partner.program === 'crew' ? '/crew' : '/circle');
         return updated;
     }
 
@@ -120,7 +124,7 @@ function createHooks(ctx, partnersApi) {
             where: { id: referral.id }, data: { stage: 'payment_pending', paymentSubmittedAt: payment.submittedAt || now(), firstPaymentId: payment.id }
         });
         const partner = await prisma.growthPartner.findUnique({ where: { id: referral.partnerId } });
-        if (partner) await notify(partner.userId, `${store.name} sent their payment`, 'It is waiting for approval. We aim to approve within 24 hours and will tell you the moment it is done.', partner.program === 'scout' ? '/crew' : '/circle');
+        if (partner) await notify(partner.userId, `${store.name} sent their payment`, 'It is waiting for approval. We aim to approve within 24 hours and will tell you the moment it is done.', partner.program === 'crew' ? '/crew' : '/circle');
         return updated;
     }
 
@@ -132,7 +136,7 @@ function createHooks(ctx, partnersApi) {
             data: { stage: referral.storeLiveAt ? 'store_live' : 'signed_up', firstPaymentId: null, paymentSubmittedAt: null }
         });
         const partner = await prisma.growthPartner.findUnique({ where: { id: referral.partnerId } });
-        if (partner) await notify(partner.userId, `${store.name}'s payment did not go through`, 'The transaction could not be confirmed. Ask them to check the ID from their SMS and send it again.', partner.program === 'scout' ? '/crew' : '/circle');
+        if (partner) await notify(partner.userId, `${store.name}'s payment did not go through`, 'The transaction could not be confirmed. Ask them to check the ID from their SMS and send it again.', partner.program === 'crew' ? '/crew' : '/circle');
         return updated;
     }
 
@@ -178,7 +182,7 @@ function createHooks(ctx, partnersApi) {
         if (!partner) return { referred: false };
         const verdict = K.evaluate(await gatherFacts(referral, partner, payment, payment.store));
         return {
-            referred: true, program: partner.program, partnerName: partner.displayName, code: partner.code, stage: referral.stage,
+            referred: true, program: C.referralProgram(referral, partner), partnerName: partner.displayName, code: partner.code, stage: referral.stage,
             decision: verdict.decision, score: verdict.score, reasons: verdict.reasons,
             visits: await prisma.growthVisit.count({ where: { referralId: referral.id } })
         };
@@ -201,7 +205,7 @@ function createHooks(ctx, partnersApi) {
             if (referral.firstPaymentId === payment.id) return null;
             const already = await prisma.growthCommission.count({ where: { referralId: referral.id, type: 'renewal', status: { not: 'voided' } } });
             const liveProducts = await prisma.product.count({ where: { storeId: store.id } });
-            const lines = C.renewalRewardsFor(partner.program, { previousCoverageEnd: previousPaidUntil, approvedAt, alreadyPaidRenewal: already > 0, liveProducts });
+            const lines = C.renewalRewardsFor(C.referralProgram(referral, partner), { previousCoverageEnd: previousPaidUntil, approvedAt, alreadyPaidRenewal: already > 0, liveProducts });
             if (!lines.length) return null;
             await prisma.growthCommission.createMany({
                 data: lines.map((l) => ({ partnerId: partner.id, referralId: referral.id, paymentId: payment.id, paymentReviewedBy: adminId, type: l.type, amount: l.amount,
@@ -209,7 +213,7 @@ function createHooks(ctx, partnersApi) {
                 skipDuplicates: true
             });
             const total = lines.reduce((s, l) => s + l.amount, 0);
-            await notify(partner.userId, `${store.name} renewed`, `They stayed. You earned ${ctx.fmtUGX(total)} in stay bonuses.`, partner.program === 'scout' ? '/crew' : '/circle');
+            await notify(partner.userId, `${store.name} renewed`, `They stayed. You earned ${ctx.fmtUGX(total)} in stay bonuses.`, partner.program === 'crew' ? '/crew' : '/circle');
             await partnersApi.refresh(partner.id);
             return { renewal: true, earned: total, lines };
         }
@@ -219,7 +223,7 @@ function createHooks(ctx, partnersApi) {
         // ---- First approved payment
         if (referral.qualifyBy && approvedAt > new Date(referral.qualifyBy)) {
             await prisma.growthReferral.update({ where: { id: referral.id }, data: { stage: 'lapsed' } });
-            await notify(partner.userId, `${store.name} paid after the window`, `They paid more than ${R.ATTRIBUTION.qualifyingWindowDays} days after signing up, so it no longer counts. Their payment still went through.`, partner.program === 'scout' ? '/crew' : '/circle');
+            await notify(partner.userId, `${store.name} paid after the window`, `They paid more than ${R.ATTRIBUTION.qualifyingWindowDays} days after signing up, so it no longer counts. Their payment still went through.`, partner.program === 'crew' ? '/crew' : '/circle');
             return { lapsed: true };
         }
         if (!['active', 'frozen'].includes(partner.status)) return null;
@@ -235,9 +239,11 @@ function createHooks(ctx, partnersApi) {
             return { blocked: true, reasons: verdict.reasons };
         }
 
-        const boost = await ctx.campaignBoost(partner.program, store.district || '', approvedAt);
-        const rank = partner.program === 'scout' ? (R.SCOUT_RANKS.find((r) => r.key === partner.rankKey) || R.SCOUT_RANKS[0]) : null;
-        const lines = C.commissionForFirstPayment(partner.program, payment, { rank, campaignBoostPercent: boost });
+        // The rules that apply are the ones for the program the partner was in when THIS person signed up, not the one they are in today.
+        const prog = C.referralProgram(referral, partner);
+        const boost = await ctx.campaignBoost(prog, store.district || '', approvedAt);
+        const rank = prog === 'crew' ? (R.CREW_RANKS.find((r) => r.key === partner.rankKey) || R.CREW_RANKS[0]) : null;
+        const lines = C.commissionForFirstPayment(prog, payment, { rank, campaignBoostPercent: boost });
         const needsHuman = verdict.decision === 'review' || partner.status === 'frozen';
         await prisma.$transaction(async (tx) => {
             await tx.growthReferral.update({ where: { id: referral.id }, data: { stage: 'paid', ...riskFields } });
@@ -258,7 +264,7 @@ function createHooks(ctx, partnersApi) {
         await notify(partner.userId, `${store.name} is confirmed`,
             needsHuman ? `Their payment is approved. Your ${ctx.fmtUGX(total)} is being double-checked before release.`
                 : `Their payment is approved. You earned ${ctx.fmtUGX(total)}, which clears in ${R.CLEARANCE.days} days.`,
-            partner.program === 'scout' ? '/crew' : '/circle');
+            partner.program === 'crew' ? '/crew' : '/circle');
         await partnersApi.refresh(partner.id);
         return { earned: total, lines, review: needsHuman };
     }
@@ -335,7 +341,7 @@ function createHooks(ctx, partnersApi) {
             for (const d of due) byPartner.set(d.partnerId, (byPartner.get(d.partnerId) || 0) + d.amount);
             for (const [partnerId, amount] of byPartner) {
                 const p = await prisma.growthPartner.findUnique({ where: { id: partnerId }, select: { userId: true, program: true } });
-                if (p) await notify(p.userId, `${ctx.fmtUGX(amount)} is ready to withdraw`, 'It has cleared. You can request a withdrawal now.', p.program === 'scout' ? '/crew' : '/circle');
+                if (p) await notify(p.userId, `${ctx.fmtUGX(amount)} is ready to withdraw`, 'It has cleared. You can request a withdrawal now.', p.program === 'crew' ? '/crew' : '/circle');
             }
         }
 
@@ -361,7 +367,7 @@ function createHooks(ctx, partnersApi) {
             if (n.delayed) parts.push(`${n.delayed} waiting longer than usual for approval`);
             if (n.trial) parts.push(`${n.trial} with a trial about to end`);
             if (n.leads) parts.push(`${n.leads} lead${n.leads === 1 ? '' : 's'} about to lose your claim`);
-            await notify(p.userId, 'Recruits need you today', parts.join(', ') + '.', p.program === 'scout' ? '/crew' : '/circle');
+            await notify(p.userId, 'Recruits need you today', parts.join(', ') + '.', p.program === 'crew' ? '/crew' : '/circle');
             summary.nudged++;
         }
 
@@ -376,7 +382,7 @@ function createHooks(ctx, partnersApi) {
             ]);
             const health = K.partnerHealth({ openFlags, blockedConversions: blocked, clearedCount: cleared, reversedCount: reversed });
             if (health.freeze) { await freeze(p, health.reason); summary.frozen++; }
-            else if (p.program === 'scout') await partnersApi.refresh(p.id);
+            else if (p.program === 'crew') await partnersApi.refresh(p.id);
         }
         return summary;
     }

@@ -4,6 +4,7 @@
  */
 const R = require('./rules');
 const C = require('./commission');
+const { createAdminTools } = require('./adminTools');
 
 const DAY = 86400000;
 
@@ -12,10 +13,11 @@ function createAdmin(ctx, partnersApi) {
 
     async function overview() {
         const t = now();
-        const [partners, byStage, pendingScouts, openFlags, review, queue, overdue, campaigns] = await Promise.all([
+        const pendingUpgrades = await prisma.growthUpgrade.count({ where: { status: 'applied' } });
+        const [partners, byStage, pendingCrew, openFlags, review, queue, overdue, campaigns] = await Promise.all([
             prisma.growthPartner.groupBy({ by: ['program', 'status'], _count: { _all: true } }),
             prisma.growthReferral.groupBy({ by: ['stage'], _count: { _all: true } }),
-            prisma.growthPartner.count({ where: { program: 'scout', status: 'applied' } }),
+            prisma.growthPartner.count({ where: { program: 'crew', status: 'applied' } }),
             prisma.growthFlag.count({ where: { status: 'open' } }),
             prisma.growthCommission.aggregate({ where: { status: 'review' }, _count: { _all: true }, _sum: { amount: true } }),
             prisma.growthWithdrawal.aggregate({ where: { status: { in: ['requested', 'in_review', 'approved'] } }, _count: { _all: true }, _sum: { amount: true } }),
@@ -24,7 +26,7 @@ function createAdmin(ctx, partnersApi) {
         ]);
         const owed = await prisma.growthCommission.aggregate({ where: { status: { in: ['held', 'available', 'review'] } }, _sum: { amount: true } });
         return {
-            partners, referralsByStage: byStage, pendingScoutApplications: pendingScouts, openFlags,
+            partners, referralsByStage: byStage, pendingCrewApplications: pendingCrew, pendingUpgrades, openFlags,
             commissionsInReview: { count: review._count._all, amount: review._sum.amount || 0 },
             payoutQueue: { count: queue._count._all, amount: queue._sum.amount || 0, overdue },
             totalOwedToPartners: owed._sum.amount || 0, liveCampaigns: campaigns
@@ -45,14 +47,18 @@ function createAdmin(ctx, partnersApi) {
             prisma.growthPartner.findMany({})
         ]);
         const programOf = new Map(partners.map((p) => [p.id, p.program]));
+        // Revenue, rewards and paid stores are counted under the program each REFERRAL was signed up under, so a Circle member who
+        // moved up to Crew does not drag their Circle-era stores into the Crew column (or the reverse). A balance adjustment with
+        // no referral falls back to the member's program today.
+        const refProgram = new Map(referrals.map((r) => [r.id, C.referralProgram(r, { program: programOf.get(r.partnerId) })]));
         const storeIds = referrals.map((r) => r.storeId);
         const payments = storeIds.length ? await prisma.subscriptionPayment.findMany({ where: { storeId: { in: storeIds }, status: 'approved' } }) : [];
-        const storeProgram = new Map(referrals.map((r) => [r.storeId, programOf.get(r.partnerId)]));
+        const storeProgram = new Map(referrals.map((r) => [r.storeId, refProgram.get(r.id)]));
 
         const inWindow = (d) => d && new Date(d) >= since;
         const blank = () => ({ revenue: 0, rewards: 0, fees: 0, storesPaid: 0 });
-        const win = { all: blank(), circle: blank(), scout: blank() };
-        const life = { all: blank(), circle: blank(), scout: blank() };
+        const win = { all: blank(), circle: blank(), crew: blank() };
+        const life = { all: blank(), circle: blank(), crew: blank() };
         const add = (bucketSet, prog, key, n) => { bucketSet.all[key] += n; if (bucketSet[prog]) bucketSet[prog][key] += n; };
 
         for (const p of payments) {
@@ -61,7 +67,7 @@ function createAdmin(ctx, partnersApi) {
             if (inWindow(p.reviewedAt)) add(win, prog, 'revenue', amt);
         }
         for (const c of commissions) {
-            if (c.amount <= 0) continue; const prog = programOf.get(c.partnerId);
+            if (c.amount <= 0) continue; const prog = (c.referralId && refProgram.get(c.referralId)) || programOf.get(c.partnerId);
             add(life, prog, 'rewards', c.amount);
             if (inWindow(c.createdAt)) add(win, prog, 'rewards', c.amount);
         }
@@ -72,7 +78,7 @@ function createAdmin(ctx, partnersApi) {
             add(life, prog, 'fees', fee);
             if (inWindow(w.paidAt)) { add(win, prog, 'fees', fee); if (known) feesActual++; else feesEstimated++; }
         }
-        for (const r of referrals) if (r.stage === 'paid') { const prog = programOf.get(r.partnerId); add(life, prog, 'storesPaid', 1); if (inWindow(r.paidAt)) add(win, prog, 'storesPaid', 1); }
+        for (const r of referrals) if (r.stage === 'paid') { const prog = refProgram.get(r.id); add(life, prog, 'storesPaid', 1); if (inWindow(r.paidAt)) add(win, prog, 'storesPaid', 1); }
 
         const view = (b) => {
             const cost = b.rewards + b.fees;
@@ -82,8 +88,8 @@ function createAdmin(ctx, partnersApi) {
         };
         return {
             windowDays: R.COST_GUARD.windowDays, warnAt: R.COST_GUARD.warnAt, alertAt: R.COST_GUARD.alertAt,
-            window: { all: view(win.all), circle: view(win.circle), scout: view(win.scout) },
-            lifetime: { all: view(life.all), circle: view(life.circle), scout: view(life.scout) },
+            window: { all: view(win.all), circle: view(win.circle), crew: view(win.crew) },
+            lifetime: { all: view(life.all), circle: view(life.circle), crew: view(life.crew) },
             fees: { paidBy: R.PAYOUT_FEE.paidBy, actualCount: feesActual, estimatedCount: feesEstimated, note: feesEstimated ? `${feesEstimated} payout(s) in this window have an estimated fee because the real fee was not entered.` : '' }
         };
     }
@@ -92,7 +98,7 @@ function createAdmin(ctx, partnersApi) {
         const where = {};
         if (program) where.program = program;
         if (status) where.status = status;
-        if (q) where.OR = [{ displayName: { contains: String(q), mode: 'insensitive' } }, { code: { contains: String(q).toUpperCase() } }, { phone: { contains: String(q).replace(/\D/g, '') || '__none__' } }];
+        if (q) where.OR = [{ displayName: { contains: String(q), mode: 'insensitive' } }, { code: { contains: String(q).toUpperCase() } }, ...(String(q).replace(/\D/g, '').length >= 5 ? [{ phone: { contains: String(q).replace(/\D/g, '') } }] : [])];
         const rows = await prisma.growthPartner.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 });
         return rows.map((p) => ({ id: p.id, displayName: p.displayName, program: p.program, status: p.status, code: p.code, rankKey: p.rankKey, qualityScore: p.qualityScore, territories: p.territories, joinedAt: p.joinedAt, phone: p.phone, frozenReason: p.frozenReason }));
     }
@@ -100,37 +106,39 @@ function createAdmin(ctx, partnersApi) {
     async function partnerDetail(id) {
         const p = await prisma.growthPartner.findUnique({ where: { id } });
         if (!p) throw apiError('Partner not found.', 404);
-        const [stats, referrals, commissions, withdrawals, flags, user] = await Promise.all([
+        const [stats, referrals, commissions, withdrawals, flags, user, upgrades] = await Promise.all([
             partnersApi.stats(p),
             prisma.growthReferral.findMany({ where: { partnerId: id }, orderBy: { createdAt: 'desc' }, take: 100 }),
             prisma.growthCommission.findMany({ where: { partnerId: id }, orderBy: { createdAt: 'desc' }, take: 100 }),
             prisma.growthWithdrawal.findMany({ where: { partnerId: id }, orderBy: { requestedAt: 'desc' }, take: 20 }),
             prisma.growthFlag.findMany({ where: { partnerId: id }, orderBy: { createdAt: 'desc' }, take: 30 }),
-            prisma.user.findUnique({ where: { id: p.userId }, select: { id: true, email: true, createdAt: true, accountStatus: true } })
+            prisma.user.findUnique({ where: { id: p.userId }, select: { id: true, email: true, createdAt: true, accountStatus: true } }),
+            prisma.growthUpgrade.findMany({ where: { partnerId: id }, orderBy: { appliedAt: 'desc' }, take: 10 })
         ]);
-        return { partner: p, user, stats, balances: C.computeBalances(commissions, withdrawals, now()), referrals, commissions, withdrawals, flags };
+        const { kycFileUrl, cardPhotoUrl, ...safe } = p;   // the stored keys of the private photos never leave the server
+        return { partner: { ...safe, hasKyc: !!kycFileUrl, hasCardPhoto: !!cardPhotoUrl }, user, stats, balances: C.computeBalances(commissions, withdrawals, now()), referrals, commissions, withdrawals, flags, upgrades, card: await partnersApi.cardState(p) };
     }
 
-    async function approveScout(adminId, id) {
+    async function approveCrew(adminId, id) {
         const p = await prisma.growthPartner.findUnique({ where: { id } });
-        if (!p || p.program !== 'scout') throw apiError('Crew application not found.', 404);
+        if (!p || p.program !== 'crew') throw apiError('Crew application not found.', 404);
         if (p.status !== 'applied') throw apiError('This application was already handled.', 400);
         // Vetting must be real: one KYC photo, one phone not already on another partner.
         const dupe = await prisma.growthPartner.count({ where: { phone: p.phone, NOT: { id } } });
         if (dupe) throw apiError('Another partner account already uses this phone number. Check before approving.', 409, 'DUPLICATE_PHONE');
         await prisma.growthPartner.update({ where: { id }, data: { status: 'active', approvedBy: adminId, approvedAt: now() } });
-        await audit(adminId, 'scout_approved', 'partner', id, {}, p.userId);
-        await notify(p.userId, `You are in ${R.PROGRAM_LABELS.scout.name}`, `Your code is ${p.code}. Start by logging the first business you visit.`, '/crew');
+        await audit(adminId, 'crew_approved', 'partner', id, {}, p.userId);
+        await notify(p.userId, `You are in ${R.PROGRAM_LABELS.crew.name}`, `Your code is ${p.code}. Start by logging the first business you visit.`, '/crew');
         return { ok: true };
     }
 
-    async function rejectScout(adminId, id, reason) {
+    async function rejectCrew(adminId, id, reason) {
         const why = String(reason || '').trim().slice(0, 300);
         if (why.length < 5) throw apiError('Give the applicant a short, kind reason.', 400, 'REASON_REQUIRED');
         const p = await prisma.growthPartner.findUnique({ where: { id } });
         if (!p || p.status !== 'applied') throw apiError('Application not found or already handled.', 404);
         await prisma.growthPartner.update({ where: { id }, data: { status: 'rejected', frozenReason: why } });
-        await audit(adminId, 'scout_rejected', 'partner', id, { reason: why }, p.userId);
+        await audit(adminId, 'crew_rejected', 'partner', id, { reason: why }, p.userId);
         await notify(p.userId, 'About your Crew application', why, '/crew');
         return { ok: true };
     }
@@ -234,7 +242,7 @@ function createAdmin(ctx, partnersApi) {
     async function updateSettings(adminId, body) {
         const data = {};
         if (typeof body.circleOpen === 'boolean') data.circleOpen = body.circleOpen;
-        if (typeof body.scoutsOpen === 'boolean') data.scoutsOpen = body.scoutsOpen;
+        if (typeof body.crewOpen === 'boolean') data.crewOpen = body.crewOpen;
         if (Array.isArray(body.extraHolidays)) {
             const ok = body.extraHolidays.map(String).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
             data.extraHolidays = [...new Set(ok)].sort();
@@ -245,7 +253,8 @@ function createAdmin(ctx, partnersApi) {
         return row;
     }
 
-    return { overview, economics, listPartners, partnerDetail, approveScout, rejectScout, freeze, unfreeze, releaseCommission, voidCommission, reviewQueue, listFlags, resolveFlag, listCampaigns, createCampaign, endCampaign, getSettings, updateSettings };
+    const base = { overview, economics, listPartners, partnerDetail, approveCrew, rejectCrew, freeze, unfreeze, releaseCommission, voidCommission, reviewQueue, listFlags, resolveFlag, listCampaigns, createCampaign, endCampaign, getSettings, updateSettings };
+    return { ...base, ...createAdminTools(ctx, partnersApi, base), };
 }
 
 module.exports = { createAdmin };

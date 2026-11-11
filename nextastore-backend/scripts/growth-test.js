@@ -33,11 +33,11 @@ check('extra holiday from settings is honoured', W.formatDueBy(W.payoutDueBy(eat
 check('overdue detection', W.isOverdue(W.payoutDueBy(eat('2026-10-12T10:00')), eat('2026-10-14T17:30')) && !W.isOverdue(W.payoutDueBy(eat('2026-10-12T10:00')), eat('2026-10-14T16:59')));
 
 console.log('Codes');
-const code = C.generatePartnerCode('scout');
+const code = C.generatePartnerCode('crew');
 check('code format (new Crew codes start CREW-)', /^CREW-[A-HJKMNP-Z2-9]{5}$/.test(code), code);
 check('normalize tolerates spaces and case', C.normalizeCode(' crew 4htr9 ') === 'CREW-4HTR9');
-check('codes issued before the rename (SCOUT-) are still understood, and kept as stored', C.normalizeCode(' scout 4htr9 ') === 'SCOUT-4HTR9' && C.normalizeCode('scout-4htr9') === 'SCOUT-4HTR9');
-check('normalize rejects look-alike characters (0/O/1/I)', C.normalizeCode('CREW-4HTR0') === null && C.normalizeCode('SCOUT-4HTR0') === null && C.normalizeCode('CIRCLE-K7M3I') === null);
+check('codes are understood however they are typed (spaces, case) and kept as stored', C.normalizeCode(' crew 4htr9 ') === 'CREW-4HTR9' && C.normalizeCode('crew-4htr9') === 'CREW-4HTR9' && C.normalizeCode('circle k7m3q') === 'CIRCLE-K7M3Q');
+check('normalize rejects look-alike characters (0/O/1/I)', C.normalizeCode('CREW-4HTR0') === null && C.normalizeCode('CIRCLE-K7M3I') === null);
 check('normalize rejects junk', C.normalizeCode('hello') === null && C.normalizeCode('') === null);
 
 console.log('Commission');
@@ -47,31 +47,31 @@ const circle = C.commissionForFirstPayment('circle', pay1);
 check('Circle: 20% of month one = UGX 4,000, nothing else', eq(shape(circle), [['first_payment', 4000]]), JSON.stringify(circle));
 const circle12 = C.commissionForFirstPayment('circle', { amount: 240000, periodMonths: 12 });
 check('Circle: a 12-month first payment still bases on ONE month, plus the commitment kicker', eq(shape(circle12), [['first_payment', 4000], ['commitment_kicker', 3000]]), JSON.stringify(circle12));
-const scoutTrail = C.commissionForFirstPayment('scout', pay1, { rank: R.SCOUT_RANKS[0] });
-check('Scout Trailhead: 25% = 5,000 and no live bonus up front (it is paid when the store renews)', eq(shape(scoutTrail), [['first_payment', 5000]]), JSON.stringify(scoutTrail));
-const scoutSummit = C.commissionForFirstPayment('scout', { amount: 120000, periodMonths: 6 }, { rank: R.SCOUT_RANKS[3] });
-check('Scout Summit, 6 months up front: 40% of one month + kicker', eq(shape(scoutSummit), [['first_payment', 8000], ['commitment_kicker', 5000]]), JSON.stringify(scoutSummit));
-const boosted = C.commissionForFirstPayment('scout', pay1, { rank: R.SCOUT_RANKS[0], campaignBoostPercent: 20 });
+const crewTrail = C.commissionForFirstPayment('crew', pay1, { rank: R.CREW_RANKS[0] });
+check('Crew Trailhead: 25% = 5,000 and no live bonus up front (it is paid when the store renews)', eq(shape(crewTrail), [['first_payment', 5000]]), JSON.stringify(crewTrail));
+const crewSummit = C.commissionForFirstPayment('crew', { amount: 120000, periodMonths: 6 }, { rank: R.CREW_RANKS[3] });
+check('Crew Summit, 6 months up front: 40% of one month + kicker', eq(shape(crewSummit), [['first_payment', 8000], ['commitment_kicker', 5000]]), JSON.stringify(crewSummit));
+const boosted = C.commissionForFirstPayment('crew', pay1, { rank: R.CREW_RANKS[0], campaignBoostPercent: 20 });
 check('Campaign boost adds 20% of the main commission (+1,000)', boosted.find((l) => l.type === 'campaign_boost')?.amount === 1000, JSON.stringify(boosted));
-const capped = C.commissionForFirstPayment('scout', pay1, { rank: R.SCOUT_RANKS[3], campaignBoostPercent: 25 });
+const capped = C.commissionForFirstPayment('crew', pay1, { rank: R.CREW_RANKS[3], campaignBoostPercent: 25 });
 const cappedTotal = capped.reduce((sum, l) => sum + l.amount, 0);
 check('MARGIN GUARD: rewards on a first payment never exceed 40% of what the store paid (we keep 60%+)', cappedTotal <= 8000 && cappedTotal === 8000, JSON.stringify(capped));
 check('the guard trims the extras first and keeps the main commission', capped.length === 1 && capped[0].type === 'first_payment');
 let always = true;
-for (const rank of R.SCOUT_RANKS) for (const months of [1, 2, 3, 6, 12]) for (const boost of [0, 10, 25, 50]) {
-    const amount = months * 20000; const lines = C.commissionForFirstPayment('scout', { amount, periodMonths: months }, { rank, campaignBoostPercent: boost });
+for (const rank of R.CREW_RANKS) for (const months of [1, 2, 3, 6, 12]) for (const boost of [0, 10, 25, 50]) {
+    const amount = months * 20000; const lines = C.commissionForFirstPayment('crew', { amount, periodMonths: months }, { rank, campaignBoostPercent: boost });
     if (lines.reduce((sum, l) => sum + l.amount, 0) > amount * R.COMMISSION.maxUpfrontShare) always = false;
 }
 check('the guard holds for every rank, length and boost combination', always);
 check('Discounted payment below one month still pays proportionally', C.commissionForFirstPayment('circle', { amount: 10000, periodMonths: 1 })[0].amount === 2000);
 check('Zero / garbage amount earns nothing', C.commissionForFirstPayment('circle', { amount: 0, periodMonths: 1 }).length === 0);
 const stay = (program, extra) => C.renewalRewardsFor(program, { previousCoverageEnd: '2026-11-01', approvedAt: '2026-11-10', alreadyPaidRenewal: false, ...extra });
-check('Scout stay bonus (4,000) + stocked-store bonus (2,000) when the shelf still has 3+ products', eq(shape(stay('scout', { liveProducts: 5 })), [['renewal', 4000], ['live_bonus', 2000]]));
-check('Scout with an empty-ish shelf gets only the stay bonus', eq(shape(stay('scout', { liveProducts: 1 })), [['renewal', 4000]]));
+check('Crew member stay bonus (4,000) + stocked-store bonus (2,000) when the shelf still has 3+ products', eq(shape(stay('crew', { liveProducts: 5 })), [['renewal', 4000], ['live_bonus', 2000]]));
+check('Crew member with an empty-ish shelf gets only the stay bonus', eq(shape(stay('crew', { liveProducts: 1 })), [['renewal', 4000]]));
 check('Circle stay bonus is 3,000 and there is no stocked-store bonus', eq(shape(stay('circle', { liveProducts: 9 })), [['renewal', 3000]]));
-check('Stay rewards never twice', stay('scout', { alreadyPaidRenewal: true, liveProducts: 5 }).length === 0);
+check('Stay rewards never twice', stay('crew', { alreadyPaidRenewal: true, liveProducts: 5 }).length === 0);
 check('Stay rewards not paid for a very late return', C.renewalRewardsFor('circle', { previousCoverageEnd: '2026-11-01', approvedAt: '2027-01-15', alreadyPaidRenewal: false }).length === 0);
-check('No stay rewards without a previous coverage date', C.renewalRewardsFor('scout', { approvedAt: '2026-11-10', alreadyPaidRenewal: false, liveProducts: 5 }).length === 0);
+check('No stay rewards without a previous coverage date', C.renewalRewardsFor('crew', { approvedAt: '2026-11-10', alreadyPaidRenewal: false, liveProducts: 5 }).length === 0);
 
 console.log('Mobile money fee (on NextaStore)');
 check('payout fee estimate follows the tiers', C.estimatePayoutFee(15000) === 700 && C.estimatePayoutFee(45000) === 1000 && C.estimatePayoutFee(150000) === 2200 && C.estimatePayoutFee(900000) === 3500);
@@ -83,7 +83,7 @@ check('0 cleared = Trailhead, 5 = Pathfinder, 15 = Trailblazer, 30 = Summit', ['
 check('promotion blocked while quality is low', C.effectiveRank(16, 40, 'pathfinder').key === 'pathfinder');
 check('promotion allowed with healthy quality', C.effectiveRank(16, 80, 'pathfinder').key === 'trailblazer');
 check('rank steps down when the 90-day count falls', C.effectiveRank(3, 90, 'trailblazer').key === 'trailhead');
-check('next rank countdown', C.nextRank(R.SCOUT_RANKS[1], 7).remaining === 8);
+check('next rank countdown', C.nextRank(R.CREW_RANKS[1], 7).remaining === 8);
 check('new partner quality starts at 70', C.qualityScore({ signups: 1 }) === 70);
 check('great partner scores high', C.qualityScore({ signups: 20, cleared: 12, reversed: 0, flagged: 0, renewed: 8, eligibleForRenewal: 10 }) >= 85);
 check('junk-heavy partner scores low', C.qualityScore({ signups: 30, cleared: 1, reversed: 1, flagged: 12, renewed: 0, eligibleForRenewal: 1 }) < 45);
@@ -195,7 +195,7 @@ check('summary counts', S.summarize([{ stage: 'paid', needsYou: false }, { stage
 
 console.log('Program names and descriptors');
 check('Circle is labelled "NextaStore Circle" (short "Circle") with the descriptor "Affiliate Program"', R.PROGRAM_LABELS.circle.name === 'NextaStore Circle' && R.PROGRAM_LABELS.circle.short === 'Circle' && R.PROGRAM_LABELS.circle.descriptor === 'Affiliate Program');
-check('Crew is labelled "NextaStore Crew" (short "Crew") with the descriptor "Field Team"', R.PROGRAM_LABELS.scout.name === 'NextaStore Crew' && R.PROGRAM_LABELS.scout.short === 'Crew' && R.PROGRAM_LABELS.scout.descriptor === 'Field Team' && R.PROGRAM_LABELS.scout.member === 'Crew member');
+check('Crew is labelled "NextaStore Crew" (short "Crew") with the descriptor "Field Team"', R.PROGRAM_LABELS.crew.name === 'NextaStore Crew' && R.PROGRAM_LABELS.crew.short === 'Crew' && R.PROGRAM_LABELS.crew.descriptor === 'Field Team' && R.PROGRAM_LABELS.crew.member === 'Crew member');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

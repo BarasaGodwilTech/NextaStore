@@ -302,7 +302,7 @@
         var url = String(raw).slice(0, 500);
         try {
             if (typeof app !== 'undefined' && app && typeof app.resolveImageUrl === 'function') url = app.resolveImageUrl(url);
-        } catch (e) { /* no app on safety.html */ }
+        } catch (e) { /* no app on the safety page */ }
         return /^(https?:\/\/|\/)/i.test(String(url || '')) ? String(url) : '';
     }
 

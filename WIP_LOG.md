@@ -1,3 +1,15 @@
+# WIP 128: Crew application is its own page, redesigned
+
+- Follow-up: the shared map picker takes optional `title`, `hint`, `saveLabel` (store wording stays the default); the apply page uses "Select your working area". Submit errors now explain a server failure instead of a bare "Something went wrong." (the API masks every 5xx, including 501 UPLOAD_UNAVAILABLE, behind that text). CACHE_VERSION v109.
+
+- New page `crew-apply.html` (+ `css/crew-apply.css`, `js/crew-apply.js`). Address: `/crew-apply` (path mode), `crew.<domain>/apply` (subdomain mode); `/apply` also works on the crew host. Other hosts redirect there. `growth-hosts.js` and `src/growth/hosts.js` gained `apply()` / `applyUrl()`.
+- Designed in Figma first: https://www.figma.com/design/zf2lT9FfTnlGHABIj3Jdte (file "NextaStore Crew · Apply page": tokens, components, four mobile screens).
+- Flow: Your details > ID front and back > Passport photo > Select working area > About you > Review. The "ID with selfie" tile is gone; the ID sheet sent to the server is now front + back. All "km" wording is gone (the note no longer says "3 km").
+- Behaviour: one history entry per step (phone Back goes to the previous step), typed answers kept in sessionStorage, errors shown next to the field with focus, map opens by itself on "Select working area", leave-warning only when photos or areas would be lost, a sent screen.
+- The Crew page (`js/growth.js`) now shows a short summary and a "Start my application" button; the old inline Crew form code was removed. Circle's two-step join is unchanged.
+- Tests: `scripts/crew-apply-browser-test.py` (33 checks, Playwright/Chromium, mocked API, map stand-in), `scripts/crew-apply-routes-test.js` (8). qa:static 317/317, sw-assets hash updated, CACHE_VERSION v108.
+- NOT updated: `growth-browser-test.js`, `growth-card-browser-test.js` and `growth-card-photo-browser-test.js` still drive the old inline form on /crew and will fail until pointed at the new page. Not run here: backend suites needing node_modules, Postgres migration, real phones, Safari/iPhone, real Leaflet.
+
 # Nexi WIP 62 checkpoint log
 
 ## WIP 62 / T1 — load-safe visitor experience
@@ -4267,3 +4279,257 @@ Real phones; `starter-row-test.py` / `widget-test.py` (Python Chromium).
 - Landing page cards/footer now point to the about pages; `about-circle` and `about-crew` added to `RESERVED_SLUGS`.
 - **Tests:** `growth-browser-test` 58/58, `growth-subdomain-browser-test` 65/65 (two expectations updated: signed-out visits now land on the about page first, `?go=1` goes to login), `growth-test` 100/100; plus 16 browser checks on the new pages (live numbers, closed state, API-down fallback, redirect gate both ways, signed-in label, no sideways scroll at 390px).
 - Not done: sitemap entry for the two pages, service-worker precache of the new files, real copy review by the business (rates, ID wording and "we cover the fee" come from the design docs and live rules, please read them once before launch).
+
+# WIP 112 — Circle / Crew: accurate About pages, separate program app (tabs + bottom bar), working redirects and sign-out, cleaner marketplace hero
+
+**Not run in a browser.** This sandbox has no Chromium/Playwright, so nothing below was looked at on a screen. Everything that can run offline did
+(`growth-about-test` 40/40, `growth-shell-test` 37/37, `growth-test` 100/100, `growth-flow-test` 83/83, `growth-hosts-test` 44/44, `seo-test` 16/16,
+`clean-url-test` 34/34, `qa-static` 317/317). The browser tests were updated for the new layout but have NOT been run: run `npm run test:growth-browser`
+(or the two growth browser scripts) before shipping.
+
+## About Circle / About Crew: wrong or stale information removed
+- Every figure now comes from `/api/growth/rules`; none is typed into the HTML (a test fails if a digit appears in the page text). New rules published:
+  `clickWindowDays`, `renewalWithinDays`, `rankWindowDays`, `rankMinQuality`, `stockedMinProducts`, `applicationReviewWorkingDays`, `payouts.firstWithdrawalNeedsStore`.
+- Fixed "6 months or more or more" (fallback text duplicated the suffix), "Four ranks" (now counts the live ranks), "remembered for 30 days", "last 90 days", "at least 3 products" (all typed).
+- First withdrawal was described as only "N days after you join". The server also needs the first store to have paid and cleared. Both pages, both FAQs and the pitch now say so,
+  and the dashboard's Withdraw button explains it instead of failing on submit (dashboard payload gained `withdrawal.first`).
+- Crew application review time was read from the PAYOUT promise (`payWithinWorkingDays`). New `REVIEW.applicationWorkingDays` in `rules.js` feeds the join page, the pending screen,
+  the "application received" notification and About Crew.
+- Removed an unsupported claim ("stores that add 3+ products pay far more often") and a hard-coded "Promotions need 60".
+- Crew application needs a verified email (server rule); the Crew page now says so. "Can I also use Circle?" was misleading: one account is in one program (`assertNotAlreadyPartner`).
+- The Join / Apply button follows the visitor (see `js/growth-about.js` `cta()`): member -> "Open my dashboard"; a member of the OTHER program is told an account is in one program
+  (before, the program page silently sent them away); applicant -> "Check my application"; closed + not a member -> disabled; a signed-in non-member is no longer shown "Open my dashboard".
+- Both pages are now served by the host router (`/about-circle`, `/about-crew`, `.html` -> 301), so `window.NEXTA_HOSTS` is filled in and canonical / og:image are absolute. Added to the sitemap.
+
+## Redirects
+- `auth-bridge` sent signed-out joiners to `/login?next=<url>`; login.html only understands `?redirect=<page>`, so after signing in they landed on the marketplace. Now `?redirect=circle%3Fgo%3D1` (or crew).
+- Logging out on circle./crew. only cleared that host's copy, and the next visit signed the person straight back in from the main site. Logout now hops through `auth-bridge?mode=logout`.
+- A session ending on a program host now goes to the main site's login and returns to the program.
+- Growth notifications carried absolute subdomain links, which the bell's same-site filter silently dropped (not clickable in subdomain mode). They are plain `/circle` / `/crew` again.
+- A Circle member who opens the Crew host (or the reverse) is still sent to their own dashboard, now with `?wrong=1` and a one-line explanation.
+
+## The programs as their own app
+- New `js/growth-shell.js`. Circle: Home, Stores, Earnings, Share, More. Crew: Home, Field, Stores, Earnings, More. Bottom tab bar on phones (safe-area aware, count/dot badges), the same links in the header on wide screens. Hash routing (`#earn`), Back is not trapped (replaceState).
+- Program account menu (main.js renders it for `[data-account-program]`): invite link, payout number, earnings, then "NextaStore marketplace / Messages / My store dashboard (sellers) / About / Terms" pointing at the main site. No Orders / Favorites / Become a seller.
+- More tab: account facts, add-a-code, "Back to NextaStore", Log out. Join / waiting / closed screens show only "About" and "NextaStore" links.
+- Info pages stay on the main site; program hosts redirect them there.
+
+## Marketplace hero
+- One column rhythm (flex + gap) instead of per-element margins, the duplicate "Ask Nexi anything..." sentence removed (the chat card introduces itself), assistant card closes the column at full width.
+- Fixed a selector with missing commas that silently disabled the collage / stats entrance animation.
+
+## Housekeeping
+- `sw-assets.hash` was stale since WIP 107/108 (changed JS/CSS with no cache bump: installed apps would keep old growth scripts). CACHE_VERSION v80 -> v83, growth-sw v4 -> v5 (caches growth-shell.js).
+- The one failing clean-URL check was a comment mentioning "safety.html"; reworded.
+
+# WIP 113 — Circle / Crew: admin operating kit, stepped join flow, visual upgrade, economics review
+
+**Still not seen in a browser** (no Chromium here). What did run, offline: growth-test 100, growth-flow-test 83, growth-hosts-test 44, growth-about-test 55,
+growth-shell-test 37, growth-economics-test 17, growth-admin-test 57, growth-errors-test 7, plus three NEW no-browser smoke tests that run the real scripts
+against a fake page and the real backend: `growth-admin-ui-smoke` 22, `growth-app-smoke` 26, `growth-about-smoke` 11. Plus seo, clean-url, assistant-facts, qa-static 317/317.
+The smoke tests prove the screens render real data without errors; they cannot prove the layout looks right. The browser tests were updated for the new flow, not run.
+
+## The bug behind "We could not load this page" on Join
+`middleware.js` errorHandler only let a short list of error codes through, so `NOT_A_PARTNER` was stripped and the Circle / Crew page treated "you have not joined yet" as a failure.
+Growth codes now pass on `/growth` routes (`growth-errors-test`). Every signed-in non-member opening /circle or /crew was hitting this.
+
+## Join flow with restriction layers
+`GET /growth/eligibility?program=` returns the layers (program open, account in good standing, email verified, not already in a program), the steps, and the review promise.
+The join card shows that checklist first; a blocked person gets the fix (send verification email, open your other dashboard, check again) and no form. Circle: number, agree. Crew: about you, areas, ID, review. The server enforces the same rules again on submit.
+
+## Admin (admin-growth.html + js/admin-growth.js, rebuilt; src/growth/adminTools.js + insights.js new)
+- Circle and Crew side by side: scope switch (both / Circle / Crew) on Overview and Members; per-program numbers, money and queues (`/segments`).
+- Members: search (name, code, phone), status, rank, flagged, sort, paging, checkboxes, bulk freeze / unfreeze / approve (one failure never stops the rest).
+- Partner file: Summary, **Why?** (a plain-words diagnosis of why she cannot withdraw / earn: frozen, no payout number, locks, first-withdrawal rule, held earnings, payments waiting on us), Money, Recruits, History. Actions: approve / decline / reopen, freeze / unfreeze, retire, note, adjust balance.
+- Adjust balance: a deduction applies at once; a credit goes to the review queue stamped with the admin, and the existing separation-of-duties rule means a DIFFERENT admin must release it. Capped at UGX 200,000.
+- Applications: Crew vetting checklist (ID on file, duplicate / self-dealing signals, areas), age against the review promise, reopen a declined one.
+- Risk: held earnings, flags, **Duplicate scan** (shared payout number / phone, paid to another partner's phone, self-referral, same-network clusters, throwaway emails, repeated rejected payouts).
+- Money: payout queue, what we owe (per program), **Economics calculator** using `js/growth-economics.js` (the same model the tests check against commission.js), observed renewal / reversal rates shown only once there are enough stores.
+- Tools: find anything (partner, email, phone, store -> who is credited), CSV exports (formula-safe; money exports need growth.payouts; each export audited), audit trail.
+- Fixed: a search like "Person 4" or a code like CIRCLE-ZUH2B used to match every phone containing a 4 or a 2.
+
+## Design
+- New `js/growth-art.js`: original SVG hero art for each program, four rank medals, a progress ring. No external images.
+- About pages: hero art, live "at a glance" chips, an earnings picture (sliders, rank buttons, from live rewards), Crew rank ladder with medals, Circle-vs-Crew compare table.
+- Member dashboard: "Get started" checklist with a ring (payout number, share, first sign-up, first paid store, first withdrawal), rank card with the medal.
+
+## Economics: docs/growth-program/ECONOMICS_REVIEW.md
+Rewards are one-time, capped at 40% of the first payment, paid only after approval + clearing. Default month: rewards + fees about 10% of referred revenue, against public SaaS benchmarks of 30-40% of lifetime value.
+The risk is NOT rewards; it is serving cost per store (break-even about UGX 17,900 a store-month on defaults; about 11,000 for a one-month Crew Summit store) and running cost. Those are inputs you must fill in.
+
+## Housekeeping
+CACHE_VERSION v84, growth-sw v6 (caches growth-art.js and growth-shell.js).
+
+# WIP 114 — Sign-in: "Continue with Google" and email verification
+
+**Not tried against real Google, a real mail server or a browser** (none available here). Tested offline: `google-auth-test` 43, `auth-routes-test` 17, `google-ui-smoke` 18 (`npm run test:auth`),
+plus growth-errors-test 8, and every earlier suite still green (qa-static 317/317, clean-url 34/34, seo 16/16).
+What YOU must do (nothing below works until you do): follow `docs/AUTH_SETUP.md` (create a Google Web client ID, set `GOOGLE_CLIENT_ID`, run `npx prisma migrate deploy && npx prisma generate`, set SMTP and `FRONTEND_URL`).
+
+## Google
+- `src/googleAuth.js`: verifies Google's signed ID token with Node's own crypto (no new package): RS256 only (`alg:none` / HS256 refused), signature against Google's published keys (cached; one re-fetch per minute at most for an unknown key id),
+  issuer, audience = OUR client id, expiry (60s skew), and "Google says the email is verified".
+- `POST /auth/google`, `GET /auth/config` (tells the pages whether Google is set up and the client id; null = no button).
+- Account joining: same Google id -> sign in; email exists and was verified -> link; email exists but was NEVER verified -> link AND throw away the old password and sign out old sessions (blocks pre-registration takeover);
+  suspended -> refused; admin accounts -> never linked or created through Google; email linked to a different Google account -> refused; new person -> created already verified (buyer, or seller with a starter store if they chose to open a shop), Circle/Crew hooks run as for a normal signup; two simultaneous first sign-ins end as one account.
+- Schema: `User.googleId String? @unique` + migration `20261027100000_google_sign_in`. `publicUser` now carries `googleLinked`.
+- Pages: `js/google-signin.js` draws Google's button on login and signup (hidden unless the server says it is set up; if Google's script is blocked a note says email still works); `AuthManager.googleCredential()` stores the session exactly like a normal login. On signup the terms box must be ticked first.
+
+## Verification email
+- A password signup now sends the confirmation email automatically (before: only when the person asked). A failing mail provider never fails the signup.
+- Resend is limited to once a minute (`RESEND_TOO_SOON`), a new link retires the old, already-verified is answered kindly.
+- Branded HTML + plain-text emails (`src/emailTemplates.js`) for confirmation and password reset (names and links escaped).
+- `verify-email.html`: refreshes the saved copy of the user (before, pages kept asking until the next login), offers "send me a new link" on an expired link (or "sign in to get a new link"), handles "already verified".
+- `scripts/mail-check.js you@example.com` sends the real confirmation message to check SMTP.
+- Error codes `GOOGLE_*`, `RESEND_*`, `ALREADY_VERIFIED` now reach the pages (the global error handler used to drop unknown codes).
+
+CACHE_VERSION v86.
+
+
+# WIP 115 — Circle to Crew upgrade, mandatory email confirmation, Google first, phone and tablet fixes
+
+Tested offline with an in-memory database stand-in and headless Chromium (pages served by the real backend for the growth screens; the API mocked for the sign-in pages). **Not run:** the new migration against a real Postgres, a real SMTP server, real Google. Suites: growth-upgrade-test 66 (new), auth-routes-test 47, google-ui-smoke 21, google-auth-test 43, growth-test 100, growth-flow 83, growth-admin 57, growth-economics 17, growth-hosts 44, growth-about 58 / smoke 11, qa-static 317/317. A browser test of the sign-in pages (35 behaviours) lives outside the repo; the same cases are covered by the smoke tests above plus the manual checks listed in OPEN_ITEMS.
+
+## Circle to Crew
+Full rule book: `docs/growth-program/09_CIRCLE_TO_CREW_UPGRADE.md`. Summary: same partner row moves; new Crew code, old one kept in `previousCodes` and resolved by `partners.findByCode`; every referral stores the program it signed up under (`GrowthReferral.program`) and is paid under that, so earlier stores stay Circle and later ones are Crew; Circle keeps working while a request waits and after a decline; one open request per member (partial unique index); admin approve/decline/reopen with audit and notifications. Migration `20261028090000_growth_upgrade` (hand written). Changed tests that encoded the old "Circle member looking at Crew is turned away": growth-admin-test, growth-about-test, growth-about-smoke.
+
+## Email must be confirmed
+See `docs/AUTH_SETUP.md`, "Email must be confirmed". Signup issues no session; sign-in is blocked until confirmed (admins and accounts from before `EMAIL_VERIFICATION_REQUIRED_FROM` exempt); the confirm link signs the person in; `POST /auth/resend-verification` works signed out; a signup over an unconfirmed address replaces it; mail availability is reported by `/auth/config` and email sign-up is switched off in the page and refused by the server when unavailable. Found and fixed while testing: a failed first send left a token that made "resend" wait a minute. `seed-dev` demo accounts are now confirmed.
+
+## Sign-in pages
+Google button first, "or sign in/up with email" after, agreement text beside both buttons (the required checkbox is gone; qa-static and google-ui-smoke updated on purpose), "Check your inbox" panel, Google holds its place while loading, Sell + existing buyer account + Google opens the shop.
+
+## Phone and tablet
+Grids with no column definition stretched past the screen (More tab, forms, the new Google block): `minmax(0, 1fr)`. Rank chips wrap. Header collapse moved from 760px to 1020px (tabs ran off a tablet); the 7-tab admin header collapses up to 1240px; admin tab strip fades at the edge and scrolls the active tab into view. Checked at 320, 360, 390, 768, 1024 and 1280.
+
+CACHE_VERSION v87.
+
+
+# WIP 116 — Phone fix for "Circle or Crew?" and a visible Google button on test machines
+
+**Not seen in a browser** (none here). Offline suites: growth-about-test 58, growth-about-smoke 11, google-ui-smoke 21, qa-static 317/317, clean-url 34/34, seo 16/16.
+
+- `about-circle` / `about-crew`: the comparison table was 460px wide with no scroll box around it (`.ga-scroll` had no CSS), so on a phone the Crew column was cut off. Wide screens keep the table; under 640px each row is a card with Circle and Crew side by side. `growth-about.js` now writes `data-label` on those cells.
+- Google: it was missing because `GOOGLE_CLIENT_ID` is empty in `nextastore-backend/.env`, and the page hides the button when the server says Google is not set up. `/auth/config` now also returns `googleSetupHint` (true only when Google is not set up AND not in production); the pages then draw a stand-in "Continue with Google" button with a note saying what to set. It never appears on a production server. Real sign-in still needs the client ID (docs/AUTH_SETUP.md).
+
+CACHE_VERSION v88.
+
+# WIP 117 - cleaner login and sign-up (two steps, Google on top)
+- Changed: `login.html`, `signup.html`, `css/auth.css`, `js/auth.js`, `js/google-signin.js`, `forgot-password.html`, `service-worker.js` (cache v90 + `sw-assets.hash`), `nextastore-backend/scripts/auth-browser-tests/run.js`, `nextastore-backend/scripts/google-ui-smoke.js`.
+- Flow: step 1 = Google button + email only ("Continue"). Step 2 = password (login) or name + password (sign-up). The typed email stays as a chip; "Change" or Esc goes back. "Keep me signed in" moved to step 1 so it also applies to Google. Sign-up lost the confirm-password box (show/hide eye instead) and gained a "Step x of 2" bar; Shop/Sell is one compact switch; the invite code is a quiet line under the form.
+- Small additions: wrong password is shown under the password box; "That email already has an account - Sign in instead" on sign-up; `/login?email=`, `/signup?email=` and `/forgot-password?email=` prefill the address; Google button uses a centred logo, pill shape, and the test-mode stand-in matches it.
+- Gotcha kept in a comment-worthy place: `data-validate` was removed from `#emailForm` and `#signupForm` because main.js's document-level validator runs AFTER the form's own handler and clears the inline errors it just set.
+- Checks: qa:static 317/317, google-ui-smoke 21/21, and a 25-check real-Chromium run of both pages against a stubbed API (both steps, validation, wrong password, existing email, email-service-down, phone width).
+- Not done / open: `npm run test:auth-browser` was updated for the two-step login (`fillLogin` helper, sampler watches `#emailForm`) but does NOT run in the sandbox (fails the same way on the untouched project: page `app` undefined / clean-URL redirects), so it still needs a run on a real machine. Real Google (the actual rendered button, not the stand-in) was not seen.
+
+## WIP 117 (part 2) - tabs stay in step, and invites open sign-up on "Sell"
+- **Why tabs did not sync:** a session WITHOUT "keep me signed in" lives in `sessionStorage`, which belongs to one tab, so a second tab never heard about it. Remembered sessions already synced through the `storage` event.
+- **Fix (`js/main.js`, `js/auth.js`):** new `SessionSync` (BroadcastChannel `nextastore-session`, same site and same browser only, so the session still disappears when every tab is closed). A sign-in or token renewal is announced (`app.shareSession()`); a sign-out is announced by `endSession('logout')`; a tab opened later asks "is anyone signed in?" once (`askOtherTabs`, waits ~180 ms only on pages that would otherwise show the login screen). Other tabs that are signed out or hold a different person adopt the new session and reload; the same person's renewal is adopted quietly; a sign-out only ends tabs of the same person. Browsers without BroadcastChannel behave as before.
+- **Loop guards:** a tab asks once (`ns_session_asked` in sessionStorage), never asks right after its own session ended (`SessionData.readEnded()`), and only adopts tokens whose user id matches the accompanying user and that have not expired.
+- **Invite -> Sell:** `js/invite.js` now links to `/signup?type=seller&ref=CODE` (and `?type=seller` with no/unknown code). `signup.html` also starts on Sell when an invite code is remembered and the address has no explicit `?type=`; `?type=buyer` is respected. Updated the four href assertions in `growth-browser-test.js` and `growth-subdomain-browser-test.js` (not run: they need the database/browsers of a real machine).
+- **Tests added:** `npm run test:tab-sync-browser` (23 checks: ticked and unticked, guest and login-page tabs, new tab on a protected page, sign-out in one tab, invite link and Sell) and `npm run test:auth-two-step-browser` (25 checks). Service-worker cache is v91.
+
+## WIP 118 — auth pages rebuilt, textured 3D set, payment wording corrected
+- Changed: `login.html`, `signup.html`, `forgot-password.html`, `css/auth.css` (new final "WIP 118" block), `index.html`, `marketplace.html`, `manifest.json`, `assets/brand/3d/*`, `assets/landing/reel-src/reel.html`, `service-worker.js` (v92), `sw-assets.hash`.
+- Auth layout: brand panel scene is a size container (cq units), so objects scale from 1024px to 4K. Form side is framed (top bar, legal row, soft backdrop) and the card scales up on large screens (`zoom`, so Google's fixed-width button stays in proportion; inner column stays 400px). Mobile/tablet get a compact top bar with a small 3D object and the legal row pinned to the bottom.
+- 3D set: new textured SVG renders (basket, shop, bag-lock, box, tag, chat, mail) using SVG lighting filters. Objects now match the page: basket/bag/chat on login, shop (sellers) or basket (shoppers) on signup via `data-mode`, envelope on forgot-password. `coins.svg` removed (implied payments); `cart.svg` is no longer used.
+- Payments: NextaStore does not process payments or hold funds. Removed "Mobile Money built in / received / Paid in full / Pay UGX…" claims; copy now says buyers and sellers agree payment directly. Seller Pass and affiliate payouts are real platform payments and are unchanged.
+- Open: `assets/landing/nextastore-tour.mp4/.webm` still show the old "Get paid with Mobile Money" scenes. `reel.html` is updated; re-run `python3 assets/landing/reel-src/render.py` from the project root with internet (needs Font Awesome from the CDN) to regenerate them.
+
+## WIP 118 / follow-up — Grace, nextastore.ug, toast placement, tour re-rendered
+- Demo store is now "Grace's Crafts" (`grace-crafts`) on login, signup, home hero, onboarding/dashboard placeholders and the tour. Dev seed data and `js/api.js` mock data still use Amina on purpose: `LOCAL_TEST_ACCOUNTS.md` documents `amina@example.com`.
+- Domain: demo links and the tour now read `nextastore.ug`. Real store links were already derived from the page origin (`storeAddress()` in `js/main.js`), so the domain move needs no front-end change; the only literal fallbacks (no page origin at all) now say `nextastore.ug`.
+- Hero notifications: "Shared on WhatsApp" now sits in the gap between the parcel and the phone; on phones all three notifications get their own slots around the phone. Restored the gold disc behind the devices (an earlier shadow rule had replaced it).
+- Tour: `nextastore-tour.mp4/.webm` and `tour-poster.jpg` re-rendered from the updated `reel.html`. `render.py` can run offline with `REEL_ROUTE_HOOK` pointing at a script that serves Font Awesome locally.
+
+## WIP 119 — Promote tools (QR, posters, business cards), share-sheet fix, seller dashboard polish
+- Changed: `dashboard.html`, `js/dashboard.js`, new `js/brand-kit.js`, `js/promote.js`, `css/promote.css`, `service-worker.js` (cache v94), `sw-assets.hash`, new test `nextastore-backend/scripts/browser-flows-py/dashboard-promote-test.py`. Design file: Figma "NextaStore - Seller Promote Tools & Dashboard UX" (share sheet, Promote screen, business card front/back, A4 poster).
+- **Mobile share-modal bug:** the Circle invite card (`[data-growth-invite]`) was a SIBLING of `.modal-content` inside the flex `.modal-overlay`, so on a phone the dialog was squeezed to a narrow column (URL showed only "https", buttons cut off) with the invite card floating over it. The card now lives inside the dialog body; on phones the dialog is a bottom sheet (max 92dvh, scrolls inside itself, 44px targets, safe-area padding, Esc closes, focus returns to the opener).
+- **Real QR everywhere:** the "QR Code Preview" placeholder and the "coming soon" download are replaced by a real, offline QR (`NextaQR` from `js/growth-qr.js`, no CDN). Download QR (PNG 1200px, SVG) from the share sheet and the Promote page.
+- **New "Promote" section** (sidebar, phone tab bar, Overview quick action "Posters & cards", deep link `/dashboard#promote`): Poster A4, Counter sign A5, WhatsApp status 1080x1920, Square post 1080x1080, Business card (front/back). Colour swatches (incl. "my store colour"), editable store name / tagline / call to action, optional phone + logo, card name/title/email. Downloads: PNG, print-ready PDF (A4/A5; business-card PDF is an A4 sheet of 10 cards, fronts page + backs page, with cut marks), and Share (Web Share with the image file on phones; falls back to download). Settings are remembered per store in localStorage (best effort).
+- **Phone tab bar** (Home, Products, Orders, Promote, More=opens the drawer) at <=768px, marked `data-dock-avoid` so the Nexi button sits above it. Overview quick actions are a 2-column grid on phones. Buttons: 44px minimum height, consistent pill shape, visible keyboard focus, disabled and pressed states.
+- **Checks run:** 34/34 real-Chromium checks at 360, 390, 768 and 1280px (sheet inside the screen, QR drawn, no sideways scroll, tab bar phone-only, all five templates download); the QR on poster, sign, story and square downloads decodes with OpenCV; both PDFs open (poster 1 page, cards 2 pages A4); qa:static 317/317; no page errors.
+- **Not done / not seen:** Font Awesome icons are a CDN and did not load in the sandbox (icons were blank in screenshots); Safari/iOS and a real print were not tested. The logo is drawn on the poster only if the image host allows cross-origin loading, otherwise the store's initials are shown. The QR encoder handles links up to ~213 bytes (store links are far shorter). The QR in the test pointed at localhost; in production it uses the store address from `app.storeAddress()`.
+
+## WIP 120 — Products, Orders and Settings redesigned (Figma first), phone order cards, status chips
+- Design file: Figma "NextaStore - Seller Dashboard: Products, Orders, Settings" (https://www.figma.com/design/WlvAbsubGKZ07ROeGF6nPU) — a NEW file, because the WIP 119 file ("Seller Promote Tools & Dashboard UX", key Pc7X1qjtFi46JYkSfqikjT) could not be opened for editing from this account (Figma said no edit access). It holds a token library (28 colour/radius variables from `main.css`, 10 text styles in Poppins Regular/Bold — the two weights the site actually loads — 3 shadows), 13 component sets (Button, Badge, Chip, Field, Select, SearchField, IconButton, NavItem, TabItem, ProductCard, ProductRow, OrderRow, OrderCard) and six screens: desktop 1280 and phone 390 for Products, Orders and Settings.
+- Changed: `dashboard.html`, `js/dashboard.js`, new `css/dashboard-manage.css` (linked after `promote.css`), `service-worker.js` (cache v95), `sw-assets.hash`, new test `nextastore-backend/scripts/browser-flows-py/dashboard-manage-test.py`.
+- **Products:** plain header with a one-line subtitle; the search / category / sort row is no longer a card (the category picker `.nx-catpick` is width:100% and used to squeeze the search box — now fixed at 220px); cards are 168px-image tiles (4 per row at 1280) with the stock badge top-left in soft amber/red, bold green price, Edit button + a 44px round delete button. On phones each product is a compact row card: 72px thumbnail, name, price, stock count with the badge beside it (the card markup now carries a second, `stock-badge--inline`, copy that only shows on phones), Edit + delete along the bottom.
+- **Orders:** the status `<select>` is replaced by pill chips (All, Pending, Processing, Shipped, Delivered, Cancelled). The select is still in the page (visually hidden) and is the single source of truth: a chip sets it and fires `change`, so `loadOrders()` and any code reading `#orderStatusFilter` are untouched. One badge palette (amber / blue / purple / green / red); the old `dashboard.css` palette used an undefined `--success-light`, so "delivered" had no background. Desktop table: badge above the next-step buttons, ids / amounts / dates never wrap. Phones (<=768px): each order is a grid card — id and date, badge top-right, customer and total, fulfillment, Confirm / Cancel side by side (44px), View full width.
+- **Settings:** Store / Account / Notifications are pill tabs across the top instead of a left sidebar (same markup, CSS only); each group of fields is a bordered card; the jump links (Basics, Location, Branding, Payments, Search & sharing) now show which part you are in — tapping one marks it, and scrolling updates it (IntersectionObserver); the save bar is full-width, and on phones it sits above the tab bar (the existing `--nexi-lift` logic keeps the Nexi button above it).
+- **Checks run:** 82/82 real-Chromium checks at 360, 390, 768 and 1280px (card/column layout, 44px targets, badge placement, chip filtering through the real API call, tab swap, save bar clear of the tab bar, no sideways scroll, no page errors); qa:static 317/317; `npm run sw-assets-hash` regenerated.
+- **Not done / not seen:** Font Awesome is a CDN and did not load in the sandbox, so icons (trash, search, tab icons) were blank in screenshots — look at them on a real machine. The Figma screens use drawn icons and a placeholder grey image tile; real product photos were not in the test data. Safari/iOS not tested. Analytics, Overview and the Account / Notifications tabs only inherit the tab and card styling; they were not redesigned. The Settings page title and tabs are in a different order than in Figma (the "Store Settings" heading is inside the panel, so it sits under the tabs). `npm run test:auth-browser` and the other database-dependent browser tests were not run.
+
+## WIP 121 — Crew application form (Figma first): ID details and photos, map-picked work areas
+- Design file: Figma "NextaStore Crew – Application Form" (https://www.figma.com/design/qoNYaQEx776kqGLdsM8WEZ), desktop 1280 and mobile 390 screens. Colours are saved as variables ("Crew/Colors"). The Figma map is a drawn stand-in for the real picker.
+- Changed: `js/growth.js` (Crew join/upgrade steps only; Circle join untouched), `css/growth.css` (end of file), `nextastore-backend/scripts/growth-browser-test.js`, `service-worker.js` (cache v96), `sw-assets.hash`. No backend, database or API change.
+- Steps are now: Your details (full name as on ID, phone) → Your ID (type, number, front / back / selfie photos) → Work area (shared map picker, up to 3 areas, 1/3/5 km reach) → About you (optional text, availability) → Review.
+- Work area uses the existing `NextaStoreMapPicker` and `NextaStoreMapPreview`. Leaflet, `map-picker.css/js` and `map-preview.js` are loaded only when the Crew applicant opens that step (nothing added to the page weight of Circle or the dashboards). A district is sent as the territory (as before); the pin coordinates travel in the note.
+- The API contract is unchanged (`phone`, `territories`, `note`, one `kycImage`). So: the ID number, name on ID, ID type, pin coordinates, reach and availability are written as a short block at the top of the application note (max 600 characters; the optional text is cut first), and the three photos are combined into ONE captioned image (front / back / selfie) that goes through the same private ID storage. If you later want separate columns or files, that needs a schema and route change.
+- Checks run: growth-browser-test.js in real Chromium (phone width): new steps validate (name, ID number, three photos, at least one area, max 3 areas, terms), the application is saved as pending with the ID stored privately. The map picker was replaced by a stand-in in that test, so the real Leaflet map was NOT exercised here.
+- Not done / not seen: the real map picker modal on a phone, Font Awesome icons (CDN, blank in the sandbox screenshots), Safari/iOS camera capture, and how the admin screen shows the note block (I did not change the admin side). The test's "Admin console: Economics tab" check was already failing on the unchanged WIP 120 zip.
+
+## WIP 122 — Promote: Product posts (own look from the store's branding), background remover, quality gate
+- Design: built directly in code (no Figma file this time). Posts use NextaStore's own identity: the logo's open ring and gold dot, arch-window photo frames, a paper price tag, a scalloped discount seal and a rounded store plate with the QR. Reference screenshots were used for what sellers need (price, discount, product, call to action), not for the look.
+- New: `js/nexta-cutout.js` (background remover), `js/nexta-quality.js` (checks and the gate), `js/brand-kit-posts.js` (Spotlight / Deal / Collection × Square / Portrait / Status × Deep / Light / My colour), `js/post-studio.js` (the screen), `css/post-studio.css`, `nextastore-backend/scripts/post-studio-test.js`.
+- Changed: `dashboard.html` (Promote opens on "Product posts"; the old posters, business cards and link card moved under "Posters & cards", same ids), `js/promote.js` (mode switch), `js/brand-kit.js` (exports its drawing helpers; no behaviour change), `service-worker.js` (cache v98), `sw-assets.hash`, `browser-flows-py/dashboard-promote-test.py` (opens "Posters & cards" first). No backend, database or API change.
+- **Branding is automatic:** store logo, banner (as a neutral texture, so a banner in one colour never fights the brand colour), brand colour, name, phone and QR. Palettes are derived from the store colour and deepened or lightened until text reads at 4.5:1 or better (checked over 933 colour/mood combinations).
+- **Background remover:** runs in the browser, nothing uploaded. It learns the background from the photo's edge, floods inward, keeps the product, clears enclosed holes (mug handle), tucks the outline in to avoid a halo. Every result gets a confidence score from objective checks (cluttered edge, strong edges left behind, shape solidity, ragged outline, subject too small / fills the frame). Good = used; rough = used with a warning; poor = the photo is shown in an arch frame instead and the seller is told why. Plain backgrounds work well; busy ones are not cut. A machine-learning engine can be plugged in with `NextaCutout.register('ai', fn)` and is graded the same way.
+- **Catalogue photos carry the store watermark (WIP 49), burned into the pixels.** A cutout of such a photo would keep the stamp on the product, so the studio says so and offers "Use a different photo" (a clean upload, used for this post only; nothing is saved).
+- **Quality gate:** by construction (fixed layouts, fitted text, enforced contrast, safe margins, status posts keep clear of the phone UI) plus checks on every change. BLOCK (Download/Share disabled, with plain advice): blurry, very dark, too small for the size, no photo / name, Deal with no discount, Collection with fewer than 2 products, text unreadable on the colours. WARN (allowed, with a nudge): a little soft or dim, flat, slightly stretched, rough cutout, text shortened, no logo, small logo, unpublished store, a 90%+ discount. Thresholds are in `NextaQuality.THRESHOLDS`.
+- Also: a caption (name, price, old price, link) with Copy and WhatsApp; remembered choices per store; stock note on the price tag ("In stock", "Only 3 left", "Book by message").
+- Checks run: `post-studio-test.js` 29/29 (18 without the optional `canvas` package); headless jsdom drive of the real dashboard.html and scripts, 25/25 (picker, style/size changes, blurry / tiny / dark photos blocked, Deal without a discount blocked, Collection rules, cutout accepted, cluttered cutout falls back, old studio still works); qa:static 317/317; renders of 3 styles × 3 sizes × 3 moods on a sample store.
+- **Not done / not seen:** nothing was seen in a real browser. No Chromium in the sandbox, so the CSS of the new screen (phone width, sticky action bar, the product picker row) is unseen. The canvas posts were viewed through node-canvas, not Chrome/Safari. Sharpness / brightness thresholds were calibrated on synthetic photos and must be tuned on real seller photos. Whether the uploads host sends CORS headers is unknown: if a catalogue photo cannot be read into a canvas, the gate says "We could not read this photo" and the seller can use "Use a different photo" (check this on the real site).
+
+## WIP 122b — Promote fixes after first real-browser test (screenshots from the seller dashboard)
+- **"Updating…" never cleared.** `.pm-busy` sets `display:inline-flex`, which beats the HTML `hidden` attribute, so the chip stayed on screen even when the preview was done. `css/post-studio.css` now makes `hidden` win inside the studio and for `.pm-busy` everywhere (this also fixes the same chip in the older Posters & cards studio). The studio also clears the chip on every exit path and after 30s at most.
+- **Product photos, logo and banner were not drawn.** Uploads live in the public R2 bucket, on another origin; a browser shows such an image but will not let a canvas read it unless the bucket sends CORS headers (the old posters had the same problem and silently fell back to initials). New: `GET /api/media/proxy?u=` (`src/routes/media.js`, mounted in `app.js`, 120/min) that fetches ONLY from our own R2 public bucket (host, port and path prefix checked; no redirects, no cookies; raster images only, SVG refused; 12 MB; 10 s) and returns it from our API. `NextaBrandKit.helpers.loadImageSafe` tries the image directly, then through the proxy, with a 12 s limit per try; the old poster logo and the new studio both use it. If an image still cannot load the studio now says so ("We could not load this photo", or a warning for the logo or banner) instead of "No photo". Photos now load in parallel.
+- **Long names, per design.** A name is split at " - " (or a comma): the first part is the headline, the rest becomes one quieter details line; each design has its limits (Spotlight 46 + 64 characters, Deal 40 + 56, square column 34 + 40, collection cards 40 or 30, headline only). Anything over is cut at a word with "…" and the studio notes "The name was shortened to fit this design. The full name stays on your store." The caption keeps the full name.
+- **Cramped price tag.** Heights are now worked out from the actual text (name lines, details line, price block) before the picture area is sized, so a two-line name can no longer squeeze the price or push into the QR plate. Square size: the seal and the ring no longer touch the text column.
+- **Settings on a PC.** `.settings-form` was capped at 700px, which left two thirds of a desktop screen empty and the save bar floating mid-page. Now full width; from 1100px the store form is two columns of cards (Branding across both), paired fields stack until 1600px so nothing is cramped; Account and Notifications stay a readable 860px. CSS only, in `css/dashboard-manage.css`.
+- Tests: `post-studio-test.js` 45 (name splitting, failed photos, the image fallback, the hidden/display guard, the settings width); new `media-proxy-test.js` 16 (allowed image, other hosts, look-alike host, cloud metadata address, path tricks, file:/javascript:, SVG, HTML, redirects, oversize); headless UI drive 30; qa:static; all 27 style/size/mood renders.
+- **Still unseen in a real browser:** the Settings layout, the spinner fix and the proxy end to end. Do these by eye: Promote on :3000 with the API on :4000 (the proxy must answer at `/api/media/proxy`), and Settings at 1366, 1536 and 1920 wide. `R2_PUBLIC_URL` must be set (it is what the proxy trusts); with no R2 configured the proxy refuses everything and images load only if the host allows CORS.
+
+## WIP 123 - more templates added NEXT TO the existing ones (nothing removed)
+- Product posts (js/brand-kit-posts.js, js/post-studio.js): new styles Arch, Price drop, Catalogue. Spotlight / Deal / Collection are unchanged.
+- Posters & signs (new js/brand-kit-templates.js, loaded after brand-kit.js, wraps NextaBrandKit.render): Grand opening (A4), Big sale (A4), Scan to order (A5). Original templates untouched; cards not touched.
+- Field use: Grand opening pill = "Call to action" field; Big sale offer band = Tagline, line under it = Call to action; Scan to order headline = Call to action, sub-line = Tagline.
+- Designs drawn first in Figma (https://www.figma.com/design/Mvd7mlklZPqdodl5XmSOwD).
+- preview/: `python3 preview/build.py` writes ONE self-contained preview/gallery.html drawn by the real studio code with sample data. Open it on any phone (or publish it) to see every template.
+- Checked: all templates render with no script errors in headless Chromium at portrait; arch/drop also at square and story. NOT checked: Safari/iPhone, real store photos/logos, PDF output of the new A4/A5 templates, the studio UI buttons in a real browser. SW cache bumped to v100.
+
+## WIP 124 - Templates nav item, tick fix, more templates
+- Fix: product picker ticks showed on every product (Font Awesome's `.fas {display:inline-block}` beat `.pp-tick {display:none}`). Now `.pp-prod .pp-tick` is hidden and only `.pp-prod.is-on` shows it (css/post-studio.css). Verified with a CSS harness that loads a FA-style rule after the stylesheet.
+- New nav item "Templates" (sidebar; phones reach it via More): section #templatesSection, js/templates-page.js, css/templates-page.css, dashboardManager.loadTemplates(). Tiles are drawn live from the store's own products/logo/colours; tapping one opens Promote on that look (NextaPromote.openPost / openTemplate, NextaPostStudio.useStyle / renderTile, NextaPromote.thumb).
+- New product post style: Bold price. New templates: We deliver (A4), We are open (A5), Thank-you card (A6), Flash sale story, New in stock (square). Posters & signs and Social tabs list them.
+- Phones/tablets: the Promote preview is pinned under the top bar (max 34vh) while options scroll under it. NOT yet checked in a real browser.
+- Not checked: the Templates page and sticky preview inside the real dashboard (needs the backend + login), Safari/iPhone, PDF output of the new print sizes. Gallery (preview/) renders all of the above without script errors in headless Chromium. SW cache v101, sw-assets.hash regenerated, qa:static 317/317.
+
+## WIP 125 - live preview pinned on every screen size
+- Posters & cards studio preview (.pm-preview-col) now pins like the product-post one on phones/tablets; both pin at `top: var(--topbar-h)`, which dashboard.js (syncTopbarHeight) sets from the real top-bar height (was a guessed 62px, the bar is 77px).
+- Preview updates are debounced 160-180 ms after each change (both studios).
+- Checked: real dashboard.html + CSS (JS blocked) at 360x740, 414x896, 768x1024, 1280x800: both previews stay pinned under the top bar after scrolling 900px. NOT checked: full app with JS/login, Safari/iPhone, landscape phones.
+- SW cache v102, sw-assets.hash regenerated.
+
+## WIP 126 - Templates loading forever, automatic background removal with a visible switch, Round and Soft card looks
+- Cause of "Templates load forever": `.pm-spin { display:inline-block }` beats the `hidden` attribute, and only the Promote studio had the guard, so every Templates tile kept its spinner turning after its picture was drawn (css/templates-page.css now hides `.tp-spin[hidden]`). Also: tiles drew strictly one at a time and every tile re-tried the same failed photo/logo (up to 2 x 12 s each). Now: 3 tiles at a time, a tile gives up after 12 s and says so (tap still opens the look), the product list wait is capped at 15 s, and a failed image is remembered for 20 s (js/brand-kit.js, per-try timeout 8 s).
+- Background removal: automatic by default. A cutout is used only when its score is high ("good", 72%+); a miss is silent and the photo is framed as before. The control is now a real switch directly under the preview (visible on phones too, pinned with the preview), showing Off / On / On (automatic). When it was applied automatically a notice says so with the % and tells the seller to switch it off if they do not like it. The seller's own choice (on or off) is remembered per store. Seller turns it on by hand: anything but "poor" is accepted (as before). Collections have no switch. Templates tiles skip cutouts (speed).
+- New product post looks next to the existing ones: Round (round frame) and Soft card (rounded card). Same layout as Arch, different frame (js/brand-kit-posts.js). Arch, Spotlight and the others are unchanged.
+- SW cache v103, sw-assets.hash regenerated. post-studio-test 34/34 (cutout checks skipped without the optional `canvas` package).
+- NOT checked in a real browser: the switch on a phone under the pinned preview, the notice wording, the Round / Soft card drawings with real photos, Templates tiles with slow networks.
+
+## WIP 127 - Crew ID card: photo step, card design, dashboard section (info-page fix from earlier in this WIP included)
+- **Info pages:** no more "Join" flicker for signed-in visitors; members see "Open my dashboard" / "Welcome back" only; `circle.html` and `crew.html` accept a session kept in sessionStorage; every button goes to the program page with `?go=1`.
+- **Backend (migration `20261101090000_crew_card`, NOT yet run on Postgres):** private card photo + admin release; card unlocks at `R.CREW_CARD.unlockLeads` (5) logged businesses (dropped leads count); one bell notice on unlock; admin "Release card now" (audited); photo fixed once released; `GET/PUT /growth/card/photo`.
+- **Crew form:** new "Card photo" step after "Your ID" (`js/crew-card-photo.js`): guide, live rating (size, sharpness, light, plain background, face check only where `FaceDetector` exists), blocks only unusable photos, sends a 720x960 JPEG crop as `cardPhoto`.
+- **Card:** `js/crew-card.js`, canvas lanyard badge (deep green + gold, open ring + dot), locked version (blurred photo, lock, progress), QR on the back, saved as one PNG (front + back). Dashboard section under the rank card; `css/growth.css`; `crew.html` scripts; `about-crew` copy + FAQ; service worker v107.
+- **Tests added:** `growth-card-test.js` (26, in `test:growth`), `growth-card-browser-test.js` and `growth-card-photo-browser-test.js` (real Chromium; need Playwright, set PLAYWRIGHT_PATH if it is not on the module path; the first listens on port 4000). `growth-about-smoke.js` stub fixed (needed addEventListener / timers) and its expectation updated to `?go=1`.
+- **Not verified:** migration on Postgres; real phone photos (thresholds in `T` are from synthetic images); Safari/iOS; real map modal and image storage (stubbed in the browser test); admin card-photo viewer in a browser. The Work-area map step was not touched.
+- **Follow-up in WIP 127:** the Crew "Work area" step now opens the map by itself on arrival and lists each area by its place name (falls back to the district); the server now REQUIRES the card photo on `applyScout` and `applyUpgrade` (`CARD_PHOTO_REQUIRED`, 400, nothing saved); tests updated to match; `growth-browser-test.js` join flow updated for the photo step and the auto-opening map. That test's later "Economics tab" check times out on the original WIP 127 zip too (not caused by this work, not investigated).
+
+## WIP 129 - `scout` renamed to `crew` underneath (database, API, code)
+- Migration `20261104090000_rename_scout_to_crew` (enum value, `crewOpen`, audit actions, `SCOUT-` partner codes to `CREW-`); verified on PostgreSQL 16 with seeded old data. Code, API paths, admin console, CSS, tests renamed; see `docs/growth-program/10_SCOUT_TO_CREW_INTERNAL_RENAME.md` for the full table. No legacy compatibility is kept (old `SCOUT-` codes, `/scouts`, `SCOUTS_ORIGIN` all removed; the migration converts stored `SCOUT-` codes).
+- SW cache v111, sw-assets.hash regenerated. `growth-hosts-test.js` gained a guard that fails if the word `scout` appears anywhere in shipped code.
+- Stale tests brought up to date (apply page split, admin tabs, invite `?type=seller`, notification path).
+- NOT run: `prisma generate` / `prisma migrate` through Prisma itself (engines not downloadable here); the migration SQL was applied with psql.
+- Nexi: 27 `growth_*` FAQ entries for Circle and Crew in `faq-instant.json` (no amounts; see `docs/growth-program/10_SCOUT_TO_CREW_INTERNAL_RENAME.md`, section "Nexi"). A knowledge `.md` was tried and dropped because it broke the false-deflection gates. Self-test FAQ bound 40-60 became 40-90; 3 now-answerable OOS golden rows removed; wip92 snapshot reviewed and regenerated; Luganda review CSV regenerated (27 new rows missing).

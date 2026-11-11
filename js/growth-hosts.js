@@ -16,7 +16,8 @@
  *   NextaHosts.mode                'subdomain' | 'path'
  *   NextaHosts.kind                'main' | 'circle' | 'crew' | null   (which host this page is on)
  *   NextaHosts.main('/login')      address of a page on the main site
- *   NextaHosts.program('scout')    address of the Circle or Crew home
+ *   NextaHosts.program('crew')    address of the Circle or Crew home
+ *   NextaHosts.about('crew')      address of the public About Circle / About Crew page (always on the main site)
  *   NextaHosts.invite(code)        the link a partner shares
  *   NextaHosts.rewriteLinks(el)    makes root-relative <a href="/marketplace"> point at the main site
  *   NextaHosts.watch()             keeps doing that for links added later (the account menu, for example)
@@ -41,8 +42,10 @@
         return { mode: 'subdomain', main: `${base}${m[1]}${port}`, circle: `${base}circle.${m[1]}${port}`, crew: `${base}crew.${m[1]}${port}` };
     }
 
+    const isCrewKey = (which) => which === 'crew';
+
     function create(cfg, loc) {
-        let c = cfg && cfg.mode === 'subdomain' && cfg.main && cfg.circle && (cfg.crew || cfg.scouts) ? { ...cfg, crew: cfg.crew || cfg.scouts } : derive(loc);
+        let c = cfg && cfg.mode === 'subdomain' && cfg.main && cfg.circle && cfg.crew ? cfg : derive(loc);
         const sub = c.mode === 'subdomain';
         const origins = sub ? { main: strip(c.main), circle: strip(c.circle), crew: strip(c.crew) } : { main: '', circle: '', crew: '' };
         const here = loc && loc.host ? String(loc.host).toLowerCase() : '';
@@ -54,12 +57,16 @@
         const withSlash = (p) => (String(p || '/').startsWith('/') ? String(p || '/') : `/${p}`);
 
         const main = (path) => (sub ? origins.main : '') + withSlash(path);
+        /** The public information page of a program (About Circle / About Crew). It lives on the main site in every mode. */
+        const about = (which) => main(isCrewKey(which) ? '/about-crew' : '/about-circle');
         function program(which, path) {
-            const key = which === 'scout' || which === 'scouts' || which === 'crew' ? 'crew' : 'circle';
+            const key = isCrewKey(which) ? 'crew' : 'circle';
             const p = withSlash(path);
             if (sub) return origins[key] + p;
             return PATHS[key] + (p === '/' ? '' : p);
         }
+        /** The Crew application page. Its own page: /crew-apply in path mode, crew.<domain>/apply in subdomain mode. */
+        const apply = () => (sub ? origins.crew + '/apply' : '/crew-apply');
         function invite(code) {
             const cc = String(code || '').toUpperCase();
             if (sub) return `${origins.circle}/i/${encodeURIComponent(cc)}`;
@@ -72,7 +79,8 @@
             const path = href.split(/[?#]/)[0];
             const stem = path.replace(/\.html$/, '');   // an old-style address ending in .html is the same page as the clean one
             if (stem === '/circle') return origins.circle + '/' + href.slice(path.length).replace(/^\//, '');
-            if (stem === '/crew' || stem === '/scouts') return origins.crew + '/' + href.slice(path.length).replace(/^\//, '');
+            if (stem === '/crew-apply' || stem === '/apply') return origins.crew + '/apply' + href.slice(path.length);
+            if (stem === '/crew') return origins.crew + '/' + href.slice(path.length).replace(/^\//, '');
             if (stem === '/invite' || path.startsWith('/i/')) return origins.circle + href;
             if (isProgramHost) {
                 // On a program host the program's own assets and home stay local; every other page is the main site.
@@ -97,7 +105,7 @@
             if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', run, { once: true }); else run();
         }
 
-        return { mode: sub ? 'subdomain' : 'path', origins, kind, isProgramHost, main, program, invite, resolve, rewriteLinks, watch, publicConfig: () => ({ mode: sub ? 'subdomain' : 'path', ...origins }), create };
+        return { mode: sub ? 'subdomain' : 'path', origins, kind, isProgramHost, main, about, apply, program, invite, resolve, rewriteLinks, watch, publicConfig: () => ({ mode: sub ? 'subdomain' : 'path', ...origins }), create };
     }
 
     return { create, derive };

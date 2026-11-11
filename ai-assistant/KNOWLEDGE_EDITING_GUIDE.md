@@ -37,3 +37,11 @@ If you want the assistant to also be aware of *upcoming* changes before
 they ship (so support doesn't get caught flat-footed on launch day), add
 them here under a clear "Coming soon, not live yet" heading rather than
 waiting until release day to write the doc.
+
+## Circle and Crew (the growth program)
+
+These answers are the `growth_*` entries in `faq-instant.json`, not a knowledge file. Keep it that way: adding many sections to the knowledge folder shifts retrieval statistics and can break the "false deflection" gates (`npm run test:wip101`). When you edit them:
+
+- **Never write an amount, rate, percentage, minimum, holding time, review time or limit.** The program pages show live numbers; the answer should say so. (The FAQ check rejects digits.)
+- Keep `direct: false`. Anchor every question on a program word (Circle, Crew, referral, invite code, reward, payout, Lead Lock). Questions made of generic words ("how much", "is it free", "share my link") steal unrelated questions.
+- After any FAQ edit run `node scripts/selftest.js`, `node scripts/alias-lint.js`, the wip92 diff (review changes, then `node scripts/wip92-diff-test.js --write`), and `npm run lg:review:export`.

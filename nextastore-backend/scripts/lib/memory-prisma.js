@@ -9,19 +9,22 @@ const uid = () => `id${++seq}`;
 
 function createMemoryPrisma(clock) {
     const DEFAULTS = {
-        growthPartner: () => ({ status: 'active', rankKey: 'trailhead', territories: [], usualIpPrefixes: [], qualityScore: 70, phone: '', signupIpPrefix: '', frozenReason: '', payoutNumber: null, payoutNetwork: null, payoutName: null, payoutNumberChangedAt: null, approvedAt: null, joinedAt: clock(), createdAt: clock() }),
-        growthReferral: () => ({ stage: 'signed_up', source: 'link', riskDecision: 'clear', riskScore: 0, riskReasons: [], leadLockExtensions: 0, leadBusiness: '', leadContactName: '', leadPhone: '', leadDistrict: '', leadNote: '', signupIpPrefix: '', deviceHash: '', recruitUserId: null, storeId: null, firstPaymentId: null, paymentSubmittedAt: null, paidAt: null, lastAskedAt: null, storeLiveAt: null, signedUpAt: null, leadLockExpiresAt: null, capturedOffline: false, createdAt: clock() }),
+        growthPartner: () => ({ previousCodes: [], upgradedAt: null, upgradedFrom: null, status: 'active', rankKey: 'trailhead', territories: [], usualIpPrefixes: [], qualityScore: 70, phone: '', signupIpPrefix: '', frozenReason: '', payoutNumber: null, payoutNetwork: null, payoutName: null, payoutNumberChangedAt: null, approvedAt: null, joinedAt: clock(), createdAt: clock() }),
+        growthReferral: () => ({ program: null, stage: 'signed_up', source: 'link', riskDecision: 'clear', riskScore: 0, riskReasons: [], leadLockExtensions: 0, leadBusiness: '', leadContactName: '', leadPhone: '', leadDistrict: '', leadNote: '', signupIpPrefix: '', deviceHash: '', recruitUserId: null, storeId: null, firstPaymentId: null, paymentSubmittedAt: null, paidAt: null, lastAskedAt: null, storeLiveAt: null, signedUpAt: null, leadLockExpiresAt: null, capturedOffline: false, createdAt: clock() }),
+        growthUpgrade: () => ({ status: 'applied', territories: [], note: '', phone: '', reviewNote: '', reviewedBy: null, reviewedAt: null, oldCode: '', newCode: '', appliedAt: clock(), createdAt: clock() }),
         growthCommission: () => ({ status: 'held', voidReason: '', note: '', createdAt: clock(), paymentReviewedBy: null }),
         growthWithdrawal: () => ({ status: 'requested', payoutName: '', rejectReason: '', needsSecondApproval: false, approvedBy: null, paidBy: null, payoutReference: '', feeEstimate: 0, feeActual: null, requestedAt: clock(), createdAt: clock() }),
         growthFlag: () => ({ status: 'open', createdAt: clock() }),
         growthCampaign: () => ({ isActive: true, boostPercent: 0, district: '', program: null, description: '' }),
-        growthSettings: () => ({ circleOpen: true, scoutsOpen: true, extraHolidays: [], termsVersion: 'test' }),
+        growthSettings: () => ({ circleOpen: true, crewOpen: true, extraHolidays: [], termsVersion: 'test' }),
         growthVisit: () => ({ visitedAt: clock() }),
         adminFollowUp: () => ({ status: 'open' }),
         notification: () => ({ createdAt: clock() }),
-        user: () => ({}), store: () => ({ deletedAt: null }), product: () => ({}), subscriptionPayment: () => ({ status: 'pending' })
+        user: () => ({ createdAt: clock(), tokenVersion: 0, accountStatus: 'active', emailVerifiedAt: null, googleId: null }), store: () => ({ deletedAt: null }), product: () => ({}), subscriptionPayment: () => ({ status: 'pending' })
     };
     const UNIQUE = { growthCommission: ['paymentId', 'partnerId', 'type'] };
+    // Stand-in for the database's partial unique index: one OPEN upgrade request per partner.
+    const GUARDS = { growthUpgrade: (rows, d) => d.status !== 'approved' && d.status !== 'declined' && d.status !== 'withdrawn' && rows.some((r) => r.partnerId === d.partnerId && r.status === 'applied') };
 
     const num = (x) => (x instanceof Date ? x.getTime() : x);
     function matches(row, where = {}) {
@@ -41,6 +44,7 @@ function createMemoryPrisma(clock) {
                         case 'not': return arg === null ? v != null : v !== arg;
                         case 'startsWith': return typeof v === 'string' && v.startsWith(arg);
                         case 'contains': return typeof v === 'string' && v.toLowerCase().includes(String(arg).toLowerCase());
+                        case 'has': return Array.isArray(v) && v.includes(arg);
                         case 'mode': return true;
                         default: throw new Error(`memory-prisma: unsupported operator ${op}`);
                     }
@@ -53,7 +57,13 @@ function createMemoryPrisma(clock) {
 
     function model(name, db) {
         const rows = db[name] = db[name] || [];
-        const fill = (data) => ({ id: data.id || uid(), ...DEFAULTS[name](), ...data });
+        // A user written with `store: { create: {...} }` also creates that store (the real client does this in one step).
+    const liftStore = (name, row, data) => {
+        if (name !== 'user' || !data || !data.store || !data.store.create) return data;
+        if (!db.store.some((st) => st.ownerId === row.id)) db.store.push({ id: `store_${db.store.length + 1}`, ownerId: row.id, deletedAt: null, ...data.store.create });
+        const { store, ...rest } = data; return rest;
+    };
+    const fill = (data) => ({ id: data.id || uid(), ...DEFAULTS[name](), ...data });
         const attach = (r, include) => {
             const out = { ...r };
             if (include && include.partner) out.partner = db.growthPartner.find((p) => p.id === r.partnerId);
@@ -65,7 +75,7 @@ function createMemoryPrisma(clock) {
             findFirst: async ({ where, orderBy, include }) => { let r = rows.filter((x) => matches(x, where)); const s = sorter(orderBy); if (s) r = [...r].sort(s); return r[0] ? attach(r[0], include) : null; },
             findMany: async ({ where, orderBy, take, include } = {}) => { let r = rows.filter((x) => matches(x, where)); const s = sorter(orderBy); if (s) r = [...r].sort(s); return (take ? r.slice(0, take) : r).map((x) => attach(x, include)); },
             count: async ({ where } = {}) => rows.filter((r) => matches(r, where)).length,
-            create: async ({ data }) => { const row = fill(data); rows.push(row); return row; },
+            create: async ({ data }) => { const row = fill(data); if (name === 'user') { row.id = row.id || `user_${rows.length + 1}`; const lifted = liftStore(name, row, row); Object.keys(row).forEach((k) => { if (k === 'store') delete row[k]; }); void lifted; } if (GUARDS[name] && GUARDS[name](rows, row)) throw Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }); rows.push(row); return row; },
             createMany: async ({ data, skipDuplicates }) => {
                 let n = 0;
                 for (const d of data) {
@@ -77,10 +87,11 @@ function createMemoryPrisma(clock) {
             },
             update: async ({ where, data }) => {
                 const row = rows.find((r) => matches(r, where)); if (!row) throw new Error(`memory-prisma: ${name} not found`);
-                for (const [k, v] of Object.entries(data)) row[k] = v && typeof v === 'object' && !(v instanceof Date) && 'increment' in v ? (row[k] || 0) + v.increment : v;
+                data = liftStore(name, row, data);
+                for (const [k, v] of Object.entries(data)) row[k] = v && typeof v === 'object' && !(v instanceof Date) && 'increment' in v ? (row[k] || 0) + v.increment : (v && typeof v === 'object' && !(v instanceof Date) && !Array.isArray(v) && 'push' in v ? [...(row[k] || []), v.push] : v);
                 return row;
             },
-            updateMany: async ({ where, data }) => { const hit = rows.filter((r) => matches(r, where)); hit.forEach((r) => Object.assign(r, data)); return { count: hit.length }; },
+            updateMany: async ({ where, data }) => { const hit = rows.filter((r) => matches(r, where)); hit.forEach((r) => { for (const [k, v] of Object.entries(data)) r[k] = v && typeof v === 'object' && !(v instanceof Date) && !Array.isArray(v) && 'push' in v ? [...(r[k] || []), v.push] : v; }); return { count: hit.length }; },
             groupBy: async ({ by, where, _count }) => {
                 const groups = new Map();
                 for (const r of rows.filter((x) => matches(x, where))) {

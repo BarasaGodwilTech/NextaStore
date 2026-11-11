@@ -24,6 +24,12 @@ if (isProd) {
     if (jwtSecret.length < 32 || /change[-_ ]?me|dev-only|secret|password|example/i.test(jwtSecret)) {
         throw new Error('JWT_SECRET must be a random string of at least 32 characters (try: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))").');
     }
+    // The Staff Console signs its short-lived sign-in challenges with its OWN secret, so a leaked or guessed shopper JWT secret can never
+    // be used against staff, and vice versa.
+    const staffSecret = required('STAFF_SECRET');
+    if (staffSecret.length < 32 || staffSecret === jwtSecret || /change[-_ ]?me|dev-only|secret|password|example/i.test(staffSecret)) {
+        throw new Error('STAFF_SECRET must be a random string of at least 32 characters and must differ from JWT_SECRET.');
+    }
     required('FRONTEND_URL');
     required('PUBLIC_URL');
     required('SMTP_HOST');
@@ -109,15 +115,13 @@ function parseTtl(raw, fallback, name) {
 //      used at least once per window lived forever.
 // "Remember me" sessions last a month of inactivity and at most 90 days in
 // total; a plain login lasts two days of inactivity and at most a week.
-// Admins never get "remember me": one hour of inactivity, twelve hours total.
+// Staff sessions are separate (see `staff` below): server-side, 30 minutes idle, 12 hours absolute.
 // JWT_EXPIRES_IN keeps its original meaning (the long, "Remember me"
 // lifetime) so existing deploys that set it to 30d are unaffected.
 const rememberTtl = parseTtl(process.env.JWT_REMEMBER_EXPIRES_IN || process.env.JWT_EXPIRES_IN, '30d', 'JWT_REMEMBER_EXPIRES_IN');
 const sessionTtl = parseTtl(process.env.JWT_SESSION_EXPIRES_IN, '2d', 'JWT_SESSION_EXPIRES_IN');
-const adminTtl = parseTtl(process.env.JWT_ADMIN_EXPIRES_IN, '1h', 'JWT_ADMIN_EXPIRES_IN');
 const rememberMaxAge = parseTtl(process.env.JWT_REMEMBER_MAX_AGE, '90d', 'JWT_REMEMBER_MAX_AGE');
 const sessionMaxAge = parseTtl(process.env.JWT_SESSION_MAX_AGE, '7d', 'JWT_SESSION_MAX_AGE');
-const adminMaxAge = parseTtl(process.env.JWT_ADMIN_MAX_AGE, '12h', 'JWT_ADMIN_MAX_AGE');
 
 const TTL_UNIT_SECONDS = {
     ms: 0.001,
@@ -168,8 +172,50 @@ if (isProd && !pushEnabled) {
     console.warn('  WARNING: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY are not set. Push notifications are disabled -- run "npm run generate:vapid-keys" once and add the output to your environment. See .env.example.');
 }
 
+// ---------------------------------------------------------------------------
+// Staff Console (src/staff/)
+// ---------------------------------------------------------------------------
+const intEnv = (name, fallback, min = 1) => { const n = parseInt(process.env[name], 10); return Number.isFinite(n) && n >= min ? n : fallback; };
+const frontOrigin = (() => { try { return new URL(process.env.FRONTEND_URL || 'http://localhost:3000').origin; } catch (e) { return 'http://localhost:3000'; } })();
+const staffSecret = process.env.STAFF_SECRET || 'dev-only-staff-secret-change-me-32chars!!';
+const staff = {
+    // Signs the short sign-in challenge (between password and MFA). NOT the shopper JWT secret.
+    secret: staffSecret,
+    // Key that encrypts every staff member's TOTP secret at rest. Defaults to a key derived from STAFF_SECRET; set STAFF_MFA_KEY to rotate independently.
+    mfaKey: process.env.STAFF_MFA_KEY || staffSecret,
+    issuer: process.env.STAFF_MFA_ISSUER || 'NextaStore Staff',
+    cookieName: 'nxs_staff',
+    idleMinutes: intEnv('STAFF_IDLE_MINUTES', 30),
+    absoluteHours: intEnv('STAFF_SESSION_HOURS', 12),
+    maxSessions: intEnv('STAFF_MAX_SESSIONS', 5),
+    lockoutAttempts: intEnv('STAFF_LOCKOUT_ATTEMPTS', 5),
+    lockoutMinutes: intEnv('STAFF_LOCKOUT_MINUTES', 15),
+    reauthMinutes: intEnv('STAFF_REAUTH_MINUTES', 10),
+    challengeMinutes: 5,
+    // Risk-based two-step verification: the authenticator code is always asked on the first sign-in, on a browser we have not
+    // seen, when a remembered browser has expired, and when a sign-in looks suspicious (src/staff/risk.js).
+    deviceCookieName: 'nxs_dev',
+    deviceTrustDays: intEnv('STAFF_DEVICE_TRUST_DAYS', 30),
+    // Roles at or above this rank (default: Super Admin only) must enter the code on EVERY sign-in. Set 0 to disable the exception.
+    mfaAlwaysRank: intEnv('STAFF_MFA_ALWAYS_RANK', 100, 0),
+    // Sensitive-action PIN
+    pinLockoutAttempts: intEnv('STAFF_PIN_LOCKOUT_ATTEMPTS', 5),
+    pinLockoutMinutes: intEnv('STAFF_PIN_LOCKOUT_MINUTES', 15),
+    inviteHours: intEnv('STAFF_INVITE_HOURS', 48),
+    resetMinutes: 60,
+    // Comma-separated IPs/CIDRs (IPv4). Empty = no restriction. When set, /api/staff answers 404 to everyone else.
+    ipAllowlist: String(process.env.STAFF_IP_ALLOWLIST || '').split(',').map((x) => x.trim()).filter(Boolean),
+    // Origins whose pages may call /api/staff with cookies. Defaults to the site itself (+ localhost in development).
+    origins: Array.from(new Set([frontOrigin, ...String(process.env.STAFF_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean),
+        ...(isProd ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000'])])),
+    // Where the console lives, for links in emails. A dedicated host (https://staff.example.com) is recommended; a path on the site works too.
+    consoleUrl: (process.env.STAFF_CONSOLE_URL || `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/staff`).replace(/\/$/, ''),
+    cookieSecure: isProd || String(process.env.STAFF_COOKIE_SECURE || '').toLowerCase() === 'true'
+};
+
 module.exports = {
     env,
+    staff,
     isProd,
     port: Number(process.env.PORT) || 4000,
     jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
@@ -182,8 +228,7 @@ module.exports = {
     // Resolved policies, in seconds: { ttlSeconds, maxAgeSeconds }.
     sessionPolicies: {
         remember: sessionPolicy(rememberTtl, rememberMaxAge),
-        session: sessionPolicy(sessionTtl, sessionMaxAge),
-        admin: sessionPolicy(adminTtl, adminMaxAge)
+        session: sessionPolicy(sessionTtl, sessionMaxAge)
     },
     corsOrigin: process.env.CORS_ORIGIN || '*',
     publicUrl: process.env.PUBLIC_URL || '',
@@ -191,6 +236,12 @@ module.exports = {
     // to build links that go into emails (password reset, email
     // verification), which need an absolute URL the recipient can click.
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    // "Continue with Google": the OAuth Web client id(s) from Google Cloud Console (comma-separated if you have more than one).
+    // Not set = the Google button simply does not appear and /auth/google answers "not set up".
+    // Email verification is required to sign in for every account created at or after this moment. Accounts that already existed
+    // (when verification was optional) keep working and are nudged to verify; the money features still need a verified email either way.
+    emailVerificationRequiredFrom: (() => { const d = new Date(process.env.EMAIL_VERIFICATION_REQUIRED_FROM || '2026-10-28T00:00:00Z'); return Number.isNaN(d.getTime()) ? new Date('2026-10-28T00:00:00Z') : d; })(),
+    googleClientIds: String(process.env.GOOGLE_CLIENT_ID || '').split(',').map((x) => x.trim()).filter(Boolean),
     // Nexi, the AI assistant, runs as a separate service (see /ai-assistant).
     // The browser only ever talks to this API; /api/assistant/* is proxied there.
     assistantUrl: (process.env.ASSISTANT_URL || 'http://127.0.0.1:4100').replace(/\/$/, ''),

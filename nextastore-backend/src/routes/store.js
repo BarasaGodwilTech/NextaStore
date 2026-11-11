@@ -181,12 +181,12 @@ router.get('/public/all', cacheResponse(30), async (req, res, next) => {
         const [counts, categoryRows] = await Promise.all([
             prisma.product.groupBy({
                 by: ['storeId'],
-                where: { storeId: { in: ids }, deletedAt: null },
+                where: { storeId: { in: ids }, deletedAt: null, moderationStatus: 'ok' },
                 _count: { _all: true }
             }),
             prisma.product.groupBy({
                 by: ['storeId', 'category'],
-                where: { storeId: { in: ids }, deletedAt: null },
+                where: { storeId: { in: ids }, deletedAt: null, moderationStatus: 'ok' },
                 _count: { _all: true }
             })
         ]);
@@ -232,7 +232,7 @@ router.get('/search', cacheResponse(30), async (req, res, next) => {
                 take: Math.min(4, limit)
             }),
             prisma.product.findMany({
-                where: { deletedAt: null, name: contains, store: storefrontVisibleWhere() },
+                where: { deletedAt: null, moderationStatus: 'ok', name: contains, store: storefrontVisibleWhere() },
                 select: {
                     id: true, name: true, price: true,
                     thumbnails: true, image: true, store: { select: { id: true, slug: true, name: true } }
@@ -293,11 +293,11 @@ router.get('/public/:idOrSlug', optionalAuth, async (req, res, next) => {
         // to pay and reactivate it).
         assertStoreVisible(store, req);
         const [productCount, categoryRows, priceAgg] = await Promise.all([
-            prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } }),
+            prisma.product.count({ where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' } }),
+            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' }, _count: { _all: true } }),
             // Lowest / highest live price — drives the storefront's price
             // slider so its ends match what this store actually sells.
-            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null }, _min: { price: true }, _max: { price: true } })
+            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' }, _min: { price: true }, _max: { price: true } })
         ]);
         const minPrice = priceAgg?._min?.price;
         const maxPrice = priceAgg?._max?.price;
@@ -316,11 +316,11 @@ router.get('/public', optionalAuth, async (req, res, next) => {
         if (!store) throw apiError('Store not found.', 404);
         assertStoreVisible(store, req);
         const [productCount, categoryRows, priceAgg] = await Promise.all([
-            prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
-            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null }, _count: { _all: true } }),
+            prisma.product.count({ where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' } }),
+            prisma.product.groupBy({ by: ['category'], where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' }, _count: { _all: true } }),
             // Lowest / highest live price — drives the storefront's price
             // slider so its ends match what this store actually sells.
-            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null }, _min: { price: true }, _max: { price: true } })
+            prisma.product.aggregate({ where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' }, _min: { price: true }, _max: { price: true } })
         ]);
         const minPrice = priceAgg?._min?.price;
         const maxPrice = priceAgg?._max?.price;

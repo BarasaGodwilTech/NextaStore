@@ -112,7 +112,7 @@ function buildFacts() {
             pricePerMonth: SUBSCRIPTION_PRICE_UGX,
             trialDays: TRIAL_DAYS,
             periodOptionsMonths: SUBSCRIPTION_PERIOD_OPTIONS.slice(),
-            // Badge months count continuous paid coverage (routes/admin.js, payment approval).
+            // Badge months count continuous paid coverage (staff/routes/finance.js, payment approval).
             badgeCountsContinuousCoverage: true
         },
         badgeTiers: Object.keys(TIER_PERKS).map((key) => ({

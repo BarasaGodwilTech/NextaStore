@@ -1,26 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
-    <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9AE"/><stop offset=".5" stop-color="#FFBE45"/><stop offset="1" stop-color="#F08C0C"/></linearGradient>
-    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E07F08"/><stop offset="1" stop-color="#A85A00"/></linearGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <linearGradient id="str" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2EDDA2"/><stop offset="1" stop-color="#008558"/></linearGradient>
-    <filter id="blur" x="-30%" y="-50%" width="160%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
-    <clipPath id="clip"><path id="shape" d="M88 44H152L172 66V184Q172 200 156 200H84Q68 200 68 184V66Z"/></clipPath>
+    <!-- kraft card: a lit fibre noise multiplied over the colour, so the grain follows the light -->
+    <filter id="kraft" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="1.15 0.9" numOctaves="2" seed="11" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale="0.75" diffuseConstant="1.18" lighting-color="#fff" result="lit"><feDistantLight azimuth="235" elevation="58"/></feDiffuseLighting>
+      <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
+      <feBlend in="SourceGraphic" in2="litc" mode="multiply"/>
+    </filter>
+    <filter id="mottle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="4" result="m"/>
+      <feColorMatrix in="m" type="matrix" values="0 0 0 0 .45  0 0 0 0 .27  0 0 0 0 .1  0 0 0 .55 -.12" result="mc"/>
+      <feComposite in="mc" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.3" numOctaves="2" seed="2" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.2 2.55" result="holes"/>
+      <feComposite in="SourceGraphic" in2="holes" operator="in" result="speck"/>
+      <feOffset in="speck" dx="-.5" dy="-.6" result="hi"/>
+      <feMerge><feMergeNode in="hi"/><feMergeNode in="speck"/></feMerge>
+    </filter>
+    <filter id="soft" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="soft2" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0D3A0"/><stop offset=".55" stop-color="#DDB57C"/><stop offset="1" stop-color="#C79A5E"/></linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B98650"/><stop offset="1" stop-color="#8A5D2E"/></linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1B8"/><stop offset=".35" stop-color="#E9B13A"/><stop offset=".7" stop-color="#B8761A"/><stop offset="1" stop-color="#F5CE6B"/></linearGradient>
+    <radialGradient id="hole" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#3a2410"/><stop offset="1" stop-color="#120a04"/></radialGradient>
+    <linearGradient id="twine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F1E3C2"/><stop offset=".5" stop-color="#D9C197"/><stop offset="1" stop-color="#A98C5A"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="face"><path id="shape" d="M92 36 L142 36 L168 60 L184 166 Q186 182 174 186 L82 204 Q70 206 66 194 L52 62 Z"/></clipPath>
   </defs>
-  <ellipse cx="128" cy="222" rx="62" ry="8" fill="#000" opacity=".28" filter="url(#blur)"/>
-  <g transform="rotate(-12 120 120)">
-    <path d="M120 54C118 30 150 14 158 30" fill="none" stroke="#005F40" stroke-width="7" stroke-linecap="round" transform="translate(2 3)"/>
-    <path d="M120 54C118 30 150 14 158 30" fill="none" stroke="url(#str)" stroke-width="6" stroke-linecap="round"/>
-    <path d="M88 44H152L172 66V184Q172 200 156 200H84Q68 200 68 184V66Z" fill="url(#back)" stroke="url(#back)" stroke-width="10" stroke-linejoin="round" transform="translate(11 10)"/>
-    <path d="M88 44H152L172 66V184Q172 200 156 200H84Q68 200 68 184V66Z" fill="url(#face)" stroke="url(#face)" stroke-width="10" stroke-linejoin="round"/>
-    <g clip-path="url(#clip)"><path d="M50 30H190L70 210H50Z" fill="url(#gloss)"/></g>
-    <circle cx="120" cy="68" r="11" fill="#A85A00"/><circle cx="120" cy="66" r="9.5" fill="#7A3F00" opacity=".55"/><circle cx="120" cy="66" r="9" fill="#2a1500" opacity=".0"/>
-    <!-- embossed percent -->
-    <g transform="translate(2.5 3.5)" fill="#B96800" stroke="#B96800" stroke-linecap="round">
-      <circle cx="101" cy="110" r="13" fill="none" stroke-width="9"/><circle cx="139" cy="164" r="13" fill="none" stroke-width="9"/><path d="M142 98L98 176" stroke-width="10"/>
+  <g transform="rotate(8 120 124)">
+    <ellipse cx="124" cy="224" rx="62" ry="7" fill="#000" opacity=".34" filter="url(#soft)"/>
+    <!-- thickness: the card edge, offset down-right -->
+    <path d="M92 36 L142 36 L168 60 L184 166 Q186 182 174 186 L82 204 Q70 206 66 194 L52 62 Z" fill="url(#edge)" transform="translate(5 6)"/>
+    <path d="M92 36 L142 36 L168 60 L184 166 Q186 182 174 186 L82 204 Q70 206 66 194 L52 62 Z" fill="#7A4E24" transform="translate(2.6 3)"/>
+    <!-- the card -->
+    <g filter="url(#kraft)"><path d="M92 36 L142 36 L168 60 L184 166 Q186 182 174 186 L82 204 Q70 206 66 194 L52 62 Z" fill="url(#card)"/></g>
+    <g clip-path="url(#face)"><rect x="40" y="30" width="160" height="190" filter="url(#mottle)"/><path d="M40 30H200V120Q120 90 40 130Z" fill="url(#sheen)"/></g>
+    <!-- stitched border -->
+    <path d="M95 48 L139 48 L160 68 L174 162 Q175 170 168 172 L86 189 Q78 191 76 183 L64 68 Z" fill="none" stroke="#7A4E24" stroke-opacity=".42" stroke-width="1.4" stroke-dasharray="4 3.5" stroke-linecap="round"/>
+    <!-- hole + brass eyelet -->
+    <circle cx="117" cy="56" r="13" fill="#7A4E24" opacity=".35"/>
+    <circle cx="116" cy="55" r="11.5" fill="url(#brass)"/>
+    <circle cx="116" cy="55" r="6.2" fill="url(#hole)"/>
+    <path d="M107 50 A11.5 11.5 0 0 1 118 43.6" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- letterpress print -->
+    <g filter="url(#ink)" fill="#0B3B2B" font-family="'Poppins','Segoe UI',Helvetica,Arial,sans-serif" font-weight="700">
+      <text x="118" y="104" font-size="15" letter-spacing="3" text-anchor="middle" opacity=".85">UGX</text>
+      <text x="117" y="136" font-size="29" letter-spacing="-1" text-anchor="middle">45,000</text>
+      <rect x="88" y="147" width="62" height="2.4" rx="1.2" opacity=".6"/>
+      <text x="117" y="172" font-size="10" letter-spacing="2.2" text-anchor="middle" opacity=".8">HANDMADE</text>
     </g>
-    <g fill="#fff" stroke="#fff" stroke-linecap="round">
-      <circle cx="101" cy="110" r="13" fill="none" stroke-width="9"/><circle cx="139" cy="164" r="13" fill="none" stroke-width="9"/><path d="M142 98L98 176" stroke-width="10"/>
-    </g>
+    <circle cx="154" cy="104" r="0" fill="none"/>
+    <!-- twine through the hole -->
+    <path d="M116 55 C 108 28, 84 10, 62 18 C 44 25, 50 50, 78 42" fill="none" stroke="#6b5230" stroke-width="5.6" stroke-linecap="round" opacity=".35" transform="translate(1.6 2)"/>
+    <path d="M116 55 C 108 28, 84 10, 62 18 C 44 25, 50 50, 78 42" fill="none" stroke="url(#twine)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M116 55 C 108 28, 84 10, 62 18 C 44 25, 50 50, 78 42" fill="none" stroke="#8d7345" stroke-width="5" stroke-linecap="round" stroke-dasharray="1.6 3.2" opacity=".55"/>
+    <path d="M110 44 C 102 28, 88 16, 72 15" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.2" stroke-linecap="round"/>
   </g>
 </svg>

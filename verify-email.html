@@ -61,6 +61,8 @@
                 <p id="verifyMessage">Hang on a moment.</p>
             </div>
             <a href="/marketplace" class="btn btn-primary btn-block btn-lg" id="verifyContinueBtn" style="display:none;">Continue</a>
+            <button type="button" class="btn btn-primary btn-block btn-lg" id="verifyResendBtn" style="display:none;"><i class="fas fa-paper-plane"></i> Send me a new link</button>
+            <p id="verifyResendNote" role="status" style="display:none; margin-top:12px; font-size:.9rem;"></p>
         </div>
     </div>
 
@@ -68,10 +70,10 @@
     <script src="js/main.js"></script><script src="js/ui-overlays.js"></script>
     <script>
         (async () => {
-            const token = new URLSearchParams(window.location.search).get('token');
-            // Same reasoning as forgot-password.html: clean the token out of
-            // the visible URL/history right away. This page's token is used
-            // once, immediately, below, so nothing else needs it afterward.
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            // Same reasoning as forgot-password.html: clean the token out of the visible URL/history right away.
+            // This page's token is used once, immediately, below, so nothing else needs it afterward.
             if (token && window.history.replaceState) {
                 const url = new URL(window.location.href);
                 url.searchParams.delete('token');
@@ -80,21 +82,97 @@
             const heading = document.getElementById('verifyHeading');
             const message = document.getElementById('verifyMessage');
             const continueBtn = document.getElementById('verifyContinueBtn');
+            const resendBtn = document.getElementById('verifyResendBtn');
+            const resendNote = document.getElementById('verifyResendNote');
+            const signedIn = !!(typeof app !== 'undefined' && app.token);
+
+            // The link may be expired or already used. A signed-in person can ask for a new one right here; anyone else signs in first.
+            function offerNewLink() {
+                resendBtn.style.display = 'block';
+                if (!signedIn) {
+                    // Not signed in (and a new account cannot sign in until it is confirmed), so ask for the address and send it again.
+                    if (!document.getElementById('verifyEmailField')) {
+                        const field = document.createElement('input');
+                        field.type = 'email'; field.id = 'verifyEmailField'; field.className = 'form-input'; field.placeholder = 'you@example.com';
+                        field.autocomplete = 'email'; field.inputMode = 'email'; field.setAttribute('aria-label', 'Your email address'); field.style.marginBottom = '12px';
+                        resendBtn.parentNode.insertBefore(field, resendBtn);
+                    }
+                    resendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send me a new link';
+                    resendBtn.onclick = async () => {
+                        const email = document.getElementById('verifyEmailField').value.trim();
+                        if (!email) { resendNote.textContent = 'Enter the email address you signed up with.'; resendNote.style.display = 'block'; return; }
+                        resendBtn.disabled = true;
+                        try {
+                            const res = await app.apiRequest('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email }) });
+                            resendNote.textContent = (res && res.data && res.data.message) || 'A new link is on its way.';
+                        } catch (error) {
+                            resendNote.textContent = error.message || 'We could not send a new link just now.';
+                        } finally {
+                            resendNote.style.display = 'block';
+                            setTimeout(() => { resendBtn.disabled = false; }, 30000);
+                        }
+                    };
+                    return;
+                }
+                resendBtn.onclick = async () => {
+                    resendBtn.disabled = true;
+                    try {
+                        const res = await app.apiRequest('/auth/send-verification', { method: 'POST' });
+                        resendNote.textContent = (res && res.data && res.data.message) || 'A new link is on its way.';
+                    } catch (error) {
+                        resendNote.textContent = error.message || 'We could not send a new link just now.';
+                    } finally {
+                        resendNote.style.display = 'block';
+                        setTimeout(() => { resendBtn.disabled = false; }, 15000);
+                    }
+                };
+            }
 
             if (!token) {
+                if (signedIn && app.user && app.user.emailVerified) {
+                    heading.innerHTML = '<i class="fas fa-circle-check"></i> Already verified';
+                    message.textContent = 'Your email is confirmed. There is nothing more to do here.';
+                    continueBtn.style.display = 'block';
+                    return;
+                }
                 heading.innerHTML = '<i class="fas fa-circle-exclamation"></i> Missing link';
-                message.textContent = 'This page needs a verification link from your email — check your inbox.';
+                message.textContent = 'This page needs the link from your confirmation email. Check your inbox, or ask for a new one.';
+                offerNewLink();
                 return;
             }
 
             try {
-                await app.apiRequest('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
+                const res = await app.apiRequest('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
                 heading.innerHTML = '<i class="fas fa-circle-check"></i> Email verified';
                 message.textContent = 'Your email is confirmed. You\u2019re all set.';
+                // Opening the link also signs the person in (they just proved the inbox is theirs). If someone ELSE is signed in on this
+                // browser, the link belongs to the person it confirmed, so the session switches to them (SessionData clears the old cart).
+                if (res && res.token && res.data && (!signedIn || !app.user || app.user.id !== res.data.id)) {
+                    TokenStorage.write('nextastore_user', JSON.stringify(res.data), false);
+                    TokenStorage.write('nextastore_token', res.token, false);
+                    app.token = res.token; app.user = res.data; app.remembered = false;
+                    SessionData.claim(res.data.id); SessionData.clearEnded();
+                    const home = res.data.role === 'seller' ? (res.needsOnboarding ? '/onboarding' : '/dashboard') : '/marketplace';
+                    continueBtn.setAttribute('href', home);
+                    continueBtn.textContent = res.needsOnboarding ? 'Set up my store' : 'Continue';
+                    message.textContent = res.needsOnboarding ? 'Your email is confirmed and you are signed in. Let\u2019s set up your store.' : 'Your email is confirmed and you are signed in.';
+                    continueBtn.style.display = 'block';
+                    setTimeout(() => window.location.replace(home), 1800);
+                    return;
+                }
+                // Keep the saved copy of the signed-in person in step, or every page keeps asking them to verify until their next login.
+                try {
+                    if (signedIn && app.user) {
+                        app.user.emailVerified = true;
+                        TokenStorage.write('nextastore_user', JSON.stringify(app.user), !!app.remembered);
+                    }
+                } catch (e) { /* the next login refreshes it */ }
+                if (signedIn && app.user && app.user.role === 'seller') continueBtn.setAttribute('href', '/dashboard');
                 continueBtn.style.display = 'block';
             } catch (error) {
                 heading.innerHTML = '<i class="fas fa-circle-exclamation"></i> Link invalid or expired';
                 message.textContent = error.message || 'Request a new verification email and try again.';
+                offerNewLink();
             }
         })();
     </script>

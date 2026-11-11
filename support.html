@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/js/clean-url.js"></script><script src="/js/back-nav.js" defer></script><title>Help & Support - NextaStore</title><link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/safety.css"><link rel="stylesheet" href="css/support.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">    <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/png/favicon/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/brand/png/favicon/favicon-64.png">
+    <meta property="og:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
+    <link rel="stylesheet" href="css/mobile.css">
+<link rel="stylesheet" href="css/assistant.css"></head><body><header class="safety-topbar"><a href="/marketplace" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a><a href="/marketplace" class="btn btn-ghost btn-sm" data-back-link data-back-fallback="/marketplace" data-back-fallback-label="Back to marketplace"><span aria-hidden="true">&larr;</span> <span data-back-label>Back</span></a><div class="account-nav-slot" data-account-nav></div></header><main class="safety-page">
+<section class="safety-hero"><span class="eyebrow">Help &amp; Support</span><h1>How can we help?</h1><p>Tell us what happened and the NextaStore team will reply by email, usually within one working day. For payment and account problems we reply sooner.</p></section>
+<section class="support-card" aria-labelledby="supportFormTitle">
+<h2 id="supportFormTitle">Open a support ticket</h2>
+<form id="supportForm" class="support-form" novalidate>
+<div id="supportGuest" class="support-grid" hidden>
+<label>Your name<input name="name" autocomplete="name" maxlength="80"></label>
+<label>Your email<input name="email" type="email" autocomplete="email" maxlength="160"></label>
+</div>
+<label>What is it about?
+<select name="category"><option value="general">Something else</option><option value="orders">An order</option><option value="payments">A payment or Seller Pass</option><option value="account">My account or sign-in</option><option value="seller">My store</option><option value="listing">A product listing</option><option value="report">Report a problem with a seller</option><option value="technical">Something is not working</option></select></label>
+<label>Short title<input name="subject" maxlength="160" required></label>
+<label>Tell us what happened<textarea name="body" rows="6" maxlength="5000" required></textarea></label>
+<p id="supportError" class="support-error" role="alert"></p>
+<button class="btn btn-primary" type="submit">Send</button>
+</form>
+<div id="supportDone" class="support-done" role="status" hidden></div>
+</section>
+<section class="support-card" id="myTicketsCard" hidden><h2>Your tickets</h2><ul id="myTickets" class="support-list"></ul></section>
+</main>
+    <footer class="footer">
+        <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
+        <div class="footer-links">
+            <a href="/#features">Features</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/signup" data-hide-when-authed>Create account</a>
+            <a href="/marketplace">Shop</a>
+            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+        </div>
+        <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
+        <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>
+        <a href="/terms" class="footer-safety-link">Terms</a>
+        <a href="/privacy" class="footer-safety-link">Privacy</a>
+    </footer>
+    <script>
+      if ("serviceWorker" in navigator) {
+        // Forces an already-open tab/installed PWA window onto a newly
+        // activated service worker instead of leaving stale JS/CSS running
+        // until the person manually closes and reopens the app. Guarded so
+        // it only fires for a real version change: `nsHadController` records
+        // whether THIS load was already under a service worker's control
+        // before registering — a brand-new visitor's very first
+        // controllerchange (clients.claim() taking control for the first
+        // time) has nothing stale to replace, so that one is skipped;
+        // `nsRefreshed` stops a second stray event from reloading twice.
+        var nsHadController = !!navigator.serviceWorker.controller;
+        var nsRefreshed = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (!nsHadController) { nsHadController = true; return; }
+          if (nsRefreshed) return;
+          nsRefreshed = true;
+          window.location.reload();
+        });
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
+<script src="js/main.js"></script><script src="js/support.js"></script><script src="js/assistant.js" defer></script></body></html>

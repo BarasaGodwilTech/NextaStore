@@ -8,15 +8,15 @@
  * Configure with environment variables (see .env.example in docs/03_INTEGRATION_GUIDE.md):
  *   GROWTH_MODE=subdomain
  *   GROWTH_ROOT_DOMAIN=nextastore.com        -> main https://nextastore.com, circle.nextastore.com, crew.nextastore.com
- *   (optional) MAIN_ORIGIN / CIRCLE_ORIGIN / CREW_ORIGIN to override any one of them (SCOUTS_ORIGIN still works as the old name), e.g.
+ *   (optional) MAIN_ORIGIN / CIRCLE_ORIGIN / CREW_ORIGIN to override any one of them, e.g.
  *   MAIN_ORIGIN=https://www.nextastore.com   or, for local work,   CIRCLE_ORIGIN=http://circle.localhost:4000
  *
  * The browser has the same logic in js/growth-hosts.js. scripts/growth-hosts-test.js checks both agree.
  */
 'use strict';
 
-const PROGRAM_PATH = { circle: '/circle', scout: '/crew' };
-const CODE_RE = /^(CIRCLE|CREW|SCOUT)-[A-HJKMNP-Z2-9]{5}$/;   // SCOUT- is the pre-rename prefix: those codes keep working
+const PROGRAM_PATH = { circle: '/circle', crew: '/crew' };
+const CODE_RE = /^(CIRCLE|CREW)-[A-HJKMNP-Z2-9]{5}$/;
 
 const stripSlash = (s) => String(s || '').replace(/\/+$/, '');
 const hostOf = (origin) => { try { return new URL(origin).host.toLowerCase(); } catch (err) { return ''; } };
@@ -28,7 +28,7 @@ function fromEnv(env = process.env) {
         scheme: env.GROWTH_SCHEME,
         main: env.MAIN_ORIGIN,
         circle: env.CIRCLE_ORIGIN,
-        crew: env.CREW_ORIGIN || env.SCOUTS_ORIGIN
+        crew: env.CREW_ORIGIN
     };
 }
 
@@ -36,7 +36,7 @@ function createHosts(cfg = fromEnv()) {
     const mode = cfg.mode === 'subdomain' ? 'subdomain' : 'path';
     const scheme = cfg.scheme === 'http' ? 'http' : 'https';
     const root = String(cfg.rootDomain || '').trim().toLowerCase().replace(/^\.+|\.+$/g, '');
-    const origins = { main: stripSlash(cfg.main), circle: stripSlash(cfg.circle), crew: stripSlash(cfg.crew || cfg.scouts) };
+    const origins = { main: stripSlash(cfg.main), circle: stripSlash(cfg.circle), crew: stripSlash(cfg.crew) };
 
     if (mode === 'subdomain') {
         if (!root && !(origins.main && origins.circle && origins.crew)) {
@@ -60,18 +60,23 @@ function createHosts(cfg = fromEnv()) {
     const kindOfHost = (hostHeader) => hostToKind.get(String(hostHeader || '').toLowerCase()) || null;
     const isAllowedOrigin = (origin) => mode === 'subdomain' && Object.values(origins).includes(stripSlash(origin));
 
-    const programKey = (program) => (program === 'scout' || program === 'scouts' || program === 'crew' ? 'crew' : 'circle');
+    const programKey = (program) => (program === 'crew' ? 'crew' : 'circle');
     const programOrigin = (program) => (mode === 'subdomain' ? origins[programKey(program)] : '');
 
     /** Link to a program's page. Absolute in subdomain mode, a root-relative path in path mode. */
     function programUrl(program, path = '/') {
         const p = path.startsWith('/') ? path : `/${path}`;
         if (mode === 'subdomain') return origins[programKey(program)] + p;
-        const base = PROGRAM_PATH[programKey(program) === 'crew' ? 'scout' : 'circle'];
+        const base = PROGRAM_PATH[programKey(program)];
         return p === '/' ? base : base + p;
     }
     /** Link to a page that lives on the main site (login, signup, marketplace...). */
     const mainUrl = (path = '/') => (mode === 'subdomain' ? origins.main : '') + (path.startsWith('/') ? path : `/${path}`);
+    /** The public information page of a program (About Circle / About Crew). It lives on the main site in every mode. */
+    const aboutUrl = (program) => mainUrl(programKey(program) === 'crew' ? '/about-crew' : '/about-circle');
+
+    /** The Crew application page: its own page, /crew-apply in path mode, crew.<domain>/apply in subdomain mode. */
+    const applyUrl = () => (mode === 'subdomain' ? origins.crew + '/apply' : '/crew-apply');
 
     /** The link a partner shares. One canonical host for invites: the Circle one. */
     function inviteUrl(code) {
@@ -97,7 +102,7 @@ function createHosts(cfg = fromEnv()) {
 
     const publicConfig = () => ({ mode, main: origins.main, circle: origins.circle, crew: origins.crew });
 
-    return { mode, origins, kindOfHost, isAllowedOrigin, programOrigin, programUrl, mainUrl, inviteUrl, safeReturn, publicConfig, PROGRAM_PATH, CODE_RE };
+    return { mode, origins, kindOfHost, isAllowedOrigin, programOrigin, programUrl, mainUrl, aboutUrl, applyUrl, inviteUrl, safeReturn, publicConfig, PROGRAM_PATH, CODE_RE };
 }
 
 module.exports = { createHosts, fromEnv };

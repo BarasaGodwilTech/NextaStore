@@ -775,7 +775,7 @@ class OnboardingWizard {
             if (step === 1 && /url|link|slug|taken/i.test(message) && /reserved/i.test(message)) {
                 const errorEl = document.getElementById('obStoreSlugError');
                 const input = document.getElementById('obStoreSlug');
-                if (errorEl) errorEl.textContent = 'That link is used by NextaStore itself (like login or cart). Try adding your area or a number, like amina-crafts-kampala.';
+                if (errorEl) errorEl.textContent = 'That link is used by NextaStore itself (like login or cart). Try adding your area or a number, like grace-crafts-kampala.';
                 input?.classList.add('input-error');
                 input?.focus();
                 input?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -784,7 +784,7 @@ class OnboardingWizard {
                 // the person can fix right here — say so next to the field.
                 const errorEl = document.getElementById('obStoreSlugError');
                 const input = document.getElementById('obStoreSlug');
-                if (errorEl) errorEl.textContent = 'Someone already has that link. Try adding your area or a number, like amina-crafts-kampala.';
+                if (errorEl) errorEl.textContent = 'Someone already has that link. Try adding your area or a number, like grace-crafts-kampala.';
                 input?.classList.add('input-error');
                 input?.focus();
                 input?.scrollIntoView({ block: 'center', behavior: 'smooth' });

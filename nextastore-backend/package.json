@@ -18,7 +18,9 @@
     "test:assistant-proxy": "node scripts/assistant-proxy-test.js",
     "test:assistant-facts": "node scripts/assistant-facts-test.js",
     "test:seo": "node scripts/seo-test.js",
-    "test:growth": "node scripts/growth-test.js && node scripts/growth-flow-test.js && node scripts/growth-hosts-test.js && python3 scripts/growth-qr-test.py",
+    "test:auth": "node scripts/google-auth-test.js && node scripts/auth-routes-test.js && node scripts/google-ui-smoke.js",
+    "test:growth": "node scripts/growth-test.js && node scripts/growth-flow-test.js && node scripts/growth-card-test.js && node scripts/growth-hosts-test.js && node scripts/growth-about-test.js && node scripts/growth-shell-test.js && node scripts/crew-apply-routes-test.js && node scripts/growth-economics-test.js && node scripts/growth-admin-test.js && node scripts/growth-errors-test.js && node scripts/growth-admin-ui-smoke.js && node scripts/growth-app-smoke.js && node scripts/growth-about-smoke.js && python3 scripts/growth-qr-test.py",
+    "test:crew-apply-browser": "python3 scripts/crew-apply-browser-test.py",
     "test:growth-browser": "node scripts/growth-browser-test.js && node scripts/growth-subdomain-browser-test.js",
     "test:push": "node scripts/push-sw-test.js && node scripts/push-backend-test.js && node scripts/push-page-test.js && node scripts/push-prompt-test.js",
     "test:push-prompt": "node scripts/push-prompt-test.js",
@@ -34,6 +36,8 @@
     "test:new-product-notify": "node scripts/notify-followers-test.js",
     "test:integration": "node scripts/integration-test.js",
     "test:auth-browser": "node scripts/auth-browser-tests/run.js",
+    "test:auth-two-step-browser": "node scripts/auth-two-step-browser-test.js",
+    "test:tab-sync-browser": "node scripts/tab-sync-referral-browser-test.js",
     "test:presence-browser": "node scripts/presence-browser-test.js",
     "test:presence-messages-browser": "node scripts/presence-messages-browser-test.js",
     "test:messages-perf-browser": "node scripts/messages-perf-browser-test.js",
@@ -47,14 +51,15 @@
     "test:assistant-ui": "node scripts/assistant-ui-browser-test.js",
     "test:mobile-drawer-browser": "node scripts/mobile-drawer-browser-test.js",
     "test:dashboard-overview-browser": "node scripts/dashboard-overview-browser-test.js",
-    "test:admin-rbac": "node scripts/admin-rbac-test.js",
-    "test:admin-console-browser": "node scripts/admin-console-browser-test.js",
     "test:dialogs-back-browser": "node scripts/dialogs-back-browser-test.js",
     "test:product-share": "node scripts/product-share-test.js",
     "test:product-url": "node scripts/product-url-test.js",
     "test:product-address-browser": "node scripts/product-address-browser-test.js",
     "test:directions-browser": "node scripts/directions-browser-test.js",
-    "test:assistant-layout": "node scripts/assistant-panel-layout-test.js"
+    "test:assistant-layout": "node scripts/assistant-panel-layout-test.js",
+    "staff:create-super-admin": "node scripts/create-super-admin.js",
+    "test:staff": "node scripts/staff-test.js",
+    "test:staff-console-browser": "node scripts/staff-console-browser-test.js"
   },
   "engines": {
     "node": ">=18"

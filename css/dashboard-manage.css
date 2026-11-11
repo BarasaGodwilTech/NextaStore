@@ -1,0 +1,188 @@
+/* WIP 120 — Products, Orders and Settings, built from the Figma file
+   "NextaStore - Seller Dashboard: Products, Orders, Settings"
+   (https://www.figma.com/design/WlvAbsubGKZ07ROeGF6nPU).
+   Loaded after dashboard.css and promote.css, so it supersedes the older rules there:
+   - order status badges (dashboard.css used a second palette and an undefined --success-light)
+   - the product cards / toolbar, the orders table and the settings layout
+   Everything is scoped to #productsSection / #ordersList / #settingsSection so other pages and the
+   overview tables are not touched. */
+
+.section-sub { color: var(--gray-500); font-size: 0.875rem; margin: 2px 0 0; }
+.section-heading h2 { margin-bottom: 0; }
+.dash-visually-hidden { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---- One palette for order status badges --------------------------------- */
+.badge { display: inline-flex; align-items: center; padding: 0.25rem 0.65rem; font-weight: 700; line-height: 1.3; }
+.badge-pending { background: var(--warning-bg); color: var(--warning); }
+.badge-processing { background: var(--info-bg); color: var(--info); }
+.badge-shipped { background: #E9E4F8; color: #6247AA; }
+.badge-delivered { background: var(--primary-light); color: var(--primary-dark); }
+.badge-cancelled { background: var(--danger-bg); color: var(--danger); }
+
+/* ---- Filter chips (orders) ------------------------------------------------ */
+.dash-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px; margin: -2px; max-width: 100%; }
+.dash-chips::-webkit-scrollbar { display: none; }
+.dash-chip {
+    flex: 0 0 auto; min-height: 40px; padding: 0 16px; border: 1px solid var(--gray-300); border-radius: 999px;
+    background: #fff; color: var(--gray-700); font: 700 0.8125rem var(--font-body); cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.dash-chip:hover { border-color: var(--ink); color: var(--ink); }
+.dash-chip.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.dash-chip:focus-visible { outline: 3px solid rgba(1, 176, 117, 0.45); outline-offset: 2px; }
+
+/* ---- Products ------------------------------------------------------------- */
+#productsSection .products-header { padding: 0; background: none; box-shadow: none; margin-bottom: 16px; }
+#productsSection .products-toolbar {
+    padding: 0; background: none; box-shadow: none; margin-bottom: 16px; gap: 12px;
+    flex-wrap: nowrap; justify-content: flex-start; align-items: stretch;
+}
+#productsSection .products-toolbar .search-bar {
+    flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 14px; background: #fff;
+    border: 1px solid var(--gray-300); border-radius: 8px;
+}
+#productsSection .products-toolbar .search-bar input { width: 100%; min-width: 0; }
+#productsSection .products-toolbar .form-select { flex: 0 0 220px; max-width: 220px; min-height: 44px; border-radius: 8px; }
+/* the category select is replaced by .nx-catpick (js/category-picker.js), which is width:100% and would squeeze the search field */
+#productsSection .products-toolbar .nx-catpick { flex: 0 0 220px; width: 220px; }
+#productsSection .products-toolbar .nx-catpick-btn { min-height: 44px; border-radius: 8px; }
+
+#productsSection .manage-products-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+#productsSection .manage-product-card { border-color: var(--gray-200); }
+#productsSection .manage-product-image { aspect-ratio: auto; height: 168px; }
+#productsSection .stock-badge { top: 12px; left: 12px; bottom: auto; padding: 4px 10px; font-size: 0.75rem; border: 0; }
+#productsSection .stock-badge-low { background: var(--warning-bg); color: var(--warning); }
+#productsSection .stock-badge-out { background: var(--danger-bg); color: var(--danger); }
+#productsSection .stock-badge--inline { display: none; position: static; }
+#productsSection .manage-product-body { padding: 14px 16px 12px; gap: 6px; }
+#productsSection .manage-product-body h4 { font-size: 0.875rem; font-weight: 700; }
+#productsSection .manage-product-price { font-weight: 700; color: var(--primary-dark); font-size: 0.875rem; }
+#productsSection .manage-product-stock { display: inline-flex; align-items: center; gap: 8px; }
+#productsSection .manage-product-actions { padding: 6px 16px 16px; align-items: center; }
+#productsSection .manage-product-actions .btn { min-height: 44px; border-radius: 999px; }
+#productsSection .manage-product-actions .btn:last-child {
+    flex: 0 0 44px; width: 44px; min-width: 44px; padding: 0; justify-content: center; color: var(--danger);
+}
+
+@media (max-width: 768px) {
+    #productsSection .products-toolbar { display: grid; grid-template-columns: 1fr 1fr; }
+    #productsSection .products-toolbar .search-bar { grid-column: 1 / -1; }
+    #productsSection .products-toolbar .form-select { flex: none; max-width: none; width: 100%; }
+    #productsSection .products-toolbar .nx-catpick { flex: none; width: 100%; }
+}
+@media (max-width: 560px) {
+    /* Phone: a compact row card — 72px thumbnail, name / price / stock, then Edit + delete along the bottom. */
+    #productsSection .manage-product-card { padding: 12px; gap: 12px; }
+    #productsSection .manage-product-image { width: 72px; height: 72px; border-radius: 8px; }
+    #productsSection .manage-product-image .stock-badge { display: none; }
+    #productsSection .stock-badge--inline { display: inline-block; padding: 2px 8px; font-size: 0.6875rem; }
+    #productsSection .manage-product-body { padding: 0; flex: 1 1 0; }
+    #productsSection .manage-product-meta { flex-direction: column; align-items: flex-start; gap: 4px; }
+    #productsSection .manage-product-actions { padding: 0; flex: 1 0 100%; }
+}
+
+/* ---- Orders --------------------------------------------------------------- */
+#ordersSection .orders-toolbar { padding: 0; background: none; box-shadow: none; margin: 16px 0 20px; }
+#ordersList > .card { padding: 0; overflow: hidden; border: 1px solid var(--gray-200); border-radius: 18px; box-shadow: var(--shadow-sm); }
+#ordersList .table th { background: var(--gray-50); color: var(--gray-500); font-size: 0.75rem; font-weight: 700; letter-spacing: 0; text-transform: none; padding: 12px; white-space: nowrap; }
+#ordersList .table td { padding: 14px 12px; vertical-align: middle; }
+#ordersList .table th:first-child, #ordersList .table td:first-child { padding-left: 20px; }
+#ordersList .table th:last-child, #ordersList .table td:last-child { padding-right: 20px; }
+/* ids, amounts and dates stay on one line; names and addresses may wrap */
+#ordersList .table td[data-label="Order ID"], #ordersList .table td[data-label="Total"], #ordersList .table td[data-label="Date"] { white-space: nowrap; }
+#ordersList .table tbody td:first-child { font-weight: 700; }
+/* badge on top, the next-step buttons side by side underneath */
+#ordersList .order-status-cell { display: grid; grid-template-columns: repeat(2, max-content); gap: 8px; justify-content: start; justify-items: start; }
+#ordersList .order-status-cell .badge { grid-column: 1 / -1; }
+#ordersList .order-status-cell .btn-sm, #ordersList .table td .btn-sm { min-height: 36px; padding: 0 14px; border-radius: 999px; }
+#ordersList .pagination { padding: 14px 20px; }
+
+@media (max-width: 768px) {
+    /* Each order is a card: id + date, badge, customer + total, fulfillment, the next-step buttons, View. */
+    #ordersList .table tbody tr:not(.is-skeleton):not(:has(> td[colspan])) {
+        display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; row-gap: 10px; align-items: center;
+        padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm);
+    }
+    #ordersList .table td { display: block; width: auto; padding: 0; border: 0; text-align: left; min-width: 0; }
+    #ordersList .table td::before { display: none; }
+    #ordersList .table td[data-label="Order ID"] { grid-column: 1; grid-row: 1; font-size: 1rem; }
+    #ordersList .table td[data-label="Date"] { grid-column: 1; grid-row: 2; font-size: 0.75rem; color: var(--gray-500); }
+    #ordersList .table td[data-label="Customer"] { grid-column: 1; grid-row: 3; }
+    #ordersList .table td[data-label="Total"] { grid-column: 2; grid-row: 3; text-align: right; font-weight: 700; font-size: 1rem; color: var(--primary-dark); }
+    #ordersList .table td[data-label="Fulfillment"] { grid-column: 1 / -1; grid-row: 4; }
+    #ordersList .table td[data-label="Fulfillment"] .td-value { text-align: left; }
+    /* The Status cell dissolves so its badge and buttons become cells of the card grid. */
+    #ordersList .table td[data-label="Status"], #ordersList .order-status-cell { display: contents; }
+    #ordersList .order-status-cell .badge { grid-column: 2; grid-row: 1 / span 2; justify-self: end; align-self: center; }
+    #ordersList .order-status-cell .btn, #ordersList .table td .order-status-cell .btn-sm { grid-row: 5; width: 100%; min-height: 44px; justify-content: center; }
+    #ordersList .order-status-cell .badge + .btn:last-child { grid-column: 1 / -1; }
+    #ordersList .table td:last-child { grid-column: 1 / -1; grid-row: 6; }
+    #ordersList .table td:last-child .btn, #ordersList .table td:last-child .btn-sm, #ordersList .table td:last-child .btn.btn-sm { width: 100%; min-height: 44px; border-radius: 999px; }
+    .dash-chip { min-height: 44px; }
+}
+
+/* ---- Settings ------------------------------------------------------------- */
+#settingsSection .settings-container { display: block; background: none; box-shadow: none; margin: 0; min-height: 0; }
+#settingsSection .settings-sidebar { width: auto; border: 0; padding: 0 0 16px; }
+#settingsSection .settings-nav { flex-direction: row; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding: 0; scrollbar-width: none; }
+#settingsSection .settings-nav::-webkit-scrollbar { display: none; }
+#settingsSection .settings-nav-item {
+    flex: 0 0 auto; min-height: 44px; padding: 0 18px; gap: 0; background: #fff; color: var(--gray-700);
+    border: 1px solid var(--gray-300); border-radius: 999px; font-size: 0.875rem; font-weight: 700; white-space: nowrap;
+}
+#settingsSection .settings-nav-item i { display: none; }
+#settingsSection .settings-nav-item:hover { background: #fff; border-color: var(--ink); color: var(--ink); }
+#settingsSection .settings-nav-item.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+#settingsSection .settings-nav-item:focus-visible { outline: 3px solid rgba(1, 176, 117, 0.45); outline-offset: 2px; }
+#settingsSection .settings-main { padding: 0; overflow: visible; }
+#settingsSection .settings-section-header { border: 0; padding: 0; margin-bottom: 16px; }
+#settingsSection .settings-section-header h2 { font-size: 1.25rem; }
+
+/* each group of fields is a card */
+#settingsSection .settings-form-section {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: 18px; box-shadow: var(--shadow-sm);
+    padding: 24px; margin-bottom: 24px;
+}
+#settingsSection .settings-form-section:last-child { margin-bottom: 24px; }
+#settingsSection .settings-form-section h3 { text-transform: none; letter-spacing: 0; font-size: 1rem; font-weight: 700; }
+
+/* jump links: quiet text chips, the current one filled */
+.store-settings-jump a { border-color: transparent; background: transparent; color: var(--primary-dark); font-weight: 700; min-height: 40px; padding: 0 14px; }
+.store-settings-jump a:hover { background: var(--primary-light); border-color: transparent; color: var(--primary-dark); }
+.store-settings-jump a.active { background: var(--primary-dark); border-color: transparent; color: #fff; }
+.store-settings-jump a:focus-visible { outline: 3px solid rgba(1, 176, 117, 0.45); outline-offset: 2px; }
+
+/* save bar: full-bleed strip that stays above the content (and above the phone tab bar) */
+#settingsSection .settings-form-actions--sticky {
+    margin: 0 calc(var(--spacing-xl) * -1) calc(var(--spacing-xl) * -1);
+    padding: 14px var(--spacing-xl) calc(14px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--gray-200); box-shadow: 0 -6px 18px rgba(11, 59, 43, 0.06);
+}
+#settingsSection .settings-form-actions--sticky .btn { min-height: 44px; border-radius: 999px; }
+
+/* ---- Settings on a desktop screen ----------------------------------------------------------------------------------
+   The store form was capped at 700px, so on a PC it sat in a narrow strip with two thirds of the screen empty (and the
+   save bar floated in the middle). It now uses the width: one column of cards on tablets and small laptops, two columns
+   from 1100px, with Branding (the banner and logo need room) across both. */
+#settingsSection .settings-form { max-width: none; }
+#settingsSection .settings-main, #settingsSection .settings-section-header, #settingsSection .store-settings-jump { max-width: 1480px; }
+#settings-account .settings-form, #settings-notifications .settings-form { max-width: 860px; }
+@media (min-width: 1100px) {
+    #settingsSection #storeSettingsForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; align-items: start; }
+    #settingsSection #storeSettingsForm > #ss-branding,
+    #settingsSection #storeSettingsForm > .settings-form-actions { grid-column: 1 / -1; }
+}
+/* two cards side by side leave each about 540px on a laptop: stack the paired fields inside them until there is room */
+@media (min-width: 1100px) and (max-width: 1599px) {
+    #settingsSection #storeSettingsForm > .settings-form-section:not(#ss-branding) .form-row { grid-template-columns: 1fr; gap: var(--spacing-md); }
+}
+
+@media (max-width: 1024px) {
+    #settingsSection .settings-form-actions--sticky { margin: 0 calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1); padding-left: var(--spacing-md); padding-right: var(--spacing-md); }
+}
+@media (max-width: 768px) {
+    #settingsSection .settings-container { margin: 0; }
+    #settingsSection .settings-main { padding: 0; }
+    #settingsSection .settings-form-section { padding: 16px; margin-bottom: 16px; }
+    #settingsSection .settings-form-actions--sticky { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); padding-bottom: 14px; margin-bottom: 0; }
+}

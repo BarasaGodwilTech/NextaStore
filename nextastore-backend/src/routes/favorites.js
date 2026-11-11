@@ -25,7 +25,7 @@ router.get('/', requireAuth, async (req, res, next) => {
             userId: req.user.id,
             // Open stores only: a favorite whose store lapsed drops off the list
             // (the heart is kept, and it returns with the store).
-            product: { deletedAt: null, store: storefrontVisibleWhere() }
+            product: { deletedAt: null, moderationStatus: 'ok', store: storefrontVisibleWhere() }
         };
 
         const [rows, total] = await Promise.all([
@@ -86,7 +86,7 @@ router.post('/:productId', requireAuth, async (req, res, next) => {
         // be reached this way either, even by someone who already has the
         // raw product id from before the store went inactive.
         const product = await prisma.product.findFirst({
-            where: { id: req.params.productId, deletedAt: null, store: storefrontVisibleWhere() },
+            where: { id: req.params.productId, deletedAt: null, moderationStatus: 'ok', store: storefrontVisibleWhere() },
             select: { id: true }
         });
         if (!product) throw apiError('Product not found.', 404);

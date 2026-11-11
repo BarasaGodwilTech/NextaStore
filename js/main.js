@@ -39,6 +39,29 @@ const TokenStorage = {
 };
 
 // ---------------------------------------------------------------------------
+// Sharing a session between open tabs
+// ---------------------------------------------------------------------------
+// A "keep me signed in" session lives in localStorage, so the browser itself tells every other tab when it changes (the
+// `storage` event, handled in setupCrossTabSync). A session WITHOUT that tick lives in sessionStorage, which belongs to one
+// tab only, so a second tab never learned about it: sign in here and the tab next to it stayed signed out.
+// BroadcastChannel closes that gap without changing what "don't keep me signed in" means. It only reaches tabs of the SAME
+// site in the SAME browser that are open right now, so the session is still gone once every tab is closed.
+// Where BroadcastChannel does not exist (old browsers) nothing here runs and tabs behave exactly as before.
+const SessionSync = {
+    NAME: 'nextastore-session',
+    channel: null,
+    open(onMessage) {
+        if (typeof BroadcastChannel === 'undefined' || this.channel) return !!this.channel;
+        try {
+            this.channel = new BroadcastChannel(this.NAME);
+            this.channel.onmessage = (e) => { try { onMessage(e.data); } catch (err) { /* a bad message must never break the page */ } };
+            return true;
+        } catch (err) { this.channel = null; return false; }
+    },
+    post(message) { try { if (this.channel) this.channel.postMessage(message); } catch (err) { /* ignore */ } }
+};
+
+// ---------------------------------------------------------------------------
 // Who does this token belong to?
 // ---------------------------------------------------------------------------
 // Reads the payload WITHOUT verifying the signature — only the server can do
@@ -476,13 +499,15 @@ class NextaStoreApp {
         this.setupEventListeners();
         this.setupAuthAwareLinks();
         this.setupCrossTabSync();
-        this.checkAuthState();
+        // A tab opened while another tab is signed in (without "keep me signed in") has no session of its own. Ask the other
+        // tabs before deciding the person is signed out; only pages that would send them to the login screen wait for the answer.
+        const mustDecide = !this.token && (document.body.hasAttribute('data-auth-required') || document.body.hasAttribute('data-auth-page'));
         // Fired by js/push.js after enable()/disable(), and by the settings
         // page's own toggle — either way, every bell's "Turn on" row on this
         // page should reflect the new state right away rather than on its
         // next open.
         document.addEventListener('ns-push-state-changed', () => this.refreshAllPushBellRows());
-        requestAnimationFrame(() => requestAnimationFrame(() => {
+        const finishBoot = () => requestAnimationFrame(() => requestAnimationFrame(() => {
             this.dismissPageSkeleton();
             // Tells the boot loading overlay (css/loading-overlay.js) that the
             // auth check has settled and it's safe to reveal this page's own
@@ -493,6 +518,15 @@ class NextaStoreApp {
             // never flashes its real content first.
             window.NextaLoader?.ready('app');
         }));
+        if (mustDecide) {
+            // Waits at most ~180 ms for a sibling tab to answer. An answer adopts that session and reloads this page signed in;
+            // silence is the normal case (a genuinely signed-out visitor) and carries straight on.
+            this.askOtherTabs(180).then(() => { this.checkAuthState(); finishBoot(); });
+        } else {
+            this.askOtherTabs(0);
+            this.checkAuthState();
+            finishBoot();
+        }
     }
 
     /** Finding 2: a "Remember me" session lives in localStorage, which is
@@ -525,6 +559,88 @@ class NextaStoreApp {
             }
             window.location.reload();
         });
+        SessionSync.open((message) => this.onSessionMessage(message));
+    }
+
+    // -----------------------------------------------------------------------
+    // Tabs that share a session WITHOUT "keep me signed in" (see SessionSync)
+    // -----------------------------------------------------------------------
+    /** Tells the other open tabs about this tab's session (after a sign-in, or when the token is renewed). Remembered sessions are
+     *  already shared through localStorage, so only an unremembered one is announced. */
+    shareSession() {
+        if (this.remembered || !this.token || !this.user) return;
+        SessionSync.post({ t: 'session', token: this.token, user: this.user });
+    }
+
+    /** Tells the other tabs this person signed out. Called before the local session is cleared. */
+    shareSignOut(userId) {
+        if (this.remembered || !userId) return;
+        SessionSync.post({ t: 'signout', userId });
+    }
+
+    /** Asks the other tabs "is anyone signed in?". With waitMs > 0 the returned promise settles once a tab answered (this page is then
+     *  reloaded signed in, and the promise stays pending so nothing else runs) or the time is up. Asked once per tab. */
+    askOtherTabs(waitMs) {
+        if (!SessionSync.channel || this.token) return Promise.resolve();
+        let again = false;
+        try { again = sessionStorage.getItem('ns_session_asked') === '1'; sessionStorage.setItem('ns_session_asked', '1'); } catch (err) { /* private mode: ask anyway */ }
+        // After a session ended here on purpose or by itself, this tab must not pick the old one straight back up from a sibling.
+        if (again || SessionData.readEnded()) return Promise.resolve();
+        SessionSync.post({ t: 'hello' });
+        if (!waitMs) return Promise.resolve();
+        return new Promise((resolve) => {
+            const timer = setTimeout(() => { this._sessionWaiter = null; resolve(); }, waitMs);
+            this._sessionWaiter = () => { clearTimeout(timer); this._sessionWaiter = null; };   // the adoption reloads the page; never resolves
+        });
+    }
+
+    /** A shared session is only taken if it is complete, its token really is for the user it comes with, and it has not expired. */
+    isUsableSharedSession(message) {
+        const token = message && message.token, user = message && message.user;
+        if (typeof token !== 'string' || !user || typeof user !== 'object') return false;
+        const id = tokenUserId(token);
+        if (!id || user.id !== id) return false;
+        const exp = decodeTokenClaims(token)?.exp;
+        return !(typeof exp === 'number' && exp * 1000 <= Date.now());
+    }
+
+    onSessionMessage(message) {
+        if (!message || typeof message !== 'object') return;
+        // Remembered sessions live in localStorage and are handled by the `storage` event above.
+        if (this.remembered) return;
+
+        if (message.t === 'hello') {
+            // A new tab is asking. Answer if this tab has a live session of its own.
+            if (this.token && this.user && !this.isTokenExpired()) this.shareSession();
+            return;
+        }
+
+        if (message.t === 'signout') {
+            if (this.token && message.userId && tokenUserId(this.token) === message.userId) {
+                this.endSession('logout');
+                window.location.reload();     // a page that needs a login goes to the login screen; a public page shows signed out
+            }
+            return;
+        }
+
+        if (message.t === 'session') {
+            if (!this.isUsableSharedSession(message)) return;
+            const sameToken = this.token === message.token;
+            if (sameToken) return;
+            if (this.token && tokenUserId(this.token) === tokenUserId(message.token)) {
+                // The same person, newer token (a routine renewal in another tab): adopt it quietly, no reload.
+                this.token = message.token;
+                TokenStorage.write('nextastore_token', message.token, false);
+                this.startSessionExpiryWatch();
+                return;
+            }
+            // Nobody here yet, or somebody else: this tab becomes the person who just signed in, the same way a remembered
+            // session does through localStorage. User record first, then the token (see handleLogin in auth.js).
+            TokenStorage.write('nextastore_user', JSON.stringify(message.user), false);
+            TokenStorage.write('nextastore_token', message.token, false);
+            if (this._sessionWaiter) this._sessionWaiter();
+            window.location.reload();
+        }
     }
 
     dismissPageSkeleton() {
@@ -628,12 +744,6 @@ class NextaStoreApp {
      *  after loadUserData() refreshes this.user, in case the cached copy
      *  is stale (e.g. the role changed on another device). */
     enforceSellerOnlyPage() {
-        const adminOnly = document.body.hasAttribute('data-admin-required');
-        if (adminOnly && this.user && this.user.role !== 'admin') {
-            window.location.href = '/marketplace';
-            return;
-        }
-        if (adminOnly && !this.user && !this.token) return;
         const sellerOnly = document.body.hasAttribute('data-seller-required');
         if (sellerOnly && this.user && this.user.role !== 'seller') {
             window.location.href = '/marketplace';
@@ -757,6 +867,12 @@ class NextaStoreApp {
         if (window.__nxAbout) return;   // a signed-out visitor is already on their way to the Circle/Crew about page
         // One page name (`cart`), a store (`amina-crafts`), or a product's own
         // address (`amina-crafts/blue-sofa-x7k2m9ab`: both parts are needed).
+        const HP = window.NextaHosts;
+        if (HP && HP.mode === 'subdomain' && HP.isProgramHost) {
+            // /login lives on the main site; once signed in, /circle or /crew there leads back here (and hands the session over).
+            window.location.href = `${HP.main('/login')}?redirect=${HP.kind === 'crew' ? 'crew' : 'circle'}${reason ? `&reason=${encodeURIComponent(reason)}` : ''}`;
+            return;
+        }
         const parts = window.location.pathname.replace(/\.html$/i, '').split('/').filter(Boolean);
         const isProductAddress = parts.length === 2 && parts.every(part => /^[A-Za-z0-9-]+$/.test(part));
         const here = (isProductAddress ? parts.join('/') : (parts.pop() || '')) + window.location.search;
@@ -773,6 +889,7 @@ class NextaStoreApp {
         clearTimeout(this._sessionWatchTimer);
         document.querySelector('.session-toast')?.remove();
         const userId = tokenUserId(this.token) || this.user?.id || null;
+        if (reason === 'logout') this.shareSignOut(userId);
         TokenStorage.clear('nextastore_token');
         TokenStorage.clear('nextastore_user');
         this.token = null;
@@ -908,6 +1025,13 @@ class NextaStoreApp {
         });
         if (!confirmed) return;
         this.endSession('logout');
+        // On circle. / crew. the main site holds its own copy of the session. Without the hop below, the next visit here would
+        // find it and sign the person straight back in, so "Log out" would appear not to work.
+        const H = window.NextaHosts;
+        if (H && H.mode === 'subdomain' && H.isProgramHost) {
+            window.location.href = `${H.origins.main}/auth-bridge?mode=logout&to=${encodeURIComponent(`${window.location.origin}/`)}`;
+            return;
+        }
         window.location.href = '/';
     }
 
@@ -982,7 +1106,7 @@ class NextaStoreApp {
             return;
         }
 
-        const role = this.user.role === 'admin' ? 'admin' : (this.user.role === 'seller' ? 'seller' : 'buyer');
+        const role = this.user.role === 'seller' ? 'seller' : 'buyer';
         const avatarStyle = this.user.avatar
             ? `style="background-image:url('${this.resolveImageUrl(this.user.avatar)}');background-size:cover;background-position:center"`
             : '';
@@ -998,13 +1122,23 @@ class NextaStoreApp {
         const seller = sellerOnboardingDone
             ? `<a href="/dashboard" class="account-menu-item"><i class="fas fa-gauge"></i> Seller dashboard</a>`
             : (role === 'seller' ? `<a href="/onboarding" class="account-menu-item"><i class="fas fa-store"></i> Finish setting up your store</a>` : '');
-        const admin = role === 'admin'
-            ? `<a href="/admin" class="account-menu-item"><i class="fas fa-gauge-high"></i> Admin console</a>` : '';
-        // NextaStore Circle (earn by inviting sellers). Admins run the program instead of joining it.
-        const earn = role !== 'admin'
-            ? `<a href="/circle" class="account-menu-item"><i class="fas fa-handshake"></i> Earn with NextaStore</a>` : '';
+        // NextaStore Circle (earn by inviting sellers).
+        const earn = `<a href="/circle" class="account-menu-item"><i class="fas fa-handshake"></i> Earn with NextaStore</a>`;
         const becomeSeller = role === 'buyer'
             ? `<button type="button" class="account-menu-item is-divider-top" data-account-action="seller"><i class="fas fa-store"></i> Become a seller</button>` : '';
+
+        // On the Circle / Crew pages the menu is the program's own (js/growth-shell.js), not the marketplace's.
+        const programMenu = containerEl.hasAttribute('data-account-program') && window.GrowthShell && window.GrowthShell.accountMenu
+            ? window.GrowthShell.accountMenu(this) : null;
+        const menuRole = programMenu ? programMenu.role : (role === 'seller' ? 'Seller account' : 'Buyer account');
+        const menuItems = programMenu ? programMenu.itemsHtml : `${verify}${seller}
+                        <a href="/orders" class="account-menu-item"><i class="fas fa-box"></i> Orders</a>
+                        <a href="/favorites" class="account-menu-item"><i class="fas fa-heart"></i> Favorites</a>
+                        <a href="/following" class="account-menu-item"><i class="fas fa-store"></i> Following</a>
+                        <a href="/messages" class="account-menu-item"><i class="fas fa-message"></i> Messages <span class="unread-badge hidden" data-unread-badge></span></a>
+                        ${earn}
+                        <a href="/support" class="account-menu-item"><i class="fas fa-life-ring"></i> Help &amp; support</a>
+                        ${becomeSeller}`;
 
         containerEl.innerHTML = `
             <div class="notification-nav-wrap" data-notification-nav-wrap>
@@ -1027,22 +1161,16 @@ class NextaStoreApp {
                 <button type="button" class="account-menu-trigger" data-account-trigger aria-haspopup="true" aria-expanded="false" aria-label="Open account menu">
                     <span class="user-avatar-circle" ${avatarStyle}>${this.user.avatar ? '' : initial}</span>
                     <span class="account-trigger-name">${this.escapeHtml((this.user.name || 'Account').split(' ')[0])}</span>
-                    ${role === 'seller' ? this.renderSellerBadges(this.store, { compact: true, limit: 1 }) : ''}
+                    ${role === 'seller' && !programMenu ? this.renderSellerBadges(this.store, { compact: true, limit: 1 }) : ''}
                     <i class="fas fa-chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="account-menu-dropdown" data-account-dropdown role="menu">
                     <div class="account-menu-header">
                         <span class="user-avatar-circle" ${avatarStyle}>${this.user.avatar ? '' : initial}</span>
-                        <div><div class="account-menu-name">${this.escapeHtml(this.user.name || 'User')} ${role === 'seller' ? this.renderSellerBadges(this.store, { compact: false, limit: 2 }) : ''}</div><div class="account-menu-role">${role === 'admin' ? this.escapeHtml(this.user.adminLevel === 'super_admin' ? 'Super administrator' : (this.user.adminRole?.name || 'Administrator')) : (role === 'seller' ? 'Seller account' : 'Buyer account')}</div></div>
+                        <div><div class="account-menu-name">${this.escapeHtml(this.user.name || 'User')} ${role === 'seller' && !programMenu ? this.renderSellerBadges(this.store, { compact: false, limit: 2 }) : ''}</div><div class="account-menu-role">${menuRole}</div></div>
                     </div>
                     <div class="account-menu-items">
-                        ${verify}${seller}${admin}
-                        <a href="/orders" class="account-menu-item"><i class="fas fa-box"></i> Orders</a>
-                        <a href="/favorites" class="account-menu-item"><i class="fas fa-heart"></i> Favorites</a>
-                        <a href="/following" class="account-menu-item"><i class="fas fa-store"></i> Following</a>
-                        <a href="/messages" class="account-menu-item"><i class="fas fa-message"></i> Messages <span class="unread-badge hidden" data-unread-badge></span></a>
-                        ${earn}
-                        ${becomeSeller}
+                        ${menuItems}
                     </div>
                     <button type="button" class="account-menu-item account-menu-logout" data-account-action="logout"><i class="fas fa-right-from-bracket"></i> Log out</button>
                 </div>
@@ -1773,6 +1901,7 @@ class NextaStoreApp {
             if (TokenStorage.read('nextastore_token') !== requestToken) return;
             this.token = fresh;
             TokenStorage.write('nextastore_token', fresh, this.remembered);
+            this.shareSession();
             this.startSessionExpiryWatch();
         } catch (err) {
             // Never let a renewal problem break the request that carried it.
@@ -1875,6 +2004,7 @@ class NextaStoreApp {
                 // "closed" page can look like that shop. Nothing else is trusted from it.
                 if (error.store && typeof error.store === 'object') failure.store = error.store;
                 if (error.duplicate && typeof error.duplicate === 'object') failure.duplicate = error.duplicate;
+                if (typeof error.email === 'string') failure.email = error.email;   // EMAIL_NOT_VERIFIED: the address to offer "resend" for
                 throw failure;
             }
 
@@ -2012,9 +2142,9 @@ class NextaStoreApp {
         if (!origin && publicUrl) {
             try { origin = new URL(publicUrl).origin; } catch { /* ignore */ }
         }
-        if (!origin) origin = 'https://nextastores.com';
+        if (!origin) origin = 'https://nextastore.ug';
 
-        let host = 'nextastores.com';
+        let host = 'nextastore.ug';
         try { host = new URL(origin).host; } catch { /* keep the safe fallback */ }
 
         const shareUrl = clean ? new URL(path, `${origin.replace(/\/$/, '')}/`).href : '';
@@ -2096,4 +2226,31 @@ const app = new NextaStoreApp();
         const later = () => (window.requestIdleCallback ? window.requestIdleCallback(start, { timeout: 1500 }) : setTimeout(start, 400));
         if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
     } catch (e) { /* the assistant is optional: never break a page over it */ }
+})();
+
+
+// Notices published by staff (Staff Console > Announcements). Quiet by design: a failure shows nothing, and a notice someone
+// closed stays closed for the rest of that browser session.
+(function loadAnnouncements() {
+    const start = async () => {
+        try {
+            if (!document.body || document.body.hasAttribute('data-auth-page') || !window.app || typeof app.apiRequest !== 'function') return;
+            let closed = []; try { closed = JSON.parse(sessionStorage.getItem('nx_ann_closed') || '[]'); } catch (e) { /* storage blocked */ }
+            const r = await app.apiRequest('/announcements/active');
+            const items = (r.data || []).filter((a) => !closed.includes(a.id));
+            if (!items.length) return;
+            const wrap = document.createElement('div'); wrap.className = 'nx-announce'; wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Announcements');
+            items.forEach((a) => {
+                const row = document.createElement('div'); row.className = `nx-announce-item ${['warning', 'success'].includes(a.tone) ? a.tone : ''}`;
+                const t = document.createElement('strong'); t.textContent = a.title; row.append(t);
+                if (a.body) row.append(document.createTextNode(` ${a.body} `));
+                const x = document.createElement('button'); x.type = 'button'; x.textContent = '\u00d7'; x.setAttribute('aria-label', 'Dismiss announcement'); x.style.cssText = 'background:none;border:0;font-size:1.2rem;cursor:pointer;margin-left:8px;color:inherit';
+                x.addEventListener('click', () => { row.remove(); closed.push(a.id); try { sessionStorage.setItem('nx_ann_closed', JSON.stringify(closed)); } catch (e) { /* ignore */ } });
+                row.append(x); wrap.append(row);
+            });
+            document.body.insertBefore(wrap, document.body.firstChild);
+            if (!document.querySelector('link[href*="support.css"]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/css/support.css'; document.head.appendChild(l); }
+        } catch (e) { /* announcements are optional */ }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(start, 600)); else setTimeout(start, 600);
 })();

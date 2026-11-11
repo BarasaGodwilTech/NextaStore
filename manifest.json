@@ -1,7 +1,7 @@
 {
   "name": "NextaStore",
   "short_name": "NextaStore",
-  "description": "Build your online store. Mobile-first storefronts for East African entrepreneurs — accept Mobile Money, manage orders, and grow.",
+  "description": "Build your online store. Mobile-first storefronts for East African entrepreneurs — list products, manage orders, and agree payment directly with your buyers.",
   "id": "/index.html",
   "start_url": "/",
   "scope": "/",

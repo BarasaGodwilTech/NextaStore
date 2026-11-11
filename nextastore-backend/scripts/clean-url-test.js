@@ -61,7 +61,7 @@ const NO_SAFETY_NET = new Set(['store-detail', 'offline']);
   check('manifest start_url and shortcuts are clean (the app id stays put on purpose)',
     manifest.start_url === '/' && manifest.shortcuts.every(s => !/\.html/.test(s.url)) && manifest.id === '/index.html');
 
-  const backend = ['src/helpers.js', 'src/seo.js', 'src/routes/admin.js', 'src/routes/auth.js', 'src/routes/orders.js', 'src/routes/products.js', 'src/routes/store.js', 'src/routes/messages.js']
+  const backend = ['src/helpers.js', 'src/seo.js', 'src/routes/auth.js', 'src/routes/orders.js', 'src/routes/products.js', 'src/routes/store.js', 'src/routes/messages.js']
     .map(f => ['nextastore-backend/' + f, read('nextastore-backend/' + f)]);
   const linkRe = /(link\s*[:=]|\/\/[^\n]*\n)?[^\n]*['"`]\/?(?:dashboard|messages|orders|subscription|product-detail|forgot-password|verify-email|marketplace|stores)\.html/;
   const bad = backend.filter(([f, src]) => src.split('\n').some(l => !/^\s*(\/\/|\*|\/\*)/.test(l) && linkRe.test(l) && !/legacyLink|messages\.html\?conversation=\$\{conversation\.id\}/.test(l)));
@@ -95,15 +95,15 @@ check('clean-url: never throws when history is missing', (() => { try { vm.runIn
   check('redirect: an old .html link lands on the clean address', go('cart.html?x=1', buyer) === '/cart?x=1' && go('index.html', buyer) === '/');
   check('redirect: a store address is opened from the site root', go('amina-crafts', buyer) === '/amina-crafts');
   check('redirect: seller-only pages stay seller-only, in every spelling', ['dashboard', 'dashboard.html', 'product-form?id=1', 'subscription', 'onboarding'].every(r => go(r, buyer) === null) && go('dashboard', seller) === '/dashboard');
-  check('redirect: admin-only page stays admin-only, in every spelling', go('admin', seller) === null && go('admin.html', seller) === null && go('admin', admin) === '/admin');
+  check('redirect: the old admin pages and the staff console are never a post-login destination, for anyone', ['admin', 'admin.html', 'admin-growth', 'staff', 'staff/anything'].every(r => go(r, seller) === null && go(r, buyer) === null && go(r, admin) === null));
   check('redirect: login/signup pages can never be a destination (no loops)', ['login', 'login.html', 'signup', 'forgot-password', 'verify-email.html'].every(r => go(r, buyer) === null));
   check('redirect: a product address (<store>/<name>-<key>) is opened from the site root, query kept, for buyers and sellers',
     go('amina-crafts/blue-sofa-x7k2m9ab', buyer) === '/amina-crafts/blue-sofa-x7k2m9ab' && go('amina-crafts/blue-sofa-x7k2m9ab?x=1', seller) === '/amina-crafts/blue-sofa-x7k2m9ab?x=1');
   check('redirect: a second part never gets past a page rule - only the first part names the page',
-    go('admin/x', seller) === null && go('dashboard/x', buyer) === null && go('login/x', buyer) === null && go('admin/x', admin) === '/admin/x');
+    go('admin/x', seller) === null && go('dashboard/x', buyer) === null && go('login/x', buyer) === null && go('staff/x', seller) === null);
   check('redirect: hostile values are refused (no scheme, host, dot, backslash, empty or extra part)',
     ['https://evil.example', '//evil.example', 'javascript:alert(1)', '../x', '/dashboard', '', 'a/b/c', 'a//b', 'a/../b', 'a/b.html', 'a/evil.example', 'a\\b', 'a/https://evil.example', '/a/b'].every(r => go(r, seller) === null));
-  check('redirect: role home pages are clean', vm.runInNewContext(chunk + '[homeFor({role:"admin"}), homeFor({role:"seller"}), homeFor({role:"buyer"})].join()', { SessionData: {} }) === '/admin,/dashboard,/marketplace');
+  check('redirect: role home pages are clean', vm.runInNewContext(chunk + '[homeFor({role:"seller"}), homeFor({role:"buyer"})].join()', { SessionData: {} }) === '/dashboard,/marketplace');
 }
 
 // ---- 5. notification links (js/main.js) -------------------------------------------

@@ -1,5 +1,5 @@
 /**
- * Private file storage for the growth program (Crew members' ID photos and visit photos).
+ * Private file storage for the growth program (Crew members' ID photos, card photos and visit photos).
  *
  * Everything else on this API goes to the PUBLIC R2 bucket and comes back as a public URL
  * (utils.saveImageIfDataUrl). An ID photo must never be one of those. This module writes to a
@@ -22,7 +22,7 @@ const EXT_BY_MIME = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg
 const MIME_BY_EXT = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', pdf: 'application/pdf' };
 const MAX_BYTES = 8 * 1024 * 1024;
 // Only keys this module wrote can be read back (a stored value is never trusted as a bucket path).
-const KEY_RE = /^private\/growth-(?:kyc|visits)\/[A-Za-z0-9_-]{1,64}\/[0-9a-f-]{36}\.(?:png|jpg|webp|pdf)$/;
+const KEY_RE = /^private\/growth-(?:kyc|visits|card)\/[A-Za-z0-9_-]{1,64}\/[0-9a-f-]{36}\.(?:png|jpg|webp|pdf)$/;
 
 let client = null;
 function s3() {

@@ -7,8 +7,8 @@
  *   - css / js / images / fonts: serve the saved copy at once, refresh it quietly in the background.
  * Change VERSION to retire every saved copy at once.
  */
-const VERSION = 'nexta-growth-v4';
-const SHELL = ['/', '/css/growth.css', '/js/growth-hosts.js', '/js/growth-ui.js', '/js/growth-qr.js', '/js/growth-kit.js', '/js/growth.js',
+const VERSION = 'nexta-growth-v6';
+const SHELL = ['/', '/css/growth.css', '/js/growth-hosts.js', '/js/growth-shell.js', '/js/growth-art.js', '/js/growth-ui.js', '/js/growth-qr.js', '/js/growth-kit.js', '/js/growth.js',
     '/assets/growth-brand/svg/lockup-circle.svg', '/assets/growth-brand/svg/lockup-crew.svg'];
 
 self.addEventListener('install', (event) => {

@@ -1,7 +1,7 @@
 /* NextaStore Circle + NextaStore Crew (brand kit v5).
    Self-contained: it carries its own colour tokens, so it looks right on circle. / crew. even if the main
    site's tokens change. Every class is prefixed gp- so nothing here can clash with an existing page.
-   Colourways: <body data-program="circle"> (green, also the invite page and admin) and "scout" (the internal key for Crew: gold). */
+   Colourways: <body data-program="circle"> (green, also the invite page and admin) and "crew" (the internal key for Crew: gold). */
 
 :root {
     --gp-ink: #0B3B2B; --gp-forest: #0F5A41; --gp-deep: #062A1D; --gp-green: #01B075; --gp-mint: #2EDDA2;
@@ -17,7 +17,7 @@
     --gp-btn: var(--gp-forest); --gp-btn-hover: var(--gp-ink); --gp-btn-text: #fff;
     --gp-hero: linear-gradient(135deg, #0B3B2B 0%, #0F5A41 62%, #138A62 100%); --gp-ring: rgba(46, 221, 162, .30); --gp-kicker-bg: rgba(255,255,255,.16);
 }
-body[data-program="scout"] {
+body[data-program="crew"] {
     --gp-accent: var(--gp-gold); --gp-accent-ink: var(--gp-amber-dark); --gp-accent-soft: #FFF4DC;
     --gp-btn: var(--gp-gold); --gp-btn-hover: #F2A21A; --gp-btn-text: var(--gp-ink);
     --gp-hero: linear-gradient(135deg, #062A1D 0%, #0B3B2B 58%, #17503C 100%); --gp-ring: rgba(255, 176, 56, .34); --gp-kicker-bg: rgba(255,176,56,.18);
@@ -26,7 +26,7 @@ body[data-program="scout"] {
 .gp-body { margin: 0; background: var(--gp-bg); color: var(--gp-text); font-family: var(--gp-font); -webkit-text-size-adjust: 100%; }
 .gp-body *, .gp-body *::before, .gp-body *::after { box-sizing: border-box; }
 .gp-body :focus-visible { outline: 3px solid var(--gp-accent); outline-offset: 2px; border-radius: 8px; }
-body[data-program="scout"] :focus-visible { outline-color: var(--gp-amber); }
+body[data-program="crew"] :focus-visible { outline-color: var(--gp-amber); }
 .gp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .gp-skip { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--gp-ink); color: #fff; padding: .7rem 1rem; border-radius: 10px; font-weight: 700; text-decoration: none; }
 .gp-skip:focus { top: 10px; }
@@ -42,7 +42,7 @@ body[data-program="scout"] :focus-visible { outline-color: var(--gp-amber); }
 .gp-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--gp-danger); color: #fff; font-size: .68rem; font-weight: 800; display: inline-grid; place-items: center; }
 .gp-count[hidden] { display: none; }
 .gp-top .account-nav-slot { flex: 0 0 auto; }
-@media (max-width: 760px) {
+@media (max-width: 1020px) {   /* was 760: on a tablet the tabs and the account button no longer fit on one line and ran off the screen */
     .gp-top { flex-wrap: wrap; min-height: 0; padding: 10px 4% 0; gap: 6px 12px; position: relative; }
     .gp-brand img { height: 44px; }   /* 44px tall = 165px wide: still above the 160px minimum */
     .gp-top .account-nav-slot { margin-left: auto; }
@@ -84,7 +84,7 @@ body[data-program="scout"] :focus-visible { outline-color: var(--gp-amber); }
 .gp-hero p { margin: 0; max-width: 560px; line-height: 1.6; font-size: .92rem; color: rgba(255,255,255,.93); }
 .gp-hero b { color: #fff; }
 .gp-hero .gp-kicker { background: var(--gp-kicker-bg); color: #fff; }
-body[data-program="scout"] .gp-hero .gp-kicker { color: var(--gp-gold-soft); }
+body[data-program="crew"] .gp-hero .gp-kicker { color: var(--gp-gold-soft); }
 .gp-code { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .gp-code-chip { font: 800 1.15rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .06em; padding: .8rem 1rem; border-radius: 14px; background: rgba(255,255,255,.14); border: 1px dashed rgba(255,255,255,.55); user-select: all; }
 .gp-linkbox { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: .78rem; color: rgba(255,255,255,.85); }
@@ -97,10 +97,10 @@ body[data-program="scout"] .gp-hero .gp-kicker { color: var(--gp-gold-soft); }
 .gp-btn:active { transform: translateY(1px); }
 .gp-btn.is-primary { background: var(--gp-btn); border-color: var(--gp-btn); color: var(--gp-btn-text); }
 .gp-btn.is-primary:hover { background: var(--gp-btn-hover); border-color: var(--gp-btn-hover); }
-body[data-program="scout"] .gp-btn.is-primary:hover { color: var(--gp-ink); }
+body[data-program="crew"] .gp-btn.is-primary:hover { color: var(--gp-ink); }
 /* the main call to action INSIDE a dark green hero: white, so it never blends into the green */
-body:not([data-program="scout"]) .gp-hero .gp-btn.is-primary { background: #fff; border-color: #fff; color: var(--gp-ink); }
-body:not([data-program="scout"]) .gp-hero .gp-btn.is-primary:hover { background: var(--gp-mint); border-color: var(--gp-mint); color: var(--gp-ink); }
+body:not([data-program="crew"]) .gp-hero .gp-btn.is-primary { background: #fff; border-color: #fff; color: var(--gp-ink); }
+body:not([data-program="crew"]) .gp-hero .gp-btn.is-primary:hover { background: var(--gp-mint); border-color: var(--gp-mint); color: var(--gp-ink); }
 .gp-btn.is-light { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); color: #fff; }
 .gp-btn.is-light:hover { background: rgba(255,255,255,.26); }
 .gp-btn.is-danger { color: var(--gp-danger); border-color: #F1C4C0; }
@@ -125,7 +125,7 @@ body:not([data-program="scout"]) .gp-hero .gp-btn.is-primary:hover { background:
 /* ---------- progress, rank ---------- */
 .gp-bar { height: 10px; border-radius: 999px; background: var(--gp-line); overflow: hidden; }
 .gp-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gp-green), var(--gp-mint)); border-radius: 999px; }
-body[data-program="scout"] .gp-bar > i { background: linear-gradient(90deg, var(--gp-amber), var(--gp-gold)); }
+body[data-program="crew"] .gp-bar > i { background: linear-gradient(90deg, var(--gp-amber), var(--gp-gold)); }
 .gp-rank { display: flex; align-items: center; gap: 12px; }
 .gp-rank-badge { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, var(--gp-gold-soft), var(--gp-gold)); color: var(--gp-ink); font-size: 1.4rem; flex: 0 0 auto; }
 
@@ -228,3 +228,239 @@ body[data-program="scout"] .gp-bar > i { background: linear-gradient(90deg, var(
 .gp-sectionnote { font-size: .78rem; color: var(--gp-muted); margin: 0 0 8px; }
 
 @media print { .gp-top, .gp-btn, .gp-toasts, .gp-foot, .gp-offline { display: none !important; } }
+
+/* ======================================================================================================
+   WIP 112: the programs as their own small app. Sections (tabs) + a bottom bar on phones, a calmer header menu on wide screens.
+   Markup comes from js/growth-shell.js: #gpTopNav (header) and #gpTabbar (bottom) carry the same links.
+   ====================================================================================================== */
+.gp-top nav[hidden], .gp-tabbar[hidden] { display: none; }
+.gp-panel { display: grid; gap: 18px; outline: none; }
+.gp-panel[hidden] { display: none; }
+
+/* header menu (wide screens): icon and label side by side, like the old nav */
+.gp-tabs .gp-tab-ic { position: relative; display: inline-grid; place-items: center; width: 1.1rem; }
+.gp-tabs .gp-tab-ic i { font-size: .95rem; }
+.gp-tabs .gp-count { position: absolute; top: -9px; right: -12px; min-width: 17px; height: 17px; padding: 0 4px; font-size: .62rem; }
+.gp-dot { position: absolute; top: -3px; right: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--gp-green); box-shadow: 0 0 0 2px #fff; }
+body[data-program="crew"] .gp-dot { background: var(--gp-gold); }
+
+/* bottom bar (phones): five equal thumb-sized targets, safe-area aware */
+.gp-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: #fff; border-top: 1px solid var(--gp-line); box-shadow: 0 -6px 20px rgba(11, 59, 43, .08); padding: 0 4px env(safe-area-inset-bottom); }
+.gp-tabbar a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 58px; padding: 6px 2px 5px; color: var(--gp-muted); text-decoration: none; font-size: .68rem; font-weight: 700; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+.gp-tabbar a:active { background: var(--gp-soft); }
+.gp-tabbar .gp-tab-ic { position: relative; display: grid; place-items: center; width: 44px; height: 28px; border-radius: 999px; transition: background .15s ease, color .15s ease; }
+.gp-tabbar .gp-tab-ic i { font-size: 1.1rem; }
+.gp-tabbar a.is-active { color: var(--gp-accent-ink); }
+.gp-tabbar a.is-active .gp-tab-ic { background: var(--gp-accent-soft); }
+.gp-tabbar .gp-count { position: absolute; top: -4px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; font-size: .62rem; }
+.gp-tabbar .gp-dot { top: 1px; right: 8px; }
+.gp-tabbar .gp-tab-label { line-height: 1.1; }
+
+@media (max-width: 760px) {
+    .has-tabbar .gp-top .gp-tabs { display: none; }                         /* the bottom bar takes over */
+    .has-tabbar { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+    .has-tabbar .gp-toasts { bottom: calc(78px + env(safe-area-inset-bottom)); }
+    .has-tabbar .gp-top { padding-bottom: 8px; }
+    .has-tabbar .gp-foot { padding-bottom: 12px; }
+}
+@media (min-width: 761px) { .gp-tabbar { display: none; } }
+@media (prefers-reduced-motion: reduce) { .gp-tabbar .gp-tab-ic { transition: none; } }
+
+/* Home: three tiles that jump to the section they summarise */
+.gp-stats { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.gp-stat { display: grid; gap: 2px; padding: 14px; background: var(--gp-card); border: 1px solid var(--gp-line); border-radius: var(--gp-radius); box-shadow: var(--gp-shadow); text-decoration: none; color: var(--gp-text); min-width: 0; }
+.gp-stat:hover { border-color: var(--gp-line-strong); }
+.gp-stat i { color: var(--gp-accent-ink); margin-bottom: 4px; }
+.gp-stat small { color: var(--gp-muted); font-size: .72rem; font-weight: 700; line-height: 1.25; }
+.gp-stat strong { font-size: 1.05rem; color: var(--gp-ink); overflow-wrap: anywhere; }
+@media (max-width: 520px) { .gp-stats { grid-template-columns: 1fr; } .gp-stat { grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; } .gp-stat i { margin: 0; } }
+
+/* More: account facts and links */
+.gp-dl { margin: 10px 0 0; display: grid; gap: 10px; }
+.gp-dl > div { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--gp-line); }
+.gp-dl > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.gp-dl dt { color: var(--gp-muted); font-size: .8rem; font-weight: 700; }
+.gp-dl dd { margin: 0; font-weight: 700; color: var(--gp-ink); text-align: right; overflow-wrap: anywhere; }
+.gp-dl code { font: 700 .85rem ui-monospace, Menlo, Consolas, monospace; }
+.gp-link { color: var(--gp-accent-ink); font-weight: 700; font-size: .85rem; text-decoration: none; }
+.gp-link:hover { text-decoration: underline; }
+
+.gp-top .account-menu-dropdown button.account-menu-item { width: 100%; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; }
+
+/* ======================================================================================================
+   WIP 113: the admin console (admin-growth.html). Same tokens as the member app, denser layout.
+   ====================================================================================================== */
+.ag-h1 { margin: 0; font-size: 1.35rem; color: var(--gp-ink); }
+.ag-head { margin-bottom: 4px; align-items: center; flex-wrap: wrap; gap: 10px; }
+.ag-scope { display: inline-flex; gap: 4px; padding: 4px; background: #fff; border: 1px solid var(--gp-line); border-radius: 999px; }
+.ag-scope button { border: 0; background: none; font: inherit; font-weight: 700; font-size: .8rem; color: var(--gp-muted); padding: .4rem .85rem; border-radius: 999px; cursor: pointer; min-height: 36px; }
+.ag-scope button.is-active { background: var(--gp-accent-soft); color: var(--gp-accent-ink); }
+.ag-two { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.ag-kpis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 10px; }
+.ag-kpi { background: var(--gp-soft); border-radius: 14px; padding: 12px 14px; display: grid; gap: 2px; min-width: 0; }
+.ag-kpi small { color: var(--gp-muted); font-weight: 700; font-size: .72rem; }
+.ag-kpi strong { font-size: 1.05rem; color: var(--gp-ink); overflow-wrap: anywhere; }
+.ag-kpi span { color: var(--gp-muted); font-size: .7rem; }
+.ag-needs { display: grid; gap: 8px; }
+.ag-need { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; text-decoration: none; background: var(--gp-warn-bg); color: var(--gp-text); border: 1px solid transparent; }
+.ag-need.tone-bad { background: var(--gp-danger-bg); }
+.ag-need b { font-size: 1.4rem; color: var(--gp-ink); min-width: 2ch; text-align: center; }
+.ag-need span { display: grid; font-weight: 700; } .ag-need small { font-weight: 500; color: var(--gp-muted); }
+.ag-need:hover { border-color: var(--gp-line-strong); }
+.ag-sub { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 2px; }
+.ag-sub a { padding: .45rem .9rem; border-radius: 999px; background: #fff; border: 1px solid var(--gp-line); color: var(--gp-muted); font-weight: 700; font-size: .82rem; text-decoration: none; min-height: 38px; display: inline-flex; align-items: center; }
+.ag-sub a.is-active { background: var(--gp-accent-soft); color: var(--gp-accent-ink); border-color: transparent; }
+.ag-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.ag-filters .gp-field { margin: 0; min-width: 150px; flex: 1 1 160px; }
+.ag-bulk { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 12px; margin-bottom: 10px; background: var(--gp-soft); border-radius: 14px; }
+.ag-bulk[hidden] { display: none; }
+.ag-pager { margin-top: 12px; }
+.ag-inline { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; } .ag-inline .gp-field { flex: 1 1 260px; margin: 0; }
+.ag-line { padding: 8px 0; border-bottom: 1px solid var(--gp-line); }
+.ag-check { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; font-size: .84rem; }
+.ag-check .is-ok { color: var(--gp-ok); } .ag-check .is-bad { color: var(--gp-danger); font-weight: 700; }
+.ag-calc { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin-top: 12px; }
+@media (min-width: 980px) { .ag-calc { grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); } }
+.ag-calc-in { display: grid; gap: 10px; align-content: start; }
+.ag-calc-in .gp-field { margin: 0; }
+.ag-unit { display: flex; align-items: center; gap: 8px; } .ag-unit input { flex: 1; min-width: 0; } .ag-unit span { color: var(--gp-muted); font-size: .8rem; min-width: 3.4rem; }
+.ag-verdict { padding: 14px 16px; border-radius: 14px; display: grid; gap: 4px; background: var(--gp-ok-bg); color: var(--gp-ok); }
+.ag-verdict.tone-warn { background: var(--gp-warn-bg); color: var(--gp-warn); } .ag-verdict.tone-bad { background: var(--gp-danger-bg); color: var(--gp-danger); } .ag-verdict.tone-muted { background: var(--gp-soft); color: var(--gp-muted); }
+.ag-verdict small { color: inherit; opacity: .9; }
+.ag-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0 12px; border-bottom: 1px solid var(--gp-line); }
+.ag-tabs button { border: 0; background: none; font: inherit; font-weight: 700; font-size: .84rem; color: var(--gp-muted); padding: .55rem .8rem; cursor: pointer; border-bottom: 3px solid transparent; min-height: 40px; }
+.ag-tabs button.is-active { color: var(--gp-accent-ink); border-bottom-color: var(--gp-accent-ink); }
+.ag-pane { min-height: 180px; max-height: 52vh; overflow: auto; padding-right: 4px; }
+.ag-actions { margin-top: 14px; flex-wrap: wrap; }
+.ag-find { padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; background: var(--gp-soft); }
+.ag-find p { margin: 4px 0; } .ag-find.tone-bad { background: var(--gp-danger-bg); } .ag-find.tone-warn { background: var(--gp-warn-bg); } .ag-find.tone-good { background: var(--gp-ok-bg); }
+.gp-dot-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gp-warn); vertical-align: 1px; } .gp-dot-inline.tone-bad { background: var(--gp-danger); }
+.gp-inline-hidden { display: none; }
+#agTabs a { white-space: nowrap; }
+
+/* WIP 113: the join flow. Requirements first, then short steps. */
+.gp-reqs { list-style: none; margin: 10px 0 14px; padding: 0; display: grid; gap: 8px; }
+.gp-reqs li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--gp-soft); }
+.gp-reqs li span { display: grid; gap: 2px; } .gp-reqs small { color: var(--gp-muted); font-weight: 500; }
+.gp-reqs .is-ok i { color: var(--gp-ok); } .gp-reqs .is-bad { background: var(--gp-warn-bg); } .gp-reqs .is-bad i { color: var(--gp-danger); }
+.gp-stepper { list-style: none; display: flex; gap: 6px; padding: 0; margin: 4px 0 16px; counter-reset: s; }
+.gp-stepper li { flex: 1 1 0; min-width: 0; display: grid; justify-items: center; gap: 4px; position: relative; color: var(--gp-muted); font-size: .72rem; font-weight: 700; text-align: center; }
+.gp-stepper li::before { content: ''; position: absolute; top: 14px; left: -50%; width: 100%; height: 2px; background: var(--gp-line); z-index: 0; }
+.gp-stepper li:first-child::before { display: none; }
+.gp-stepper li span { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid var(--gp-line); font-size: .8rem; }
+.gp-stepper li em { font-style: normal; line-height: 1.2; }
+.gp-stepper .is-now { color: var(--gp-accent-ink); } .gp-stepper .is-now span { border-color: var(--gp-accent-ink); background: var(--gp-accent-soft); }
+.gp-stepper .is-done span { background: var(--gp-accent-ink); border-color: var(--gp-accent-ink); color: #fff; } .gp-stepper .is-done::before, .gp-stepper .is-now::before { background: var(--gp-accent-ink); }
+.gp-step[hidden], .gp-form [hidden] { display: none; }
+.gp-sum { margin-bottom: 12px; padding: 4px 14px; background: var(--gp-soft); border-radius: 14px; }
+.gp-idprev { max-width: 100%; max-height: 220px; border-radius: 12px; border: 1px solid var(--gp-line); margin-top: 8px; }
+
+/* WIP 113: "Get started" and the rank medal */
+.gp-start-ring { color: var(--gp-accent-ink); }
+.gp-start-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.gp-start-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--gp-soft); }
+.gp-start-list li small { display: block; color: var(--gp-muted); font-weight: 500; }
+.gp-start-list li.is-next { background: var(--gp-accent-soft); outline: 2px solid var(--gp-accent-ink); outline-offset: -2px; }
+.gp-start-list li.is-done { opacity: .72; } .gp-start-list li.is-done b { text-decoration: line-through; }
+.gp-start-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid var(--gp-line-strong); font-weight: 800; font-size: .8rem; }
+.gp-start-list .is-done .gp-start-n { background: var(--gp-accent-ink); border-color: var(--gp-accent-ink); color: #fff; }
+.gp-rank-badge svg { display: block; }
+.gp-rank-badge.is-medal { background: none; width: auto; height: auto; border-radius: 0; box-shadow: none; }
+
+/* ---- WIP 115: phone-width fixes ---------------------------------------------------------------------------------------------
+   A grid with no column definition sizes its one column to the widest thing inside it. On a phone that stretched the whole More tab
+   (and the forms) past the screen edge, clipping the right side of every card. minmax(0, 1fr) lets the column shrink to the screen. */
+.gp-shell, .gp-panel, .gp-recruit, .gp-form, .gp-dl, .gp-steps, .gp-reqs, .ag-needs, .ag-check, .gp-studio-actions, .ag-calc-in { grid-template-columns: minmax(0, 1fr); }
+.gp-card, .gp-panel > *, .gp-shell > * { min-width: 0; }
+.gp-card code, .gp-needs code, .gp-hero code { overflow-wrap: anywhere; }
+.gp-ticks { list-style: none; margin: 8px 0 14px; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.gp-ticks li { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; line-height: 1.45; }
+.gp-ticks li > i { flex: 0 0 22px; height: 22px; margin-top: 1px; border-radius: 50%; display: grid; place-items: center; background: var(--gp-accent-soft); color: var(--gp-accent-ink); font-size: .68rem; }
+.gp-sub { margin: 14px 0 0; font-size: .82rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; color: var(--gp-muted); }
+.gp-upgrade h2 { display: flex; gap: 10px; align-items: center; font-size: 1.02rem; }
+.gp-upgrade h2 > i { color: var(--gp-accent-ink); }
+
+/* The admin tab strip scrolls sideways on a phone but hides its scrollbar, so the clipped last tab looked like the end. A soft fade on the
+   right edge says "there is more", and the active tab is scrolled into view when you open it. */
+@media (max-width: 1020px) {
+    #agTabs { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); padding-right: 28px; scroll-padding: 0 28px; }
+}
+.ag-quote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--gp-line-strong); background: var(--gp-soft); border-radius: 0 10px 10px 0; font-size: .86rem; overflow-wrap: anywhere; }
+.ag-fine { font-size: .76rem; margin: 8px 0 0; }
+
+/* Chips hold real sentences (a rank name, a percentage, a threshold): let them wrap instead of running past a narrow screen. */
+.gp-chip { white-space: normal; max-width: 100%; overflow-wrap: anywhere; }
+
+/* The admin console has seven tabs, so it needs the wrapped header up to a wider screen than the member pages do. */
+@media (min-width: 1021px) and (max-width: 1240px) {
+    body[data-admin-required] .gp-top { flex-wrap: wrap; min-height: 0; padding: 10px 4% 0; gap: 6px 12px; }
+    body[data-admin-required] .gp-top .account-nav-slot { margin-left: auto; }
+    body[data-admin-required] .gp-top nav { order: 3; width: 100%; margin-left: 0; border-top: 1px solid var(--gp-line); padding: 4px 0; }
+    body[data-admin-required] .gp-top nav a { flex: 1 0 auto; justify-content: center; }
+}
+
+/* ---------- WIP 121: Crew application form (Figma "NextaStore Crew - Application Form"): ID photo tiles, map work-area picker ---------- */
+.gp-uploads { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.gp-up { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 190px; padding: 16px 12px; text-align: center; background: var(--gp-soft); border: 1.5px dashed var(--gp-green); border-radius: 14px; cursor: pointer; }
+.gp-up:hover { background: #E9F5EF; }
+.gp-up:focus-within { outline: 3px solid var(--gp-accent); outline-offset: 2px; }
+.gp-up b { font-size: .82rem; color: var(--gp-ink); }
+.gp-up small { font-size: .72rem; color: var(--gp-muted); }
+.gp-up-art svg { display: block; }
+.gp-up-prev { width: 100%; height: 84px; border-radius: 10px; overflow: hidden; background: #fff; }
+.gp-up-prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gp-up-pill { margin-top: 6px; padding: 5px 12px; border: 1px solid var(--gp-line-strong); border-radius: 999px; background: #fff; color: var(--gp-forest); font-size: .74rem; font-weight: 700; }
+.gp-up.is-set { border-style: solid; background: var(--gp-ok-bg); }
+.gp-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--gp-info-bg); color: var(--gp-info); font-size: .78rem; line-height: 1.5; }
+.gp-areamap { position: relative; min-height: 240px; border-radius: 14px; overflow: hidden; border: 1px solid var(--gp-line-strong); background: var(--gp-soft); }
+.gp-areamap-empty { width: 100%; min-height: 240px; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 20px; border: 0; cursor: pointer; font: inherit; color: var(--gp-ink);
+    background: repeating-linear-gradient(0deg, transparent 0 46px, rgba(15,90,65,.06) 46px 48px), repeating-linear-gradient(90deg, transparent 0 46px, rgba(15,90,65,.06) 46px 48px), var(--gp-soft); }
+.gp-areamap-empty i { font-size: 1.6rem; color: var(--gp-forest); }
+.gp-areamap-empty small { color: var(--gp-muted); font-size: .76rem; }
+.gp-areamap-empty:focus-visible { outline: 3px solid var(--gp-accent); outline-offset: -3px; }
+.gp-arealist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.gp-arealist:empty { display: none; }
+.gp-arealist li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--gp-line); border-radius: 12px; background: #fff; }
+.gp-arealist li > i { color: var(--gp-forest); }
+.gp-arealist li > span { flex: 1 1 auto; min-width: 0; display: grid; }
+.gp-arealist li small { color: var(--gp-muted); font-size: .72rem; }
+@media (max-width: 640px) {
+    .gp-uploads { grid-template-columns: 1fr; }
+    .gp-up { flex-direction: row; justify-content: flex-start; text-align: left; min-height: 0; gap: 12px; padding: 12px 14px; flex-wrap: wrap; }
+    .gp-up-prev { width: 72px; height: 56px; }
+    .gp-up-pill { margin: 0 0 0 auto; }
+}
+.gp-checks label span { white-space: nowrap; }
+.gp-checks input[type=radio], .gp-checks input[type=checkbox] { accent-color: var(--gp-forest); }
+
+/* ---- Crew ID card: the photo step (js/crew-card-photo.js) and the card on the dashboard (js/crew-card.js) ---- */
+.gp-photo { display: grid; gap: 14px; }
+.gp-photoguide { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gp-photoguide li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--gp-soft); border: 1px solid var(--gp-line); border-radius: 12px; font-size: .8rem; font-weight: 600; color: var(--gp-ink); }
+.gp-photoguide i { width: 18px; text-align: center; color: var(--gp-amber); }
+.gp-photo-pick { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 12px; border: 1.5px dashed var(--gp-green); border-radius: 14px; background: var(--gp-soft); cursor: pointer; }
+.gp-photo-pick:hover { background: #E9F5EF; }
+.gp-photo-pick:focus-within { outline: 3px solid var(--gp-accent); outline-offset: 2px; }
+.gp-photo-frame { display: grid; place-items: center; width: 132px; aspect-ratio: 3 / 4; border-radius: 16px; background: #fff; border: 1px solid var(--gp-line-strong); overflow: hidden; }
+.gp-photo-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gp-photo-frame.is-set { border: 3px solid var(--gp-gold); }
+.gp-photo-rate { padding: 14px; border-radius: 14px; background: #fff; border: 1px solid var(--gp-line); }
+.gp-photo-rate[hidden] { display: none; }
+.gp-photo-rate.is-good { border-color: #9AD6B8; background: var(--gp-ok-bg); }
+.gp-photo-rate.is-ok { border-color: #F2D18A; background: var(--gp-warn-bg); }
+.gp-photo-rate.is-poor { border-color: #F2B8B2; background: var(--gp-danger-bg); }
+.gp-photo-score { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; color: var(--gp-ink); }
+.gp-photo-score span { font-weight: 800; }
+.gp-photo-rate ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.gp-photo-rate li { display: flex; gap: 10px; align-items: flex-start; font-size: .84rem; }
+.gp-photo-rate li small { display: block; color: var(--gp-muted); font-size: .76rem; margin-top: 2px; }
+.gp-photo-rate li.is-ok i { color: var(--gp-ok); } .gp-photo-rate li.is-warn i { color: var(--gp-amber); } .gp-photo-rate li.is-bad i { color: var(--gp-danger); }
+.gp-photo-rate li i { margin-top: 3px; }
+@media (max-width: 420px) { .gp-photoguide { grid-template-columns: 1fr; } }
+
+.gp-idcard { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px; align-items: center; }
+.gp-idcard-stage { filter: drop-shadow(0 14px 28px rgba(6, 42, 29, .28)); }
+.gp-idcard-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 600 / 940; border-radius: 7%; }
+.gp-idcard-side { display: grid; gap: 12px; align-content: center; }
+.gp-idcard-side [hidden] { display: none; }
+@media (max-width: 640px) { .gp-idcard { grid-template-columns: 1fr; justify-items: center; } .gp-idcard-stage { width: min(100%, 300px); } .gp-idcard-side { width: 100%; } }

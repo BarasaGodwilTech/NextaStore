@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0b3b2b">
+<title>Sign in · NextaStore Staff</title>
+<script src="js/clean-url.js"></script>
+<link rel="icon" href="../assets/brand/svg/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/staff.css">
+<link rel="stylesheet" href="css/kit.css">
+</head>
+<body data-page="login">
+<a class="skip" href="#main">Skip to content</a>
+<div class="auth">
+  <aside class="auth-side">
+    <div>
+      <img src="../assets/brand/svg/icon.svg" alt="">
+      <h1>NextaStore Staff Console</h1>
+      <p>Management tools for the NextaStore team. This is a separate system from the marketplace: staff accounts cannot shop, and shopper accounts cannot sign in here.</p>
+    </div>
+    <ul>
+      <li>Every sign-in needs a password and an authenticator code.</li>
+      <li>Sessions end after a period of inactivity.</li>
+      <li>Every action is recorded in the audit log.</li>
+    </ul>
+    <p class="small">Authorised staff only. Activity on this system is monitored.</p>
+  </aside>
+  <main class="auth-main" id="main" tabindex="-1">
+    <div class="auth-card" id="view" aria-live="polite"><div class="skel"></div></div>
+  </main>
+</div>
+<noscript><p class="empty">This console needs JavaScript.</p></noscript>
+<script src="config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

@@ -3,37 +3,15 @@ const config = require('./config');
 const prisma = require('./prisma');
 const { apiError } = require('./utils');
 
-const ADMIN_PERMISSIONS = Object.freeze({
-    DASHBOARD_VIEW: 'dashboard.view',
-    USERS_VIEW: 'users.view',
-    USERS_EDIT: 'users.edit',
-    USERS_SUSPEND: 'users.suspend',
-    USERS_PASSWORD_RESET: 'users.password_reset',
-    ADMINS_MANAGE: 'admins.manage',
-    ROLES_MANAGE: 'roles.manage',
-    REPORTS_REVIEW: 'reports.review',
-    SUBSCRIPTIONS_REVIEW: 'subscriptions.review',
-    SETTINGS_MANAGE: 'settings.manage',
-    FOLLOWUPS_MANAGE: 'followups.manage',
-    AUDIT_VIEW: 'audit.view',
-    // NextaStore Circle / Crew (growth program). Keep review and payouts on different people.
-    GROWTH_VIEW: 'growth.view',
-    GROWTH_REVIEW: 'growth.review',
-    GROWTH_PAYOUTS: 'growth.payouts',
-    GROWTH_SETTINGS: 'growth.settings'
-});
-
 // Only HS256 is ever issued (see signSessionToken). Pinning it on verify means a
 // token can never be accepted under a different algorithm than the one we sign with.
 const JWT_ALGORITHM = 'HS256';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
-// Which lifetime rules apply to this person. Admins never get "remember me",
-// whatever the login form sent: their consoles hold everyone's data, so they
-// get the short inactivity window and the short absolute cap.
+// Which lifetime rules apply to this person. (Administrators are not users any more: they sign in to the Staff Console,
+// see src/staff/, with server-side sessions of their own. Nothing here knows about them.)
 function policyFor(role, rememberMe) {
-    if (role === 'admin') return config.sessionPolicies.admin;
     return rememberMe ? config.sessionPolicies.remember : config.sessionPolicies.session;
 }
 
@@ -57,8 +35,7 @@ async function userFromAuthHeader(req) {
     let user;
     try {
         user = await prisma.user.findUnique({
-            where: { id: payload.userId },
-            include: { adminRole: true }
+            where: { id: payload.userId }
         });
     } catch (err) {
         console.error('[auth] user lookup failed:', err.message);
@@ -98,7 +75,7 @@ async function userFromAuthHeader(req) {
 // can never be given a lifetime that runs past the absolute cap.
 function signSessionToken(user, rememberMe = false, authTime = null) {
     const now = nowSeconds();
-    const rm = user.role !== 'admin' && !!rememberMe;
+    const rm = !!rememberMe;
     const policy = policyFor(user.role, rm);
     const at = authTime || now;
     const exp = Math.min(now + policy.ttlSeconds, at + policy.maxAgeSeconds);
@@ -210,46 +187,6 @@ function requireSeller(req, res, next) {
     next();
 }
 
-function isSuperAdmin(user) {
-    return !!user && user.role === 'admin' && user.adminLevel === 'super_admin';
-}
-
-function hasAdminPermission(user, permission) {
-    if (!user || user.role !== 'admin') return false;
-    if (isSuperAdmin(user)) return true;
-    return Array.isArray(user.adminRole?.permissions) && user.adminRole.permissions.includes(permission);
-}
-
-function requireAdmin(req, res, next) {
-    if (!req.user) return next(apiError('You need to be logged in.', 401));
-    if (req.user.role !== 'admin') return next(apiError('Administrator access is required.', 403));
-    next();
-}
-
-function requireAdminPermission(permission) {
-    return (req, res, next) => {
-        if (!req.user) return next(apiError('You need to be logged in.', 401));
-        if (!hasAdminPermission(req.user, permission)) {
-            return next(apiError('You do not have permission to perform this action.', 403));
-        }
-        next();
-    };
-}
-
-// For endpoints that more than one kind of admin legitimately needs (e.g. the
-// user-update route is shared by "edit accounts" and "suspend accounts"), the
-// route guard admits any of the listed permissions and the handler then
-// enforces the exact one per field it is asked to change.
-function requireAnyAdminPermission(...permissions) {
-    return (req, res, next) => {
-        if (!req.user) return next(apiError('You need to be logged in.', 401));
-        if (!permissions.some((p) => hasAdminPermission(req.user, p))) {
-            return next(apiError('You do not have permission to perform this action.', 403));
-        }
-        next();
-    };
-}
-
 function notFound(req, res, next) {
     next(apiError(`No route for ${req.method} ${req.path}`, 404));
 }
@@ -261,9 +198,13 @@ function errorHandler(err, req, res, next) {
     const status = err.status || err.statusCode || 500;
     if (status >= 500 && status !== 503) console.error(err);
     const payload = { message: status >= 500 && status !== 503 ? 'Something went wrong.' : (err.message || 'Something went wrong.') };
-    if (err.code && (/^TOKEN_|^ACCOUNT_|^STORE_|^SERVICE_UNAVAILABLE$/.test(err.code))) payload.code = err.code;
+    if (err.code && (/^TOKEN_|^ACCOUNT_|^STORE_|^GOOGLE_|^RESEND_|^EMAIL_|^ALREADY_VERIFIED$|^SERVICE_UNAVAILABLE$/.test(err.code))) payload.code = err.code;
+    // The Circle / Crew module answers with plain machine codes (NOT_A_PARTNER, EMAIL_UNVERIFIED, PROGRAM_CLOSED ...) that its pages act on.
+    // Without this, a signed-in person who simply has not joined yet got "We could not load this page" instead of the join form.
+    else if (err.code && /\/growth(\/|\?|$)/.test(req.originalUrl || '') && /^[A-Z][A-Z_]{2,40}$/.test(err.code)) payload.code = err.code;
     // The "shutters down" page of a lapsed store needs the shop's public
     // identity (name/logo/colour) - see closedStoreIdentity in helpers.js.
+    if (err.code === 'EMAIL_NOT_VERIFIED' && err.meta && err.meta.email) payload.email = err.meta.email;   // so the page can offer "resend" for the right address
     if (err.code === 'STORE_INACTIVE' && err.meta && typeof err.meta === 'object') payload.store = err.meta;
     if (err.code === 'DUPLICATE_PRODUCT' && err.meta) { payload.code = err.code; payload.duplicate = err.meta; }
     if (status === 413) payload.message = 'That upload is too large.';
@@ -277,12 +218,6 @@ module.exports = {
     optionalAuth,
     requireAuth,
     requireSeller,
-    requireAdmin,
-    requireAdminPermission,
-    requireAnyAdminPermission,
-    hasAdminPermission,
-    isSuperAdmin,
-    ADMIN_PERMISSIONS,
     notFound,
     errorHandler
 };

@@ -150,7 +150,7 @@ async function starters(req, res) {
     }
 }
 
-/** WIP 93 Tier 3.3: GET the assistant's last-50 handoff list (scrubbed questions). Read-only; mounted ONLY behind admin permission (routes/admin.js). */
+/** WIP 93 Tier 3.3: GET the assistant's last-50 handoff list (scrubbed questions). Read-only; mounted ONLY behind a staff permission (staff/routes/support.js). */
 async function handoffs(req, res) {
     try {
         const up = await callUpstream('/api/assistant/handoffs', {}, AbortSignal.timeout(5000));

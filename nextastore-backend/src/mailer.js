@@ -24,20 +24,39 @@ function getTransporter() {
     return transporter;
 }
 
+// Is email usable right now? Used to decide whether password sign-up can safely ask people to confirm an address.
+//  - SMTP configured: yes, unless the last few sends in a row failed (a provider outage): then we say no for a few minutes so people
+//    are steered to "Continue with Google" instead of creating an account whose confirmation email never arrives.
+//  - SMTP not configured: yes in development (the link is printed in the server log and handed back to the page), no in production.
+const OUTAGE_AFTER = 3, OUTAGE_WINDOW_MS = 5 * 60 * 1000;
+let consecutiveFailures = 0, lastFailureAt = 0;
+function status() {
+    const configured = !!process.env.SMTP_HOST;
+    if (!configured) return { configured: false, available: !config.isProd, devMode: !config.isProd };
+    const outage = consecutiveFailures >= OUTAGE_AFTER && Date.now() - lastFailureAt < OUTAGE_WINDOW_MS;
+    return { configured: true, available: !outage, devMode: false };
+}
+
 async function sendMail({ to, subject, text, html }) {
     const t = getTransporter();
     if (!t) {
         console.log(`\n[mailer] SMTP not configured — logging email instead of sending:\nTo: ${to}\nSubject: ${subject}\n${text}\n`);
         return { delivered: false };
     }
-    await t.sendMail({
-        from: process.env.SMTP_FROM || 'NextaStore <no-reply@nextastores.com>',
-        to,
-        subject,
-        text,
-        html
-    });
+    try {
+        await t.sendMail({
+            from: process.env.SMTP_FROM || 'NextaStore <no-reply@nextastores.com>',
+            to,
+            subject,
+            text,
+            html
+        });
+    } catch (err) {
+        consecutiveFailures += 1; lastFailureAt = Date.now();
+        throw err;
+    }
+    consecutiveFailures = 0;
     return { delivered: true };
 }
 
-module.exports = { sendMail };
+module.exports = { sendMail, status };

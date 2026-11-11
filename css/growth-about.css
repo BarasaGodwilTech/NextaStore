@@ -50,3 +50,81 @@
 .ga-hero, .ga-hero h1, .ga-hero p, .ga-hero .ga-kicker, .ga-hero .ga-note, .ga-cta h2, .ga-cta p, .ga-cta .ga-note { color: #fff; }
 .ga-hero .ga-btn, .ga-cta .ga-btn { color: var(--gp-btn-text); }
 .ga-grid { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }
+
+/* WIP 112: the button now follows the visitor (member / other program / closed), so it needs a calm note and a clear disabled look. */
+.ga-hero .ga-member-note, .ga-cta .ga-member-note { margin: .9rem auto 0; padding: .7rem .95rem; max-width: 34rem; border-radius: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); font-size: .88rem; line-height: 1.5; opacity: 1; text-align: left; }
+.ga-hero .ga-member-note { margin-left: 0; }
+.ga-btn[aria-disabled="true"] { cursor: not-allowed; }
+.ga-status[hidden], [data-status-dot][hidden], [data-signedout-note][hidden], [data-needs-store][hidden], [data-fee][hidden] { display: none; }
+
+/* ==========================================================================================
+   WIP 113: the upgraded info pages: hero art, glance chips, earnings picture, rank ladder, compare table
+   ========================================================================================== */
+.ga-hero .ga-wrap { align-items: center; }
+.ga-art { width: min(100%, 460px); justify-self: center; filter: drop-shadow(0 18px 30px rgba(11, 59, 43, .22)); }
+.ga-art svg { display: block; width: 100%; height: auto; }
+@media (max-width: 760px) { .ga-art { width: min(80%, 320px); margin-top: 6px; } }
+.ga-glance { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; }
+.ga-glance[hidden] { display: none; }
+.ga-glance li { padding: .35rem .8rem; border-radius: 999px; font-size: .82rem; font-weight: 700; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .34); }
+
+.ga-calcsec[hidden], #gaLadderSec[hidden], #gaCompareSec[hidden] { display: none; }
+.ga-calc { display: grid; gap: 20px; margin-top: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { .ga-calc { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; } }
+.ga-calc-in, .ga-calc-out { background: #fff; border: 1px solid var(--ga-line, #dfe9e3); border-radius: 22px; padding: 22px; box-shadow: 0 8px 24px rgba(11, 59, 43, .06); }
+.ga-calc-in { display: grid; gap: 20px; align-content: start; }
+.ga-field { display: grid; gap: 8px; } .ga-field label, .ga-label { font-weight: 700; font-size: .92rem; }
+.ga-field input[type=range] { width: 100%; accent-color: var(--ga-accent, #0f7b53); height: 36px; }
+.ga-ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.ga-ranks button { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 14px; border: 2px solid var(--ga-line, #dfe9e3); background: #fff; font: inherit; font-weight: 700; font-size: .82rem; cursor: pointer; min-height: 48px; }
+.ga-ranks button.is-on { border-color: var(--ga-accent, #0f7b53); background: var(--ga-soft, #f2fbf6); }
+.ga-calc-out { display: grid; gap: 12px; align-content: center; }
+.ga-total { display: grid; gap: 2px; } .ga-total small { color: #5b6e65; font-weight: 700; } .ga-total strong { font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--ga-accent, #0f7b53); line-height: 1.1; }
+.ga-calc-out dl { margin: 0; display: grid; gap: 8px; } .ga-calc-out dl div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; background: var(--ga-soft, #f2fbf6); border-radius: 12px; font-size: .9rem; }
+.ga-calc-out dt { color: #3d5249; } .ga-calc-out dd { margin: 0; font-weight: 800; white-space: nowrap; }
+.ga-calc-out p { margin: 0; font-size: .8rem; color: #5b6e65; }
+
+.ga-ladder { list-style: none; margin: 18px 0 0; padding: 4px 2px 14px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; }
+.ga-rank { scroll-snap-align: start; display: grid; justify-items: center; gap: 4px; text-align: center; padding: 18px 14px; background: #fff; border: 1px solid var(--ga-line, #dfe9e3); border-radius: 22px; box-shadow: 0 8px 24px rgba(11, 59, 43, .06); }
+.ga-rank b { font-size: 1.05rem; } .ga-rank span { color: #5b6e65; font-size: .84rem; } .ga-rank em { font-style: normal; font-weight: 800; color: var(--ga-accent, #0f7b53); }
+.ga-medal svg { display: block; }
+.ga-compare th, .ga-compare td { text-align: left; vertical-align: top; }
+.ga-compare td:first-child { font-weight: 700; white-space: nowrap; }
+body[data-program="crew"] { --ga-accent: #8a5a00; --ga-soft: #fff7e6; --ga-line: #f0e0bd; }
+
+
+/* ==========================================================================================
+   WIP 116: "Circle or Crew?" comparison. It used to be a 460px-wide table with no scroll box around it, so on a phone the Crew column
+   was cut off. Wide screens keep the table; phones get one card per row, Circle and Crew side by side inside it.
+   ========================================================================================== */
+.ga-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--gp-line); border-radius: var(--gp-radius); background: #fff; }
+.ga-compare { min-width: 0; }
+.ga-compare td { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+    .ga-scroll { overflow: visible; border: 0; background: transparent; }
+    .ga-compare, .ga-compare tbody, .ga-compare tr, .ga-compare td { display: block; width: 100%; min-width: 0; box-sizing: border-box; }
+    .ga-compare thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* still read out, just not drawn */
+    .ga-compare tr { margin: 0 0 12px; background: #fff; border: 1px solid var(--gp-line); border-radius: 16px; overflow: hidden; }
+    .ga-compare tr:last-child { margin-bottom: 0; }
+    .ga-compare td { border-bottom: 1px solid var(--gp-line); padding: .7rem .9rem; }
+    .ga-compare td:first-child { background: var(--gp-soft); color: var(--gp-ink); white-space: normal; font-weight: 800; }
+    .ga-compare td:last-child { border-bottom: 0; }
+    .ga-compare td[data-label] { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: .6rem; align-items: start; font-weight: 600; color: var(--gp-ink); }
+    .ga-compare td[data-label]::before { content: attr(data-label); font-size: .7rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #5b6e65; padding-top: .15rem; }
+    .ga-compare td[data-label="Crew"] { font-weight: 800; color: var(--gp-accent-ink); }
+}
+
+/* ---- The Join / Open-my-dashboard button never flashes the wrong words (WIP 127) ----
+   A visitor with a session may already be a member. Until we know (cached answer or /growth/me), the button is a quiet
+   placeholder of the same size, so nothing jumps and nothing reads "Join" for a person who is already in. */
+.ga-btn[data-state="pending"] { position: relative; pointer-events: none; color: transparent; background: rgba(255,255,255,.22); border-color: transparent; min-width: 15rem; min-height: 3.1rem; overflow: hidden; }
+.ga-btn[data-state="pending"] span, .ga-btn[data-state="pending"] i { visibility: hidden; }
+.ga-btn[data-state="pending"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.35) 50%, transparent 80%); transform: translateX(-100%); animation: ga-shimmer 1.2s ease-in-out infinite; }
+@keyframes ga-shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .ga-btn[data-state="pending"]::after { animation: none; } }
+/* Someone with a session: the "free to join / sign in" lines are for people who are not in yet, so they wait too. */
+html[data-session="1"] body:not([data-member]) [data-signedout-note], html[data-session="1"] body:not([data-member]) .ga-note [data-note-text],
+body[data-member="wait"] [data-signedout-note], body[data-member="wait"] .ga-note [data-note-text] { display: none; }
+/* Already in a program: the button is the only call to action. No "free to join", no "sign in", no "apply" words. */
+body[data-member="in"] .ga-note [data-note-text], body[data-member="in"] [data-status-dot], body[data-member="in"] [data-signedout-note] { display: none; }
+body[data-member="in"] .ga-glance { display: none; }

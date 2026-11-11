@@ -216,7 +216,9 @@ location /api/ { proxy_pass http://api_upstream; }
 location = /index.html { return 301 /; }
 location / {
     # /dashboard.html -> 301 -> /dashboard (query string kept)
-    if ($request_uri ~ "^/([A-Za-z0-9_-]+)\.html(\?.*)?$") { return 301 /$1$2; }
+    if ($request_uri ~ "^/((?:staff/)?[A-Za-z0-9_-]+)\.html(\?.*)?$") { return 301 /$1$2; }
+    rewrite ^/staff/index$ /staff/ permanent;     # /staff/index.html -> /staff/ (Staff Console home)
+    rewrite ^/staff$ /staff/ permanent;            # the console uses relative links, so it needs the trailing slash
     try_files $uri $uri.html $uri/ @api;         # file, then <name>.html, then ...
 }
 location @api { proxy_pass http://api_upstream; } # ... otherwise the API
@@ -244,6 +246,7 @@ exists - there is no table of pages to update:
 | Where | How |
 | --- | --- |
 | Production (nginx, above) | `try_files $uri $uri.html ...` serves `/name` from `name.html`; the `if ($request_uri ~ ...\.html)` line 301-redirects `/name.html` to `/name`. `$request_uri` is the *original* request, which is why the internal `.html` lookup cannot redirect-loop. |
+| Staff Console (`/staff/login`, `/staff/invite`, `/staff/reset`, `/staff/`) | Same rule: the `(staff/)?` part of the nginx regex covers it, and `staff/js/clean-url.js` tidies the address bar locally. Invitation and reset e-mails already link to the clean addresses. |
 | Local (`start-local.bat`) | `http-server -e html` serves `/name` from `name.html`. It cannot 301, so `js/clean-url.js` rewrites a typed `/name.html` to `/name` in the address bar (no reload). |
 | Netlify / Cloudflare Pages / Vercel (`cleanUrls`) | Already the default (or one setting); no extra rule needed. |
 | Any other static host | Turn on its "clean URLs" / "pretty URLs" option, or add the equivalent of the nginx lines. Without it `/dashboard` will 404 - the link generators (`app.storeLink`, notification links, emails) all use clean addresses. |
@@ -518,3 +521,11 @@ Test without a database: `node scripts/assistant-proxy-test.js`; browser: `npm r
 - `SUPPORT_EMAIL`: public support email included in Nexi live facts. If unset, the current site address `support@nextawillstechnologies.com` is used as a fallback; set this in production to the monitored support address.
 - `SUPPORT_URL`: public support page URL included in Nexi live facts. If unset, `https://nextawillstechnologies.com` is used as a fallback; set this in production to the intended support page.
 - `SMTP_HOST` and `SMTP_FROM`: configure production e-mail delivery. Nexi exposes only a yes/no e-mail-enabled signal derived from whether `SMTP_HOST` is set; it never exposes SMTP credentials or configuration values. Production should set both `SMTP_HOST` and `SMTP_FROM`.
+
+
+## Sign-in setup
+Google sign-in and email verification: see `../docs/AUTH_SETUP.md`.
+
+
+## Staff Console
+The admin side is now a separate system (own sign-in, MFA, sessions and roles). See `docs/staff-console/README.md`. Production needs `STAFF_SECRET` and `STAFF_MFA_KEY`; run `npm run test:staff` for its security tests.

@@ -36,7 +36,7 @@ const scenarios = [
 ];
 const partners = [
     { name: 'Circle member', program: 'circle', rank: null },
-    ...R.SCOUT_RANKS.map((r) => ({ name: `Scout ${r.label}`, program: 'scout', rank: r }))
+    ...R.CREW_RANKS.map((r) => ({ name: `Crew ${r.label}`, program: 'crew', rank: r }))
 ];
 
 console.log(`Seller Pass: UGX ${month.toLocaleString('en-UG')} a month. Reward base: ${R.COMMISSION.baseMonths} month.`);

@@ -363,7 +363,10 @@
         state = null;
     }
 
-    function open({ initialDistrict, initialCoordinates, onSave, onCancel } = {}) {
+    function open({ initialDistrict, initialCoordinates, onSave, onCancel, title, hint, saveLabel } = {}) {
+        // Optional wording, so other pages (the Crew working area) can reuse the picker without saying "store". Defaults are the store wording.
+        const T = { title: title || 'Select Your Store Location', hint: hint || 'Tap the map to mark your exact shop (optional). Drag the pin to adjust.', save: saveLabel || 'Save Location' };
+        const escT = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         const district = districtCoordinates[initialDistrict] ? initialDistrict : 'kampala';
         const center = districtCoordinates[district];
         const hasExisting = Boolean(initialCoordinates);
@@ -375,7 +378,7 @@
         overlay.innerHTML = `
             <div class="map-modal-content" role="dialog" aria-modal="true" aria-labelledby="mapPickerTitle">
                 <div class="map-modal-header">
-                    <h3 id="mapPickerTitle">Select Your Store Location</h3>
+                    <h3 id="mapPickerTitle">${escT(T.title)}</h3>
                     <button type="button" class="map-modal-close" id="mpCloseBtn" aria-label="Close map picker">${ICON_X}</button>
                 </div>
                 <div class="map-modal-filters">
@@ -397,7 +400,7 @@
                     <div id="mpMapContainer" class="custom-map-container"></div>
                     <div class="map-guidance" id="mpGuidance" style="display:none;">
                         <i class="fas fa-hand-pointer" aria-hidden="true"></i>
-                        <span>Tap the map to mark your exact shop (optional). Drag the pin to adjust.</span>
+                        <span>${escT(T.hint)}</span>
                         <button type="button" class="map-guidance-dismiss" id="mpGuidanceDismiss" aria-label="Dismiss tip">${ICON_X}</button>
                     </div>
                     <div class="map-locate-status" id="mpLocateStatus" role="status" style="display:none;"></div>
@@ -412,7 +415,7 @@
                 </div>
                 <div class="map-action-bar">
                     <button type="button" class="btn btn-secondary" id="mpCancelBtn"><i class="fas fa-times"></i> Cancel</button>
-                    <button type="button" class="btn btn-primary" id="mpSaveBtn"><i class="fas fa-check"></i> Save Location</button>
+                    <button type="button" class="btn btn-primary" id="mpSaveBtn"><i class="fas fa-check"></i> ${escT(T.save)}</button>
                 </div>
             </div>
         `;

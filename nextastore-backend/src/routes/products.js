@@ -34,7 +34,7 @@ router.get('/deals', cacheResponse(30), async (req, res, next) => {
         const products = await prisma.product.findMany({
             // Draft stores (setup not launched), and stores whose trial has
             // lapsed with no confirmed payment, never surface here either.
-            where: { onSale: true, deletedAt: null, store: storefrontVisibleWhere() },
+            where: { onSale: true, deletedAt: null, moderationStatus: 'ok', store: storefrontVisibleWhere() },
             include: { store: true },
             orderBy: { sold: 'desc' },
             take: 8
@@ -103,6 +103,7 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
             // Draft stores, and stores whose trial has lapsed with no
             // confirmed payment, never appear in the marketplace-wide
             // product grid.
+            moderationStatus: 'ok',
             store: storefrontVisibleWhere(),
             ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
             ...(category ? { category } : {}),
@@ -147,7 +148,7 @@ router.get('/public', optionalAuth, cacheResponse(30), async (req, res, next) =>
 router.get('/public/:id', optionalAuth, async (req, res, next) => {
     try {
         const product = await prisma.product.findFirst({
-            where: { id: req.params.id, deletedAt: null, store: storefrontVisibleWhere() }
+            where: { id: req.params.id, deletedAt: null, moderationStatus: 'ok', store: storefrontVisibleWhere() }
         });
         if (!product) throw apiError('Product not found.', 404);
         res.json({ data: serializeProduct(product) });
@@ -178,6 +179,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
         const where = {
             storeId: store.id,
             deletedAt: null,
+            // Staff-removed listings stay visible to the owning seller only.
+            ...(req.user?.id === store.ownerId ? {} : { moderationStatus: 'ok' }),
             ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
             ...(category ? { category } : {}),
             ...(Number.isFinite(minPrice) ? { price: { gte: minPrice } } : {}),

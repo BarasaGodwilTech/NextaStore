@@ -37,7 +37,7 @@
             return;
         }
         if (s.status !== 'active' && s.status !== 'frozen') { host.hidden = true; return; }
-        const page = H ? H.program(s.program === 'scout' ? 'scout' : 'circle') : (s.program === 'scout' ? '/crew' : '/circle');
+        const page = H ? H.program(s.program === 'crew' ? 'crew' : 'circle') : (s.program === 'crew' ? '/crew' : '/circle');
         const link = H ? H.invite(s.code) : `${location.origin}/invite?ref=${encodeURIComponent(s.code)}`;
         const text = `Open your own online shop on NextaStore, free for ${rules.trialDays} days: ${link}`;
         host.innerHTML = `<section class="gp-card"><div class="gp-spread"><div><span class="gp-kicker"><i class="fas fa-circle-nodes" aria-hidden="true"></i> Your invite code</span>

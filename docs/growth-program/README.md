@@ -2,7 +2,7 @@
 
 Everything for **NextaStore Circle** (the affiliate program) and **NextaStore Crew** (the field team), in one folder. The two names are kept; each is shown with its descriptor ("Affiliate Program", "Field Team") in logos, page titles, kickers and link previews.
 **Nothing here is wired into NextaStore yet.** Connecting it is a short, ordered job: see `docs/03_INTEGRATION_GUIDE.md`.
-**Round 5 (this version):** brand kit v5 applied. The field team is now **NextaStore Crew** (it was Nexta Scouts) and Circle is **NextaStore Circle**: new names, logos, colours, `crew.` subdomain, `CREW-` codes (old `SCOUT-` codes still work). Start with `docs/08_V5_CREW_REBRAND.md`.
+**Round 5 (this version):** brand kit v5 applied. The field team is now **NextaStore Crew** (it was Nexta Scouts) and Circle is **NextaStore Circle**: new names, logos, colours, `crew.` subdomain, `CREW-` codes. Start with `docs/08_V5_CREW_REBRAND.md`.
 **Round 4:** the brand kit v3 was applied, Circle and Crew can live on their own subdomains, and a bug sweep plus UI and UX clean-up was done: `docs/07_V4_CHANGES.md`.
 
 ## In one paragraph
@@ -38,6 +38,7 @@ growth-program/
     05_PARTNER_TERMS_DRAFT.md         draft terms (needs a lawyer)
     06_STRATEGY_VERIFICATION.md       each strategy and rule, and how it was confirmed; bugs found and fixed
     07_V4_CHANGES.md                  round 4: branding, subdomains, bugs fixed, decisions to confirm, what is not verified
+    10_SCOUT_TO_CREW_INTERNAL_RENAME.md  round 6: the internal word `scout` renamed to `crew` (database, API, code, tests); nothing of the old name is kept
     08_V5_CREW_REBRAND.md             round 5: brand kit v5, Scouts becomes Crew, what changed and what stayed
     brand/                            the brand guide and sheet
     screens/                          screenshots from the browser test
@@ -69,7 +70,7 @@ growth-program/
          growth-ref.js invite.js growth-invite-widget.js admin-growth.js
     assets/growth-brand/   logos, favicons, share images from brand kit v3
   assistant/
-    12-earn-with-nexta.md  growth-faq.json     knowledge for Nexi (no hard-coded amounts)
+    (Nexi's growth knowledge is the growth_* entries in ai-assistant/src/knowledge/faq-instant.json, no hard-coded amounts)
 ```
 
 ## Try it

@@ -16,8 +16,11 @@
  * The session hand-off, main-site side. Lives at /auth-bridge on the MAIN host only.
  * It only ever talks to the two origins the SERVER wrote into window.NEXTA_HOSTS (never to anything taken
  * from the address), so it cannot be used to send a sign-in to a stranger's site.
- *   ?to=<url>                 redirect mode: send the visitor back to <url>#nxs=<session> (or on to /login)
+ *   ?to=<url>                 redirect mode: send the visitor back to <url>#nxs=<session> (or on to /login?redirect=circle|crew)
  *   ?mode=check&parent=<origin>   framed mode: tell the parent page whether this is still the same session
+ *   ?mode=logout&to=<url>     sign-out hop: ends the session HERE too, then returns to <url>. Signing out on circle./crew.
+ *                             only clears that host's own storage; without this hop the very next visit would find the
+ *                             main site still signed in and sign the person straight back in.
  */
 (function () {
     'use strict';
@@ -46,12 +49,24 @@
 
     var to; try { to = new URL(q.get('to')); } catch (e) { to = null; }
     if (!to || allowed.indexOf(to.origin) < 0 || to.username || to.password) return home();
+
+    if (q.get('mode') === 'logout') {
+        // Same clean-up as a normal "Log out" on the main site (js/main.js endSession + SessionData), minus anything that needs the app.
+        ['nextastore_token', 'nextastore_user', 'nextastore_remember'].forEach(function (k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* ignore */ } });
+        ['nextastore_cart_v1', 'ns_messages_failed_v1', 'nextastore_notification_prefs', 'ns_data_owner', 'ns_last_activity'].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+        ['nextastore_pending_action', 'ns_session_ended'].forEach(function (k) { try { sessionStorage.removeItem(k); } catch (e) { /* ignore */ } });
+        location.replace(to.origin + '/');   // always the program's front door, never a deep link: a signed-out visitor lands on its about page
+        return;
+    }
     if (!token) {
         // Signed out on the main site too. Someone just landing on a program's home reads about the program first;
         // the Join button there comes back with ?go=1, which goes on to sign-in.
         var HS = window.NEXTA_HOSTS || {}, about = to.origin === HS.crew ? '/about-crew' : to.origin === HS.circle ? '/about-circle' : '';
         if (about && (to.pathname === '/' || to.pathname === '') && to.searchParams.get('go') !== '1') { location.replace(about); return; }
-        location.replace('/login?next=' + encodeURIComponent(to.href)); return;
+        // login.html understands ?redirect=<page name>, not a full address: send them back through the main site's own /circle or /crew
+        // (which hands them on to the right host), and keep go=1 so they land on the join form rather than the about page again.
+        var back = to.origin === HS.crew ? 'crew' : 'circle', qp = new URLSearchParams(to.search); qp.set('go', '1');
+        location.replace('/login?redirect=' + encodeURIComponent(back + '?' + qp.toString())); return;
     }
     var payload = b64uEncode(JSON.stringify({ t: token, u: user, r: remember }));
     location.replace(to.origin + to.pathname + to.search + '#nxs=' + payload);

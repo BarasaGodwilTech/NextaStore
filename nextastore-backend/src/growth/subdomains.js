@@ -14,8 +14,9 @@
  *   both hosts     /api/*, /css, /js, /assets, fonts, images: passed on to your normal handlers
  *                  /sw.js, /manifest.json, /favicon.ico: this program's own (so it installs as its own app)
  *                  anything else (/login, /marketplace, /admin ...): redirected to the same path on the main site
- *   main host      /circle, /crew, /scouts (old name), /invite, /i/CODE: redirected to the right subdomain (old links and
+ *   main host      /circle, /crew, /invite, /i/CODE: redirected to the right subdomain (old links and
  *                  notifications keep working). /auth-bridge may be framed by the two subdomains only.
+ *                  /about-circle and /about-crew (the public information pages) stay here, served with the host settings filled in.
  */
 'use strict';
 
@@ -26,7 +27,10 @@ const STATIC_EXT = new Set(['.css', '.js', '.map', '.png', '.jpg', '.jpeg', '.gi
 const PASS_PREFIXES = ['/api/', '/css/', '/js/', '/assets/', '/webfonts/', '/fonts/', '/img/', '/images/'];
 const PASS_EXACT = new Set(['/health', '/healthz', '/robots.txt']);
 
-const PAGES = { circle: 'circle.html', crew: 'crew.html', invite: 'invite.html' };
+const PAGES = { circle: 'circle.html', crew: 'crew.html', invite: 'invite.html', apply: 'crew-apply.html' };
+// The public information pages live on the MAIN site in every mode. Serving them here (instead of as plain files) lets the
+// server write the host settings and the absolute link-preview addresses into them, the same as the program pages.
+const ABOUT_PAGES = { '/about-circle': 'about-circle.html', '/about-crew': 'about-crew.html' };
 
 function createHostRouter(opts = {}) {
     const { hosts } = opts;
@@ -111,6 +115,14 @@ function createHostRouter(opts = {}) {
         return false;
     }
 
+    // The Crew application is its own page. /crew-apply works everywhere; /apply is the short address on the crew host.
+    const isApplyPath = (p) => ['/crew-apply', '/crew-apply.html', '/apply', '/apply.html'].includes(p);
+    const aboutRequest = (p) => Object.prototype.hasOwnProperty.call(ABOUT_PAGES, p.replace(/\.html$/, ''));
+    function serveAbout(req, res, p, qs) {
+        if (/\.html$/.test(p)) return redirect(res, p.replace(/\.html$/, '') + qs, 301);   // one address per page: the clean one
+        return sendPage(req, res, ABOUT_PAGES[p], p === '/about-crew' ? 'crew' : 'circle');
+    }
+
     return function growthHostRouter(req, res, next) {
         // Prefix a fixed origin instead of using it as a base: a request line like "//evil.com" must stay a PATH, never become a host.
         const url = new URL(`http://x${String(req.url).startsWith('/') ? '' : '/'}${req.url}`);
@@ -129,9 +141,10 @@ function createHostRouter(opts = {}) {
             if (!readOnly) return next();
             if (p === '/circle' || p === '/circle.html') return sendPage(req, res, PAGES.circle, 'circle');
             if (p === '/crew' || p === '/crew.html') return sendPage(req, res, PAGES.crew, 'crew');
-            if (p === '/scouts' || p === '/scouts.html') return redirect(res, '/crew' + qs, 301);   // the old name
+            if (isApplyPath(p)) return sendPage(req, res, PAGES.apply, 'crew');
             if (p === '/invite' || p === '/invite.html') return sendPage(req, res, PAGES.invite, 'circle');
             if (inviteMatch) return sendPage(req, res, PAGES.invite, 'circle');
+            if (aboutRequest(p)) return serveAbout(req, res, p, qs);
             return next();
         }
 
@@ -142,8 +155,10 @@ function createHostRouter(opts = {}) {
         if (kind === 'main') {
             if (readOnly) {
                 if (p === '/circle' || p === '/circle.html') return redirect(res, hosts.programUrl('circle', '/') + qs);
-                if (p === '/crew' || p === '/crew.html' || p === '/scouts' || p === '/scouts.html') return redirect(res, hosts.programUrl('scout', '/') + qs);
+                if (p === '/crew' || p === '/crew.html') return redirect(res, hosts.programUrl('crew', '/') + qs);
                 if (isInvitePath) return redirect(res, hosts.origins.circle + p.replace(/\.html$/, '') + qs);
+                if (isApplyPath(p)) return redirect(res, hosts.applyUrl() + qs);
+                if (aboutRequest(p)) return serveAbout(req, res, p, qs);
                 if (p === '/auth-bridge' || p === '/auth-bridge.html') {
                     // Only the two program hosts may frame the session check; the page itself re-checks every origin it talks to.
                     res.removeHeader && res.removeHeader('X-Frame-Options');
@@ -178,13 +193,17 @@ function createHostRouter(opts = {}) {
             return send(res, 404, 'text/plain', 'not found');
         }
 
+        if (isApplyPath(p)) {
+            if (program === 'crew') return sendPage(req, res, PAGES.apply, 'crew');
+            return redirect(res, hosts.applyUrl() + qs);
+        }
         if (isInvitePath) {
             if (program === 'crew') return redirect(res, hosts.origins.circle + p.replace(/\.html$/, '') + qs);
             return sendPage(req, res, PAGES.invite, 'circle');
         }
         if (p === '/' || p === '/index.html' || p === `/${program}` || p === `/${program}.html`) return sendPage(req, res, program === 'crew' ? PAGES.crew : PAGES.circle, program);
         if (p === '/circle' || p === '/circle.html') return redirect(res, hosts.programUrl('circle', '/') + qs);
-        if (p === '/crew' || p === '/crew.html' || p === '/scouts' || p === '/scouts.html') return redirect(res, hosts.programUrl('scout', '/') + qs);
+        if (p === '/crew' || p === '/crew.html') return redirect(res, hosts.programUrl('crew', '/') + qs);
 
         // Everything else is the main site's business: /login, /signup, /marketplace, /terms, /admin ...
         return redirect(res, hosts.origins.main + p + qs);

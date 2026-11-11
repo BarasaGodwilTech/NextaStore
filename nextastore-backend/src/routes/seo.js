@@ -124,7 +124,7 @@ router.get('/p/:productId', async (req, res, next) => {
         if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return notFound();
 
         const product = await prisma.product.findFirst({
-            where: { id, deletedAt: null, store: { deletedAt: null } },
+            where: { id, deletedAt: null, moderationStatus: 'ok', store: { deletedAt: null, moderationStatus: 'ok' } },
             select: { id: true, name: true, store: { select: { slug: true } } }
         });
         if (!product || !product.store) return notFound();
@@ -175,8 +175,9 @@ router.get('/:storeSlug/:productSlug', async (req, res, next) => {
         const product = await prisma.product.findFirst({
             where: {
                 deletedAt: null,
+                moderationStatus: 'ok',
                 id: { endsWith: key, mode: 'insensitive' },
-                store: { deletedAt: null, OR: [{ slug: storeKey }, { id: rawStore }] }
+                store: { deletedAt: null, moderationStatus: 'ok', OR: [{ slug: storeKey }, { id: rawStore }] }
             },
             select: {
                 id: true, name: true, description: true, price: true, stock: true, listingType: true,
@@ -283,12 +284,12 @@ router.get('/:slug', async (req, res, next) => {
 
         const [products, productCount, methods] = await Promise.all([
             prisma.product.findMany({
-                where: { storeId: store.id, deletedAt: null },
+                where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' },
                 orderBy: [{ sold: 'desc' }, { createdAt: 'desc' }],
                 take: 24,
                 select: { id: true, name: true, description: true, price: true, category: true, stock: true, listingType: true, image: true, images: true, thumbnails: true }
             }),
-            prisma.product.count({ where: { storeId: store.id, deletedAt: null } }),
+            prisma.product.count({ where: { storeId: store.id, deletedAt: null, moderationStatus: 'ok' } }),
             getActivePaymentMethods().catch(() => [])
         ]);
         const accepted = store.payments || {};

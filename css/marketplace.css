@@ -172,13 +172,16 @@
 .marketplace-hero.no-collage { grid-template-columns: minmax(0, 1fr); }
 .hero-collage[hidden] { display: none; }
 
-.hero-content { min-width: 0; }
+.hero-content { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-md); }
+/* One column, one rhythm: every block is spaced by the gap above, none by its own margin. The assistant card closes the column at full width. */
+.hero-content > * { margin-top: 0; margin-bottom: 0; }
+.hero-content > .hero-chat { width: 100%; margin-top: var(--spacing-xs); }
 
 .hero-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
-    margin: 0 0 var(--spacing-md);
+    margin: 0;
     padding: 0.35rem 0.85rem 0.35rem 0.7rem;
     border: 1px solid var(--gray-200);
     border-radius: 999px;
@@ -196,7 +199,7 @@
     z-index: 0;
     font-size: clamp(2rem, 2.4vw + 1rem, 3.1rem);
     line-height: 1.06;
-    margin-bottom: var(--spacing-md);
+    margin: 0;
     max-width: 20ch;
     overflow-wrap: break-word;
     text-wrap: balance;
@@ -216,13 +219,13 @@
     transform: rotate(-1.2deg);
 }
 
-.hero-lead { font-size: 1.0625rem; color: var(--gray-600); max-width: 52ch; margin: 0 0 var(--spacing-lg); }
+.hero-lead { font-size: 1.0625rem; color: var(--gray-600); max-width: 52ch; margin: 0; }
 
 
 .hero-actions { display: none; gap: var(--spacing-md); flex-wrap: wrap; }
 
 
-.hero-sell-line { margin: var(--spacing-lg) 0 0; font-size: 0.875rem; color: var(--gray-500); }
+.hero-sell-line { margin: 0; padding-left: 2px; font-size: 0.875rem; color: var(--gray-500); }
 .marketplace-container .hero-sell-line a { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--secondary); text-decoration: none; }
 .hero-sell-line a i { font-size: 0.7rem; transition: transform 0.15s ease; }
 .hero-sell-line a:hover { text-decoration: underline; }
@@ -397,7 +400,7 @@
     .hero-content > *:nth-child(3) { animation-delay: 0.1s; }
     .hero-content > *:nth-child(4) { animation-delay: 0.15s; }
     .hero-content > *:nth-child(n+5) { animation-delay: 0.2s; }
-    .hero-col:nth-child(1)     .hero-col:nth-child(2)     .hero-band-card { animation: mk-rise 0.6s cubic-bezier(.2, .7, .2, 1) 0.3s both; }
+    .hero-col:nth-child(1), .hero-col:nth-child(2), .hero-band-card { animation: mk-rise 0.6s cubic-bezier(.2, .7, .2, 1) 0.3s both; }
 }
 @media (prefers-reduced-motion: reduce) { .hero-dot, .stat-value.is-pending { animation: none; } }
 @keyframes mk-rise { from { opacity: 0; transform: translateY(14px); } }
@@ -1375,7 +1378,9 @@
 
     .marketplace-hero { padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-md); gap: var(--spacing-lg); }
     .hero-content h1 { max-width: none; }
-    .hero-lead { font-size: 1rem; margin-bottom: var(--spacing-lg); }
+    .hero-lead { font-size: 1rem; }
+    .hero-content { gap: var(--spacing-sm); }
+    .hero-content > .hero-chat { margin-top: var(--spacing-xs); }
     /* phones: the two buttons sit under the chat; the "Selling something?" line is redundant there */
     .hero-sell-line { display: none; }
     .hero-collage { margin-inline: calc(-1 * var(--spacing-lg)); padding-inline: var(--spacing-lg); }

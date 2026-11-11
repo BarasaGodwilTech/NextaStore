@@ -13,6 +13,13 @@ separated here:
 
 ## Needs a live environment (verify, don't rebuild)
 
+- **Circle to Crew upgrade and mandatory email confirmation (WIP 115)** — written and tested offline only. To check, in this order:
+  1. Run `npx prisma migrate deploy && npx prisma generate` on a **copy** of the real database first. Confirm `GrowthReferral.program` was filled for every existing row: `SELECT count(*) FROM "GrowthReferral" WHERE program IS NULL;` should be 0.
+  2. With real SMTP set: sign up with a new email, confirm the email arrives, open the link, and check you land signed in (a seller on store setup). Try signing in before confirming (should show the inbox panel). Turn SMTP off (or break the password) and check the sign-up page switches to Google-only.
+  3. With real Google set up: sign up choosing **Sell** with an email that already has a buyer account; you should land on store setup.
+  4. Upgrade, end to end, with two test accounts: Circle member A invites B (B signs up, not yet paid); A applies to Crew; an admin approves; check A's old Circle link still opens the invite page for A; C signs up through the old link; approve B's and C's payments and compare the commission lines (B should be Circle rate, C Crew rate).
+  5. Decide whether the program should be fixed at sign-up time (what is built) or at link-click time. See the upgrade doc.
+
 - **Product address + WhatsApp preview (WIP 42 + 43)** — a product's own address
   (`nextastores.com/<store-slug>/<name>-<key>`, which is also what the browser shows) is built and
   tested (real handlers, stubbed DB/cache; real Chromium with the real page renderer; crawler view
@@ -232,14 +239,15 @@ mistakes (forgot to bump, forgot to regenerate, hand-edited the combined hash).
 ## NextaStore Circle and Crew (WIP 103): to do before turning it on
 
 - [ ] `npm run migrate:deploy` (new tables and the `growth` notification type; hand-written, never run on real Postgres), then `npm run test:growth`.
-- [ ] Check no existing store already uses a newly reserved slug (`circle`, `crew`, `scouts`, `invite`, `i`, `admin-growth`, `auth-bridge`).
+- [ ] Check no existing store already uses a newly reserved slug (`circle`, `crew`, `invite`, `i`, `admin-growth`, `auth-bridge`).
 - [ ] Create a private R2 bucket (public access off) and set `R2_PRIVATE_BUCKET_NAME`. Until then Crew applications answer "uploads are not set up".
 - [ ] Give the right admins `growth.view` / `growth.review` / `growth.payouts` / `growth.settings` (keep review and payouts on different people).
 - [ ] Both programs start closed. In the admin (Circle & Crew > settings) open Circle first, run one real signup > store > first payment > approval > earning > withdrawal, then open Crew.
 - [ ] Path mode serves `/circle`, `/crew`, `/invite` from static files if your proxy's `try_files` finds them first. The pages work either way, but link previews only get their placeholders filled when the request reaches Node. Route those paths (and `/i/*`) to the API if previews matter.
 - [ ] Optional: subdomains (`GROWTH_MODE=subdomain`, DNS and proxy for `circle.` and `crew.` pointing at the Node app, `/api` answered on both).
 - [ ] Optional: send the payer's phone number with subscription payments (guide step 8) so Crew can match a store by phone.
-- [ ] Nexi knowledge for Circle/Crew was not added (Nexi is frozen). If wanted, copy the guide's knowledge entries in a separate WIP.
+- [x] Nexi knowledge for Circle/Crew was added in WIP 129 as 27 `growth_*` entries in `faq-instant.json` (a deliberate exception to the Nexi freeze, requested by the owner). Still to do before launch: a Luganda speaker reviews the 27 new rows in `lg-review/NEXI_LUGANDA_REVIEW.csv`, and the English wording is read once by the owner, like the other Nexi sentences above.
+- [ ] Nexi has no answer for "why has my Seller Pass payment not been approved" (it falls to the refund FAQ, which does not answer it). Write a payment-approval entry from the real review process.
 - [ ] Real devices: Crew install-to-home-screen, camera/QR, geolocation check-in, offline lead logging.
 
 ## Nexi polish (WIP 104): to check on real devices
@@ -248,3 +256,30 @@ mistakes (forgot to bump, forgot to regenerate, hand-edited the combined hash).
 - [ ] Look at the hero and the floating panel on a real small phone (320-360px) in English and Luganda, idle and mid-conversation: full words in the language slider, full subtitle, both slider buttons, nothing cut.
 - [ ] On a real desktop, check the two-questions-at-a-time starter row and that the previous / next buttons scroll it.
 - [ ] Luganda wording is still unreviewed by a speaker (see the lg-review notes); this WIP changed layout only.
+
+
+## From WIP 112 (Circle / Crew app shell, About pages)
+- **Needs a browser:** nothing in WIP 112 was seen on a screen. Check on a phone-width and a desktop viewport: the bottom tab bar (five items, safe-area padding, toast clears it), the header tabs on wide screens, the program account menu, the marketplace hero spacing with and without a chat in progress, and run the two growth browser tests (updated, not run).
+- **Needs a live environment:** the `auth-bridge?mode=logout` hop and the `?redirect=circle%3Fgo%3D1` sign-in hand-back on real `circle.` / `crew.` hosts.
+- **Not built:** there is no Circle -> Crew upgrade path. One account is in one program, and a retired Circle member cannot apply to Crew. The About pages now say so honestly; a product decision is needed if people should be able to move.
+
+
+## From WIP 113
+- **Needs a browser:** the admin console layout (sidebar tabs on a phone, the partner file dialog, the calculator), the stepped join form, the About pages' new hero art / calculator / medals, the Get-started card and rank medal, the hero and bottom bar from WIP 112. Run the growth browser tests, then look at each page at phone and desktop width.
+- **Needs YOUR numbers:** cost to serve one store per month and the monthly cost of running the program (Money, Economics). Until entered, the verdict says it cannot judge. Record the real mobile-money fee on every payout you mark paid.
+- **Product decisions still open:** no Circle -> Crew upgrade path; whether a rejected Crew applicant may re-apply by themselves (today an admin must reopen the application); whether to add a small recurring share once you have real renewal data.
+- **Not built:** Jumia-style monthly activity levels with demotion (rank already follows paid stores in the last 90 days); partner-visible click counts on their link (the visit data exists in GrowthVisit but is not shown).
+
+## From WIP 114
+- **You must create the Google Web client ID and SMTP account** (docs/AUTH_SETUP.md). Until then no Google button appears and emails are only printed in the server log.
+- **Decide:** should some actions REQUIRE a verified email (today only joining Circle/Crew does)? e.g. publishing a store, placing an order.
+- **Not built:** unlinking Google from an account; a "set a password" box for Google-only people (they use "Forgot password" today); Google on the Android/iOS apps (they would need their own client ids, comma-separated in GOOGLE_CLIENT_ID).
+
+## From WIP 122
+- **Needs a browser:** Promote > Product posts at 360 / 390 / 768 / 1280px (product picker row, style and size buttons, quality panel, sticky Download bar clear of the tab bar), and the posts in Chrome and Safari (fonts, shadows).
+- **Check on the live site:** product photos load into a canvas (the uploads host needs `Access-Control-Allow-Origin`; helmet's default `Cross-Origin-Resource-Policy` must not block it). If not, catalogue photos show "We could not read this photo".
+- **Tune with real photos:** `NextaQuality.THRESHOLDS` (sharpness, darkness, stretch). Suggested: log how often each rule fires on real seller photos for a week, and check that blocked photos really look bad.
+- **Decide:** a machine-learning background remover for busy backgrounds (e.g. a small ONNX/WASM segmentation model hosted on NextaStore's own server, loaded only when the seller turns on "Remove the background", plugged in with `NextaCutout.register`). Roughly 5 to 40 MB depending on the model, so a data-cost question for sellers on mobile data. Until then, busy photos are shown in a frame.
+- **Decide:** keep an un-stamped original of each product photo (today only the stamped version is stored), so cutouts and posts can use a clean one.
+- **Not built:** posts for services with a "from" price, multi-language captions, scheduling, saving a made post to the store's gallery.
+- **Optional, cleaner than the proxy:** set CORS on the R2 bucket (allow `GET` from your site's origins). Then images load directly and the proxy is never used. Example rule: `[{"AllowedOrigins":["https://nextastores.com","http://localhost:3000"],"AllowedMethods":["GET","HEAD"],"AllowedHeaders":["*"],"MaxAgeSeconds":86400}]`.

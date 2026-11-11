@@ -417,7 +417,7 @@ ${share.price ? `<meta property="product:price:amount" content="${share.price}">
 // robotsRulesFor() turns each into the rules for /page, /page?query and the
 // old /page.html.
 const PRIVATE_PAGES = [
-    'dashboard', 'admin', 'messages', 'cart', 'orders', 'favorites', 'following',
+    'dashboard', 'admin', 'staff', 'messages', 'cart', 'orders', 'favorites', 'following',
     'subscription', 'onboarding', 'product-form', 'login', 'signup',
     'forgot-password', 'verify-email'
 ];
@@ -455,7 +455,7 @@ function renderSitemap({ siteUrl, appUrl, stores = [] }) {
     // host as /sitemap.xml (a sitemap may not list other hosts' URLs).
     try {
         if (new URL(appUrl).host === new URL(site).host) {
-            ['/', '/marketplace', '/stores', '/safety', '/terms', '/privacy'].forEach(p => urls.push({ loc: `${site}${p}` }));
+            ['/', '/marketplace', '/stores', '/about-circle', '/about-crew', '/safety', '/terms', '/privacy'].forEach(p => urls.push({ loc: `${site}${p}` }));
         }
     } catch (e) { /* ignore malformed URLs; store pages are still listed */ }
     stores.slice(0, SITEMAP_MAX_URLS - urls.length).forEach(s => {

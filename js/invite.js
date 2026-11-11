@@ -23,8 +23,10 @@
 
         const trial = rules && rules.trialDays;
         const price = rules && rules.passPricePerMonth;
-        const target = H.main('/signup') + (who ? `?ref=${encodeURIComponent(code)}` : '');
-        const kind = who && who.program === 'scout' ? 'a NextaStore Crew member' : 'a NextaStore member';
+        // Everyone who lands here came to open a shop, so the sign-up page opens with "Sell" already chosen: after confirming their email they go
+        // straight to setting up the store. The code rides along when there is one.
+        const target = H.main('/signup') + '?type=seller' + (who ? `&ref=${encodeURIComponent(code)}` : '');
+        const kind = who && who.program === 'crew' ? 'a NextaStore Crew member' : 'a NextaStore member';
         const freeLine = trial ? `Free for ${trial} days.` : 'Free to start.';
         const priceLine = trial && price ? `The first ${trial} days are free; after that a Seller Pass is ${ugx(price)} a month, paid by MTN or Airtel.` : 'Choose a Seller Pass when you are ready, paid by MTN or Airtel.';
         document.title = who ? `${who.firstName} invited you to open your shop · NextaStore` : document.title;

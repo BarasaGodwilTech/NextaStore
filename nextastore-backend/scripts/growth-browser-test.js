@@ -63,6 +63,8 @@ async function main() {
     });
     const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: true });
     const waitToast = async (page, re, ms = 6000) => { try { await page.waitForFunction((src) => new RegExp(src, 'i').test((document.querySelector('.gp-toast') || {}).textContent || ''), re.source, { timeout: ms }); return true; } catch (e) { return false; } };
+    // The dashboard is sections now (WIP 112): switching is a hash change, exactly what a tab tap does.
+    const tab = (pg, id) => pg.evaluate((i) => { location.hash = i; }, id);
     const toastText = async (page) => { await page.waitForSelector('.gp-toast', { timeout: 4000 }).catch(() => {}); return (await page.locator('.gp-toast').last().textContent().catch(() => '')) || ''; };
 
     // ============================================================ 1. Circle: join in the browser
@@ -78,7 +80,9 @@ async function main() {
     ok('the earnings estimator updates: 5 stores x UGX 4,000 = UGX 20,000, with renewals UGX 35,000', calc.includes('UGX 20,000') && calc.includes('UGX 35,000') && (await page.textContent('#gpNLabel')) === '5 stores', calc);
     ok('the green header text is light enough to read (contrast)', await heroReadable(page));
     await shot(page, '01-circle-join');
+    ok('the join card shows a requirements checklist before any form', (await page.locator('.gp-reqs li.is-ok').count()) >= 3);
     await page.fill('#gpPhone', '0772 123 456');
+    await page.click('#gpNext');                                   // step 2: agree and join
     await page.click('#gpJoin button[type=submit]');
     await page.waitForFunction(() => document.getElementById('gpErr').textContent.length > 0, null, { timeout: 5000 });
     ok('joining without accepting the terms is refused with a clear message', /terms/i.test(await page.textContent('#gpErr')) && !db.growthPartner.length);
@@ -89,6 +93,7 @@ async function main() {
     ok('the Circle dashboard header says Affiliate Program', /NextaStore Circle\s*·\s*Affiliate Program/.test(await page.textContent('.gp-hero .gp-kicker')));
     ok('joining shows the dashboard with a CIRCLE code', /^CIRCLE-[A-Z2-9]{5}$/.test(dinaCode), dinaCode);
     ok('after ticking the terms the partner row exists', db.growthPartner.some((p) => p.code === dinaCode));
+    await tab(page, 'share');
     await page.waitForSelector('#gpCardPreview svg');
     ok('the Share Studio shows the invite card with her code', (await page.innerHTML('#gpCardPreview')).includes(dinaCode));
     const layout = await page.evaluate(() => {
@@ -119,7 +124,7 @@ async function main() {
     await page.waitForSelector('#gpGo', { timeout: 8000 });
     const inviteText = await page.textContent('#gpInvite');
     ok('the invited person is told who invited them, by first name only', inviteText.includes('Dina invited you') && !inviteText.includes('Auma') && !inviteText.includes('0772'));
-    ok('the sign-up button carries the code', (await page.getAttribute('#gpGo', 'href')) === `/signup?ref=${encodeURIComponent(dinaCode)}`);
+    ok('the sign-up button carries the code and opens with Sell chosen', (await page.getAttribute('#gpGo', 'href')) === `/signup?type=seller&ref=${encodeURIComponent(dinaCode)}`);
     ok('the code is remembered in the browser for sign-up (30 days)', await page.evaluate((c) => JSON.parse(localStorage.getItem('nx_ref')).code === c, dinaCode));
     ok('the trial and price come from the server rules', inviteText.includes('Free for 7 days') && inviteText.includes('UGX 20,000'));
     ok('invite page: header text is readable', await heroReadable(page));
@@ -127,7 +132,7 @@ async function main() {
     await ctx.close();
     ({ ctx, page } = await open(null, '/invite?ref=CIRCLE-ZZZZZ', { noAuth: true }));
     await page.waitForSelector('#gpGo');
-    ok('a wrong code still gives a friendly plain invite page', (await page.textContent('#gpInvite')).includes('You are invited') && (await page.getAttribute('#gpGo', 'href')) === '/signup');
+    ok('a wrong code still gives a friendly plain invite page', (await page.textContent('#gpInvite')).includes('You are invited') && (await page.getAttribute('#gpGo', 'href')) === '/signup?type=seller');
     await ctx.close();
 
     // ============================================================ 3. Recruit status, delayed approval, withdrawal
@@ -148,15 +153,17 @@ async function main() {
     db.growthCommission.push({ id: 'seedc', partnerId: partnerRow.id, referralId: 'seedpaid', paymentId: 'sp', type: 'first_payment', amount: 16000, status: 'available', note: 'seed', createdAt: new Date(Date.now() - 6 * DAY), clearsAt: new Date(Date.now() - 3 * DAY) });
 
     ({ ctx, page } = await open(dina, '/circle'));
-    await page.waitForSelector('.gp-recruit', { timeout: 8000 });
+    await page.waitForSelector('.gp-recruit', { state: 'attached', timeout: 8000 });
     ok('the delayed recruit floats to the top and is marked as needing the recruiter', await page.locator('.gp-recruit.needs-you').count() >= 1 && (await page.textContent('#gpRecruits')).includes('longer than we aim'));
     ok('the banner counts recruits that need help', (await page.textContent('#gpRoot')).includes('1 recruit could use your help today'));
     ok('the recruiter sees no contact details of the recruit', !(await page.content()).includes('0755000111') && !(await page.content()).includes('petergadgets'));
     ok('circle dashboard: header text is readable', await heroReadable(page));
     await shot(page, '04-circle-delayed');
+    await tab(page, 'recruits');
     await page.click('[data-ask]');
     ok('"Ask us to check" confirms to the recruiter and lands in the admin follow-ups', (await waitToast(page, /Thank you/)) && db.adminFollowUp.length === 1 && /Peter Gadgets/.test(db.adminFollowUp[0].title));
     ok('the NextaStore-pays-the-fee promise is shown on the money card', (await page.textContent('#gpMoney')).includes('NextaStore pays the mobile money fee'));
+    await tab(page, 'earn');
     await page.click('#gpWithdraw');
     await page.waitForSelector('#gpWf');
     ok('the withdrawal dialog opens prefilled with what can be withdrawn (UGX 16,000)', (await page.inputValue('#gpAmt')) === '16000');
@@ -176,50 +183,48 @@ async function main() {
     console.log('Crew: application, leads, offline queue, QR, Market Days');
     const kofi = mkUser('Kofi Mensah');
     ({ ctx, page } = await open(kofi, '/crew'));
-    await page.waitForSelector('#gpJoin', { timeout: 8000 });
+    await page.waitForSelector('#gpJoinCard', { timeout: 8000 });
     ok('the Crew pitch names itself as the field team next to the name', /NextaStore Crew\s*·\s*Field Team/.test((await page.textContent('.gp-hero .gp-kicker')).trim()), await page.textContent('.gp-hero .gp-kicker'));
     ok('the Crew pitch lists the rank ladder with server rates (25% to 40%)', /25% to 40%/.test(await page.textContent('#gpRoot')));
-    await page.fill('#gpPhone', '0753 111 000');
-    for (const t of ['kampala', 'wakiso', 'mukono', 'jinja']) await page.check(`#gpTerr input[value=${t}]`).catch(() => {});
-    const picked = await page.locator('#gpTerr input:checked').count();
-    ok('only 3 areas can be chosen', picked === 3, `picked ${picked}`);
-    await page.fill('#gpNote', 'I know many traders in Owino.');
-    await page.click('#gpJoin button[type=submit]');
-    await sleep(600);
-    ok('an application without ID photo or terms is refused with a clear message', /ID|terms/i.test(await page.textContent('#gpErr')));
-    await page.setInputFiles('#gpId', { name: 'id.png', mimeType: 'image/png', buffer: PNG_1PX });
-    await page.check('#gpTerms');
-    await page.click('#gpJoin button[type=submit]');
+    // The application form is its own page now (crew-apply, covered by crew-apply-browser-test.py). Here the Crew page must
+    // show the pitch and lead to it; the application itself is then made through the real backend service.
+    const applyHref = await page.getAttribute('#gpApply', 'href');
+    ok('the Crew page leads to the application page with one clear button', /\/(crew-)?apply/.test(applyHref || ''), applyHref);
+    await growth.partners.applyCrew(kofi, { phone: '0753111000', territories: ['kampala', 'wakiso', 'mukono'], note: 'I know many traders in Owino.', kycFileUrl: 'private/growth-kyc/kofi.jpg', cardPhotoUrl: 'private/growth-card/kofi.jpg', agreedTerms: true, ip: '10.0.0.5' });
+    await page.reload();
     await page.waitForSelector(':text("We are reviewing your application")', { timeout: 8000 });
     const kp = db.growthPartner.find((p) => p.displayName === 'Kofi Mensah');
     ok('application saved as pending, ID stored through the private path (not a public URL)', kp && kp.status === 'applied' && kp.kycFileUrl.startsWith('private/growth-kyc/') && kp.territories.length === 3);
-    await shot(page, '06-scout-pending');
+    await shot(page, '06-crew-pending');
 
-    await growth.admin.approveScout('adminX', kp.id);
+    await growth.admin.approveCrew('adminX', kp.id);
     await growth.admin.createCampaign('adminX', { title: 'Kampala Market Week', description: 'Pay this week', boostPercent: 20, district: 'kampala', startsAt: new Date(Date.now() - DAY), endsAt: new Date(Date.now() + 3 * DAY) });
     db.store.push({ id: 'bs2', ownerId: 'x', name: 'Mukono Mart', district: 'mukono', isPublished: true, deletedAt: null });
     await page.reload();
-    await page.waitForSelector('#gpLead', { timeout: 8000 });
+    await page.waitForSelector('#gpLead', { state: 'attached', timeout: 8000 });
     const root = await page.textContent('#gpRoot');
     ok('an approved Crew member sees the lead form, Market Days, Trail Map and Share Studio', root.includes('Log a business you visited') && root.includes('Kampala Market Week') && root.includes('Trail map') && root.includes('Pitch kit'));
     ok('the Market Day shows its boost and that it is live', root.includes('+20% boost'));
+    await tab(page, 'field');
     await page.fill('#gpLb', 'Mama Rose Shop'); await page.fill('#gpLp', '0772 555 111'); await page.fill('#gpLc', 'Rose');
     await page.click('#gpLead button[type=submit]');
     ok('logging a lead online claims it and says until when', (await waitToast(page, /Yours until/)) && db.growthReferral.some((r) => r.leadBusiness === 'Mama Rose Shop' && r.stage === 'lead'));
-    await page.waitForSelector('#gpRecruits :text("Mama Rose Shop")');
+    await page.waitForSelector('#gpRecruits :text("Mama Rose Shop")', { state: 'attached' });
     ok('the lead appears in the recruit list with its stage', (await page.textContent('#gpRecruits')).includes('Lead logged'));
+    await tab(page, 'home');
     ok('crew dashboard: header text is readable', await heroReadable(page));
-    await shot(page, '07-scout-dashboard');
+    await shot(page, '07-crew-dashboard');
 
     // offline
     await ctx.setOffline(true);
+    await tab(page, 'field');
     await page.fill('#gpLb', 'Quiet Kiosk'); await page.fill('#gpLp', '0779 000 123');
     await page.click('#gpLead button[type=submit]');
-    await page.waitForSelector('#gpQueue', { timeout: 8000 });
+    await page.waitForSelector('#gpQueue', { state: 'attached', timeout: 8000 });
     ok('with no signal the lead is saved on the phone and the Crew member is told', (await page.textContent('#gpQueue')).includes('1 lead saved on your phone'));
     ok('nothing reached the server yet', !db.growthReferral.some((r) => r.leadBusiness === 'Quiet Kiosk'));
     ok('the queue lives in the browser', await page.evaluate(() => JSON.parse(localStorage.getItem('nx_lead_queue')).length === 1));
-    await shot(page, '08-scout-offline-queue');
+    await shot(page, '08-crew-offline-queue');
     await ctx.setOffline(false);
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     const synced = await until(() => db.growthReferral.some((r) => r.leadBusiness === 'Quiet Kiosk'), 8000);
@@ -229,19 +234,20 @@ async function main() {
     ok('the queue empties once it is sent', (await page.locator('#gpQueue').count()) === 0 && await page.evaluate(() => JSON.parse(localStorage.getItem('nx_lead_queue') || '[]').length === 0));
 
     // QR
+    await tab(page, 'home');
     await page.click('#gpQr'); await page.waitForSelector('#gpQrBox canvas');
-    const qrPath = path.join(SHOTS, 'scout-qr.png'); await page.locator('#gpQrBox canvas').screenshot({ path: qrPath });
+    const qrPath = path.join(SHOTS, 'crew-qr.png'); await page.locator('#gpQrBox canvas').screenshot({ path: qrPath });
     ok('the Crew member\'s on-screen QR works with no CDN and scans to the invite link', decodeQr(qrPath) === `${BASE}/invite?ref=${kp.code}`, decodeQr(qrPath));
     await ctx.close();
 
     // ============================================================ 5. Admin console
     console.log('Admin console');
     const adm1 = mkUser('Admin One', { role: 'admin' }); const adm2 = mkUser('Admin Two', { role: 'admin' });
-    ({ ctx, page } = await open(adm1, '/admin-growth#economics'));
+    ({ ctx, page } = await open(adm1, '/admin-growth#money/economics'));
     await page.waitForSelector('#agRoot .gp-card', { timeout: 8000 });
-    ok('the Economics tab explains the cost guard and shows both windows', (await page.textContent('#agRoot')).includes('Is the program worth it?') && (await page.textContent('#agRoot')).includes('Since the program began'));
+    ok('the Economics tab explains the cost guard and shows both windows', (await page.textContent('#agRoot')).includes('What the program actually did') && (await page.textContent('#agRoot')).includes('Since the program began'));
     await shot(page, '09-admin-economics');
-    await page.click('a[data-tab=payouts]'); await page.waitForSelector('[data-open]', { timeout: 8000 });
+    await page.click('.ag-sub a[href="#money/payouts"]'); await page.waitForSelector('[data-open]', { timeout: 8000 });
     ok('the payout queue shows the request with its deadline and the two-admin warning', (await page.textContent('#agRoot')).includes('Dina Auma') && (await page.textContent('#agRoot')).includes('two admins'));
     await page.click('[data-open]'); await page.waitForSelector('#pApprove');
     ok('the payout dialog warns that NextaStore pays the fee and shows the estimate', (await page.textContent('dialog')).includes('NextaStore pays the mobile money fee'));
@@ -251,12 +257,12 @@ async function main() {
     await page.fill('#pRef', 'MTN-77889'); await page.fill('#pFee', '650'); await page.click('#pPaid');
     ok('the same admin cannot pay a first payout (two-person rule shown as a message)', (await waitToast(page, /different admin/)) && db.growthWithdrawal[0].status === 'approved');
     await ctx.close();
-    ({ ctx, page } = await open(adm2, '/admin-growth#payouts'));
+    ({ ctx, page } = await open(adm2, '/admin-growth#money/payouts'));
     await page.waitForSelector('[data-open]', { timeout: 8000 }); await page.click('[data-open]'); await page.waitForSelector('#pPaid');
     await page.fill('#pRef', 'MTN-77889'); await page.fill('#pFee', '650'); await page.click('#pPaid');
     ok('a second admin pays it, and the REAL fee is recorded', await until(() => db.growthWithdrawal[0].status === 'paid', 5000) && db.growthWithdrawal[0].feeActual === 650);
     await ctx.close();
-    ({ ctx, page } = await open(dina, '/circle')); await page.waitForSelector('#gpMoney');
+    ({ ctx, page } = await open(dina, '/circle')); await page.waitForSelector('#gpMoney', { state: 'attached' });
     ok('the partner sees she has been paid', (await page.textContent('#gpMoney')).includes('UGX 16,000') && db.notification.some((n) => /You have been paid/.test(n.title)));
     await ctx.close();
     const eco = await growth.admin.economics();

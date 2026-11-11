@@ -177,7 +177,7 @@ const SUBSCRIPTION_REMINDER_COOLDOWN_MS = 20 * 60 * 60 * 1000; // ~20h
  *  cron job" approach subscriptionInfo() already uses for the status itself,
  *  applied to notifying about it too. Reuses the existing 'subscription'
  *  NotificationType (already used for admin payment-review notifications,
- *  see routes/admin.js) so this needs no schema change, and goes through
+ *  see staff/routes/finance.js) so this needs no schema change, and goes through
  *  createNotification so it becomes both a bell entry and a push, matching
  *  the wording of the dashboard's own trial-ending banner. Never throws —
  *  same contract as createNotification, since a reminder failing to send
@@ -224,7 +224,8 @@ function isStoreCurrentlyActive(store) {
     const now = Date.now();
     const trialOk = !!store.trialEndsAt && new Date(store.trialEndsAt).getTime() > now;
     const paidOk = !!store.subscriptionPaidUntil && new Date(store.subscriptionPaidUntil).getTime() > now;
-    return trialOk || paidOk;
+    // Staff can restrict a store (Staff Console > Stores): it then leaves every public surface exactly like a lapsed one.
+    return (trialOk || paidOk) && store.moderationStatus !== 'restricted';
 }
 
 /** The Prisma where-fragment matching isStoreCurrentlyActive() above, for
@@ -235,7 +236,7 @@ function isStoreCurrentlyActive(store) {
  *  needs to update both of these together. */
 function storeActiveWhere() {
     const now = new Date();
-    return { OR: [{ trialEndsAt: { gt: now } }, { subscriptionPaidUntil: { gt: now } }] };
+    return { moderationStatus: 'ok', OR: [{ trialEndsAt: { gt: now } }, { subscriptionPaidUntil: { gt: now } }] };
 }
 
 /** Throws a structured 404 for a store a shopper shouldn't be able to see —
@@ -401,17 +402,25 @@ function publicUser(user) {
         email: user.email,
         role: user.role,
         accountStatus: user.accountStatus || 'active',
-        adminLevel: user.adminLevel || 'standard',
-        adminRole: user.adminRole ? { id: user.adminRole.id, name: user.adminRole.name, permissions: user.adminRole.permissions || [] } : null,
         avatar: user.avatar || null,
         cover: user.cover || null,
-        emailVerified: !!user.emailVerifiedAt
+        emailVerified: !!user.emailVerifiedAt,
+        googleLinked: !!user.googleId
     };
 }
 
-async function recordAdminAudit({ actorId, action, targetType, targetId = null, targetUserId = null, metadata = {} }) {
+async function recordAdminAudit({ actorId = null, actorLabel, action, targetType, targetId = null, targetUserId = null, metadata = {}, ip, userAgent }) {
     try {
-        await prisma.adminAuditLog.create({ data: { actorId, action, targetType, targetId, targetUserId, metadata } });
+        // Inside a staff request the session middleware has already noted who, where from and with what (src/staff/context.js),
+        // so rows written by code that only knows an actor id (the Circle / Crew module) still carry the origin.
+        const c = require('./staff/context').get() || {};
+        await prisma.adminAuditLog.create({ data: {
+            actorId: actorId || c.actorId || null,
+            actorLabel: String(actorLabel != null ? actorLabel : (c.actorLabel || '')).slice(0, 200),
+            action, targetType, targetId, targetUserId, metadata,
+            ip: String(ip != null ? ip : (c.ip || '')).slice(0, 64),
+            userAgent: String(userAgent != null ? userAgent : (c.userAgent || '')).slice(0, 300)
+        } });
     } catch (err) {
         console.error('Failed to write admin audit log:', err);
     }

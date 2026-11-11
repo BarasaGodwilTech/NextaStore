@@ -70,7 +70,7 @@ Also add `'/api/growth'` to the list that gets the 20 MB JSON parser (the `uploa
 app.set('trust proxy', 1);                                         // so the router sees the real host and https behind your proxy
 app.use(growth.hostRouter({ pagesDir: path.join(__dirname, '..') }));   // pagesDir = the folder that holds circle.html, crew.html, invite.html, auth-bridge.html, js/, assets/
 ```
-Everything it needs it takes from `growth.hosts`, which reads the environment (see **Subdomains** below). With no environment variables set you get exactly the v1 to v3 layout (`/circle`, `/crew`, `/invite` on the main site; the old `/scouts` address redirects to `/crew`).
+Everything it needs it takes from `growth.hosts`, which reads the environment (see **Subdomains** below). With no environment variables set you get exactly the v1 to v3 layout (`/circle`, `/crew`, `/invite` on the main site).
 
 Put the `createGrowth(...)` call in its own small file, `src/growthInstance.js`, exporting the one shared `growth` object. `app.js` and the route files (`auth.js`, `store.js`, `subscription.js`, `admin.js`) all `require('../growthInstance')` from there, which avoids a circular import with `app.js`.
 
@@ -141,7 +141,7 @@ The strongest self-referral check ("the partner paid from their own mobile money
 * In `js/auth.js`: add `'/admin-growth'` to `ADMIN_ONLY_PAGES`. `/circle` and `/crew` are open to any signed-in user, and `/invite` is public, so they need no entry. `npm run qa:static` checks the lists against the `data-*-required` attributes.
 * Confirm the clean-URL setup serves `/admin-growth` (the host router serves `/circle`, `/crew`, `/invite`, `/i/CODE` and `/auth-bridge` itself).
 * Add entry points: an "Earn with NextaStore" link in the account menu (`/circle`), a "Join the Crew" link in the footer or about page, and a link from the admin sidebar to `/admin-growth`.
-* **Seller dashboard widget:** place `<div data-growth-invite></div>` where you want the card, and load `growth.css`, `growth-hosts.js`, `growth-ui.js`, `growth-qr.js`, `growth-kit.js` and `growth-invite-widget.js` on that page (in that order). The card links to circle./scouts. by itself, using the host settings the server returns from `/api/growth/rules`. It shows "Get my invite code" to non-members and the code, share buttons and what needs attention to members, and hides itself if anything fails.
+* **Seller dashboard widget:** place `<div data-growth-invite></div>` where you want the card, and load `growth.css`, `growth-hosts.js`, `growth-ui.js`, `growth-qr.js`, `growth-kit.js` and `growth-invite-widget.js` on that page (in that order). The card links to circle./crew. by itself, using the host settings the server returns from `/api/growth/rules`. It shows "Get my invite code" to non-members and the code, share buttons and what needs attention to members, and hides itself if anything fails.
 * Bump the main site's service worker cache version if it precaches page shells. (The program subdomains have their own small worker, `growth-sw.js`, served at `/sw.js` on those hosts only.)
 * Add the `growth` notification type to the bell's icon mapping in `main.js`. Until then it falls back to the default icon.
 * **No external service is needed for QR codes.** `growth-qr.js` generates them on the phone, so they work with no data. Icons use the Font Awesome you already load.
@@ -170,7 +170,7 @@ The first, second, third and fifth need no install and no database. The QR test 
 ### A. What you set
 1. **DNS**: add `circle` and `crew` records pointing where the main site points (an A/AAAA record, or a CNAME to the same target).
 2. **Certificates**: the two new host names need https. A wildcard certificate for `*.yourdomain.com` is simplest; otherwise add both names to the existing one. (The service worker and "install as app" refuse to work without https.)
-3. **Proxy**: make sure your reverse proxy forwards the **`Host` header** untouched and that requests for all three names reach the same Node app. Nginx: `proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme;`, and `server_name yourdomain.com circle.yourdomain.com scouts.yourdomain.com;`. Caddy: list the three names in one site block. Express: `app.set('trust proxy', 1)`.
+3. **Proxy**: make sure your reverse proxy forwards the **`Host` header** untouched and that requests for all three names reach the same Node app. Nginx: `proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme;`, and `server_name yourdomain.com circle.yourdomain.com crew.yourdomain.com;`. Caddy: list the three names in one site block. Express: `app.set('trust proxy', 1)`.
 4. **Environment variables** for the Node app:
 ```
 GROWTH_MODE=subdomain
@@ -178,7 +178,6 @@ GROWTH_ROOT_DOMAIN=yourdomain.com          # main = https://yourdomain.com, circ
 # only if the main site is NOT the bare root domain, or for local work:
 # MAIN_ORIGIN=https://www.yourdomain.com
 # CIRCLE_ORIGIN=http://circle.localhost:4000   CREW_ORIGIN=http://crew.localhost:4000   MAIN_ORIGIN=http://localhost:4000
-# (SCOUTS_ORIGIN, the pre-rename name, is still read if CREW_ORIGIN is not set)
 ```
 The server refuses to start in subdomain mode with a half-written setup (it names what is missing). Switch it off again by removing `GROWTH_MODE`.
 
@@ -190,7 +189,7 @@ The server refuses to start in subdomain mode with a half-written setup (it name
 | `circle.` / `crew.` host, `/api/*`, `/css`, `/js`, `/assets`, fonts, images | handled by your normal API and static files |
 | `circle.` / `crew.` host, `/sw.js`, `/manifest.json`, `/favicon.ico` | this program's own worker, manifest and icon (so Crew installs as its own app with its own icon) |
 | `circle.` / `crew.` host, **anything else** (`/login`, `/marketplace`, `/admin`...) | redirected to the same path on the main site |
-| main host, `/circle`, `/crew`, `/scouts` (old name), `/invite`, `/i/CODE` | redirected to the right subdomain (old links, old notifications and printed QR codes keep working) |
+| main host, `/circle`, `/crew`, `/invite`, `/i/CODE` | redirected to the right subdomain (links and printed QR codes keep working) |
 | main host, `/auth-bridge` | the session hand-off page, frameable only by the two program hosts |
 
 The admin console (`/admin-growth`) deliberately **stays on the main site**: admin accounts and permissions live there, and a money console should not be one more public host.
@@ -202,7 +201,7 @@ The site keeps the sign-in token in **localStorage**, which is private to one ad
 3. After the page loads, a hidden frame asks the bridge "same session?". Signed out on the main site, or switched to another account? The program page follows (so nobody stays signed in as the wrong person).
 
 Safety properties (all covered by tests): the bridge only talks to the two origins **the server** wrote into the page (never to anything in the address), so it cannot hand a sign-in to a look-alike host; the bridge cannot be framed by other sites; the token never stays in the address bar; a damaged hand-over cannot cause an endless redirect loop.
-Things to know: (a) if your login page does not honour a `next` parameter, a person who had to log in lands where login normally sends them and taps Circle again, which then works at once; (b) the **long-term** fix is a session cookie scoped to `.yourdomain.com` (then none of this is needed); (c) this relies on circle./scouts. being the same *site* as the main host (same registrable domain), which they are.
+Things to know: (a) if your login page does not honour a `next` parameter, a person who had to log in lands where login normally sends them and taps Circle again, which then works at once; (b) the **long-term** fix is a session cookie scoped to `.yourdomain.com` (then none of this is needed); (c) this relies on circle./crew. being the same *site* as the main host (same registrable domain), which they are.
 
 ### D. The API
 If your frontend calls `/api` on the **same host as the page** (the usual setup), the same Express app already answers on circle. and crew. and nothing is needed. If the API is on **another** host (for example `api.yourdomain.com`), the router answers CORS for exactly the three growth origins (it echoes the origin, never `*`); if you already use the `cors` package, add the two origins there instead and pass `apiCors: false` to `hostRouter`.
@@ -221,11 +220,11 @@ NODE_PATH=$(npm root -g) node scripts/growth-subdomain-browser-test.js
 runs three real host names in real Chromium. Then by hand: sign in on the main site, open `circle.yourdomain.com`; sign out on the main site and reload Circle; open a Crew invite link in a private window and complete signup; on a phone, add Crew to the home screen, switch on airplane mode and open it.
 
 ## Rollout (suggested)
-1. Deploy everything with both programs **closed** (`GrowthSettings`: circleOpen and scoutsOpen false, through Campaigns > Program settings). Hooks run but nobody can join, so nothing can go wrong.
+1. Deploy everything with both programs **closed** (`GrowthSettings`: circleOpen and crewOpen false, through Campaigns > Program settings). Hooks run but nobody can join, so nothing can go wrong.
 2. Open **Circle** to staff and friends. Walk the whole path once with real MoMo and a real approval.
 3. Open **Crew** to 3 to 5 people you know. Hand-approve, watch the Review and Flags tabs for two weeks.
 4. Tune `rules.js` from real numbers, then open wider.
 
 ## Nexi (the assistant)
 ### 11. Knowledge
-Copy `assistant/12-earn-with-nexta.md` into `ai-assistant/src/knowledge/` and merge `assistant/growth-faq.json` entries into `faq-instant.json`. The answers deliberately contain **no percentages or amounts**: those are proposals and will change. Point the assistant at `/circle` and `/scouts` for current numbers, or add them to `assistantFacts.js` / `factsValues.js` so Nexi follows `rules.js` automatically, as it does for the Seller Pass price today.
+Done in round 6: the Circle and Crew knowledge is the `growth_*` entries in `ai-assistant/src/knowledge/faq-instant.json` (see `10_SCOUT_TO_CREW_INTERNAL_RENAME.md`, section "Nexi"). The answers deliberately contain **no percentages or amounts**: those are proposals and will change. Point the assistant at `/circle` and `/crew` for current numbers, or add them to `assistantFacts.js` / `factsValues.js` so Nexi follows `rules.js` automatically, as it does for the Seller Pass price today.

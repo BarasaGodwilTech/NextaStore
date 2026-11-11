@@ -19,7 +19,7 @@
 
     function normalize(raw) {
         const s = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        const m = s.match(/^(CIRCLE|CREW|SCOUT)([A-HJKMNP-Z2-9]{5})$/);   // SCOUT- = codes from before the rename; they still work
+        const m = s.match(/^(CIRCLE|CREW)([A-HJKMNP-Z2-9]{5})$/);
         return m ? `${m[1]}-${m[2]}` : null;
     }
     /** The domain a cookie should be shared on, or '' to keep it on this host only (localhost, bare IPs, path mode). */

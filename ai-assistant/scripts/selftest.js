@@ -875,7 +875,8 @@ function isLgHandoff(r, reason = 'language_guard') {
 
     const faqRaw = fs.readFileSync(path.join(config.knowledgeDir, 'faq-instant.json'), 'utf8');
     const faqJson = JSON.parse(faqRaw);
-    check('FAQ JSON has 40-60 entries', faqJson.length >= 40 && faqJson.length <= 60);
+    // The bound is a sanity check on a hand-curated list, not a design limit: the Circle/Crew growth FAQ added a block of entries on purpose.
+    check('FAQ JSON has 40-90 entries', faqJson.length >= 40 && faqJson.length <= 90);
     check('FAQ JSON has no raw numeric literals', !/\b\d+(?:[.,]\d+)?\b/.test(faqRaw));
     check('FAQ JSON has no raw order-status names', !/\b(?:pending|processing|shipped|delivered|cancelled)\b/i.test(faqRaw));
     check('all FAQ placeholders resolve from generated facts', faqJson.every((e) => { try { require('../src/knowledge/factsValues').expand(e.answer); return true; } catch { return false; } }));

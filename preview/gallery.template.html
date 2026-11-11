@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NextaStore template gallery</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap">
+<style>
+:root{--bg:#F7FAF8;--ink:#0B3B2B;--mut:#52615B;--card:#fff;--line:#DCE6E1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A1C15;--ink:#EAF4EF;--mut:#9DB5AA;--card:#12281F;--line:#23423A}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,sans-serif}
+header{padding:20px 16px 8px}h1{font-size:20px;margin:0 0 4px}p.s{margin:0;color:var(--mut);font-size:13px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:8px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--line)}
+nav a{white-space:nowrap;padding:8px 14px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:700}
+section{padding:18px 16px}h2{font-size:17px;margin:0 0 4px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px;margin-top:12px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
+figure canvas{width:100%;height:auto;display:block;border-radius:10px;background:#ddd}
+figcaption{font-size:12px;margin-top:8px;color:var(--mut)}figcaption b{color:var(--ink)}
+.new{background:#FFB038;color:#0B3B2B;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px}
+.err{color:#b3261e;font-size:12px}
+</style></head><body>
+<header><h1>NextaStore template gallery</h1><p class="s" id="meta">Drawn live by the studio's own code with sample store data. <span class="new">NEW</span> = added this round.</p></header>
+<nav><a href="#posts">Product posts</a><a href="#posters">Posters &amp; signs</a></nav>
+<section id="posts"><h2>Product posts</h2><p class="s">Portrait 1080×1350, deep and light moods.</p><div class="grid" id="gPosts"></div></section>
+<section id="posters"><h2>Posters &amp; signs</h2><p class="s">Same swatches as the studio.</p><div class="grid" id="gPosters"></div></section>
+<script>
+/*__SCRIPTS__*/
+</script>
+<script>
+(async function(){
+  const store={name:'Nakato Gadgets',url:'https://nextastores.com/nakato-gadgets',color:'#00B074',phone:'0772 123 456',logo:null,banner:null};
+  function phoneImg(body,screen){const c=document.createElement('canvas');c.width=460;c.height=900;const x=c.getContext('2d');
+    x.fillStyle=body;x.beginPath();x.roundRect(10,10,440,880,80);x.fill();x.fillStyle=screen;x.beginPath();x.roundRect(30,34,400,832,62);x.fill();
+    x.fillStyle='rgba(255,255,255,.18)';x.beginPath();x.roundRect(30,34,400,360,62);x.fill();x.fillStyle=body;x.beginPath();x.arc(230,76,18,0,7);x.fill();return c;}
+  function photoImg(a,b){const c=document.createElement('canvas');c.width=1000;c.height=1000;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,1000,1000);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,1000,1000);
+    x.fillStyle='rgba(255,255,255,.9)';x.beginPath();x.roundRect(330,170,340,660,60);x.fill();return c;}
+  const P1={name:'Samsung Galaxy A06 - 6.7" 4GB RAM 128GB - Black',price:689000,originalPrice:985000,image:phoneImg('#15171A','#2EDDA2'),mode:'cutout'};
+  const P2={name:'Itel P55',price:520000,originalPrice:0,image:phoneImg('#3B2A12','#FFB038'),mode:'cutout'};
+  const P3={name:'Lenovo IdeaPad 3',price:1850000,originalPrice:0,image:photoImg('#7FD6FF','#2A6F97'),mode:'photo'};
+  const P4={name:'Wireless earbuds',price:85000,originalPrice:99000,image:photoImg('#FFD59A','#E08A00'),mode:'photo'};
+  const meta=document.getElementById('meta');const mk=(grid,label,isNew)=>{const f=document.createElement('figure');const c=document.createElement('canvas');const cap=document.createElement('figcaption');cap.innerHTML='<b>'+label+'</b>'+(isNew?'<span class="new">NEW</span>':'');f.append(c,cap);document.getElementById(grid).appendChild(f);return {c,cap};};
+  const NEW_STYLES=['arch','drop','catalogue','bold'];
+  for(const st of NextaPosts.STYLES){
+    for(const mood of ['deep','light']){
+      const {c,cap}=mk('gPosts',st.label+' · '+mood,NEW_STYLES.includes(st.id));
+      const multi=st.products[1]>1, prods=multi?[P1,P2,P3,P4]:[P1];
+      try{const rep=await NextaPosts.render(c,{style:st.id,format:'portrait',mood,badge:multi?'NEW ARRIVALS':(st.id==='deal'||st.id==='drop'?'ON SALE':'NEW IN'),cta:'Scan to order',store,showPhone:true,showBanner:false,showLogo:true,products:prods},{scale:.5});
+        if(rep.shrunk.length||rep.truncated.length)cap.innerHTML+=' <span class="err">text shrunk/cut: '+rep.shrunk.length+'/'+rep.truncated.length+'</span>';
+      }catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}
+    }
+  }
+  for(const fmt of ['square','story']){for(const sid of ['arch','drop']){const {c,cap}=mk('gPosts',sid+' · '+fmt,true);
+    try{await NextaPosts.render(c,{style:sid,format:fmt,mood:'deep',badge:sid==='drop'?'ON SALE':'NEW IN',cta:'Scan to order',store,showPhone:true,showBanner:false,showLogo:true,products:[P1]},{scale:.4});}catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}}}
+  const NEWT=['opening','sale','scansign','delivery','openhours','thanks','flash','newin'];
+  const swatches=[['ink','#0B3B2B'],['gold','#FFB038'],['light','#FFFFFF']];
+  for(const t of NextaBrandKit.TEMPLATES.filter(t=>t.group!=='card')){
+    for(const [sid,bg] of swatches){
+      const {c,cap}=mk('gPosters',t.label+' · '+sid,NEWT.includes(t.id));
+      try{await NextaBrandKit.render(c,t.id,{name:store.name,url:store.url,phone:store.phone,showPhone:true,showLogo:true,tagline:'',cta:'',theme:{bg}},{scale:t.w>2000?.2:.4});}
+      catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}
+    }
+  }
+  meta.insertAdjacentHTML('beforeend',' Rendered '+document.querySelectorAll('canvas').length+' previews.');
+})();
+</script></body></html>

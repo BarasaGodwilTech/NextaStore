@@ -12,10 +12,10 @@
        which skips this check and carries on to sign-in. Signed-in people, and anyone returning from the sign-in hand-over, are not affected. */
     (function () { try {
         if (window.NextaHosts && window.NextaHosts.mode === 'subdomain') return;   // on circle./crew. hosts the sign-in bridge makes this call
-        var t = localStorage.getItem('nextastore_token');
+        var t = localStorage.getItem('nextastore_token') || sessionStorage.getItem('nextastore_token');   // a session without "keep me signed in" lives in sessionStorage
         if (/[?&]go=1/.test(location.search) || location.hash.indexOf('#nxs=') === 0 || (t && t.split('.').length === 3)) return;
         window.__nxAbout = true;
-        location.replace(window.NextaHosts ? window.NextaHosts.main('/about-crew') : '/about-crew');
+        location.replace(window.NextaHosts ? window.NextaHosts.about('crew') : '/about-crew');
     } catch (e) { /* storage blocked: fall through to the normal sign-in flow */ } })();
     </script>
     <script src="/js/growth-session.js" data-auth="required"></script>
@@ -41,30 +41,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/growth.css">
 </head>
-<body class="gp-body" data-auth-required data-program="scout" data-assistant="off">
+<body class="gp-body" data-auth-required data-program="crew" data-assistant="off">
     <a class="gp-skip" href="#gpRoot">Skip to content</a>
     <header class="gp-top">
         <a class="gp-brand" href="/" data-local><img src="/assets/growth-brand/svg/lockup-crew.svg" alt="NextaStore Crew, field team" height="46"></a>
-        <nav aria-label="Navigation">
-            <a href="/" data-local class="is-active" aria-current="page"><i class="fas fa-compass" aria-hidden="true"></i><span>Dashboard</span></a>
-            <a href="/marketplace"><i class="fas fa-store" aria-hidden="true"></i><span>Marketplace</span></a>
-            <a href="/messages"><i class="fas fa-message" aria-hidden="true"></i><span>Messages</span></a>
-        </nav>
-        <div class="account-nav-slot" data-account-nav></div>
+        <nav id="gpTopNav" class="gp-tabs" aria-label="Navigation" hidden></nav>
+        <div class="account-nav-slot" data-account-nav data-account-program></div>
     </header>
     <main class="gp-shell" id="gpRoot" tabindex="-1"><div class="gp-skel"></div><div class="gp-skel"></div></main>
     <footer class="gp-foot">
         <div class="gp-row"><img src="/assets/growth-brand/svg/mark-crew.svg" alt="" width="48" height="48"><span>NextaStore Crew, the field team.</span></div>
-        <div class="gp-row"><a href="/terms">Terms</a><a href="/marketplace">NextaStore</a></div>
+        <div class="gp-row"><a href="/about-crew">About Crew</a><a href="/terms">Terms</a><a href="/marketplace">NextaStore</a></div>
     </footer>
+    <nav class="gp-tabbar" id="gpTabbar" aria-label="Sections" hidden></nav>
     <noscript><div class="gp-shell"><section class="gp-card"><h2>JavaScript is needed</h2><p class="gp-muted">Please turn on JavaScript in your browser to use NextaStore Crew.</p></section></div></noscript>
 
+    <script src="/js/growth-shell.js"></script>
+    <script src="/js/growth-art.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/ui-overlays.js"></script>
     <script src="/js/growth-ui.js"></script>
     <script src="/js/growth-qr.js"></script>
     <script src="/js/growth-kit.js"></script>
+    <script src="/js/crew-card-photo.js"></script>
+    <script src="/js/crew-card.js"></script>
     <script src="/js/growth.js"></script>
 </body>
 </html>

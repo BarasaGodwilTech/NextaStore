@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <!-- soft-touch plastic: a very fine lit grain under the gloss -->
+    <filter id="matte" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="14" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale=".45" diffuseConstant="1.1" lighting-color="#fff" result="l"><feDistantLight azimuth="235" elevation="62"/></feDiffuseLighting>
+      <feComposite in="l" in2="SourceAlpha" operator="in" result="lc"/>
+      <feBlend in="SourceGraphic" in2="lc" mode="multiply"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="soft2" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="2"/></filter>
+    <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5FE9B6"/><stop offset=".5" stop-color="#16C48A"/><stop offset="1" stop-color="#007A52"/></linearGradient>
+    <linearGradient id="gAedge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0A8E60"/><stop offset="1" stop-color="#00553A"/></linearGradient>
+    <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".6" stop-color="#F6E7C6"/><stop offset="1" stop-color="#E2C88F"/></linearGradient>
+    <linearGradient id="gBedge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D7BB82"/><stop offset="1" stop-color="#A98A4F"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".62"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="dot" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#D5EFE4"/></radialGradient>
+    <clipPath id="clipA"><path d="M112 98H184Q214 98 214 128V158Q214 188 184 188H152L128 214Q124 218 124 212V188H112Q82 188 82 158V128Q82 98 112 98Z"/></clipPath>
+    <clipPath id="clipB"><path d="M62 30H122Q152 30 152 60V84Q152 114 122 114H82L58 138Q54 142 54 136V114H52Q22 114 22 84V60Q22 30 52 30Z"/></clipPath>
+  </defs>
+  <ellipse cx="122" cy="226" rx="84" ry="8" fill="#000" opacity=".34" filter="url(#soft)"/>
+  <!-- BACK bubble (buyer, cream) -->
+  <path d="M62 30H122Q152 30 152 60V84Q152 114 122 114H82L58 138Q54 142 54 136V114H52Q22 114 22 84V60Q22 30 52 30Z" fill="#000" opacity=".26" transform="translate(4 9)" filter="url(#soft2)"/>
+  <path d="M62 30H122Q152 30 152 60V84Q152 114 122 114H82L58 138Q54 142 54 136V114H52Q22 114 22 84V60Q22 30 52 30Z" fill="url(#gBedge)" transform="translate(0 6)"/>
+  <g filter="url(#matte)"><path d="M62 30H122Q152 30 152 60V84Q152 114 122 114H82L58 138Q54 142 54 136V114H52Q22 114 22 84V60Q22 30 52 30Z" fill="url(#gB)"/></g>
+  <g clip-path="url(#clipB)"><ellipse cx="72" cy="30" rx="70" ry="30" fill="url(#gloss)" opacity=".7"/></g>
+  <g fill="#0B3B2B" opacity=".55"><rect x="42" y="56" width="74" height="7" rx="3.5"/><rect x="42" y="72" width="94" height="7" rx="3.5"/><rect x="42" y="88" width="48" height="7" rx="3.5"/></g>
+  <!-- FRONT bubble (seller, green) -->
+  <path d="M112 98H184Q214 98 214 128V158Q214 188 184 188H152L128 214Q124 218 124 212V188H112Q82 188 82 158V128Q82 98 112 98Z" fill="#000" opacity=".3" transform="translate(4 10)" filter="url(#soft2)"/>
+  <path d="M112 98H184Q214 98 214 128V158Q214 188 184 188H152L128 214Q124 218 124 212V188H112Q82 188 82 158V128Q82 98 112 98Z" fill="url(#gAedge)" transform="translate(0 7)"/>
+  <g filter="url(#matte)"><path d="M112 98H184Q214 98 214 128V158Q214 188 184 188H152L128 214Q124 218 124 212V188H112Q82 188 82 158V128Q82 98 112 98Z" fill="url(#gA)"/></g>
+  <g clip-path="url(#clipA)"><ellipse cx="124" cy="98" rx="84" ry="34" fill="url(#gloss)"/><path d="M82 176Q148 196 214 168V190H82Z" fill="#003d29" opacity=".18"/></g>
+  <path d="M88 130 Q90 108 112 105" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- typing dots -->
+  <g><circle cx="122" cy="146" r="9" fill="#00553A" opacity=".35" transform="translate(1.4 2.4)"/><circle cx="148" cy="146" r="9" fill="#00553A" opacity=".35" transform="translate(1.4 2.4)"/><circle cx="174" cy="146" r="9" fill="#00553A" opacity=".35" transform="translate(1.4 2.4)"/>
+  <circle cx="122" cy="146" r="9" fill="url(#dot)"/><circle cx="148" cy="146" r="9" fill="url(#dot)"/><circle cx="174" cy="146" r="9" fill="url(#dot)"/>
+  <circle cx="119" cy="143" r="2.6" fill="#fff"/><circle cx="145" cy="143" r="2.6" fill="#fff"/><circle cx="171" cy="143" r="2.6" fill="#fff"/></g>
+</svg>

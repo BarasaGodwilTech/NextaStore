@@ -480,12 +480,12 @@
    "language": "en"
   },
   "Why has my Seller Pass payment not been approved": {
-   "reply": "Seller Pass costs UGX 20,000 per month of coverage. Seller Pass payments are not refundable.",
+   "reply": "Seller Pass payments are not refundable.",
    "bubbles": [
-    "Seller Pass costs UGX 20,000 per month of coverage. Seller Pass payments are not refundable."
+    "Seller Pass payments are not refundable."
    ],
-   "source": "model",
-   "faqId": null,
+   "source": "faq",
+   "faqId": "seller_pass_refund",
    "handoff": null,
    "flag": null,
    "language": "en"
@@ -504,10 +504,10 @@
    "language": "en"
   },
   "What happens when Seller Pass expires": {
-   "reply": "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.\n\nTo cancel a Seller Pass subscription: there is nothing to cancel.",
+   "reply": "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.\n\n[Open Seller Pass](/subscription)",
    "bubbles": [
-    "If a store's paid coverage (or trial) runs out before it's renewed, the subscription status shows as ended and the seller is prompted to renew.",
-    "To cancel a Seller Pass subscription: there is nothing to cancel."
+    "Nothing is charged automatically, and there is nothing to cancel. To continue coverage, buy another block from the subscription page.",
+    "[Open Seller Pass](/subscription)"
    ],
    "source": "model",
    "faqId": null,
@@ -2398,10 +2398,10 @@
    "language": "en"
   },
   "how do I turn on notifications": {
-   "reply": "In-app notifications cover things like: order status changes, new messages, new products from stores a buyer follows, and subscription reminders for sellers (e.g.\n\ntrial ending soon). Push notifications mirror the important ones to the browser/device if the user has enabled push and installed the app (NextaStore works as an installable PWA).",
+   "reply": "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.\n\nPush notifications mirror important ones when enabled.",
    "bubbles": [
-    "In-app notifications cover things like: order status changes, new messages, new products from stores a buyer follows, and subscription reminders for sellers (e.g.",
-    "trial ending soon). Push notifications mirror the important ones to the browser/device if the user has enabled push and installed the app (NextaStore works as an installable PWA)."
+    "In-app notifications cover order status changes, new messages, new products from followed stores, and seller subscription reminders.",
+    "Push notifications mirror important ones when enabled."
    ],
    "source": "model",
    "faqId": null,
@@ -2526,12 +2526,13 @@
    "language": "en"
   },
   "what does pending mean on my order": {
-   "reply": "An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled. A new order starts as pending.",
+   "reply": "The platform order statuses are pending, processing, shipped, delivered and cancelled. Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses.",
    "bubbles": [
-    "An order is always in one of these statuses: pending, processing, shipped, delivered and cancelled. A new order starts as pending."
+    "The platform order statuses are pending, processing, shipped, delivered and cancelled.",
+    "Buyers see friendlier labels: Placed, Confirmed, Shipped / ready, Completed, and Cancelled for the corresponding internal statuses."
    ],
-   "source": "model",
-   "faqId": null,
+   "source": "faq",
+   "faqId": "order_statuses",
    "handoff": null,
    "flag": null,
    "language": "en"

@@ -1,4 +1,4 @@
-> **Naming (round 5):** the field team, called "Nexta Scouts" when this was written, is now **NextaStore Crew**; Circle is **NextaStore Circle**. Code identifiers (`scout`, `SCOUT_RANKS`, `/growth/scouts/apply`) keep the old word on purpose. See `07_V4_CHANGES.md` and `08_V5_CREW_REBRAND.md`.
+> **Naming (round 5):** the field team, called "Nexta Scouts" when this was written, is now **NextaStore Crew**; Circle is **NextaStore Circle**. Code identifiers were renamed to match in round 6 (`crew`, `CREW_RANKS`, `/growth/crew/apply`); this document still uses the old words where it describes the original design. See `07_V4_CHANGES.md` and `08_V5_CREW_REBRAND.md`.
 
 # Program design: NextaStore Circle and NextaStore Crew
 

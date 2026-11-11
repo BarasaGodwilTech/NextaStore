@@ -3,7 +3,7 @@
  *   node growth-program/backend/scripts/growth-flow-test.js
  *
  * It swaps Prisma for a tiny in-memory stand-in (scripts/lib/memory-prisma.js) and drives the REAL
- * service code through whole stories: a Circle member earning and withdrawing, a Scout climbing a
+ * service code through whole stories: a Circle member earning and withdrawing, a Crew member climbing a
  * rank, fraud attempts being blocked, offline leads, Market Days, the daily digest and the
  * economics view.
  *
@@ -150,7 +150,7 @@ async function main() {
     check('rewards counted: 4,000 + 7,000 + 4,000 + 3,000 stay = 18,000', eco.lifetime.all.rewards === 18000, String(eco.lifetime.all.rewards));
     check('the REAL fee (650) is used in preference to the estimate (700)', eco.lifetime.all.fees === 650 && eco.fees.actualCount === 1);
     check('cost ratio = (rewards + fees) / revenue and is flagged good', Math.abs(eco.lifetime.all.ratio - (18650 / revenue)) < 1e-9 && eco.lifetime.all.status === 'good', JSON.stringify(eco.lifetime.all));
-    check('per-program split: all of it is Circle so far', eco.lifetime.circle.rewards === 18000 && eco.lifetime.scout.rewards === 0);
+    check('per-program split: all of it is Circle so far', eco.lifetime.circle.rewards === 18000 && eco.lifetime.crew.rewards === 0);
 
     // ---------------------------------------------------------------- reversal
     console.log('Reversal: an approved payment turns out bad');
@@ -190,23 +190,23 @@ async function main() {
     const out2 = await hooks.onPaymentApproved({ payment: dupRef, store: t2s, adminId: 'admin1' });
     check('the same MoMo transaction ID on two stores is blocked', out2.blocked && /already used/.test(out2.reasons.join(' ')));
 
-    // ---------------------------------------------------------------- Scouts
-    console.log('Scout: apply, vetting, lead lock, visits');
+    // ---------------------------------------------------------------- Crew members
+    console.log('Crew member: apply, vetting, lead lock, visits');
     const kofi = mkUser('u_kofi', 'Kofi Mensah', 'kofi@gmail.com');
-    await expectError('Scouts must upload an ID', 'KYC_REQUIRED', () => partners.applyScout(kofi, { phone: '0753111000', territories: ['kampala'], agreedTerms: true }));
-    const kp = await partners.applyScout(kofi, { phone: '0753111000', territories: ['kampala', 'wakiso', 'mukono', 'entebbe'], kycFileUrl: 'private/id.jpg', agreedTerms: true });
+    await expectError('Crew members must upload an ID', 'KYC_REQUIRED', () => partners.applyCrew(kofi, { phone: '0753111000', territories: ['kampala'], agreedTerms: true }));
+    const kp = await partners.applyCrew(kofi, { phone: '0753111000', territories: ['kampala', 'wakiso', 'mukono', 'entebbe'], kycFileUrl: 'private/id.jpg', cardPhotoUrl: 'private/card.jpg', agreedTerms: true });
     check('application waits for approval; territories capped at 3', kp.status === 'applied' && kp.territories.length === 3);
     await expectError('cannot log leads before approval', 'NOT_APPROVED', () => leads.logLead(kofi, { business: 'Mama Rose Shop', phone: '0772555111' }));
-    await admin.approveScout('admin1', kp.id);
-    let twice = null; try { await admin.approveScout('admin1', kp.id); } catch (e) { twice = e; }
+    await admin.approveCrew('admin1', kp.id);
+    let twice = null; try { await admin.approveCrew('admin1', kp.id); } catch (e) { twice = e; }
     check('cannot approve the same application twice', !!twice);
 
     const lead = await leads.logLead(kofi, { business: 'Mama Rose Shop', contactName: 'Rose', phone: '0772 555 111', district: 'Kampala' });
     check('lead logged with a 14-day lock', lead.lockDays === 14 && lead.offline === false);
-    await expectError('same Scout cannot log it twice', 'YOURS_ALREADY', () => leads.logLead(kofi, { business: 'Mama Rose Shop', phone: '+256772555111' }));
-    const op = await (async () => { const u = mkUser('u_kofi2', 'Other Scout', 'o@gmail.com'); const p = await partners.applyScout(u, { phone: '0754000999', territories: ['jinja'], kycFileUrl: 'private/id2.jpg', agreedTerms: true }); await admin.approveScout('admin1', p.id); return { user: u, partner: p }; })();
-    await expectError('a second Scout cannot take a locked lead (and is not told who has it)', 'LEAD_TAKEN', () => leads.logLead(op.user, { business: 'Rose Provisions', phone: '0772555111' }));
-    await expectError('a Scout cannot log their own number', 'OWN_NUMBER', () => leads.logLead(kofi, { business: 'My own', phone: '0753111000' }));
+    await expectError('same Crew member cannot log it twice', 'YOURS_ALREADY', () => leads.logLead(kofi, { business: 'Mama Rose Shop', phone: '+256772555111' }));
+    const op = await (async () => { const u = mkUser('u_kofi2', 'Other Crew member', 'o@gmail.com'); const p = await partners.applyCrew(u, { phone: '0754000999', territories: ['jinja'], kycFileUrl: 'private/id2.jpg', cardPhotoUrl: 'private/card.jpg', agreedTerms: true }); await admin.approveCrew('admin1', p.id); return { user: u, partner: p }; })();
+    await expectError('a second Crew member cannot take a locked lead (and is not told who has it)', 'LEAD_TAKEN', () => leads.logLead(op.user, { business: 'Rose Provisions', phone: '0772555111' }));
+    await expectError('a Crew member cannot log their own number', 'OWN_NUMBER', () => leads.logLead(kofi, { business: 'My own', phone: '0753111000' }));
     advance(10 * DAY);
     const v1 = await leads.logVisit(kofi, lead.id, { note: 'Showed demo', lat: 0.3136, lng: 32.5811 });
     check('a follow-up visit extends the claim', v1.extended && v1.extensionsLeft === 1, JSON.stringify(v1));
@@ -227,20 +227,20 @@ async function main() {
     const p5 = pay('s_rose'); await hooks.onPaymentSubmitted({ payment: p5, store: roseStore }); approve(p5);
     await hooks.onPaymentApproved({ payment: p5, store: roseStore, adminId: 'admin1' });
     const kc = db.growthCommission.filter((c) => c.partnerId === kp.id);
-    check('Trailhead Scout: 25% (5,000) + campaign boost 20% (1,000), no live bonus yet', eq(kc.map((c) => [c.type, c.amount]).sort(), [['campaign_boost', 1000], ['first_payment', 5000]].sort()), JSON.stringify(kc.map((c) => [c.type, c.amount])));
+    check('Trailhead Crew member: 25% (5,000) + campaign boost 20% (1,000), no live bonus yet', eq(kc.map((c) => [c.type, c.amount]).sort(), [['campaign_boost', 1000], ['first_payment', 5000]].sort()), JSON.stringify(kc.map((c) => [c.type, c.amount])));
 
     const board = await partners.campaigns(kofi);
-    check('Scout sees the live Kampala Market Week and next week\'s, not the Circle-only or far-off ones', eq(board.map((c) => c.title), ['Kampala Market Week', 'Next week']), JSON.stringify(board.map((c) => c.title)));
+    check('Crew member sees the live Kampala Market Week and next week\'s, not the Circle-only or far-off ones', eq(board.map((c) => c.title), ['Kampala Market Week', 'Next week']), JSON.stringify(board.map((c) => c.title)));
     const live = board.find((c) => c.live);
     check('the board counts Kofi\'s paid store and ranks him first, by first name only', live.mine === 1 && live.rank === 1 && live.board[0].firstName === 'Kofi' && live.board[0].you === true && live.board.length === 1);
-    check('Circle members are not mixed into a Scout board', !live.board.some((b) => b.firstName === 'Amina'));
+    check('Circle members are not mixed into a Crew member board', !live.board.some((b) => b.firstName === 'Amina'));
     const circleBoard = await partners.campaigns(amina);
     check('the Circle member sees the campaign for everyone and the Circle-only one', circleBoard.some((c) => c.title === 'Circle only weekend') && circleBoard.some((c) => c.title === 'Kampala Market Week'));
 
-    console.log('Stay bonus for Scouts, and rank promotion');
+    console.log('Stay bonus for Crew members, and rank promotion');
     const roseRenewal = pay('s_rose'); approve(roseRenewal);
     const sr = await hooks.onPaymentApproved({ payment: roseRenewal, store: roseStore, adminId: 'admin1', previousPaidUntil: new Date(nowMs + 2 * DAY) });
-    check('Scout: stay bonus 4,000 + stocked-store bonus 2,000 (3+ products still on the shelf)', sr.earned === 6000 && eq(sr.lines.map((l) => l.type).sort(), ['live_bonus', 'renewal']));
+    check('Crew member: stay bonus 4,000 + stocked-store bonus 2,000 (3+ products still on the shelf)', sr.earned === 6000 && eq(sr.lines.map((l) => l.type).sort(), ['live_bonus', 'renewal']));
     for (const label of ['K1', 'K2', 'K3', 'K4']) await recruit(kp, label);
     const kAfter = await partners.dashboard(kofi);
     check('five paid stores in 90 days promotes Kofi to Pathfinder (30%)', kAfter.rank.key === 'pathfinder' && kAfter.ratePercent === 30, JSON.stringify(kAfter.rank));
@@ -253,9 +253,9 @@ async function main() {
     mkStore('s_m1', 'x', 'Mukono A', { district: 'mukono' });
     const trail = await partners.trailMap(kofi);
     const order = trail.districts.map((d) => d.district);
-    check('the Trail Map lists the Scout\'s own areas first, thinnest marketplace first', order.slice(0, 3).join() === 'mukono,wakiso,kampala' && trail.districts.slice(0, 3).every((d) => d.inYourTerritory), order.join());
+    check('the Trail Map lists the Crew member\'s own areas first, thinnest marketplace first', order.slice(0, 3).join() === 'mukono,wakiso,kampala' && trail.districts.slice(0, 3).every((d) => d.inYourTerritory), order.join());
     const kampala = trail.districts.find((d) => d.district === 'kampala');
-    check('it shows the Scout\'s own footprint in each district', kampala.yours.leads >= 1 && kampala.yours.paid >= 1, JSON.stringify(kampala.yours));
+    check('it shows the Crew member\'s own footprint in each district', kampala.yours.leads >= 1 && kampala.yours.paid >= 1, JSON.stringify(kampala.yours));
     await expectError('Circle members cannot open the Trail Map', undefined, () => partners.trailMap(amina));
 
     console.log('Strategy: offline leads');
@@ -279,7 +279,7 @@ async function main() {
     const ov = await admin.overview();
     check('admin overview works (groupBy / aggregate)', ov.partners.length > 0 && ov.referralsByStage.length > 0 && typeof ov.totalOwedToPartners === 'number');
     eco = await admin.economics();
-    check('economics splits Circle and Scout rewards', eco.lifetime.scout.rewards > 0 && eco.lifetime.circle.rewards > 0 && eco.window.all.status !== undefined);
+    check('economics splits Circle and Crew rewards', eco.lifetime.crew.rewards > 0 && eco.lifetime.circle.rewards > 0 && eco.window.all.status !== undefined);
 
     // ---------------------------------------------------------------- Expiry and safety
     console.log('Expiry and safety');

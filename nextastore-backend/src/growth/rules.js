@@ -1,6 +1,6 @@
 /**
  * Growth program rules: NextaStore Circle (the affiliate program) and NextaStore Crew (the field team).
- * (Internally the field team is still called 'scout': database values, API paths, permission names. Only what people SEE says Crew.)
+ * (Internally the field team is still called 'crew': database values, API paths, permission names. Only what people SEE says Crew.)
  *
  * One dependency-free file, same idea as src/platformRules.js: every number the
  * code enforces and every number the docs / Nexi describe lives HERE. Change a
@@ -11,11 +11,11 @@
  * confirm before launch; nothing else in the folder hard-codes them.
  */
 
-const PROGRAMS = Object.freeze({ circle: 'circle', scout: 'scout' });
+const PROGRAMS = Object.freeze({ circle: 'circle', crew: 'crew' });
 
 const PROGRAM_LABELS = {
     circle: { name: 'NextaStore Circle', short: 'Circle', descriptor: 'Affiliate Program', tagline: 'Bring a store into your circle.', member: 'Circle member' },
-    scout: { name: 'NextaStore Crew', short: 'Crew', descriptor: 'Field Team', tagline: 'Find the stores worth finding.', member: 'Crew member' }
+    crew: { name: 'NextaStore Crew', short: 'Crew', descriptor: 'Field Team', tagline: 'Find the stores worth finding.', member: 'Crew member' }
 };
 
 // What a store pays for the Seller Pass. Mirrors src/platformRules.js on purpose;
@@ -29,7 +29,7 @@ const ATTRIBUTION = {
     lateClaimDays: 7,           // a new seller may type a code in within this many days of signup...
     lateClaimRequiresNoPayment: true, // ...but only while no payment has been submitted
     qualifyingWindowDays: 60,   // the store's first payment must be APPROVED within this many days of signup
-    leadLockDays: 14,           // Scouts: a logged lead is that Scout's alone for this long
+    leadLockDays: 14,           // Crew members: a logged lead is that Crew member's alone for this long
     leadLockMaxExtensions: 2,   // each logged follow-up visit extends the lock...
     leadLockExtendDays: 7,      // ...by this many days
     oneReferrerPerStore: true,  // first valid attribution wins, never re-assigned
@@ -39,7 +39,7 @@ const ATTRIBUTION = {
 // ---- What a successful store is worth ---------------------------------------------
 // Design rule: pay LESS up front and MORE once the store has proved it stays.
 //   - upfront (first approved payment): a percentage of ONE month, plus the 6-month kicker and any boost
-//   - on the first on-time renewal: the stay bonus, and for Scouts a stocked-store bonus
+//   - on the first on-time renewal: the stay bonus, and for Crew members a stocked-store bonus
 //     (the store still has products on its shelf). Both are only paid for stores that came back.
 // A hard guard on top: everything paid on a first payment is capped at maxUpfrontShare of what the
 // store actually paid, so NextaStore always keeps the rest, whatever the rank, kicker or boost.
@@ -47,8 +47,8 @@ const ATTRIBUTION = {
 const COMMISSION = {
     baseMonths: 1,
     circle: { rate: 0.20, commitmentKicker: 3000, renewalBonus: 3000 },        // (PROPOSED) 20% of month one = UGX 4,000
-    // Scout rate rises with rank (see SCOUT_RANKS). The rest are flat.
-    scout: { commitmentKicker: 5000, renewalBonus: 4000, liveBonus: 2000 },    // (PROPOSED) liveBonus = stocked-store bonus, paid on renewal
+    // Crew rate rises with rank (see CREW_RANKS). The rest are flat.
+    crew: { commitmentKicker: 5000, renewalBonus: 4000, liveBonus: 2000 },    // (PROPOSED) liveBonus = stocked-store bonus, paid on renewal
     maxUpfrontShare: 0.40,
     // A first payment covering this many months or more earns the kicker. It matches the
     // 6-month Verified Seller threshold: stores that commit are stores that stay.
@@ -56,20 +56,20 @@ const COMMISSION = {
     // The store's NEXT approved payment must arrive no later than this many days after the
     // previous coverage ended. Paid once per store.
     renewalWithinDays: 45,
-    // Stocked-store bonus (Scouts): at least this many products on the shelf when the store renews.
+    // Stocked-store bonus (Crew members): at least this many products on the shelf when the store renews.
     liveMinProducts: 3
 };
 
-// Scouts climb by CLEARED conversions in the last 90 days. Rank changes the commission
+// Crew members climb by CLEARED conversions in the last 90 days. Rank changes the commission
 // rate only, never the withdrawal limits (those follow trust, see TRUST_LEVELS).
-const SCOUT_RANKS = [
+const CREW_RANKS = [
     { key: 'trailhead',   label: 'Trailhead',   minCleared90d: 0,  rate: 0.25 },
     { key: 'pathfinder',  label: 'Pathfinder',  minCleared90d: 5,  rate: 0.30 },
     { key: 'trailblazer', label: 'Trailblazer', minCleared90d: 15, rate: 0.35 },
     { key: 'summit',      label: 'Summit',      minCleared90d: 30, rate: 0.40 }
 ];
 const RANK_WINDOW_DAYS = 90;
-const RANK_MIN_QUALITY_SCORE = 60; // below this a Scout keeps their rank but cannot be promoted
+const RANK_MIN_QUALITY_SCORE = 60; // below this a Crew member keeps their rank but cannot be promoted
 
 // ---- When money becomes real --------------------------------------------------------
 //   held       approved payment exists, clearance window running (can still be voided)
@@ -145,6 +145,21 @@ const FOLLOW_UP = {
     trialEndingNudgeDays: 2              // the recruiter hears when a recruit's trial ends within this many days
 };
 
+// ---- Reviewing Crew applications ----------------------------------------------------
+// The promise shown to applicants (join page, pending screen, the "application received" notification and the
+// public About Crew page all read THIS number; none of them borrows the payout promise any more).
+const REVIEW = { applicationWorkingDays: 2 };
+
+// ---- Moving up from Circle to Crew -----------------------------------------------------
+// A Circle member may ask to join the Crew. Circle keeps working, untouched, until an admin approves; a declined request changes nothing.
+// Money rule (the one that matters): a referral is paid under the program its partner was in WHEN THAT PERSON SIGNED UP
+// (GrowthReferral.program, set once). So people who signed up through the Circle link before the move stay on Circle rules for
+// good, and only sign-ups after approval are treated as Crew. The old code and link keep working: they simply resolve to the same
+// member, whose program at that moment decides how the new sign-up counts.
+const UPGRADE = {
+    reapplyAfterDays: 14   // after a declined request, the member can ask again after this long (an admin can reopen it sooner)
+};
+
 // ---- Signals the risk engine looks at (weights live in risk.js) ----------------------
 const RISK = {
     reviewAtScore: 30,   // conversion is held for a human to release
@@ -170,30 +185,34 @@ const FIELD = {
     leaderboardSize: 5
 };
 
-// ---- Scout territories ---------------------------------------------------------------
+// ---- Crew territories ---------------------------------------------------------------
 // Values match Store.district. A territory never blocks a sign-up; it shapes the Trail Map
 // and the "gap" suggestions. Leads are protected by the lead lock, not by geography.
-const TERRITORIES = { maxPerScout: 3 };
+const TERRITORIES = { maxPerMember: 3 };
+
+// ---- Crew ID card -------------------------------------------------------------------------
+// The card is made when a member is approved, but stays LOCKED until they have shown they are working: unlockLeads businesses
+// logged (leads, source 'lead', any stage). That keeps the card (a thing shopkeepers will trust) from going to someone who applied
+// and never walked a market. An admin with growth.review can release a card earlier, for any reason, from the member's file.
+const CREW_CARD = { unlockLeads: 5 };
 
 // ---- Partner codes -------------------------------------------------------------------
 // Readable, no 0/O/1/I, e.g. CIRCLE-K7M3Q or CREW-4HTR9.
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 5;
-const CODE_PREFIX = { circle: 'CIRCLE', scout: 'CREW' };
-// Codes issued before the rename started with SCOUT-. They keep working everywhere a code is typed, scanned or linked.
-const LEGACY_CODE_PREFIXES = ['SCOUT'];
+const CODE_PREFIX = { circle: 'CIRCLE', crew: 'CREW' };
 
 // ---- Admin permissions this feature adds (see INTEGRATION_GUIDE) -----------------------
 const GROWTH_PERMISSIONS = Object.freeze({
     VIEW: 'growth.view',           // read dashboards, partners, referrals
-    REVIEW: 'growth.review',       // approve Scouts, release/void flagged conversions, freeze partners
+    REVIEW: 'growth.review',       // approve Crew members, release/void flagged conversions, freeze partners
     PAYOUTS: 'growth.payouts',     // approve and mark withdrawals paid
     SETTINGS: 'growth.settings'    // campaigns, holidays, pause the programs
 });
 
 module.exports = {
-    PROGRAMS, PROGRAM_LABELS, PASS_PRICE_PER_MONTH_UGX, TRIAL_DAYS, ATTRIBUTION, COMMISSION, SCOUT_RANKS, RANK_WINDOW_DAYS,
-    RANK_MIN_QUALITY_SCORE, CLEARANCE, TRUST_LEVELS, TRUST_RULES, WITHDRAWAL, PAYOUT_FEE, EAT_OFFSET_HOURS,
-    FIXED_HOLIDAYS_MMDD, MOVABLE_HOLIDAYS, FOLLOW_UP, RISK, COST_GUARD, FIELD, TERRITORIES, CODE_ALPHABET, CODE_LENGTH,
-    CODE_PREFIX, LEGACY_CODE_PREFIXES, GROWTH_PERMISSIONS
+    PROGRAMS, PROGRAM_LABELS, PASS_PRICE_PER_MONTH_UGX, TRIAL_DAYS, ATTRIBUTION, COMMISSION, CREW_RANKS, RANK_WINDOW_DAYS,
+    RANK_MIN_QUALITY_SCORE, REVIEW, UPGRADE, CLEARANCE, TRUST_LEVELS, TRUST_RULES, WITHDRAWAL, PAYOUT_FEE, EAT_OFFSET_HOURS,
+    FIXED_HOLIDAYS_MMDD, MOVABLE_HOLIDAYS, FOLLOW_UP, RISK, COST_GUARD, FIELD, TERRITORIES, CREW_CARD, CODE_ALPHABET, CODE_LENGTH,
+    CODE_PREFIX, GROWTH_PERMISSIONS
 };

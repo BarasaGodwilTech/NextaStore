@@ -714,6 +714,421 @@
     "direct": false
   },
   {
+    "id": "growth_circle_what",
+    "questions": [
+      "What is Circle, the referral program",
+      "What is circle",
+      "Tell me about circle",
+      "What is the circle program",
+      "What is the affiliate program",
+      "What is the referral program",
+      "Earn by inviting stores"
+    ],
+    "answer": "NextaStore Circle turns word of mouth into income. Anyone with a verified NextaStore account can invite a store owner, and earns a reward when that store pays for its Seller Pass. You are not selling anything for NextaStore: you are introducing people to a tool you believe in. You get your own invite code, link and a shareable invite card with a QR code, plus a tracker showing where each store you invited is. The full explanation and a live earnings calculator are on the Circle information page (/about-circle).",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_what",
+    "questions": [
+      "What is Crew, the paid field team",
+      "What is crew",
+      "Tell me about crew",
+      "What is the crew program",
+      "What is the paid field team",
+      "What does a crew member do",
+      "How does crew work"
+    ],
+    "answer": "NextaStore Crew is NextaStore's paid field team. Crew members visit markets and shops in the districts they choose, show owners how a NextaStore shop works on their own phone, and help them get started. When a store they brought pays, they earn a reward, and their rate grows as they rank up by bringing in stores that stay. Crew members also get field tools such as lead logging, a map of where the marketplace is thin, campaigns, and a pitch kit. Places are approved by NextaStore. More is on the Crew information page (/about-crew).",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_circle_vs_crew",
+    "questions": [
+      "What is the difference between Circle and Crew",
+      "Circle or crew",
+      "Circle vs crew",
+      "Difference between circle and crew",
+      "Which should i join circle or crew",
+      "Is crew better than circle",
+      "What do crew members get that circle members do not"
+    ],
+    "answer": "Circle is open to any verified account, is free to join, starts at once, and rewards you for stores you invite through your link, QR code or code. Crew requires an application and approval, and is for people who will work the field. Crew members earn at higher rates that rise with rank, and get field tools: logging a business so it is held for them, working offline, a district map, campaigns with a leaderboard, and a pitch kit. Each account joins one program at a time. A Circle member who wants more can ask to move up to Crew.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_circle_join",
+    "questions": [
+      "How do I join Circle",
+      "Join circle",
+      "Sign up for circle",
+      "Become a circle member",
+      "Get my circle invite code",
+      "Get my referral code",
+      "Get my referral link"
+    ],
+    "answer": "Open the Circle page (/circle), make sure your email is verified, and accept the program terms. Your personal invite code and link are created straight away. You can then share your link or invite card on WhatsApp, or let the store owner type your code when they sign up. If joining shows as unavailable, new members may be paused for the moment; the page says so, and you can check back later.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_circle_need_store",
+    "questions": [
+      "Do I need a store to join Circle",
+      "Do i need a shop to join circle",
+      "Can a buyer join circle",
+      "Can buyers earn from referrals",
+      "Do i have to be a seller to refer",
+      "Who can join circle",
+      "Am i eligible for circle"
+    ],
+    "answer": "No. Any verified NextaStore account can join Circle, including buyers. You need a verified account and to accept the terms. You do not need your own store.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_cost",
+    "questions": [
+      "Does Circle or Crew cost anything",
+      "Is circle free",
+      "Is crew free",
+      "Do i pay to be a circle member",
+      "Do i pay to be a crew member",
+      "Is the affiliate program free",
+      "Is the referral program free"
+    ],
+    "answer": "No. Joining Circle is free, and Crew has no joining fee either. You earn only when a store you brought pays for its Seller Pass.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_apply",
+    "questions": [
+      "How do I apply to join Crew",
+      "Apply for crew",
+      "How do i apply to crew",
+      "Join crew",
+      "Become a crew member",
+      "Crew application",
+      "How do i become a crew field agent",
+      "How do I join Crew"
+    ],
+    "answer": "Go to the Crew application page (/crew-apply) with a verified account. You give your phone number, choose the districts you will work in, and upload a clear photo of your ID (front and back) and a plain photo of your face for your Crew ID card. These are stored privately and are never shown publicly. You then read and accept the terms and send the application. NextaStore's team reviews every application and may ask for more detail. When you are approved you are told, and your Crew tools unlock.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_review_time",
+    "questions": [
+      "How long does a Crew application review take",
+      "How long does crew review take",
+      "When will i be accepted for crew",
+      "My crew application is still waiting",
+      "Crew acceptance time",
+      "Status of my crew application",
+      "Has my crew application been accepted"
+    ],
+    "answer": "The Crew application page and your Crew page say what to expect, and there is no fixed time to quote here. While you wait, your Crew page shows that the application is being reviewed. If it is taking much longer than the page said, or you were asked for more detail, contact support and mention that you applied to Crew.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_closed",
+    "questions": [
+      "Why is Circle or Crew closed to new people",
+      "Crew applications closed",
+      "Circle closed",
+      "Is crew open",
+      "Is circle open",
+      "Circle is not taking new members",
+      "Crew is not taking applications"
+    ],
+    "answer": "NextaStore can open or pause new members for each program. When a program is paused, its page says it is not taking new people right now. Check back later. Other reasons you may not be able to continue are an unverified account, or already being in the other program, since one account joins one program.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_how_earn",
+    "questions": [
+      "How do I earn with Circle or Crew",
+      "How do i earn with circle",
+      "How do i earn with crew",
+      "How are referral rewards earned",
+      "When do i earn a referral reward",
+      "When do i get a referral commission",
+      "Do i earn when someone i invited signs up",
+      "Earn money by inviting shops",
+      "Make money by bringing shop owners here"
+    ],
+    "answer": "You earn when a store you brought actually pays, never for a sign-up alone. The first reward is added when the store's first Seller Pass payment is approved. A further stay bonus is earned when the store makes its first on-time renewal. Rewards are worked out from one month's Seller Pass price, even if the store pays for a longer period up front. Crew members may also earn a stocked-store bonus when the store has enough products on its shelf, and time-limited Market Day campaigns can add a boost while they run. The exact amounts and rates are on the program pages.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_how_much",
+    "questions": [
+      "How much can a Circle or Crew member earn",
+      "How much does circle pay",
+      "How much does crew pay",
+      "How much can i earn from referrals",
+      "What is the circle reward amount",
+      "What is the crew reward rate",
+      "What percentage do circle members get",
+      "How much do I get when a store I invited pays",
+      "How much do I earn per store"
+    ],
+    "answer": "Amounts are not quoted here because they change. The Circle page (/about-circle) and the Crew page (/about-crew) have a calculator where you move the sliders to try a month, using today's live rewards. For Crew the first-month rate depends on your rank. Rewards depend on stores actually paying, so there is no guaranteed amount.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_how_paid",
+    "questions": [
+      "How and when are Circle and Crew rewards paid",
+      "How do i withdraw my circle rewards",
+      "How do i withdraw my crew rewards",
+      "When can i withdraw referral money",
+      "How do i cash out my rewards",
+      "Referral rewards payout method",
+      "Are circle rewards paid by mobile money",
+      "When do I get paid my referral commission",
+      "How do I get my referral money"
+    ],
+    "answer": "Rewards are paid to your mobile money number (MTN or Airtel). After a store's payment is approved, the reward is held for a short clearing period, and then it can be withdrawn. There is a minimum for a withdrawal, and your very first withdrawal opens once your first store has paid and cleared. NextaStore pays the mobile money fee, so you receive the full amount you withdraw. Withdrawals are checked before they are paid, which protects your earnings and the program. Your Earnings section shows what is clearing and what is ready, and the page shows the current minimum and times. If a withdrawal looks wrong, contact support with the date and the amount.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_reward_missing",
+    "questions": [
+      "Why is my Circle or Crew reward still clearing or missing",
+      "My referral reward is missing",
+      "My commission is missing",
+      "Why is my reward not in my circle balance",
+      "The store i invited paid but no reward",
+      "Where is my referral reward",
+      "My reward is still clearing",
+      "My referral reward is not showing",
+      "I invited a store and it paid but my reward is not there"
+    ],
+    "answer": "A reward appears after the store's payment is approved, so a store that has only signed up, or whose payment is still waiting for approval, has not earned you anything yet. Once approved, it is held while it clears before you can withdraw it. Check your dashboard to see whether the store is listed as yours and what stage it is at. A reward is not paid when the payment is reversed, when the invite did not count (for example another code was used first), or when a flag is under review. If the store is yours and the payment is approved but nothing shows, contact support with the store name.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_store_knows_inviter",
+    "questions": [
+      "How does a store know which member invited it",
+      "How do stores know who invited them",
+      "How is my referral tracked",
+      "How does my invite code work",
+      "Where does the invited store type my code",
+      "What does the invited store see"
+    ],
+    "answer": "Through your invite link, your QR code or your personal code. The invite page tells the visitor who invited them, using your first name only, and the code is remembered on their device for a while so it still counts if they sign up later. A store owner can also type your code when signing up.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_forgot_code",
+    "questions": [
+      "What if the store forgot my invite code",
+      "Store forgot my invite code",
+      "Add a referral code after signup",
+      "Late referral code",
+      "Can the store add my invite code later",
+      "I forgot to use a referral code",
+      "Signed up without an invite code"
+    ],
+    "answer": "A store can add an invite code after signing up for a limited time, as long as nothing has been paid yet. After the first payment, the invite can no longer be added. The store should do this as soon as possible; if it cannot, contact support.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_two_members",
+    "questions": [
+      "What if two members invited the same store",
+      "Two members invited the same store",
+      "Which member gets the referral",
+      "Someone else used their invite code",
+      "Another member referred my store",
+      "Duplicate referral",
+      "One store one referrer"
+    ],
+    "answer": "One store has one referrer. The first valid code or link that the store used when signing up is the one that counts. For Crew, a business logged by a member is held for that member for a set time, so someone else cannot simply take the credit for a visit. If the owner signs up with another member's code while a hold is live, an admin reviews it.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_self_referral",
+    "questions": [
+      "Can I earn from a store I run myself, or from fake referrals",
+      "Can i refer myself",
+      "Can i use my invite code on myself",
+      "Earn referral rewards on my shop",
+      "Self referral",
+      "Fake referrals",
+      "Family referrals",
+      "Can I refer my own shop",
+      "Can I refer my own store"
+    ],
+    "answer": "No. Fake sign-ups, self-referrals and payments that are reversed are not rewarded, and may lead to the account being frozen. Rewards are for real stores that you personally brought and that really pay.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_downline",
+    "questions": [
+      "Is Circle or Crew a pyramid scheme or downline",
+      "Is circle a pyramid scheme",
+      "Is crew a pyramid scheme",
+      "Multi level marketing",
+      "Downline",
+      "Do i earn from members i recruit",
+      "Do i earn from other members referrals"
+    ],
+    "answer": "No. You are paid only for stores you personally brought. There are no recruiting chains and no earnings from other members' referrals. Both programs pay only when a store pays.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_lead_lock",
+    "questions": [
+      "What is Lead Lock for Crew members",
+      "What is lead lock",
+      "How do i log a lead as crew",
+      "Log a business as a crew member",
+      "My crew lead is locked to me",
+      "Protect my crew visit",
+      "How long is a crew lead held"
+    ],
+    "answer": "When a Crew member logs a business they visited, it is held for them for a set time, so a rival cannot take the credit for the visit. A real follow-up visit that is logged extends the hold. The business cannot be one the member already owns or one tied to their own number. If the owner signs up with another member's code while the hold is live, an admin reviews it, so log early and log honestly. The current hold times are shown in the Crew tools.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_offline",
+    "questions": [
+      "Can Crew members work offline",
+      "Crew offline",
+      "Log crew leads without internet",
+      "No data in the market crew",
+      "Does the crew app work offline",
+      "Save crew leads offline",
+      "Crew lead no signal"
+    ],
+    "answer": "Yes. If there is no signal, a lead is saved on the phone and sent automatically when signal returns. It keeps the time it was captured, within a limit, so the visit is not lost. The installed Crew app also opens without signal and can show the member's QR code.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_ranks",
+    "questions": [
+      "What are Crew ranks",
+      "Crew ranks",
+      "How do i rank up in crew",
+      "How do i get promoted in crew",
+      "What are the crew levels",
+      "Crew rank trailhead",
+      "How does my crew rate go up"
+    ],
+    "answer": "Everyone starts at the first rank. The more stores you bring in that pay and stay, the higher your rank, and a higher rank earns a higher rate. Rank follows stores that paid and cleared over a recent stretch, so it can also move back if activity drops. A promotion only lands while your quality score is healthy. Quality is about behaviour, not volume: stores that pay, stay and renew, with no flags or reversals.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_crew_id_card",
+    "questions": [
+      "What is the Crew ID card",
+      "Crew id card",
+      "Crew badge",
+      "Crew card",
+      "How do i get my crew card",
+      "Download my crew id card",
+      "Why is my crew card locked"
+    ],
+    "answer": "Approved Crew members get a NextaStore Crew ID card made from the face photo they gave when applying. It unlocks once a member has logged enough real businesses, or earlier if NextaStore's team releases it. The card has a QR code on the back, and it can be saved to the phone. Your Crew page shows your progress toward unlocking it. The photo can be replaced while applying and while the card is still locked. Once the card is released the photo is fixed, so ask support if it really needs changing.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_id_private",
+    "questions": [
+      "Is my Crew ID photo private",
+      "Is my crew id photo safe",
+      "Who can see my crew id",
+      "Is my crew passport photo private",
+      "Why does crew need my id",
+      "Is my crew id photo shared",
+      "Privacy of my crew application id"
+    ],
+    "answer": "The ID photo and the face photo for the Crew card are stored privately, are never shown publicly, and are used only to review the application and make the card. Only authorised NextaStore staff reviewing applications can open the ID.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_upgrade",
+    "questions": [
+      "Can I move from Circle to Crew",
+      "Upgrade to crew",
+      "Move up to crew",
+      "Switch from circle to crew",
+      "Change from circle to crew",
+      "I am in circle and want crew",
+      "Circle member apply for crew"
+    ],
+    "answer": "Yes. A Circle member can ask to move up to Crew from their Circle page. The request needs the same details as a Crew application, including the ID and card photo, and a NextaStore admin approves it. Your Circle membership keeps working until then, and a declined or withdrawn request changes nothing. Your balance, payout number, withdrawals and history carry over, since it is the same account. On approval you get a new Crew code, and your old Circle code, link and QR code keep working. Stores that signed up under your Circle link before approval stay on Circle rewards, and stores that sign up after approval earn Crew rewards. You cannot be in both programs at once, which is why the move is an upgrade.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_payout_details",
+    "questions": [
+      "How do I set or change my Circle or Crew payout details",
+      "Change my circle payout details",
+      "Change my crew payout details",
+      "Edit my payout details",
+      "Correct the mobile money my rewards are paid to",
+      "Set my payout details for rewards",
+      "Add my mtn payout for rewards"
+    ],
+    "answer": "You set the mobile money number your rewards are paid to in your dashboard, under your payout details. Whenever it is set or changed, withdrawals are paused for a safety period, and you get a notice. This protects your earnings if someone else gets into your account. The page shows how long the pause lasts. If you did not make the change yourself, change your password and contact support straight away. If you entered a wrong number, correct it in your dashboard, and contact support if a withdrawal was already requested to the old number.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_frozen",
+    "questions": [
+      "Why was my Circle or Crew account frozen",
+      "My circle account is frozen",
+      "My crew account is frozen",
+      "Circle account suspended",
+      "Crew account suspended",
+      "Referral rewards on hold",
+      "Circle account under review"
+    ],
+    "answer": "A program account can be frozen while NextaStore reviews signs of fake sign-ups, self-referrals, reversed payments or other breaches of the terms. Rewards that are under review are not paid until the review finishes. The reason for a review is not visible here, so contact support with your code to find out where it stands.",
+    "audience": "any",
+    "direct": false
+  },
+  {
+    "id": "growth_dashboard",
+    "questions": [
+      "Where is my Circle or Crew dashboard",
+      "Where is my circle dashboard",
+      "Where is my crew dashboard",
+      "Open my circle dashboard",
+      "Where do i see my referral earnings",
+      "Where do i see the stores i invited",
+      "Where do i find my invite code"
+    ],
+    "answer": "Circle members use the Circle page (/circle) and Crew members use the Crew page (/crew). Both show your code, your invite link and QR code, the stores you brought and where each one is, your earnings and withdrawals. If you open the wrong one, you are sent to your own page. If you have not joined yet, the page shows how to join.",
+    "audience": "any",
+    "direct": false
+  },
+  {
     "id": "contact_support",
     "questions": [
       "How do I contact support",

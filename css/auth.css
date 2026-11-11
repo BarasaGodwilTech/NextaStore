@@ -631,3 +631,420 @@
 @media (prefers-reduced-motion: reduce) {
     .auth-3d .o-float { animation: none; }
 }
+
+/* WIP 114: "Continue with Google" under the sign-in and sign-up forms. Hidden until the server says Google is set up. */
+.auth-google[hidden], .auth-google-btn[hidden] { display: none; }
+.auth-google { margin-top: 18px; display: grid; gap: 12px; justify-items: center; }
+.auth-divider { width: 100%; display: flex; align-items: center; gap: 12px; color: var(--gray-500, #6b7c73); font-size: .82rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200, #dfe9e3); }
+.auth-google-btn { width: 100%; display: flex; justify-content: center; min-height: 44px; }
+.auth-google-terms, .auth-google-note { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--gray-500, #6b7c73); text-align: center; max-width: 34ch; }
+.auth-google-terms a { color: inherit; text-decoration: underline; }
+
+
+/* ---- Google first, email second (WIP 115) ----------------------------------------------------------------------------------- */
+.auth-google--top { margin: 6px 0 18px; grid-template-columns: minmax(0, 1fr); justify-items: stretch; }   /* a plain grid sizes to its widest child: Google's button measured the card as 400px wide and ran past it */
+.auth-google--top > * { min-width: 0; }
+.auth-google--top .auth-google-btn { min-height: 44px; }
+/* While Google's own button is loading, hold its place so the form below does not jump when it appears. */
+.auth-google-btn.is-loading { border-radius: 999px; background: linear-gradient(90deg, var(--gray-100, #eef3f0) 25%, var(--gray-200, #dfe9e3) 50%, var(--gray-100, #eef3f0) 75%); background-size: 200% 100%; animation: authShimmer 1.2s linear infinite; }
+@keyframes authShimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .auth-google-btn.is-loading { animation: none; } }
+.auth-consent { margin: 10px 0 0; font-size: .78rem; line-height: 1.5; color: var(--gray-500, #6b7c73); text-align: center; }
+.auth-google--top .auth-consent { margin: 0 auto; max-width: 36ch; }
+.auth-consent a { color: inherit; text-decoration: underline; }
+form.is-unavailable { opacity: .55; pointer-events: none; }
+.auth-notice { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: var(--warning-light, #fff4d6); color: #5e3b00; font-size: .88rem; line-height: 1.45; }
+.auth-notice[hidden], .auth-check[hidden], #authMain[hidden] { display: none; }
+
+/* "Check your inbox": shown after signing up with email, and when someone who has not confirmed tries to sign in. */
+.auth-check { display: grid; gap: 12px; text-align: center; justify-items: center; padding: 6px 0 2px; }
+.auth-check > * { width: 100%; margin: 0; }
+.auth-check-icon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 2px; width: 64px; background: var(--primary-light, #e1f5ec); color: var(--primary, #0f6b4a); font-size: 1.6rem; }
+.auth-check h2 { font-size: 1.35rem; margin: 0; }
+.auth-check p { color: var(--gray-600, #51655b); line-height: 1.5; font-size: .95rem; }
+.auth-check-addr span { display: inline-block; max-width: 100%; padding: 8px 14px; border-radius: 999px; background: var(--gray-100, #eef3f0); color: var(--gray-900, #14231b); font-weight: 700; overflow-wrap: anywhere; }
+.auth-check-sub { font-size: .84rem !important; }
+.auth-check-dev { padding: 10px 12px; border-radius: 10px; background: #fff4d6; color: #5e3b00 !important; font-size: .82rem !important; text-align: left; overflow-wrap: anywhere; }
+.auth-check .btn[hidden] { display: none; }
+
+.auth-header.is-compact h1, .auth-header.is-compact p { display: none; }
+
+
+/* WIP 116: the stand-in "Continue with Google" button shown only on a test machine where GOOGLE_CLIENT_ID is not set yet */
+.auth-google-fake { width: 100%; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; border: 1px solid #dadce0; border-radius: 999px; background: #fff; color: #3c4043; font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; transition: box-shadow .15s, background .15s; }
+.auth-google-fake:hover { background: #f8f9fa; box-shadow: 0 1px 3px rgba(60, 64, 67, .25); }
+.auth-google-setup { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: #fff7e6; border: 1px dashed #e0b45c; color: #6b4a00; max-width: none; transition: background .3s; }
+.auth-google-setup.is-flash { background: #ffe9b8; }
+
+
+/* ==========================================================================
+   WIP 117 - cleaner sign-in and sign-up: two steps, Google on top
+   ---------------------------------------------------------------------------
+   Step 1 asks for as little as possible: Google, or just an email address
+   ("Continue"). Step 2 is the password (login) or name + password (sign-up).
+   The address typed in step 1 stays on screen as a chip that goes back.
+   Everything below overrides the earlier rules in this file on purpose; the
+   markers qa:static checks (awning, auth-form-main, 16px inputs, reduced
+   motion) are untouched.
+   ========================================================================== */
+.auth-step[hidden], [data-step][hidden] { display: none !important; }
+
+/* Form side: plain paper behind the card (the faint icon pattern is gone), and a slimmer card so
+   Google's button (max 400px) is exactly as wide as everything under it. */
+.auth-form-side::before { display: none; }
+@media (min-width: 961px) {
+    .auth-card {
+        max-width: 28rem;
+        padding: 2.1rem 2.1rem 1.6rem;
+        border-color: var(--gray-100);
+        box-shadow: 0 1px 0 rgba(11, 59, 43, 0.04), 0 30px 60px -34px rgba(11, 59, 43, 0.28);
+    }
+    .auth-back { max-width: 28rem; }
+}
+@media (min-width: 1600px) { .auth-card, .auth-back { max-width: 28rem; } }
+.auth-header { margin-bottom: 1.4rem; }
+.auth-header h1 { font-size: clamp(1.6rem, 2.3vw, 1.9rem); color: var(--auth-ink); text-wrap: balance; }
+.auth-header p { color: var(--gray-600); font-size: 0.92rem; }
+
+/* Pill buttons and round Google button; fields keep the softer 14px corners. */
+.auth-card .btn-lg { min-height: 52px; border-radius: 999px; font-weight: 600; box-shadow: 0 8px 18px -8px rgba(0, 133, 88, 0.55); }
+.auth-card .btn-lg:disabled { box-shadow: none; }
+.auth-card .btn-outline { border-radius: 999px; }
+.auth-card .form-group { margin-bottom: 1rem; }
+.auth-card .form-label { font-size: 0.82rem; font-weight: 600; }
+.auth-card .form-input { min-height: 50px; }
+
+/* Google first, with a quiet "or" under it. */
+.auth-google--top { margin: 0; gap: 0; }
+.auth-google--top .auth-google-btn { min-height: 44px; align-items: center; }
+.auth-divider { margin: 1.2rem 0; gap: 14px; font-size: 0.78rem; font-weight: 500; text-transform: lowercase; letter-spacing: 0; color: var(--gray-500); }
+.auth-divider::before, .auth-divider::after { background: var(--gray-100); }
+.auth-divider span { padding: 0; }
+.auth-google-fake { min-height: 50px; font-size: 0.95rem; border: 1.5px solid var(--gray-200); gap: 12px; }
+.auth-google-fake:hover { background: #fcfdfc; border-color: var(--gray-300); box-shadow: 0 2px 8px rgba(11, 59, 43, .1); }
+.auth-google-fake svg { width: 20px; height: 20px; }
+.auth-google-fake:focus-visible { outline: 2px solid var(--store-green); outline-offset: 2px; }
+.auth-google-btn.is-loading { min-height: 44px; }
+
+/* "Keep me signed in", under Continue. */
+.auth-keep { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; font-size: 0.84rem; color: var(--gray-600); cursor: pointer; }
+.auth-keep input { width: 18px; height: 18px; margin: 0; accent-color: var(--store-green); flex: none; }
+
+/* Step 2: the address typed in step 1, as a chip that goes back. */
+.auth-chip {
+    width: 100%; display: flex; align-items: center; gap: 0.75rem; text-align: left;
+    padding: 0.5rem 0.9rem 0.5rem 0.5rem; margin-bottom: 1.1rem;
+    border: 1.5px solid var(--gray-200); border-radius: 999px; background: var(--paper);
+    font: inherit; color: var(--gray-900); cursor: pointer; min-height: 48px;
+    transition: border-color .15s ease;
+}
+.auth-chip:hover { border-color: var(--gray-300); }
+.auth-chip:focus-visible { outline: 2px solid var(--store-green); outline-offset: 2px; }
+.auth-chip-avatar { width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--auth-ink); color: #fff; font-size: 0.85rem; font-weight: 600; }
+.auth-chip-email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 500; }
+.auth-chip-edit { font-size: 0.8rem; font-weight: 600; color: var(--primary-dark); }
+
+.auth-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.auth-label-row .form-label { margin-bottom: 0.4rem; }
+.forgot-link { margin-left: 0; font-size: 0.8rem; }
+
+/* Sign-up: two-step progress bar. */
+.auth-progress { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 0.5rem; }
+.auth-progress i { height: 4px; border-radius: 4px; background: var(--gray-100); transition: background-color .25s ease; }
+.auth-progress i.on { background: var(--store-green); }
+.auth-progress-label { margin: 0 0 1rem; font-size: 0.72rem; font-weight: 500; color: var(--gray-500); }
+
+/* Sign-up: Shop / Sell as one tight switch. */
+.account-type-toggle { gap: 4px; padding: 4px; background: var(--gray-100); border-radius: 16px; margin-bottom: 1.1rem; }
+.account-type-option-card { grid-template-columns: 20px 1fr; column-gap: 0.65rem; padding: 0.55rem 0.7rem; border: 1.5px solid transparent; border-radius: 12px; background: transparent; }
+.account-type-option-card i { width: 20px; height: 20px; grid-row: span 2; background: none; color: var(--gray-500); font-size: 1rem; border-radius: 0; }
+.account-type-option-card strong { font-size: 0.86rem; color: var(--gray-600); }
+.account-type-option-card span { font-size: 0.7rem; }
+.account-type-option:hover .account-type-option-card { border-color: transparent; }
+.account-type-option input:checked + .account-type-option-card { background: #fff; border-color: transparent; box-shadow: 0 1px 3px rgba(11, 59, 43, 0.14); }
+.account-type-option input:checked + .account-type-option-card i { background: none; color: var(--primary-dark); }
+.account-type-option input:checked + .account-type-option-card strong { color: var(--auth-ink); }
+.account-type-option input:checked + .account-type-option-card::after { display: none; }
+@media (max-width: 480px) {
+    .account-type-option-card { grid-template-columns: 1fr; row-gap: 0.1rem; padding: 0.6rem; }
+    .account-type-option-card i { grid-row: auto; margin-bottom: 0.2rem; width: 22px; height: 22px; }
+}
+
+/* Invite code: a quiet text line that opens, not a dashed box. */
+.invite { margin: 1rem 0 0; border: 0; background: none; border-radius: 0; }
+.invite > summary { min-height: 36px; padding: 0; font-size: 0.84rem; }
+.invite-body { padding: 0.3rem 0 0; }
+.invite-body .form-input { text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Sign-up: "that email already has an account". */
+.auth-inline-note { display: grid; gap: 2px; margin: 0 0 1rem; padding: 0.75rem 0.95rem; border-radius: 12px; background: var(--warning-bg); color: #5e3b00; font-size: 0.85rem; line-height: 1.45; }
+.auth-inline-note[hidden] { display: none; }
+.auth-inline-note a, .auth-linkbtn { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.auth-linkbtn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; cursor: pointer; }
+
+/* Small print and footer. */
+.auth-consent { margin-top: 1rem; }
+.auth-google--top .auth-consent { margin: 0 auto; }
+.auth-footer { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--gray-100); display: grid; gap: 0.25rem; }
+.auth-footer p a { text-decoration: none; }
+.auth-footer p a:hover { text-decoration: underline; }
+.auth-footer-alt { font-size: 0.875rem !important; }
+.powered-by { margin-top: 0.6rem !important; }
+
+/* Moving between steps: the new step slides in from the right. */
+.auth-step:not([hidden]) { animation: authStepIn .28s cubic-bezier(.2, .8, .3, 1); }
+@keyframes authStepIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .auth-step:not([hidden]) { animation: none; } .auth-progress i { transition: none; } .auth-chip { transition: none; } }
+
+/* Test-mode stand-in: the button and its note stack instead of sitting side by side. */
+.auth-google-btn { flex-wrap: wrap; }
+.auth-google-btn > .auth-google-fake, .auth-google-btn > .auth-google-note { flex: 1 0 100%; }
+
+
+/* ==========================================================================
+   WIP 118 — brand panel, 3D scene and form-side frame, rebuilt
+   --------------------------------------------------------------------------
+   Why this block exists: the old panel placed its 3D objects with fixed
+   percentages, so on very wide or short windows they overlapped or vanished,
+   and the form card floated in a big empty column. Now:
+     * .auth-scene is a size container; every object is sized in cq units from
+       the room it actually has, so the composition scales from 1024px to 4K.
+     * The form side is framed (top bar + legal row + soft backdrop) so the
+       card is anchored on large screens instead of lost in them.
+     * Objects are real textured renders (assets/brand/3d), not flat icons.
+   ========================================================================== */
+
+.auth-container {
+    --card-w: 30rem;                              /* card width on desktop       */
+    --card-pad: 2.5rem;                           /* (card-w - 25rem) / 2 keeps the inner column at 400px,
+                                                     the widest Google's sign-in button can be */
+    grid-template-columns: minmax(420px, 1.12fr) minmax(480px, 1fr);
+}
+@media (min-width: 1900px) { .auth-container { --card-w: 32rem; --card-pad: 3.5rem; } }
+@media (min-width: 2400px) { .auth-container { --card-w: 34rem; --card-pad: 4.5rem; } }
+
+/* ---- Brand panel surface: warm light from the lower right + paper grain ---- */
+.auth-side {
+    background:
+        radial-gradient(60% 50% at 78% 64%, rgba(255, 176, 56, 0.22), transparent 70%),
+        radial-gradient(55% 40% at 8% 0%, rgba(1, 176, 117, 0.20), transparent 70%),
+        linear-gradient(168deg, #0E4733 0%, #08301F 55%, #062A1F 100%);
+}
+.auth-side::after {
+    inset: 0; right: 0; bottom: 0; left: 0; top: 0;
+    width: auto; aspect-ratio: auto; border-radius: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+}
+@media (max-height: 800px) { .auth-side::after { display: block; } }
+
+.auth-side-inner {
+    gap: clamp(0.75rem, 2.2vh, 1.5rem);
+    padding: clamp(1.1rem, 3vh, 2rem) clamp(1.75rem, 4vw, 4rem) clamp(1rem, 2.6vh, 1.75rem);
+}
+.auth-side-content { flex: 0 0 auto; }
+.auth-side-quote { max-width: none; margin: 0; flex: 0 0 auto; position: relative; z-index: 4; }
+@media (max-height: 700px) { .auth-side-quote { display: none; } }
+
+/* ---- The scene ----------------------------------------------------------- */
+.auth-scene {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;
+    container-type: size;
+    margin-inline: 0;
+}
+.auth-scene img {
+    position: absolute;
+    display: block;
+    height: auto;
+    max-width: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    will-change: transform;
+}
+
+/* a printed-paper sun the hero object stands in front of */
+.scene-disc {
+    position: absolute;
+    right: -2cqw;
+    bottom: -26cqh;
+    width: min(74cqw, 118cqh);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 34% 28%, #FFD27A 0%, #FFB938 42%, #F09A12 78%, #D9810A 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), inset 0 -3rem 5rem rgba(140, 70, 0, 0.30), 0 0 8rem rgba(255, 176, 56, 0.20);
+    overflow: hidden;
+}
+.scene-disc::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .15 0 0 0 0 0 0 0 0 .7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+}
+
+.sc-hero { width: min(60cqw, 98cqh); right: -3cqw; bottom: 0; z-index: 2; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(.2,.7,.2,1); filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.18)); }
+/* two roles: .sc-g stands on the ground in front of the hero, .sc-b floats up beside it */
+.sc-g    { width: min(21cqw, 36cqh); right: 41cqw; bottom: 0; z-index: 3; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.22)); }
+.sc-b    { width: min(21cqw, 36cqh); left: 24cqw; top: 3cqh; z-index: 3; }
+.auth-scene--signup .sc-b { left: auto; right: 2cqw; top: 1cqh; width: min(20cqw, 34cqh); }
+.auth-scene--reset  .sc-g { right: 50cqw; width: min(24cqw, 40cqh); }
+.sc-float      { animation: auth3d-float 7s ease-in-out infinite; }
+.sc-float.late { animation-delay: -3.2s; animation-duration: 8.5s; }
+
+/* signup: shoppers see the market basket, sellers see a storefront */
+.auth-scene[data-mode="buyer"]  .sc-hero--seller,
+.auth-scene[data-mode="seller"] .sc-hero--buyer { opacity: 0; transform: translateY(14px) scale(0.97); pointer-events: none; }
+
+/* the storefront card (what a buyer sees) */
+.auth-store {
+    position: absolute;
+    left: 0; bottom: 2cqh;
+    width: min(17.5rem, 44cqw);
+    z-index: 4;
+}
+.auth-store .showcase-card { padding: 0.8rem; border-radius: 20px; box-shadow: 0 34px 50px -24px rgba(0, 0, 0, 0.65); }
+.auth-store .showcase-head { margin-bottom: 0.6rem; }
+.auth-store .showcase-note {
+    display: flex; align-items: center; gap: 0.45rem;
+    margin-top: 0.65rem; padding-top: 0.6rem;
+    border-top: 1px solid var(--gray-100);
+    font-size: 0.68rem; font-weight: 600; color: var(--gray-600); line-height: 1.3;
+}
+.auth-store .showcase-note i { color: var(--store-green); }
+.auth-store .showcase-toast { right: -2.5rem; bottom: -1.6rem; }
+.auth-store .showcase-toast--money { top: -3.4rem; bottom: auto; right: -2rem; }
+
+/* graceful degradation as the room shrinks */
+@container (max-width: 640px) { .sc-g { right: 44cqw; } .auth-scene--login .sc-b { left: 34cqw; } }
+@container (max-width: 520px) { .auth-store { display: none; } .auth-scene--login .sc-b { left: 4cqw; top: 10cqh; } .sc-g { right: auto; left: 0; } .sc-hero { right: -4cqw; } }
+@container (max-height: 470px) { .auth-store .showcase-toast { display: none; } }
+@container (max-height: 400px) { .auth-store { display: none; } .auth-scene--login .sc-b { left: 4cqw; top: 8cqh; } .sc-g { right: auto; left: 0; } }
+@container (max-height: 250px) { .sc-g, .sc-b { display: none; } }
+
+/* ---- Form side: framed, so a centred card never looks stranded ------------- */
+.auth-form-side {
+    background:
+        radial-gradient(52rem 34rem at 100% 0%, rgba(1, 176, 117, 0.11), transparent 62%),
+        radial-gradient(46rem 30rem at 0% 100%, rgba(255, 176, 56, 0.14), transparent 62%),
+        radial-gradient(rgba(11, 59, 43, 0.085) 1px, transparent 1.5px) 0 0 / 22px 22px,
+        var(--paper);
+}
+.auth-form-main {
+    padding: 0;
+    justify-content: flex-start;
+    align-items: stretch;
+    position: relative;
+}
+/* calm the dot grid right behind the card so the card reads as the focus */
+.auth-form-main::before {
+    content: '';
+    position: absolute; z-index: 0; pointer-events: none;
+    left: 50%; top: 50%;
+    width: min(100%, 52rem); height: min(100%, 46rem);
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, var(--paper) 52%, transparent 100%);
+    opacity: 0.9;
+}
+.auth-form-main > * { position: relative; z-index: 1; }
+
+.auth-topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: clamp(0.5rem, 2vh, 1.25rem) clamp(1rem, 3vw, 2.75rem);
+    min-height: 3.5rem;
+}
+.auth-topbar .auth-back { width: auto; max-width: none; margin: 0; }
+.auth-switch { font-size: 0.875rem; color: var(--gray-600); }
+.auth-switch a {
+    margin-left: 0.25rem;
+    padding: 0.45rem 0.95rem;
+    border: 1px solid var(--gray-200); border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--primary-dark); font-weight: 700; text-decoration: none; white-space: nowrap;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.auth-switch a:hover, .auth-switch a:focus-visible { border-color: var(--store-green); box-shadow: 0 6px 16px -8px rgba(0, 133, 88, 0.5); transform: translateY(-1px); }
+.auth-topbar-art { display: none; }
+
+.auth-form-main .auth-card,
+.auth-form-main .auth-card-wrap {
+    margin: auto;                        /* centres in the space between top bar and legal row */
+}
+@media (min-width: 961px) {
+    .auth-card {
+        width: calc(100% - 2rem);
+        max-width: var(--card-w);
+        padding: 2.1rem var(--card-pad) 1.6rem;
+        border-radius: 28px;
+        box-shadow: 0 1px 0 rgba(11, 59, 43, 0.04), 0 2px 6px rgba(11, 59, 43, 0.04), 0 40px 70px -36px rgba(11, 59, 43, 0.34);
+    }
+}
+@media (min-width: 1600px) { .auth-card { max-width: var(--card-w); } }
+
+.auth-legal {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0.2rem 1.4rem;
+    padding: 1rem 1rem clamp(1rem, 2.4vh, 1.75rem);
+    font-size: 0.78rem;
+}
+.auth-legal a { color: var(--gray-500); text-decoration: none; padding: 0.35rem 0; }
+.auth-legal a:hover, .auth-legal a:focus-visible { color: var(--primary-dark); text-decoration: underline; text-underline-offset: 3px; }
+
+/* short desktop windows: tighten rather than scroll */
+@media (min-width: 961px) and (max-height: 760px) {
+    .auth-card { padding-top: 1.5rem; padding-bottom: 1.2rem; }
+    .auth-topbar { min-height: 3rem; padding-block: 0.25rem; }
+    .auth-legal { padding-block: 0.5rem 0.75rem; }
+}
+
+/* ---- Tablet & phone ------------------------------------------------------- */
+@media (max-width: 960px) {
+    .auth-form-side { background: radial-gradient(40rem 22rem at 100% 0%, rgba(1, 176, 117, 0.10), transparent 62%), var(--paper); }
+    .auth-form-main::before { display: none; }
+    .auth-form-main { padding: 0; }
+    .auth-topbar { padding: 0.5rem 1rem 0; min-height: 3.5rem; }
+    .auth-switch { display: none; }                     /* the card footer already carries this link */
+    .auth-topbar-art { display: block; width: 3.5rem; height: 3.5rem; margin: -0.25rem 0 -0.75rem; filter: drop-shadow(0 8px 8px rgba(11, 59, 43, 0.18)); }
+    .auth-form-main .auth-card { margin: 0.25rem auto 1.25rem; width: calc(100% - 2rem); max-width: 32rem; }
+    .auth-legal { padding-top: 0.25rem; }
+}
+@media (min-width: 640px) and (max-width: 960px) {
+    .auth-topbar { padding: 0.75rem 2rem 0; }
+    .auth-topbar-art { width: 4.5rem; height: 4.5rem; }
+    .auth-form-main .auth-card { padding: 2rem 2.25rem 1.75rem; }
+}
+@media (max-width: 480px) {
+    .auth-form-main { padding: 0; }
+    .auth-form-main .auth-card { width: calc(100% - 1.5rem); margin-top: 0.5rem; }
+}
+@media (max-width: 340px) { .auth-topbar-art { display: none; } }
+
+/* big screens: the whole card scales (zoom keeps Google's fixed-width button in proportion) */
+@media (min-width: 1700px) and (min-height: 880px)   { .auth-card { zoom: 1.1; } }
+@media (min-width: 2200px) and (min-height: 1100px)  { .auth-card { zoom: 1.24; } }
+@media (min-width: 2400px) and (min-height: 1300px)  { .auth-card { zoom: 1.4; } }
+@media (min-width: 2200px) {
+    .auth-side-brand img { height: 46px; }
+    .auth-side-content { max-width: 40rem; }
+    .auth-side-content h2 { font-size: 3.4rem; }
+    .auth-side-content p { font-size: 1.3rem; }
+    .auth-side-points li { font-size: 1.15rem; }
+    .auth-side-quote { font-size: 1.05rem; }
+    .auth-topbar { padding-inline: 3.5rem; }
+    .auth-back, .auth-switch { font-size: 1.05rem; }
+    .auth-legal { font-size: 0.95rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sc-float { animation: none; }
+    .sc-hero { transition: none; }
+}
+
+/* phones/tablets: keep the legal row at the foot of the screen instead of mid-page */
+@media (max-width: 960px) {
+    .auth-form-side { min-height: 100vh; min-height: 100dvh; }
+    .auth-legal { margin-top: auto; }
+}

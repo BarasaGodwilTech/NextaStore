@@ -22,10 +22,10 @@ function generatePartnerCode(program, randomBytes = crypto.randomBytes) {
     return `${R.CODE_PREFIX[program]}-${body}`;
 }
 
-/** Accepts "crew-4htr9", " CREW 4HTR9 ", "CIRCLE-K7M3Q" (and old "scout-4htr9" codes); returns the code as stored, or null. */
+/** Accepts "crew-4htr9", " CREW 4HTR9 ", "CIRCLE-K7M3Q" ; returns the code as stored, or null. */
 function normalizeCode(raw) {
     const s = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    for (const prefix of [...Object.values(R.CODE_PREFIX), ...R.LEGACY_CODE_PREFIXES]) {
+    for (const prefix of Object.values(R.CODE_PREFIX)) {
         if (s.startsWith(prefix) && s.length === prefix.length + R.CODE_LENGTH) {
             const body = s.slice(prefix.length);
             if ([...body].every((c) => R.CODE_ALPHABET.includes(c))) return `${prefix}-${body}`;
@@ -34,40 +34,48 @@ function normalizeCode(raw) {
     return null;
 }
 
+/**
+ * Which program's rules pay this referral. The program the partner was in when the person signed up (set once, on the referral).
+ * Rows from before the column existed fall back to the partner's program, which the migration also backfills, so both agree.
+ */
+function referralProgram(referral, partner) {
+    return (referral && referral.program) || (partner && partner.program) || 'circle';
+}
+
 // ---- Ranks (Crew) ------------------------------------------------------------------
 function rankFor(cleared90d) {
-    let best = R.SCOUT_RANKS[0];
-    for (const rank of R.SCOUT_RANKS) if (cleared90d >= rank.minCleared90d) best = rank;
+    let best = R.CREW_RANKS[0];
+    for (const rank of R.CREW_RANKS) if (cleared90d >= rank.minCleared90d) best = rank;
     return best;
 }
 
 /**
- * The rank a Scout actually holds. Rank follows the rolling 90-day count (so it can step
+ * The rank a Crew member actually holds. Rank follows the rolling 90-day count (so it can step
  * down when activity stops), but a promotion only lands while quality is healthy.
  */
 function effectiveRank(cleared90d, qualityScore, currentKey = 'trailhead') {
     const earned = rankFor(cleared90d);
-    const held = R.SCOUT_RANKS.find((r) => r.key === currentKey) || R.SCOUT_RANKS[0];
-    const promoting = R.SCOUT_RANKS.indexOf(earned) > R.SCOUT_RANKS.indexOf(held);
+    const held = R.CREW_RANKS.find((r) => r.key === currentKey) || R.CREW_RANKS[0];
+    const promoting = R.CREW_RANKS.indexOf(earned) > R.CREW_RANKS.indexOf(held);
     return promoting && qualityScore < R.RANK_MIN_QUALITY_SCORE ? held : earned;
 }
 
 function nextRank(rank, cleared90d) {
-    const i = R.SCOUT_RANKS.findIndex((r) => r.key === rank.key);
-    const next = R.SCOUT_RANKS[i + 1];
+    const i = R.CREW_RANKS.findIndex((r) => r.key === rank.key);
+    const next = R.CREW_RANKS[i + 1];
     return next ? { ...next, remaining: Math.max(0, next.minCleared90d - cleared90d) } : null;
 }
 
 // ---- Commission for a store's first approved payment ---------------------------------
 /**
- * @param program   'circle' | 'scout'
+ * @param program   'circle' | 'crew'
  * @param payment   { amount, periodMonths }
- * @param opts      { rank (scout), campaignBoostPercent }
+ * @param opts      { rank (crew), campaignBoostPercent }
  * @returns         array of line items [{ type, amount, note }] (empty if nothing earned)
  */
 function commissionForFirstPayment(program, payment, opts = {}) {
     const lines = [];
-    const rate = program === 'scout' ? (opts.rank || R.SCOUT_RANKS[0]).rate : R.COMMISSION.circle.rate;
+    const rate = program === 'crew' ? (opts.rank || R.CREW_RANKS[0]).rate : R.COMMISSION.circle.rate;
     const baseCap = R.COMMISSION.baseMonths * R.PASS_PRICE_PER_MONTH_UGX;
     const base = Math.min(Number(payment.amount) || 0, baseCap);
     const main = Math.round((base * rate) / 100) * 100; // whole hundreds, neat on MoMo
@@ -114,7 +122,7 @@ function estimatePayoutFee(amount) {
 }
 
 /**
- * Rewards for a store's first on-time renewal: the stay bonus, plus (Scouts) a stocked-store
+ * Rewards for a store's first on-time renewal: the stay bonus, plus (Crew members) a stocked-store
  * bonus when the store still has products on its shelf. Returns [] when nothing is due.
  * Paid once per store; the caller passes alreadyPaidRenewal.
  */
@@ -125,7 +133,7 @@ function renewalRewardsFor(program, { previousCoverageEnd, approvedAt, alreadyPa
     const cfg = R.COMMISSION[program];
     const lines = [];
     if (cfg.renewalBonus) lines.push({ type: 'renewal', amount: cfg.renewalBonus, note: 'Your store renewed its Seller Pass' });
-    if (program === 'scout' && cfg.liveBonus && Number(liveProducts) >= R.COMMISSION.liveMinProducts) {
+    if (program === 'crew' && cfg.liveBonus && Number(liveProducts) >= R.COMMISSION.liveMinProducts) {
         lines.push({ type: 'live_bonus', amount: cfg.liveBonus, note: `Store still had ${liveProducts} products when it renewed` });
     }
     return lines;
@@ -253,7 +261,7 @@ function twoPersonRuleOk({ approvedBy, paidBy, needsSecondApproval }) {
 
 // ---- Quality score (0-100) -----------------------------------------------------------------
 /**
- * Behaviour, not volume. Fresh partners start at 70 so a brand-new Scout is not punished
+ * Behaviour, not volume. Fresh partners start at 70 so a brand-new Crew member is not punished
  * for having no history.
  */
 function qualityScore({ signups, cleared, reversed, flagged, renewed, eligibleForRenewal }) {
@@ -266,7 +274,7 @@ function qualityScore({ signups, cleared, reversed, flagged, renewed, eligibleFo
     return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-module.exports = {
+module.exports = { referralProgram,
     generatePartnerCode, normalizeCode, rankFor, effectiveRank, nextRank, commissionForFirstPayment,
     renewalRewardsFor, clearsAtFor, applyUpfrontCap, estimatePayoutFee, formatEat, computeBalances, trustLevel, checkWithdrawal, separationOfDutiesOk,
     twoPersonRuleOk, qualityScore

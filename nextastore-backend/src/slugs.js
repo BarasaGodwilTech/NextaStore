@@ -23,13 +23,13 @@ function slugify(text) {
 // fails if a new top-level .html page is added without being listed here.
 const RESERVED_SLUGS = new Set([
     // pages in the site root (basename of each .html file)
-    'index', 'admin', 'cart', 'dashboard', 'favorites', 'following', 'forgot-password',
+    'index', 'admin', 'staff', 'cart', 'dashboard', 'favorites', 'following', 'forgot-password',
     'login', 'marketplace', 'messages', 'offline', 'onboarding', 'orders', 'privacy',
     'product-detail', 'product-form', 'safety', 'signup', 'store', 'store-detail',
     'stores', 'subscription', 'terms', 'verify-email',
     'nextastore-loading-everyone', 'nextastore-loading-seller',
     // NextaStore Circle / Crew (growth program) pages and short links
-    'circle', 'crew', 'scouts', 'invite', 'i', 'admin-growth', 'auth-bridge', 'about-circle', 'about-crew',
+    'circle', 'crew', 'invite', 'i', 'admin-growth', 'auth-bridge', 'about-circle', 'about-crew', 'crew-apply', 'apply',
     // folders and files served from the site root
     'api', 'assets', 'css', 'js', 'errors', 'uploads', 'sitemap', 'robots', 'manifest',
     'service-worker', 'favicon', 'static', 'public', 'health', 's', 'p',

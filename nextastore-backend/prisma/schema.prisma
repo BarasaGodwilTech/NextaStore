@@ -47,7 +47,6 @@ enum PaymentStatus {
 enum UserRole {
   buyer
   seller
-  admin
 }
 
 enum UserAccountStatus {
@@ -55,9 +54,47 @@ enum UserAccountStatus {
   suspended
 }
 
-enum AdminLevel {
-  standard
-  super_admin
+// ---------------------------------------------------------------------------
+// STAFF CONSOLE (internal administration).
+// Staff are NOT users. A StaffAccount has its own table, its own login, its own
+// MFA, its own sessions and its own roles. It has no cart, no store, no orders,
+// no messages and no way to sign in to the shopper site, and a shopper account
+// has no way into the console. See src/staff/.
+// ---------------------------------------------------------------------------
+enum StaffStatus {
+  invited    // created by another staff member; has not accepted the invite yet
+  active
+  suspended
+}
+
+enum StaffTokenType {
+  invite
+  password_reset
+}
+
+enum ModerationStatus {
+  ok
+  restricted   // hidden from shoppers by staff (store: not in marketplace/storefront; product: not listed)
+}
+
+enum TicketStatus {
+  open
+  pending     // waiting on the customer
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum TicketAuthorKind {
+  customer
+  staff
+  system
 }
 
 enum AdminFollowUpStatus {
@@ -92,9 +129,11 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  // The person's Google account id (the `sub` of a verified Google ID token), once they have used "Continue with Google".
+  // Unique, so one Google account can only ever open or link ONE NextaStore account. Null for people who only use a password.
+  googleId     String?  @unique
   role         UserRole @default(buyer)
   accountStatus UserAccountStatus @default(active)
-  adminLevel   AdminLevel @default(standard)
   // Bumped on password change, password reset, and "log out everywhere".
   // Every session token carries the tokenVersion it was issued under (see
   // signSessionToken in src/middleware.js); a token whose value no longer
@@ -102,8 +141,6 @@ model User {
   // every token issued before this column existed, so deploying this alone
   // logs nobody out.
   tokenVersion Int @default(0)
-  adminRoleId  String?
-  adminRole    AdminRole? @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
   avatar       String?
   cover        String?
   emailVerifiedAt DateTime?
@@ -128,26 +165,139 @@ model User {
   ordersAsBuyer        Order[]        @relation("BuyerOrders")
   orderReports         OrderReport[]
   verificationTokens   VerificationToken[]
-  createdAdminRoles    AdminRole[] @relation("AdminRoleCreator")
-  adminFollowUps       AdminFollowUp[] @relation("FollowUpOwner")
-  adminFollowUpsAssigned AdminFollowUp[] @relation("FollowUpAssignee")
-  adminAuditLogs       AdminAuditLog[] @relation("AuditActor")
-  adminAuditTargetLogs AdminAuditLog[] @relation("AuditTargetUser")
+  // Staff-side records ABOUT this person (never staff identities themselves).
+  followUpsAbout       AdminFollowUp[] @relation("FollowUpOwner")
+  auditTargetLogs      AdminAuditLog[] @relation("AuditTargetUser")
+  supportTickets       SupportTicket[]
+  staffNotes           UserNote[]
 }
 
 
-model AdminRole {
+model StaffRole {
   id          String   @id @default(cuid())
+  // Stable machine name: 'super_admin', 'support_agent', ... or 'custom_xxx'.
+  key         String   @unique
   name        String   @unique
   description String   @default("")
   permissions String[] @default([])
+  // Hierarchy. A staff member can only create, edit, suspend or reset staff whose role ranks BELOW their own, and can only
+  // hand out roles that rank below their own. Super Admin is 100. See src/staff/permissions.js.
+  rank        Int      @default(10)
+  // System roles ship with the product: they cannot be edited or deleted from the console.
+  isSystem    Boolean  @default(false)
   createdById String?
-  createdBy   User?    @relation("AdminRoleCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  users       User[]
+  createdBy   StaffAccount? @relation("StaffRoleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  members     StaffAccount[]
+  followUps   AdminFollowUp[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
 
-  followUps   AdminFollowUp[]
+model StaffAccount {
+  id            String      @id @default(cuid())
+  name          String
+  email         String      @unique
+  passwordHash  String
+  jobTitle      String      @default("")
+  roleId        String
+  role          StaffRole   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  status        StaffStatus @default(invited)
+  // Forces a new password (and blocks everything else) until it is set. True for migrated admins and after an admin-issued reset.
+  mustChangePassword Boolean @default(false)
+  passwordChangedAt  DateTime?
+  // Two-step verification (TOTP). The secret is stored AES-256-GCM encrypted (src/staff/crypto.js), never in clear.
+  // mfaEnabledAt stays null until the first code is confirmed; sign-in is refused until it is set.
+  mfaSecretEnc  String?
+  mfaEnabledAt  DateTime?
+  mfaLastStep   Int?        // last accepted 30-second step: a code can never be used twice
+  recoveryCodeHashes String[] @default([])
+  // Sensitive-action PIN (6 digits, bcrypt). Set by the person after their first sign-in; asked for before money, access and
+  // security changes. pinSetAt stays null until it exists; the console is blocked (except the PIN page) until then.
+  pinHash       String?
+  pinSetAt      DateTime?
+  pinFailed     Int         @default(0)
+  pinLockedUntil DateTime?
+  failedLogins  Int         @default(0)
+  lockedUntil   DateTime?
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  // Bumped on password change/reset, MFA reset and "sign out everywhere". Pre-auth challenges carry it.
+  tokenVersion  Int         @default(0)
+  createdById   String?
+  createdBy     StaffAccount?  @relation("StaffCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdStaff  StaffAccount[] @relation("StaffCreator")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  sessions      StaffSession[]
+  devices       StaffDevice[]
+  tokens        StaffToken[]
+  createdRoles  StaffRole[]    @relation("StaffRoleCreator")
+  auditLogs     AdminAuditLog[] @relation("AuditActor")
+  followUpsAssigned AdminFollowUp[] @relation("FollowUpAssignee")
+  ticketsAssigned   SupportTicket[]
+  ticketMessages    SupportTicketMessage[]
+  userNotes         UserNote[]
+
+  @@index([roleId])
+  @@index([status])
+}
+
+// One row per signed-in browser. The browser holds an opaque random token (httpOnly cookie); only its SHA-256 is stored here, so a
+// database leak does not yield usable sessions. Revoking a session is one UPDATE.
+model StaffSession {
+  id          String   @id @default(cuid())
+  staffId     String
+  staff       StaffAccount @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  csrfToken   String
+  deviceId    String?
+  ip          String   @default("")
+  userAgent   String   @default("")
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  // Absolute end of life; the idle timeout is checked against lastSeenAt.
+  expiresAt   DateTime
+  // Last time the person proved themselves again (password or MFA code). Sensitive actions need this to be recent ("step-up").
+  reauthAt    DateTime @default(now())
+  revokedAt   DateTime?
+  revokedReason String?
+
+  @@index([staffId, revokedAt])
+  @@index([expiresAt])
+}
+
+// A browser the person has verified with their authenticator. It holds an opaque random token in a long-lived httpOnly cookie
+// (only its SHA-256 is stored). While trustedUntil is in the future, a normal sign-in from it skips the authenticator code,
+// unless the sign-in looks suspicious (see src/staff/risk.js). Revoking it forces the code next time.
+model StaffDevice {
+  id          String   @id @default(cuid())
+  staffId     String
+  staff       StaffAccount @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  label       String   @default("")
+  userAgent   String   @default("")
+  firstIp     String   @default("")
+  lastIp      String   @default("")
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  trustedUntil DateTime
+  revokedAt   DateTime?
+
+  @@index([staffId, revokedAt])
+}
+
+model StaffToken {
+  id        String   @id @default(cuid())
+  staffId   String
+  staff     StaffAccount @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  type      StaffTokenType
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([staffId, type])
 }
 
 model AdminFollowUp {
@@ -159,9 +309,9 @@ model AdminFollowUp {
   relatedUserId String?
   relatedUser   User?               @relation("FollowUpOwner", fields: [relatedUserId], references: [id], onDelete: SetNull)
   assignedToId  String?
-  assignedTo    User?               @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedTo    StaffAccount?       @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   adminRoleId   String?
-  adminRole     AdminRole?          @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
+  adminRole     StaffRole?          @relation(fields: [adminRoleId], references: [id], onDelete: SetNull)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   completedAt   DateTime?
@@ -171,21 +321,142 @@ model AdminFollowUp {
   @@index([assignedToId])
 }
 
+// Append-only trail of everything staff do (and of every sign-in attempt). actorId is null for events with no known staff member
+// (e.g. a failed sign-in for an unknown address); actorLabel keeps a readable "Name <email>" so the trail survives staff changes.
 model AdminAuditLog {
   id            String   @id @default(cuid())
-  actorId       String
-  actor         User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId       String?
+  actor         StaffAccount? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorLabel    String   @default("")
   action        String
   targetType    String
   targetId      String?
   targetUserId  String?
   targetUser    User?    @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
   metadata      Json     @default("{}")
+  ip            String   @default("")
+  userAgent     String   @default("")
   createdAt     DateTime @default(now())
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
   @@index([targetUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+// ---- Support desk -----------------------------------------------------------------------------------------------------------
+model SupportTicket {
+  id             String         @id @default(cuid())
+  number         Int            @unique @default(autoincrement())
+  subject        String
+  category       String         @default("general")
+  status         TicketStatus   @default(open)
+  priority       TicketPriority @default(normal)
+  requesterId    String?
+  requester      User?          @relation(fields: [requesterId], references: [id], onDelete: SetNull)
+  requesterName  String         @default("")
+  requesterEmail String         @default("")
+  assigneeId     String?
+  assignee       StaffAccount?  @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  relatedOrderId String?
+  source         String         @default("web")
+  // Answer-by time, from the priority (src/staff/support.js SLA_HOURS). Resolved/closed tickets stop the clock.
+  slaDueAt       DateTime?
+  firstResponseAt DateTime?
+  resolvedAt     DateTime?
+  lastMessageAt  DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  messages       SupportTicketMessage[]
+
+  @@index([status, priority])
+  @@index([assigneeId, status])
+  @@index([requesterId])
+  @@index([slaDueAt])
+  @@index([lastMessageAt])
+}
+
+model SupportTicketMessage {
+  id            String           @id @default(cuid())
+  ticketId      String
+  ticket        SupportTicket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorKind    TicketAuthorKind
+  authorStaffId String?
+  authorStaff   StaffAccount?    @relation(fields: [authorStaffId], references: [id], onDelete: SetNull)
+  authorName    String           @default("")
+  body          String
+  // Internal notes are visible to staff only and are never emailed or shown to the customer.
+  isInternal    Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+model CannedReply {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  // 'reply' (ticket answers), 'email' and 'notification' (messages to accounts / broadcasts). Variables: {{first_name}}, {{name}}, {{staff_name}}.
+  kind        String   @default("reply")
+  subject     String   @default("")
+  category    String   @default("general")
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// One message sent to many accounts at once (Staff Console > Messages). The row is the receipt: who sent it, to whom, how many.
+model Broadcast {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String   @default("")
+  body        String
+  audience    String   @default("all")        // all | sellers | buyers | new_7d
+  channels    String[] @default([])           // in_app | email
+  status      String   @default("sending")    // sending | sent | failed
+  recipients  Int      @default(0)
+  inAppSent   Int      @default(0)
+  emailSent   Int      @default(0)
+  emailFailed Int      @default(0)
+  sentById    String?
+  sentByLabel String   @default("")
+  createdAt   DateTime @default(now())
+  finishedAt  DateTime?
+
+  @@index([createdAt])
+}
+
+// Internal staff notes about a shopper or seller account. Never shown to the person.
+model UserNote {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     StaffAccount? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String   @default("")
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Platform-wide notice shown as a banner on the shopper site while active (see GET /api/announcements/active).
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String   @default("")
+  tone        String   @default("info")      // info | warning | success
+  audience    String   @default("all")       // all | sellers | buyers
+  isActive    Boolean  @default(false)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
 }
 
 model Store {
@@ -253,6 +524,12 @@ model Store {
   subscriptionStatus    StoreSubscriptionStatus @default(trial)
   trialEndsAt           DateTime                @default(dbgenerated("(now() + interval '7 days')"))
   subscriptionPaidUntil DateTime?
+
+  // Staff moderation (Staff Console > Stores). 'restricted' removes the store from every public surface; the owner can still sign in.
+  moderationStatus ModerationStatus @default(ok)
+  moderationNote   String           @default("")
+  moderatedAt      DateTime?
+  moderatedBy      String?
 
   products Product[]
   orders   Order[]
@@ -350,6 +627,11 @@ model Product {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
+  // Staff moderation (Staff Console > Products). 'restricted' hides the listing from shoppers; the seller still sees it.
+  moderationStatus ModerationStatus @default(ok)
+  moderationNote   String           @default("")
+  moderatedAt      DateTime?
+  moderatedBy      String?
 
   orderItems OrderItem[]
   conversations Conversation[]
@@ -533,6 +815,7 @@ enum NotificationType {
   new_product
   store_live
   growth
+  staff_message
 }
 
 model Notification {
@@ -685,7 +968,7 @@ model PlatformSettings {
 }
 
 // =============================================================================
-// Nexta Circle + Nexta Scouts: models to PASTE at the end of
+// NextaStore Circle + NextaStore Crew: models to PASTE at the end of
 // nextastore-backend/prisma/schema.prisma.   (Not wired in yet.)
 //
 // Design choice: these models point at User, Store and SubscriptionPayment by
@@ -701,19 +984,26 @@ model PlatformSettings {
 
 enum GrowthProgram {
   circle
-  scout
+  crew
 }
 
 enum GrowthPartnerStatus {
-  applied    // Scouts apply and wait for approval; Circle members skip this and start as active
+  applied    // Crew members apply and wait for approval; Circle members skip this and start as active
   active
   frozen     // withdrawals paused, new referrals still recorded but held for review
   rejected
   retired    // left the program; history kept
 }
 
+enum GrowthUpgradeStatus {
+  applied    // a Circle member asked to move to Crew; Circle keeps working while this waits
+  approved   // the member is now in Crew (the row stays as the record of when and by whom)
+  declined   // Circle carries on exactly as before
+  withdrawn  // the member took the request back
+}
+
 enum GrowthReferralStage {
-  lead             // Scout logged a prospect who has no account yet
+  lead             // Crew member logged a prospect who has no account yet
   signed_up
   store_live
   payment_pending  // first payment submitted, awaiting admin approval
@@ -763,13 +1053,22 @@ model GrowthPartner {
   code                   String              @unique
   displayName            String
   phone                  String              @default("")
-  // Scouts only
+  // Crew members only
   rankKey                String              @default("trailhead")
   territories            String[]            @default([])
   kycFileUrl             String?             // ID photo, uploaded through the existing upload path; never shown to other partners
   applicationNote        String              @default("")
+  // Crew ID card. The photo is private (same bucket as the ID); the card unlocks by target (rules.js CREW_CARD) or when an admin releases it.
+  cardPhotoUrl           String?
+  cardIssuedAt           DateTime?
+  cardIssuedBy           String?
   approvedBy             String?
   approvedAt             DateTime?
+  // Circle -> Crew upgrade. One person is in ONE program at a time; an approved upgrade moves this same row (balances, payout number
+  // and history stay) and issues a new Crew code. The old code is kept here so every link already shared keeps working, silently.
+  previousCodes          String[]            @default([])
+  upgradedAt             DateTime?
+  upgradedFrom           GrowthProgram?
   // Payout destination. Changing it starts a withdrawal lock (rules.js WITHDRAWAL.payoutNumberChangeLockHours).
   payoutNetwork          String?
   payoutNumber           String?
@@ -792,9 +1091,39 @@ model GrowthPartner {
   withdrawals GrowthWithdrawal[]
   visits      GrowthVisit[]
   flags       GrowthFlag[]
+  upgrades    GrowthUpgrade[]
 
   @@index([program, status])
+  @@index([previousCodes], type: Gin)
   @@index([payoutNumber])
+}
+
+// A Circle member's request to move up to Crew. The member stays a fully working Circle member until an admin approves it.
+model GrowthUpgrade {
+  id                 String               @id @default(cuid())
+  partnerId          String
+  partner            GrowthPartner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  fromProgram        GrowthProgram
+  toProgram          GrowthProgram
+  status             GrowthUpgradeStatus  @default(applied)
+  phone              String               @default("")
+  territories        String[]             @default([])
+  note               String               @default("")
+  kycFileUrl         String?
+  cardPhotoUrl       String?
+  agreedTermsVersion String               @default("")
+  signupIpPrefix     String               @default("")
+  appliedAt          DateTime             @default(now())
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  reviewNote         String               @default("")
+  oldCode            String               @default("")   // the code before the move (filled on approval)
+  newCode            String               @default("")   // the code after the move (filled on approval)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([partnerId, status])
+  @@index([status, appliedAt])
 }
 
 // One row = one prospect or store that a partner brought (or logged).
@@ -803,11 +1132,14 @@ model GrowthReferral {
   partnerId            String
   partner              GrowthPartner       @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   stage                GrowthReferralStage @default(signed_up)
+  // The program the partner was in AT THE MOMENT this person signed up. Set once, never recomputed: it decides which rules
+  // (rate, bonuses, campaigns) pay this referral for its whole life, even if the partner later upgrades from Circle to Crew.
+  program              GrowthProgram?
   source               String              @default("link")   // link | code | late_claim | lead
   // Who it ended up being (null while still only a lead)
   recruitUserId        String?             @unique
   storeId              String?             @unique            // one referrer per store, enforced by the database
-  // Scout lead details (never shown to other partners)
+  // Crew member lead details (never shown to other partners)
   leadBusiness         String              @default("")
   leadContactName      String              @default("")
   leadPhone            String              @default("")       // normalised, 256XXXXXXXXX
@@ -829,7 +1161,7 @@ model GrowthReferral {
   riskDecision         String              @default("clear")  // clear | review | block
   riskScore            Int                 @default(0)
   riskReasons          Json                @default("[]")
-  capturedOffline      Boolean             @default(false)   // Scout logged it with no signal; createdAt holds the time they captured it
+  capturedOffline      Boolean             @default(false)   // Crew member logged it with no signal; createdAt holds the time they captured it
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 
@@ -842,7 +1174,7 @@ model GrowthReferral {
   @@index([stage, paymentSubmittedAt])
 }
 
-// Proof a Scout really went there. NOT paid for: only used to settle "who found them first"
+// Proof a Crew member really went there. NOT paid for: only used to settle "who found them first"
 // disputes and to give admins evidence when a conversion is flagged.
 model GrowthVisit {
   id         String         @id @default(cuid())
@@ -952,7 +1284,7 @@ model GrowthCampaign {
 model GrowthSettings {
   id             String   @id @default("singleton")
   circleOpen     Boolean  @default(false)   // false = no new Circle sign-ups (existing keep earning). Starts CLOSED: open it from the admin (Campaigns > Program settings) when ready.
-  scoutsOpen     Boolean  @default(false)   // same for Crew applications
+  crewOpen       Boolean  @default(false)   // same for Crew applications
   extraHolidays  String[] @default([])      // 'YYYY-MM-DD', e.g. Eid dates once announced
   termsVersion   String   @default("2026-10-draft")
   updatedAt      DateTime @updatedAt

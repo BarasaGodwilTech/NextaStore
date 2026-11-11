@@ -11,14 +11,14 @@ import numpy as np, cv2
 HERE = os.path.dirname(os.path.abspath(__file__))
 QR_JS = os.path.join(HERE, '..', '..', 'js', 'growth-qr.js')
 SAMPLES = [
-    'https://nextastores.com/signup?ref=SCOUT-4HTR9',
+    'https://nextastores.com/signup?ref=CREW-4HTR9',
     'https://nextastores.com/signup?ref=CIRCLE-K7M3Q',
     'A',
-    'https://nextastores.com/invite?ref=SCOUT-4HTR9&utm_source=qr&utm_campaign=kampala-market-week',
-    'https://nextastores.com/invite?ref=SCOUT-4HTR9&utm_source=qr&utm_campaign=kampala-market-week&note=' + 'x' * 70,
-    'https://nextastores.com/invite?ref=SCOUT-4HTR9&utm_source=qr&utm_campaign=kampala-market-week&note=' + 'abcdefghij' * 10,
+    'https://nextastores.com/invite?ref=CREW-4HTR9&utm_source=qr&utm_campaign=kampala-market-week',
+    'https://nextastores.com/invite?ref=CREW-4HTR9&utm_source=qr&utm_campaign=kampala-market-week&note=' + 'x' * 70,
+    'https://nextastores.com/invite?ref=CREW-4HTR9&utm_source=qr&utm_campaign=kampala-market-week&note=' + 'abcdefghij' * 10,
     'Nexta Duuka \u2014 Kampala \u2713 ' + '\u00e9' * 8,
-    'https://nextastores.com/invite?ref=SCOUT-4HTR9&' + 'q=1234567890&' * 11,
+    'https://nextastores.com/invite?ref=CREW-4HTR9&' + 'q=1234567890&' * 11,
 ]
 js = "const Q=require(%s);const s=JSON.parse(process.argv[1]);console.log(JSON.stringify(s.map(t=>{const q=Q.encode(t);return{text:t,version:q.version,modules:q.modules.map(r=>r.map(m=>m?1:0))}})))" % json.dumps(os.path.abspath(QR_JS))
 out = subprocess.run(['node', '-e', js, json.dumps(SAMPLES)], capture_output=True, text=True)

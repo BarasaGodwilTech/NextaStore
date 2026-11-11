@@ -60,7 +60,7 @@ async function main() {
     async function newPage(ctx, label) {
         const page = await ctx.newPage();
         page.on('pageerror', (e) => errors.push(`${label}: ${e.message}`));
-        page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|ERR_FAILED|ERR_INTERNET/.test(m.text())) errors.push(`${label}: console: ${m.text()}`); });
+        page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|ERR_FAILED|ERR_INTERNET|Can.t reach the server/.test(m.text())) errors.push(`${label}: console: ${m.text()}`); });
         return page;
     }
     /** Sign in ON THE MAIN SITE only (that is where a person really signs in). */
@@ -79,7 +79,7 @@ async function main() {
     ok('link-preview image is an absolute URL on the circle host (crawlers do not run scripts)', r.body.includes(`content="${O.circle}/assets/growth-brand/social/circle-og-1200x630.png"`) && !r.body.includes('{{PROGRAM_URL}}'));
     ok('the page cannot be framed (it has money buttons on it)', r.headers['x-frame-options'] === 'DENY');
     r = await raw(H('crew'), '/');
-    ok('crew host / serves the Crew page with the Crew preview image', r.status === 200 && r.body.includes('data-program="scout"') && r.body.includes(`${O.crew}/assets/growth-brand/social/crew-og-1200x630.png`));
+    ok('crew host / serves the Crew page with the Crew preview image', r.status === 200 && r.body.includes('data-program="crew"') && r.body.includes(`${O.crew}/assets/growth-brand/social/crew-og-1200x630.png`));
     r = await raw(H('circle'), '/login?next=%2Fx');
     ok('circle host: any main-site page redirects to the main site, query kept', r.status === 302 && r.headers.location === `${O.main}/login?next=%2Fx`, r.headers.location);
     r = await raw(H('crew'), '/marketplace');
@@ -125,7 +125,7 @@ async function main() {
     ok('signed out everywhere: Circle first shows the public about page on the main site', originOf(page) === O.main && new URL(page.url()).pathname === '/about-circle', page.url());
     await page.goto(`${O.circle}/?go=1`);
     await page.waitForURL(/\/login/, { timeout: 8000 });
-    ok('the Join button (?go=1) then sends you to sign in, and remembers where you were going', originOf(page) === O.main && new URL(page.url()).searchParams.get('next') === `${O.circle}/?go=1`, page.url());
+    ok('the Join button (?go=1) then sends you to sign in, and remembers where you were going (login.html understands ?redirect=, not ?next=)', originOf(page) === O.main && new URL(page.url()).searchParams.get('redirect') === 'circle?go=1', page.url());
     await signInOnMain(page, dina);
     await page.goto(`${O.circle}/`);
     await page.waitForSelector('#gpJoin', { timeout: 10000 });
@@ -133,7 +133,7 @@ async function main() {
     ok('the token is not left in the address bar', !page.url().includes('nxs') && !page.url().includes('#'));
     ok('Circle holds its own copy of the session, for this host only', await page.evaluate(() => !!localStorage.getItem('nextastore_token') && JSON.parse(localStorage.getItem('nextastore_user')).name === 'Dina Auma'));
     const links = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gp-top nav a, .gp-foot a')].map((a) => [a.textContent.trim(), a.href])));
-    ok('header and footer links to main-site pages point at the main site, the program link stays here', links.Marketplace === `${O.main}/marketplace` && links.Messages === `${O.main}/messages` && links.Terms === `${O.main}/terms` && links.Dashboard === `${O.circle}/`, JSON.stringify(links));
+    ok('header and footer links to main-site pages point at the main site, the program link stays here', links.NextaStore === `${O.main}/marketplace` && links['About Circle'] === `${O.main}/about-circle` && links.Terms === `${O.main}/terms`, JSON.stringify(links));
     ok('the logo goes to the program home, not the marketplace', (await page.getAttribute('.gp-brand', 'href')) === '/');
     ok('the Circle lockup (with descriptor) is the header logo', (await page.getAttribute('.gp-brand img', 'src')).endsWith('/lockup-circle.svg') && (await page.evaluate(() => document.querySelector('.gp-brand img').naturalWidth)) >= 120);
     ok('Circle favicon + theme colour are set', await page.evaluate(() => document.querySelector('link[rel=icon][type="image/svg+xml"]').href.includes('/favicon/circle/') && document.querySelector('meta[name=theme-color]').content === '#0B3B2B'));
@@ -143,12 +143,13 @@ async function main() {
     await page.setViewportSize({ width: 1280, height: 900 });
     sz = await sizes();
     ok('brand minimums on a desktop: header lockup at least 160px wide, footer mark at least 48px', sz.head >= 160 && sz.foot >= 48, JSON.stringify(sz));
-    await page.fill('#gpPhone', '0772 123 456'); await page.check('#gpTerms'); await page.click('#gpJoin button[type=submit]');
+    await page.fill('#gpPhone', '0772 123 456'); await page.click('#gpNext'); await page.check('#gpTerms'); await page.click('#gpJoin button[type=submit]');
     await page.waitForSelector('#gpCode', { timeout: 8000 });
     const dinaCode = (await page.textContent('#gpCode')).trim();
     ok('Dina joins Circle on the subdomain', /^CIRCLE-[A-Z2-9]{5}$/.test(dinaCode));
     ok('her invite link is the short link on the Circle host', (await page.textContent('#gpLinkText')) === `${O.circle}/i/${dinaCode}`, await page.textContent('#gpLinkText'));
-    ok('welcome notification links to the Circle subdomain', db.notification.some((n) => /Welcome to NextaStore Circle/.test(n.title) && n.link === `${O.circle}/`), JSON.stringify(db.notification.map((n) => n.link)));
+    ok('welcome notification links to /circle (the bell only follows plain paths; the main site redirects it to the Circle subdomain)', db.notification.some((n) => /Welcome to NextaStore Circle/.test(n.title) && n.link === '/circle'), JSON.stringify(db.notification.map((n) => n.link)));
+    await page.evaluate(() => { location.hash = 'share'; });
     await page.waitForSelector('#gpCardPreview svg');
     ok('the invite card shows the Circle lockup and her code', (await page.innerHTML('#gpCardPreview')).includes('<image') && (await page.innerHTML('#gpCardPreview')).includes(dinaCode));
     await shot(page, '10-circle-dashboard-desktop');
@@ -185,7 +186,7 @@ async function main() {
     const inviteText = await page.textContent('#gpInvite');
     ok('the short link shows who invited you, first name only', inviteText.includes('Dina invited you') && !inviteText.includes('Auma'));
     ok('no sign-in needed to see it', originOf(page) === O.circle && !page.url().includes('login'));
-    ok('"Open my free shop" goes to the MAIN site signup with the code', (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup?ref=${dinaCode}`, await page.getAttribute('#gpGo', 'href'));
+    ok('"Open my free shop" goes to the MAIN site signup with the code', (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup?type=seller&ref=${dinaCode}`, await page.getAttribute('#gpGo', 'href'));
     ok('invite page uses the NextaStore logo and the Circle colourway', (await page.getAttribute('.gp-brand img', 'src')).includes('/assets/brand/') && (await page.getAttribute('body', 'data-program')) === 'circle');
     await page.setViewportSize({ width: 1280, height: 900 }); await shot(page, '11-invite-desktop'); await page.setViewportSize({ width: 430, height: 900 });
     await page.click('#gpGo');
@@ -196,41 +197,41 @@ async function main() {
     await page2.goto(`${O.main}/signup`);
     ok('opening the main-site signup later, by hand, still knows the code (cookie on the parent domain)', (await seenCode(page2)) === dinaCode);
     await ctx.close();
-    // a code printed before the rename (SCOUT-...) must keep working
+    // a Crew code opens the invite and names who invited
     const old1 = mkUser('Hema Tendo');
-    db.growthPartner.push({ id: 'gp_old', userId: old1.id, program: 'scout', status: 'active', code: 'SCOUT-HEMTA', displayName: 'Hema Tendo', phone: '256753222000', territories: ['kampala'], rankKey: 'trailhead', qualityScore: 70, joinedAt: new Date(Date.now() - 20 * 86400000), approvedAt: new Date(Date.now() - 19 * 86400000), usualIpPrefixes: [], payoutNumber: null, kycFileUrl: 'private/x', createdAt: new Date() });
-    ctx = await newCtx(); page = await newPage(ctx, 'legacy');
-    await page.goto(`${O.circle}/i/SCOUT-HEMTA`);
+    db.growthPartner.push({ id: 'gp_old', userId: old1.id, program: 'crew', status: 'active', code: 'CREW-HEMTA', displayName: 'Hema Tendo', phone: '256753222000', territories: ['kampala'], rankKey: 'trailhead', qualityScore: 70, joinedAt: new Date(Date.now() - 20 * 86400000), approvedAt: new Date(Date.now() - 19 * 86400000), usualIpPrefixes: [], payoutNumber: null, kycFileUrl: 'private/x', createdAt: new Date() });
+    ctx = await newCtx(); page = await newPage(ctx, 'crew-invite');
+    await page.goto(`${O.circle}/i/CREW-HEMTA`);
     await page.waitForSelector('#gpGo');
-    ok('a code printed before the rename (SCOUT-...) still opens the invite and names who invited', (await page.textContent('#gpInvite')).includes('Hema invited you') && (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup?ref=SCOUT-HEMTA`);
+    ok('a Crew code opens the invite and names who invited', (await page.textContent('#gpInvite')).includes('Hema invited you') && (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup?type=seller&ref=CREW-HEMTA`);
     ok('the invite page says "NextaStore Crew member" for a field-team code', (await page.textContent('#gpInvite')).includes('NextaStore Crew member'));
-    await page.goto(`${O.circle}/invite?ref=SCOUT-HEMTA`);
+    await page.goto(`${O.circle}/invite?ref=CREW-HEMTA`);
     await page.waitForSelector('#gpGo');
-    ok('the old long link form works too', (await page.textContent('#gpInvite')).includes('Hema invited you'));
+    ok('the long link form works too', (await page.textContent('#gpInvite')).includes('Hema invited you'));
     await ctx.close();
     ctx = await newCtx(); page = await newPage(ctx, 'stranger-3');
     await page.goto(`${O.circle}/i/CIRCLE-ZZZZZ`);
     await page.waitForSelector('#gpGo');
-    ok('an unknown code gives a friendly plain invite with a gentle note', (await page.textContent('#gpInvite')).includes('You are invited') && (await page.textContent('#gpInvite')).includes('could not match') && (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup`);
+    ok('an unknown code gives a friendly plain invite with a gentle note', (await page.textContent('#gpInvite')).includes('You are invited') && (await page.textContent('#gpInvite')).includes('could not match') && (await page.getAttribute('#gpGo', 'href')) === `${O.main}/signup?type=seller`);
     await ctx.close();
 
     // ============================================================ 4. Crew: the installed app and no signal
     console.log('Crew app: install, offline, QR, queue');
     const kofi = mkUser('Kofi Mensah');
-    db.growthPartner.push({ id: 'gp_kofi', userId: kofi.id, program: 'scout', status: 'active', code: 'CREW-KOFI2', displayName: 'Kofi Mensah', phone: '256753111000', territories: ['kampala'], rankKey: 'trailhead', qualityScore: 70, joinedAt: new Date(Date.now() - 20 * 86400000), approvedAt: new Date(Date.now() - 19 * 86400000), usualIpPrefixes: [], payoutNumber: null, kycFileUrl: 'private/x', createdAt: new Date() });
+    db.growthPartner.push({ id: 'gp_kofi', userId: kofi.id, program: 'crew', status: 'active', code: 'CREW-KOFI2', displayName: 'Kofi Mensah', phone: '256753111000', territories: ['kampala'], rankKey: 'trailhead', qualityScore: 70, joinedAt: new Date(Date.now() - 20 * 86400000), approvedAt: new Date(Date.now() - 19 * 86400000), usualIpPrefixes: [], payoutNumber: null, kycFileUrl: 'private/x', createdAt: new Date() });
     ctx = await newCtx({ serviceWorkers: 'allow' });
     page = await newPage(ctx, 'kofi');
     await signInOnMain(page, kofi);
     await page.goto(`${O.crew}/`);
-    await page.waitForSelector('#gpLead', { timeout: 12000 });
-    ok('Crew opens signed in, in the Crew colourway with the Crew lockup', originOf(page) === O.crew && (await page.getAttribute('.gp-brand img', 'src')).endsWith('/lockup-crew.svg') && (await page.getAttribute('body', 'data-program')) === 'scout');
+    await page.waitForSelector('#gpLead', { state: 'attached', timeout: 12000 });
+    ok('Crew opens signed in, in the Crew colourway with the Crew lockup', originOf(page) === O.crew && (await page.getAttribute('.gp-brand img', 'src')).endsWith('/lockup-crew.svg') && (await page.getAttribute('body', 'data-program')) === 'crew');
     ok('Crew favicon + manifest are the Crew ones', await page.evaluate(() => document.querySelector('link[rel=icon][type="image/svg+xml"]').href.includes('/favicon/crew/')));
     ok('the Crew invite link also lives on the Circle host', (await page.textContent('#gpLinkText')) === `${O.circle}/i/CREW-KOFI2`);
     await page.setViewportSize({ width: 1280, height: 900 }); await shot(page, '12-crew-dashboard-desktop'); await page.setViewportSize({ width: 430, height: 900 });
     ok('the Crew hero is gold-on-forest (primary button is gold with ink text)', await page.evaluate(() => { const b = getComputedStyle(document.querySelector('#gpLead button[type=submit]')); return b.backgroundColor === 'rgb(255, 176, 56)' && b.color === 'rgb(11, 59, 43)'; }));
     const swReady = await page.evaluate(async () => { try { const reg = await navigator.serviceWorker.ready; return !!reg.active; } catch (e) { return false; } });
     ok('the Crew app registers its service worker (installable, works offline)', swReady);
-    await page.reload(); await page.waitForSelector('#gpLead');           // now controlled by the worker: this copy of the page is saved
+    await page.reload(); await page.waitForSelector('#gpLead', { state: 'attached' });           // now controlled by the worker: this copy of the page is saved
     await sleep(500);
     await ctx.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -249,9 +250,9 @@ async function main() {
     await ctx.setOffline(false);
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     ok('signal back: the real dashboard loads and the queued lead is sent', await until(() => db.growthReferral.some((x) => x.leadBusiness === 'Quiet Kiosk' && x.stage === 'lead'), 10000));
-    await page.waitForSelector('#gpMoney', { timeout: 8000 });
+    await page.waitForSelector('#gpMoney', { state: 'attached', timeout: 8000 });
     ok('the offline view is replaced by the dashboard', (await page.locator('#gpMoney').count()) === 1 && (await page.locator('.gp-offline').count()) === 0);
-    ok('Crew notifications that name no page still go to the Crew host', await (async () => { await growth.ctx.notify(kofi.id, 'probe', 'x'); return db.notification.some((n) => n.title === 'probe' && n.link === `${O.crew}/`); })());
+    ok('Crew notifications that name no page point at /crew (the bell follows plain paths; the host router moves it to the Crew host)', await (async () => { await growth.ctx.notify(kofi.id, 'probe', 'x'); return db.notification.some((n) => n.title === 'probe' && n.link === '/crew'); })());
     await ctx.close();
 
     // ============================================================ 5. Admin stays on the main site

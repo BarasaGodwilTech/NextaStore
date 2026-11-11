@@ -3,7 +3,7 @@
  * on an in-memory database, plus a small HTTP server that serves
  *   - the growth pages from the project root (they win),
  *   - YOUR site files from PROJECT_DIR, or the bundled stub site when PROJECT_DIR is not set.
- * One server answers for every host name (main, circle., scouts.), exactly like one Express app behind a proxy.
+ * One server answers for every host name (main, circle., crew.), exactly like one Express app behind a proxy.
  */
 const path = require('path');
 const fs = require('fs');

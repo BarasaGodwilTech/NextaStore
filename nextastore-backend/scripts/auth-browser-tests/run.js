@@ -86,14 +86,21 @@ const readIdentity = (page) => page.evaluate(() => {
     };
 });
 
+// The login page is two steps now: the email address + Continue, then the password + Sign in.
+async function fillLogin(page, who, { remember = false } = {}) {
+    await page.fill('#email', who.email);
+    if (remember) await page.check('#rememberMe');
+    await page.click('#emailContinueBtn');
+    await page.waitForSelector('#password', { state: 'visible' });
+    await page.fill('#password', who.password);
+}
+
 async function uiLogin(page, who, { remember = false, query = '' } = {}) {
     await page.goto(`${BASE}/login.html${query}`);
-    await page.fill('#email', who.email);
-    await page.fill('#password', who.password);
-    if (remember) await page.check('#rememberMe');
+    await fillLogin(page, who, { remember });
     await Promise.all([
         waitLeftLogin(page),
-        page.click('button[type="submit"]')
+        page.click('#loginForm button[type="submit"]')
     ]);
     await page.waitForLoadState('load');
     await sleep(250); // let loadUserData()/badge polling settle
@@ -241,7 +248,7 @@ async function s2(browser) {
     // thing at its own position? (sessionStorage survives the same-tab redirect)
     await page.addInitScript(() => {
         const sample = () => {
-            const f = document.getElementById('loginForm');
+            const f = document.getElementById('emailForm');
             if (f) {
                 const r = f.getBoundingClientRect();
                 const el = r.height > 0 ? document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)) : null;
@@ -283,7 +290,7 @@ async function s2(browser) {
     const gp = await newPage(guest);
     await gp.addInitScript(() => {
         const sample = () => {
-            const f = document.getElementById('loginForm');
+            const f = document.getElementById('emailForm');
             if (f) {
                 const r = f.getBoundingClientRect();
                 const el = r.height > 0 ? document.elementFromPoint(r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)) : null;
@@ -317,8 +324,8 @@ async function s2(browser) {
     check('2c  an expired session sends the person to login with the reason', toLogin, (await identity(page)).url);
     const notice = await page.textContent('#sessionNotice').catch(() => '');
     check('2c  the login page explains why', /expired/i.test(notice || ''), `notice = "${notice}"`);
-    await page.fill('#email', USERS.seller.email); await page.fill('#password', USERS.seller.password);
-    await Promise.all([waitLeftLogin(page), page.click('button[type="submit"]')]);
+    await fillLogin(page, USERS.seller);
+    await Promise.all([waitLeftLogin(page), page.click('#loginForm button[type="submit"]')]);
     check("2c  a DIFFERENT person signing in next is not dropped on the previous person's page", !/orders\.html/.test((await identity(page)).url), (await identity(page)).url);
     await ctx.close();
 
@@ -333,8 +340,8 @@ async function s2(browser) {
     });
     await page.goto(`${BASE}/orders.html`);
     await waitUrl(page, /login\.html/, 6000);
-    await page.fill('#email', USERS.buyer.email); await page.fill('#password', USERS.buyer.password);
-    await Promise.all([waitLeftLogin(page), page.click('button[type="submit"]')]);
+    await fillLogin(page, USERS.buyer);
+    await Promise.all([waitLeftLogin(page), page.click('#loginForm button[type="submit"]')]);
     check('2c  the SAME person signing back in IS returned to the page they were on', /orders\.html/.test((await identity(page)).url), (await identity(page)).url);
     await ctx.close();
 }
@@ -501,8 +508,8 @@ async function s5(browser) {
     const notice = await b.textContent('#sessionNotice').catch(() => '');
     check('5b  the login page tells device B why', /sessions were ended|password changed/i.test(notice || ''), `notice = "${notice}"`);
 
-    await b.fill('#email', USERS.buyer.email); await b.fill('#password', USERS.buyer.password);
-    await Promise.all([waitLeftLogin(b), b.click('button[type="submit"]')]);
+    await fillLogin(b, USERS.buyer);
+    await Promise.all([waitLeftLogin(b), b.click('#loginForm button[type="submit"]')]);
     check('5c  signing in again on device B works (a new token carries the new version)', (await identity(b)).hasToken && /orders\.html/.test((await identity(b)).url), (await identity(b)).url);
     await deviceA.close(); await deviceB.close();
 }

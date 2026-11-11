@@ -18,7 +18,8 @@ const validation = read('nextastore-backend/src/validation.js');
 const orderRoutes = read('nextastore-backend/src/routes/orders.js');
 const app = read('nextastore-backend/src/app.js');
 const adminMigration = read('nextastore-backend/prisma/migrations/20260911093000_admin_moderation/migration.sql');
-const adminRoute = read('nextastore-backend/src/routes/admin.js');
+// The admin API was replaced by the separate Staff Console API (src/staff/routes/*).
+const adminRoute = ['people', 'team', 'finance', 'support'].map((f) => read(`nextastore-backend/src/staff/routes/${f}.js`)).join('\n');
 const middleware = read('nextastore-backend/src/middleware.js');
 
 const renderIndex = storeDetail.indexOf('renderProducts()');
@@ -44,7 +45,7 @@ check('Store directory uses seller badges', /renderSellerBadges/.test(read('js/s
 check('Store detail uses verification signal', /verified/i.test(storeDetail));
 check('Admin migration uses valid plain SQL enum value', /ALTER TYPE \"UserRole\" ADD VALUE IF NOT EXISTS 'admin';/.test(adminMigration) && !/\"'\"'admin'\"'\"'/.test(adminMigration));
 check('Reports route is mounted through orders router', /app\.use\(['"]\/api\/orders['"],\s*orderRoutes\)/.test(app));
-check('Admin moderation routes are server-side gated', /requireAdmin/.test(adminRoute) && /requireAuth/.test(adminRoute));
+check('Staff routes are server-side gated by permission', /requirePermission/.test(adminRoute));
 check('Seller-only backend middleware remains seller-only', /req\.user\.role !== 'seller'/.test(middleware) && !/!\['seller', 'admin'\]\.includes\(req\.user\.role\)/.test(middleware));
 const integration = read('nextastore-backend/scripts/integration-test.js');
 check('Integration test binds Prisma to TEST_DATABASE_URL', /process\.env\.DATABASE_URL\s*=\s*process\.env\.TEST_DATABASE_URL/.test(integration));
@@ -171,9 +172,6 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('Login redirect: SELLER_ONLY_PAGES matches every data-seller-required page',
     same(listOf('SELLER_ONLY_PAGES'), withAttr('data-seller-required')),
     `auth.js has [${listOf('SELLER_ONLY_PAGES')}], HTML has [${withAttr('data-seller-required')}]`);
-  check('Login redirect: ADMIN_ONLY_PAGES matches every data-admin-required page',
-    same(listOf('ADMIN_ONLY_PAGES'), withAttr('data-admin-required')),
-    `auth.js has [${listOf('ADMIN_ONLY_PAGES')}], HTML has [${withAttr('data-admin-required')}]`);
   check('Login redirect: AUTH_PAGES covers every data-auth-page page (no redirect loops)',
     withAttr('data-auth-page').every(f => listOf('AUTH_PAGES').includes(f)),
     `data-auth-page pages: [${withAttr('data-auth-page')}]`);
@@ -216,7 +214,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('password change (PUT /user/me) removes push devices only when the password changed',
     /if \(passwordChanged\) await removeAllSubscriptionsForUser\(req\.user\.id\)/.test(routeBody(userRoute, "router.put('/me'")));
   check('suspending an account removes its push devices',
-    /accountStatus === 'suspended'[^\n]*removeAllSubscriptionsForUser\(target\.id\)/.test(adminRoute));
+    /'suspended'[\s\S]{0,400}removeAllSubscriptionsForUser\(target\.id\)/.test(adminRoute));
   check('package.json has test:push and test:push-browser scripts',
     !!pkg.scripts && /push-sw-test\.js/.test(pkg.scripts['test:push'] || '') && /push-backend-test\.js/.test(pkg.scripts['test:push'] || '') && /push-sw-browser-test\.js/.test(pkg.scripts['test:push-browser'] || ''));
   check('test:push also runs the page-side (js/push.js) fake-browser suite',
@@ -229,7 +227,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   const main = read('js/main.js');
   const dashboardJs = dashboard; // already loaded above
   const dashboardHtml = read('dashboard.html');
-  const pagesWithBell = ['admin.html', 'cart.html', 'dashboard.html', 'favorites.html', 'following.html',
+  const pagesWithBell = ['cart.html', 'dashboard.html', 'favorites.html', 'following.html',
     'index.html', 'marketplace.html', 'messages.html', 'onboarding.html', 'orders.html',
     'product-detail.html', 'product-form.html', 'store-detail.html', 'stores.html', 'subscription.html'];
 
@@ -268,7 +266,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   const pushJs = read('js/push.js');
   const promptJs = read('js/push-prompt.js');
   const dashboardJs2 = dashboard; // already loaded above
-  const pagesWithBell = ['admin.html', 'cart.html', 'dashboard.html', 'favorites.html', 'following.html',
+  const pagesWithBell = ['cart.html', 'dashboard.html', 'favorites.html', 'following.html',
     'index.html', 'marketplace.html', 'messages.html', 'onboarding.html', 'orders.html',
     'product-detail.html', 'product-form.html', 'store-detail.html', 'stores.html', 'subscription.html'];
 
@@ -427,7 +425,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     /res\.status === 401 \|\| res\.status === 403/.test(presenceJs) && /reason === 'replaced'/.test(presenceJs));
 
   const pagesWithBell = [
-    'admin.html', 'cart.html', 'dashboard.html', 'favorites.html', 'following.html',
+    'cart.html', 'dashboard.html', 'favorites.html', 'following.html',
     'index.html', 'marketplace.html', 'messages.html', 'onboarding.html', 'orders.html',
     'product-detail.html', 'product-form.html', 'store-detail.html', 'stores.html', 'subscription.html'
   ];
@@ -532,8 +530,9 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     pages.every(([, h]) => !/page-breadcrumb/.test(h)));
   check('auth.css keeps inputs at 16px on phones (no iOS zoom) and respects reduced motion',
     /font-size: 16px/.test(authCss) && /prefers-reduced-motion: reduce/.test(authCss));
-  check('Signup still carries the terms checkbox as required, and Get Started ?type=seller still preselects Sell',
-    /id="agreeTerms" required/.test(read('signup.html')) && /get\('type'\) === 'seller'/.test(read('signup.html')));
+  // Changed on purpose (WIP 115): agreement is stated beside BOTH ways in (Google and email) instead of a box that had to be ticked before Google worked.
+  check('Signup states the Terms/Privacy agreement beside BOTH Google and the email button, and ?type=seller still preselects Sell',
+    (read('signup.html').match(/By (continuing with Google|creating an account) you agree to our/g) || []).length === 2 && !/id="agreeTerms"/.test(read('signup.html')) && /get\('type'\) === 'seller'/.test(read('signup.html')));
   check('Signup submit-button label cache is reset when the account type changes',
     /delete btn\.dataset\.originalText/.test(read('signup.html')));
 
@@ -547,7 +546,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   const schema = read('nextastore-backend/prisma/schema.prisma');
   const storeRoute = read('nextastore-backend/src/routes/store.js');
   check('store_live notification: enum value + migration exist',
-    /new_product\s+store_live(?:\s+growth)?\s*\}/.test(schema) &&
+    /new_product\s+store_live(?:\s+growth)?(?:\s+staff_message)?\s*\}/.test(schema) &&
     /ADD VALUE IF NOT EXISTS 'store_live'/.test(read('nextastore-backend/prisma/migrations/20260924090000_store_live_notification/migration.sql')));
   check('PUT /store notifies the owner only on the draft -> live transition',
     /data\.isPublished === true && !store\.isPublished/.test(storeRoute) && /type: 'store_live'/.test(storeRoute));
@@ -613,10 +612,10 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('terms.html and privacy.html exist, are titled, and cross-link to each other',
     /<title>Terms of Service - NextaStore<\/title>/.test(terms) && /<title>Privacy Policy - NextaStore<\/title>/.test(privacy) &&
     /href="\/privacy"/.test(terms) && /href="\/terms"/.test(privacy));
-  check('Signup links go to the real pages in a new tab (no more "#"), and the agree checkbox is still required',
+  check('Signup links go to the real pages in a new tab (no more "#"), beside both the Google and the email button',
     /href="\/terms" target="_blank" rel="noopener">Terms of Service/.test(signup) &&
     /href="\/privacy" target="_blank" rel="noopener">Privacy Policy/.test(signup) &&
-    /id="agreeTerms" required/.test(signup) && !/<a href="#">(Terms of Service|Privacy Policy)/.test(signup));
+    (signup.match(/you agree to our/g) || []).length === 2 && !/<a href="#">(Terms of Service|Privacy Policy)/.test(signup));
   check('Legal pages state the real product model: no payment processing/escrow, and phone shown only if the seller chooses',
     /does not process your payment/.test(terms) && /only if the seller chooses to show it/.test(privacy) && /only if you choose to show it/.test(terms));
   check('Legal pages use same-site relative canonical URLs',
@@ -717,8 +716,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   const subscriptionJs = read('js/subscription.js');
   const subscriptionHtmlFull = read('subscription.html');
   const subscriptionCss = read('css/subscription.css');
-  const adminHtmlFull = read('admin.html');
-  const adminJs = read('js/admin.js');
+  const adminHtmlFull = read('staff/js/sections-admin.js');
+  const adminJs = adminHtmlFull;
   const platformSettingsMigration = read('nextastore-backend/prisma/migrations/20260927090000_platform_settings_dial_instructions/migration.sql');
 
   check('Mobile-money method starts unselected so a seller cannot silently default to MTN',
@@ -738,9 +737,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     /ADD COLUMN "airtelMoneyInstructions"/.test(platformSettingsMigration) &&
     /mtnMomoInstructions:\s*z\.string\(\)\.trim\(\)\.max\(240\)\.optional\(\)/.test(validation) &&
     /mtnMomoInstructions:\s*settings\.mtnMomoInstructions/.test(subscriptionRoute));
-  check('Admin settings form exposes and saves both dial-instruction fields',
-    /id="settingsMtnInstructions"/.test(adminHtmlFull) && /id="settingsAirtelInstructions"/.test(adminHtmlFull) &&
-    /settingsMtnInstructions['"]\)\.value/.test(adminJs) && /mtnMomoInstructions:document\.getElementById\('settingsMtnInstructions'\)\.value\.trim\(\)/.test(adminJs));
+  check('Staff Settings form exposes and saves both dial-instruction fields',
+    /'mtnMomoInstructions'/.test(adminJs) && /'airtelMoneyInstructions'/.test(adminJs));
 }
 
 // --- WIP 28: badge copy reverted to "No badge", 6mo no longer pre-selected by
@@ -881,12 +879,12 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
 // ---- WIP 40: full notification text, no native popups, smart Back ----
 {
   const mainJs = read('js/main.js'), mainCss = read('css/main.css'), backNav = read('js/back-nav.js');
-  const siteJs = ['js/dashboard.js', 'js/orders.js', 'js/admin.js', 'js/cart-page.js', 'js/store-detail.js', 'js/product-detail.js', 'js/messages.js', 'js/marketplace.js']
+  const siteJs = ['js/dashboard.js', 'js/orders.js', 'js/cart-page.js', 'js/store-detail.js', 'js/product-detail.js', 'js/messages.js', 'js/marketplace.js']
     .map(f => read(f)).join('\n');
   check('Notifications: desktop shows the full title and body (no nowrap / ellipsis on the item text)',
     !/\.notification-preview-main (?:strong|span)\{[^}]*(?:white-space:nowrap|text-overflow:ellipsis)/.test(mainCss));
   check('No native browser popups: window.alert / confirm / prompt are not used anywhere in the site scripts',
-    !/(?:^|[^A-Za-z0-9_.$])window\.(?:alert|confirm|prompt)\s*\(/m.test(siteJs + read('js/admin.js')) && !/(?<![A-Za-z0-9_.$])(?:alert|prompt)\s*\(/.test(siteJs.replace(/showAlert\(/g, '')));
+    !/(?:^|[^A-Za-z0-9_.$])window\.(?:alert|confirm|prompt)\s*\(/m.test(siteJs) && !/(?<![A-Za-z0-9_.$])(?:alert|prompt)\s*\(/.test(siteJs.replace(/showAlert\(/g, '')));
   check('app.prompt() exists beside app.confirm(), validates inline, and keeps typed text when the backdrop is clicked',
     /\n    prompt\(\{/.test(mainJs) && /site-dialog-error/.test(mainJs) && /_downOnBackdrop/.test(mainJs) && /\.site-dialog-form/.test(mainCss));
   check('Back: js/back-nav.js exists and every page with a back control loads it',
@@ -939,7 +937,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     (() => { const handler = seoRoute.slice(idx('/:storeSlug/:productSlug'), idx('/:slug')); // the product handler only: the store route has the same line
       return /const live = store\.isPublished && isStoreCurrentlyActive\(store\)/.test(handler) && /store\.deletedAt/.test(handler) && /noindex,nofollow/.test(seoSrc); })());
   check('Product address: found by the id\'s tail INSIDE the named store (indexed store filter, case-insensitive), never a table-wide scan',
-    /id: \{ endsWith: key, mode: 'insensitive' \}/.test(seoRoute) && /store: \{ deletedAt: null, OR: \[\{ slug: storeKey \}, \{ id: rawStore \}\] \}/.test(seoRoute));
+    /id: \{ endsWith: key, mode: 'insensitive' \}/.test(seoRoute) && /store: \{ deletedAt: null, moderationStatus: 'ok', OR: \[\{ slug: storeKey \}, \{ id: rawStore \}\] \}/.test(seoRoute));
   check('Product address: one address per product - any other spelling 301s to it, and the reserved first words (css, api, errors...) are never shadowed',
     /req\.path !== clean/.test(seoRoute) && /isReservedSlug\(storeKey\)\) return next\(\)/.test(seoRoute) && /RESERVED_SLUGS[\s\S]*'p'/.test(slugSrc));
   check('Product address: both routes are under the public per-IP rate limiter (unauthenticated, read the database)',
@@ -982,8 +980,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
       /window\.NexiAssistant = \{/.test(nexiJs) && /nexi-top/.test(nexiJs) && /mountHero/.test(nexiJs) && /ALLOWED_PATHS/.test(nexiJs) && !/innerHTML\s*=\s*(m|msg|text|ev|reply)\b/.test(nexiJs) &&
       /prefers-reduced-motion: reduce/.test(nexiCss) && /@media print/.test(nexiCss) && /\.nexi-fab/.test(nexiCss) && /z-index: 900/.test(nexiCss));
     const mainJs = read('js/main.js');
-    check('Nexi loads on every main.js page via one loader, and admin + inbox opt out',
-      /loadAssistantDock/.test(mainJs) && /data-assistant="off"/.test(read('admin.html')) && /data-assistant="off"/.test(read('messages.html')) && /assistant\.js/.test(read('safety.html')));
+    check('Nexi loads on every main.js page via one loader, and the inbox opts out',
+      /loadAssistantDock/.test(mainJs) && /data-assistant="off"/.test(read('messages.html')) && /assistant\.js/.test(read('safety.html')));
     const proxyJs = read('nextastore-backend/src/assistantProxy.js');
     check('Nexi proxy: mounted behind its own per-minute and per-hour limits, strips client roles, never buffers the stream',
       /api\/assistant\/chat', assistantMinuteLimiter, assistantHourLimiter/.test(app) && /app\.use\('\/api\/assistant', assistantRoutes\)/.test(app) && /role === 'user' \|\| m\.role === 'assistant'/.test(proxyJs) && /no-transform/.test(proxyJs));

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <filter id="paper" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="1.5 1.0" numOctaves="2" seed="31" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale=".6" diffuseConstant="1.14" lighting-color="#fff" result="l"><feDistantLight azimuth="235" elevation="60"/></feDiffuseLighting>
+      <feComposite in="l" in2="SourceAlpha" operator="in" result="lc"/>
+      <feBlend in="SourceGraphic" in2="lc" mode="multiply"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="soft2" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <linearGradient id="env" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF9EA"/><stop offset="1" stop-color="#F0DDB4"/></linearGradient>
+    <linearGradient id="envL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F3E3BD"/><stop offset="1" stop-color="#FBF1D6"/></linearGradient>
+    <linearGradient id="envR" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#E4CC98"/><stop offset="1" stop-color="#F6E7C3"/></linearGradient>
+    <linearGradient id="envB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8E6"/><stop offset="1" stop-color="#EBD6A8"/></linearGradient>
+    <linearGradient id="liner" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0A7A55"/><stop offset="1" stop-color="#065A3F"/></linearGradient>
+    <pattern id="linerp" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="none"/><rect width="2.2" height="10" fill="#fff" opacity=".09"/></pattern>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F3EEE0"/></linearGradient>
+    <linearGradient id="btn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34D9A0"/><stop offset="1" stop-color="#008A5E"/></linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <clipPath id="bodyC"><rect x="34" y="112" width="172" height="96" rx="7"/></clipPath>
+  </defs>
+  <g transform="rotate(-5 120 140)">
+    <ellipse cx="122" cy="222" rx="84" ry="8" fill="#000" opacity=".34" filter="url(#soft)"/>
+    <!-- open flap, seen from inside -->
+    <g filter="url(#paper)"><path d="M34 112 L120 52 L206 112Z" fill="url(#liner)"/></g>
+    <path d="M34 112 L120 52 L206 112Z" fill="url(#linerp)"/>
+    <path d="M40 111 L120 56 L200 111" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.4" stroke-linejoin="round"/>
+    <!-- the letter -->
+    <rect x="58" y="42" width="124" height="118" rx="6" fill="#000" opacity=".28" transform="translate(3 6)" filter="url(#soft2)"/>
+    <g filter="url(#paper)"><rect x="58" y="42" width="124" height="118" rx="6" fill="url(#card)"/></g>
+    <rect x="58.6" y="42.6" width="122.8" height="116.8" rx="5.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1"/>
+    <circle cx="82" cy="64" r="11.5" fill="#00553A" opacity=".3" transform="translate(1.2 2.2)"/>
+    <circle cx="82" cy="64" r="11.5" fill="url(#btn)"/>
+    <path d="M75.5 61.5 a6.5 6.5 0 0 1 13 0" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" transform="translate(0 -1)"/>
+    <rect x="76" y="62" width="12" height="9.5" rx="2.2" fill="#fff"/>
+    <rect x="98" y="58" width="68" height="6.5" rx="3.2" fill="#0B3B2B" opacity=".78"/>
+    <rect x="98" y="69" width="48" height="5" rx="2.5" fill="#9fb0a7"/>
+    <rect x="72" y="86" width="94" height="5" rx="2.5" fill="#bcc8c1"/>
+    <rect x="72" y="97" width="56" height="15" rx="7.5" fill="#00553A" opacity=".3" transform="translate(1.2 2.2)"/>
+    <rect x="72" y="97" width="56" height="15" rx="7.5" fill="url(#btn)"/>
+    <path d="M77 99.6 H122" stroke="#fff" stroke-opacity=".6" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="85" y="102.8" width="30" height="4.2" rx="2.1" fill="#fff"/>
+    <!-- envelope body -->
+    <rect x="34" y="112" width="172" height="96" rx="7" fill="#000" opacity=".26" transform="translate(3 6)" filter="url(#soft2)"/>
+    <g filter="url(#paper)"><rect x="34" y="112" width="172" height="96" rx="7" fill="url(#env)"/></g>
+    <g clip-path="url(#bodyC)">
+      <path d="M34 112 L34 208 L116 164Z" fill="url(#envL)"/>
+      <path d="M206 112 L206 208 L124 164Z" fill="url(#envR)"/>
+      <path d="M34 208 L120 148 L206 208Z" fill="url(#envB)"/>
+      <path d="M34 112 L116 164 L34 208" fill="none" stroke="#a98a4f" stroke-opacity=".45" stroke-width="1.1"/>
+      <path d="M206 112 L124 164 L206 208" fill="none" stroke="#a98a4f" stroke-opacity=".45" stroke-width="1.1"/>
+      <path d="M34 208 L120 148 L206 208" fill="none" stroke="#a98a4f" stroke-opacity=".5" stroke-width="1.2"/>
+      <path d="M36 209 L120 150 L204 209" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>
+    </g>
+    <rect x="34.6" y="112.6" width="170.8" height="94.8" rx="6.6" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.1"/>
+  </g>
+</svg>

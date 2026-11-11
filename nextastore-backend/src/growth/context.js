@@ -24,13 +24,14 @@ function createContext(deps) {
 
     const hosts = deps.hosts || createHosts({ mode: 'path' });
 
-    // A notification's link. Callers pass '/circle' or '/crew' (or the old '/scouts'), or nothing; both are turned into the
-    // right page for this deployment (a path on the main site, or the program's own subdomain). With no
-    // link at all we look the person up so a Crew member is never sent to the Circle page.
-    const programLink = (program, path = '/') => hosts.programUrl(program, path);
+    // A notification's link. The bell only follows plain same-site paths (main.js safeInternalLink drops anything absolute),
+    // so these are ALWAYS '/circle' or '/crew': on the main site the host router sends them on to circle. / crew. in subdomain
+    // mode, and on a program host the page's link rewriter does the same. Callers pass '/circle', '/crew',
+    // another site path, or nothing; with nothing we look the person up so a Crew member is never sent to the Circle page.
+    const programLink = (program) => hosts.PROGRAM_PATH[program === 'crew' ? 'crew' : 'circle'];
     async function linkFor(userId, link) {
         if (link === '/circle') return programLink('circle');
-        if (link === '/crew' || link === '/scouts') return programLink('scout');
+        if (link === '/crew') return programLink('crew');
         if (link) return link;
         try {
             const p = await prisma.growthPartner.findUnique({ where: { userId }, select: { program: true } });

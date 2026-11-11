@@ -16,7 +16,7 @@
 // mismatched old-file/new-file combo across separately-cached scripts is
 // exactly what produces a "<something> is not defined" error like the
 // TokenStorage one that motivated this comment.
-const CACHE_VERSION = 'v80';
+const CACHE_VERSION = 'v113';
 const CACHE_NAME = `nextastore-cache-${CACHE_VERSION}`;
 // Clean address, not /offline.html: the web server 301s every *.html to its
 // clean form, and a worker must never hand a page a redirected response for a
@@ -86,6 +86,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // The Staff Console is a separate system: never cache or serve its pages or API from this worker.
+  if (url.pathname === '/staff' || url.pathname.startsWith('/staff/') || url.pathname.startsWith('/api/staff')) return;
 
   // Page navigations: try the network first so users always see fresh
   // content when online, fall back to a cached copy, then to offline.html.

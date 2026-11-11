@@ -13,6 +13,8 @@ const { createHooks } = require('./hooks');
 const { createLeads } = require('./leads');
 const { createWithdrawals } = require('./withdrawals');
 const { createAdmin } = require('./admin');
+const { createUpgrades } = require('./upgrades');
+const { createCard } = require('./card');
 const { buildRoutes } = require('./routes');
 const { createHosts } = require('./hosts');
 const { createHostRouter } = require('./subdomains');
@@ -23,9 +25,12 @@ function createGrowth(deps) {
     const ctx = createContext({ ...deps, hosts });
     const partners = createPartners(ctx);
     const hooks = createHooks(ctx, partners);
-    const leads = createLeads(ctx, partners);
+    const card = createCard(ctx, partners);
+    const leads = createLeads(ctx, partners, card);
     const withdrawals = createWithdrawals(ctx, partners);
     const admin = createAdmin(ctx, partners);
+    const upgrades = createUpgrades(ctx, partners);
+    admin.upgrades = upgrades;
 
     // Wrap every hook so a bug or a database blip in the growth code can NEVER break a signup,
     // a payment submission or an admin's payment approval. Failures are logged, not thrown.
@@ -38,11 +43,11 @@ function createGrowth(deps) {
     }
 
     return {
-        ctx, partners, leads, withdrawals, admin, rules: R, hosts,
+        ctx, partners, leads, withdrawals, admin, upgrades, card, rules: R, hosts,
         hostRouter: (opts) => createHostRouter({ hosts, ...opts }),
         hooks: { ...hooks, safe },
         sweep: hooks.sweep,
-        routes: (mw) => buildRoutes({ partners, hooks, leads, withdrawals, admin, ctx }, mw)
+        routes: (mw) => buildRoutes({ partners, hooks, leads, withdrawals, admin, upgrades, card, ctx }, mw)
     };
 }
 

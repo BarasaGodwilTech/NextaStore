@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#0B3B2B">
     <link rel="apple-touch-icon" href="/assets/brand/png/icon/icon-180.png">
     <title>NextaStore — Build Your Online Store</title>
-    <meta name="description" content="Launch a mobile-first online store built for East African entrepreneurs. Accept Mobile Money, manage orders, and grow — all in one place.">
+    <meta name="description" content="Launch a mobile-first online store built for East African entrepreneurs. List products, share your shop link, and agree payment directly with your buyers — all in one place.">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/categories.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -17,7 +17,7 @@
            NextaStore landing page (WIP 109 redesign)
            Idea: the market stall becomes a shop link. Marketplace line-icon patterns, the
            brand's own sticker-style category art, and one live phone that builds a
-           store, takes a Mobile Money payment and rings with the order.
+           store, takes an order request and rings with the order.
            Page-only styles live here; shared pieces stay in css/main.css.
            The Featured Stores card rules below are copied by
            scripts/store-cards-browser-test.js - keep the class names.
@@ -200,7 +200,7 @@
         /* 3D props around the rig */
         .p3d { position: absolute; z-index: 3; height: auto; max-width: none; pointer-events: none; }
         .p-tag { left: -13%; top: -9%; width: calc(var(--pw) * .55); }
-        .p-coins { left: 4%; bottom: -3%; width: calc(var(--pw) * .66); }
+        .p-box { left: 0; bottom: -4%; width: calc(var(--pw) * .56); filter: drop-shadow(0 12px 14px rgba(0,0,0,.22)); }
         .o-float { animation: stage-float 7s ease-in-out infinite; }
         @keyframes stage-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(1.5deg); } }
 
@@ -221,8 +221,8 @@
         .fl b { display: block; font-size: .875rem; }
         .fl small { display: block; color: var(--gray-500); font-size: .75rem; overflow-wrap: anywhere; }
         .fl .ic { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; font-size: 1rem; color: #fff; }
-        .f1 { left: 34%; bottom: 2%; } .f1 .ic { background: #25D366; }
-        .f2 { right: -3%; top: 12%; } .f2 .ic { background: var(--gold); color: var(--ink); }
+        .f1 { left: 25%; bottom: -3%; max-width: calc(var(--pw) * .8); } .f1 .ic { background: #25D366; }
+        .f2 { right: -3%; top: 2%; } .f2 .ic { background: var(--gold); color: var(--ink); }
         .f3 { right: 0; bottom: 8%; } .f3 .ic { background: var(--primary); }
 
         /* Animated state: the page script adds .anim, then .s1 ... .s6 in time order. Without JS or with
@@ -467,7 +467,19 @@
             .shelf-art svg, .store-card { transition: none; }
             .o-float { animation: none; }
         }
-    </style>
+    
+        /* realism: the laptop glass catches the light */
+        .lt-screen { position: relative; }
+        .lt-screen::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(115deg, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, .06) 26%, transparent 40%); }
+
+        /* phones: the three notifications get their own slots around the phone (top-left, top-right, bottom-right) so none covers the shop */
+        @media (max-width: 720px) {
+            .fl { max-width: 10rem; }
+            .f1 { left: 0; top: 0; bottom: auto; }
+            .f2 { right: 0; top: 0; }
+            .f3 { right: 0; bottom: 0; }
+        }
+</style>
     <link rel="icon" href="assets/brand/png/favicon/favicon.ico">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon/favicon-16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon/favicon-32.png">
@@ -528,27 +540,27 @@
         <div class="hero-inner">
             <div>
                 <h1 id="heroTitle">Open your <span class="chip" aria-hidden="true"><svg class="nx-cat-icon"><use href="#c-crafts"/></svg></span> shop online in <span class="chip alt" aria-hidden="true"><svg class="nx-cat-icon"><use href="#c-phones"/></svg></span> minutes, not weeks.</h1>
-                <p class="lede">Set up a mobile-first storefront, take MTN and Airtel Mobile Money, and manage every order from one simple dashboard. No developers. No code.</p>
+                <p class="lede">Set up a mobile-first storefront, share it on WhatsApp, and manage every order from one simple dashboard. Buyers agree how to pay with you directly. No developers. No code.</p>
                 <div class="hero-buttons">
                     <a href="/signup?type=seller" class="btn btn-primary btn-lg" data-auth-aware-link><i class="fas fa-rocket"></i> Get started free</a>
                     <a href="#tour" class="btn btn-outline btn-lg"><i class="fas fa-play"></i> Watch the tour</a>
                 </div>
                 <div class="pay-row">
-                    <span>Customers pay with</span>
-                    <span class="pay-pill"><i class="fas fa-mobile-screen-button"></i> MTN Mobile Money</span>
+                    <span>You choose how you get paid</span>
+                    <span class="pay-pill"><i class="fas fa-money-bill-wave"></i> Cash</span>
+                    <span class="pay-pill"><i class="fas fa-mobile-screen-button"></i> MTN MoMo</span>
                     <span class="pay-pill"><i class="fas fa-mobile-screen-button"></i> Airtel Money</span>
-                    <span class="pay-pill"><i class="fas fa-credit-card"></i> Card</span>
                 </div>
             </div>
 
-            <div class="stage" id="heroStage" role="img" aria-label="A phone showing a shop called Amina's Crafts. Products appear, a customer pays with Mobile Money, and the seller gets an order notification.">
+            <div class="stage" id="heroStage" role="img" aria-label="A phone showing a shop called Grace's Crafts. Products appear, a customer sends an order request and messages the seller to agree payment, and the seller gets a notification.">
                 <div class="laptop" aria-hidden="true">
                     <div class="lt-lid">
                         <span class="lt-cam"></span>
                         <div class="lt-screen">
                             <div class="lt-side"><i class="lt-logo"></i><i class="on fas fa-house"></i><i class="fas fa-bag-shopping"></i><i class="fas fa-box"></i><i class="fas fa-chart-simple"></i><i class="fas fa-gear"></i></div>
                             <div class="lt-main">
-                                <div class="lt-top"><div><b>Good morning, Amina</b><small>Amina's Crafts &middot; Today</small></div><span class="lt-live">Live</span></div>
+                                <div class="lt-top"><div><b>Good morning, Grace</b><small>Grace's Crafts &middot; Today</small></div><span class="lt-live">Live</span></div>
                                 <div class="lt-kpis">
                                     <div class="lt-kpi"><small>Today's sales</small><b><span class="v1">UGX 200,000</span><span class="v2">UGX 245,000</span></b><em>+12%</em></div>
                                     <div class="lt-kpi"><small>Orders</small><b><span class="v1">4</span><span class="v2">5</span></b><em>+1 new</em></div>
@@ -558,13 +570,13 @@
                                     <div class="lt-card"><small>Sales this week</small><div class="lt-bars"><i style="--h:42%"></i><i style="--h:58%"></i><i style="--h:36%"></i><i style="--h:66%"></i><i style="--h:50%"></i><i style="--h:72%"></i><i class="today"></i></div></div>
                                     <div class="lt-card"><small>Recent orders</small>
                                         <ul class="lt-list">
-                                            <li class="lt-new"><span class="lt-row"><b>Kanzu Wear</b><span class="lt-ok">Paid</span><em>UGX 45,000</em></span></li>
-                                            <li><span class="lt-row"><b>Beaded Necklace</b><span class="lt-ok">Paid</span><em>UGX 12,000</em></span></li>
-                                            <li><span class="lt-row"><b>Coffee Beans</b><span class="lt-ok">Paid</span><em>UGX 36,000</em></span></li>
+                                            <li class="lt-new"><span class="lt-row"><b>Kanzu Wear</b><span class="lt-ok">Confirmed</span><em>UGX 45,000</em></span></li>
+                                            <li><span class="lt-row"><b>Beaded Necklace</b><span class="lt-ok">Confirmed</span><em>UGX 12,000</em></span></li>
+                                            <li><span class="lt-row"><b>Coffee Beans</b><span class="lt-ok">Confirmed</span><em>UGX 36,000</em></span></li>
                                             <li><span class="lt-row"><b>Leather Sandals</b><span class="lt-wait">Pending</span><em>UGX 55,000</em></span></li>
-                                            <li><span class="lt-row"><b>Woven Basket</b><span class="lt-ok">Paid</span><em>UGX 28,000</em></span></li>
-                                            <li><span class="lt-row"><b>Bark Cloth Bag</b><span class="lt-ok">Paid</span><em>UGX 85,000</em></span></li>
-                                            <li><span class="lt-row"><b>Kawa Coffee 500g</b><span class="lt-ok">Paid</span><em>UGX 18,000</em></span></li>
+                                            <li><span class="lt-row"><b>Woven Basket</b><span class="lt-ok">Confirmed</span><em>UGX 28,000</em></span></li>
+                                            <li><span class="lt-row"><b>Bark Cloth Bag</b><span class="lt-ok">Confirmed</span><em>UGX 85,000</em></span></li>
+                                            <li><span class="lt-row"><b>Kawa Coffee 500g</b><span class="lt-ok">Confirmed</span><em>UGX 18,000</em></span></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -574,15 +586,15 @@
                     <div class="lt-base"><span></span></div>
                 </div>
                 <img class="p3d p-tag o-float" src="assets/brand/3d/tag.svg" alt="" width="240" height="240" decoding="async">
-                <img class="p3d p-coins" src="assets/brand/3d/coins.svg" alt="" width="240" height="240" decoding="async">
+                <img class="p3d p-box" src="assets/brand/3d/box.svg" alt="" width="240" height="240" decoding="async">
                 <div class="phone" aria-hidden="true">
                     <div class="ph">
                         <div class="ph-notch"></div>
                         <div class="ph-status"><span>9:41</span><span><i class="fas fa-signal"></i><i class="fas fa-battery-three-quarters"></i></span></div>
                         <div class="ph-banner rv r1"></div>
                         <div class="ph-id rv r1">
-                            <div class="ph-av">A</div>
-                            <div><b>Amina's Crafts</b><small><i class="fas fa-location-dot"></i> Kampala</small></div>
+                            <div class="ph-av">G</div>
+                            <div><b>Grace's Crafts</b><small><i class="fas fa-location-dot"></i> Kampala</small></div>
                             <div class="ph-cart"><i class="fas fa-bag-shopping"></i><em>1</em></div>
                         </div>
                         <div class="ph-grid">
@@ -593,18 +605,18 @@
                         </div>
                         <div class="ph-sheet">
                             <div class="pay-a">
-                                <h4>Pay with</h4>
-                                <div class="pay-opt sel"><span class="dot" style="background:#FFCB05"></span> MTN Mobile Money</div>
-                                <div class="pay-opt"><span class="dot" style="background:#E4002B"></span> Airtel Money</div>
-                                <div class="pay-btn">Pay UGX 45,000</div>
+                                <h4>Pay the seller directly</h4>
+                                <div class="pay-opt sel"><span class="dot" style="background:#16C48A"></span> Cash on delivery</div>
+                                <div class="pay-opt"><span class="dot" style="background:#FFCB05"></span> Mobile Money</div>
+                                <div class="pay-btn">Send order request</div>
                             </div>
-                            <div class="pay-b"><div class="ok"><i class="fas fa-check"></i></div><b>Payment received</b><small>UGX 45,000 &middot; MTN Mobile Money</small></div>
+                            <div class="pay-b"><div class="ok"><i class="fas fa-check"></i></div><b>Order request sent</b><small>Grace will confirm and agree payment</small></div>
                         </div>
                     </div>
                 </div>
-                <div class="fl f1" aria-hidden="true"><span class="ic"><i class="fab fa-whatsapp"></i></span><span><b>Shared on WhatsApp</b><small>nextastores.com/amina-crafts</small></span></div>
+                <div class="fl f1" aria-hidden="true"><span class="ic"><i class="fab fa-whatsapp"></i></span><span><b>Shared on WhatsApp</b><small>nextastore.ug/grace-crafts</small></span></div>
                 <div class="fl f2" aria-hidden="true"><span class="ic"><i class="fas fa-bag-shopping"></i></span><span><b>New order</b><small>Kanzu Wear &middot; UGX 45,000</small></span></div>
-                <div class="fl f3" aria-hidden="true"><span class="ic"><i class="fas fa-check"></i></span><span><b>Mobile Money received</b><small>Paid in full</small></span></div>
+                <div class="fl f3" aria-hidden="true"><span class="ic"><i class="fas fa-comment-dots"></i></span><span><b>Message from a buyer</b><small>&ldquo;Can I pay on delivery?&rdquo;</small></span></div>
             </div>
             <script>document.getElementById('heroStage').classList.add('anim');</script>
         </div>
@@ -643,7 +655,7 @@
                         <span class="step-no">1</span>
                         <div class="ui">
                             <label>Store name</label>
-                            <div class="field on">Amina's Crafts</div>
+                            <div class="field on">Grace's Crafts</div>
                             <label>Where are you?</label>
                             <div class="field"><i class="fas fa-location-dot"></i>Kampala, Central</div>
                             <div class="btn-fake">Create my store</div>
@@ -678,15 +690,15 @@
                         <span class="step-no">3</span>
                         <div class="chat">
                             <div class="bub me">My shop is open. Come and see:
-                                <div class="lp"><span class="sw"><i class="fas fa-store"></i></span><span><b>Amina's Crafts</b><small>nextastores.com/amina-crafts</small></span></div>
+                                <div class="lp"><span class="sw"><i class="fas fa-store"></i></span><span><b>Grace's Crafts</b><small>nextastore.ug/grace-crafts</small></span></div>
                             </div>
                             <div class="bub you">I'll take the kanzu.</div>
-                            <div class="paid"><i class="fas fa-circle-check"></i> UGX 45,000 received</div>
+                            <div class="paid"><i class="fas fa-circle-check"></i> Order confirmed</div>
                         </div>
                     </div>
                     <div>
-                        <h3>Share it and get paid</h3>
-                        <p>Send your link on WhatsApp. Customers order and pay with Mobile Money, and every order lands in your dashboard.</p>
+                        <h3>Share it and get orders</h3>
+                        <p>Send your link on WhatsApp. Customers order and agree payment with you directly, and every order lands in your dashboard.</p>
                     </div>
                 </article>
             </div>
@@ -698,12 +710,12 @@
         <div class="wrap tour-inner">
             <div>
                 <h2 id="tourTitle">Watch a shop go from empty to first sale.</h2>
-                <p>A 26-second walk-through: set up the store, add products, share the link, and get paid with Mobile Money.</p>
+                <p>A 26-second walk-through: set up the store, add products, share the link, and take your first order.</p>
                 <ol class="chapters">
                     <li><button type="button" class="chapter" data-seek="0"><span class="n">1</span> Set up your store</button></li>
                     <li><button type="button" class="chapter" data-seek="5.6"><span class="n">2</span> Add your products</button></li>
                     <li><button type="button" class="chapter" data-seek="11.2"><span class="n">3</span> Share it on WhatsApp</button></li>
-                    <li><button type="button" class="chapter" data-seek="16.8"><span class="n">4</span> Get paid with Mobile Money</button></li>
+                    <li><button type="button" class="chapter" data-seek="16.8"><span class="n">4</span> Take your first order</button></li>
                 </ol>
             </div>
             <figure class="tour-frame" id="tourFrame">
@@ -713,7 +725,7 @@
                 </video>
                 <button type="button" class="tour-play" id="tourPlay" aria-label="Play video"><i class="fas fa-play"></i><i class="fas fa-pause"></i></button>
                 <div class="tour-bar" aria-hidden="true"><i id="tourBar"></i></div>
-                <figcaption class="visually-hidden" id="tourDesc">A silent animated walk-through with on-screen captions. A seller names a store and picks a location, adds products with prices, shares the shop link on WhatsApp, and a customer pays with Mobile Money. The seller sees the order and the money arrive.</figcaption>
+                <figcaption class="visually-hidden" id="tourDesc">A silent animated walk-through with on-screen captions. A seller names a store and picks a location, adds products with prices, shares the shop link on WhatsApp, and a customer sends an order request. The seller sees the order arrive and agrees payment with the buyer directly.</figcaption>
             </figure>
         </div>
     </section>
@@ -726,21 +738,21 @@
             </div>
             <div class="bento">
                 <article class="tile bento-dark t7 t-pay">
-                    <div class="icon-tile tone-primary"><i class="fas fa-credit-card"></i></div>
-                    <h3>Local payments</h3>
-                    <p>Accept MTN Mobile Money, Airtel Money, and card payments without extra setup.</p>
+                    <div class="icon-tile tone-primary"><i class="fas fa-handshake"></i></div>
+                    <h3>Payments, on your terms</h3>
+                    <p>Buyers pay you directly. List the methods you accept and agree the details in chat. NextaStore never takes payments or holds your money.</p>
                     <div class="pay-demo" aria-hidden="true">
-                        <div class="mini-opt sel"><span class="dot" style="background:#FFCB05"></span> MTN Mobile Money</div>
+                        <div class="mini-opt sel"><i class="fas fa-money-bill-wave"></i> Cash</div>
+                        <div class="mini-opt"><span class="dot" style="background:#FFCB05"></span> MTN MoMo</div>
                         <div class="mini-opt"><span class="dot" style="background:#E4002B"></span> Airtel Money</div>
-                        <div class="mini-opt"><i class="fas fa-credit-card"></i> Card</div>
-                        <div class="mini-ok"><i class="fas fa-circle-check"></i> UGX 45,000 received</div>
+                        <div class="mini-ok"><i class="fas fa-circle-check"></i> Agreed with the buyer</div>
                     </div>
                 </article>
                 <article class="tile bento-green t5 t-share">
                     <div class="icon-tile" style="background:rgba(255,255,255,.2);color:#fff"><i class="fas fa-share-nodes"></i></div>
                     <h3>Share your store</h3>
                     <p>Easily share your store link via WhatsApp, Facebook, and Twitter to reach more customers.</p>
-                    <div class="link-pill"><span>nextastores.com/amina-crafts</span><i class="fas fa-copy"></i></div>
+                    <div class="link-pill"><span>nextastore.ug/grace-crafts</span><i class="fas fa-copy"></i></div>
                     <div class="share-row" aria-hidden="true"><span><i class="fab fa-whatsapp"></i></span><span><i class="fab fa-facebook-f"></i></span><span><i class="fab fa-x-twitter"></i></span></div>
                 </article>
                 <article class="tile t4">
@@ -771,7 +783,7 @@
                     <div class="icon-tile tone-coral"><i class="fas fa-headset"></i></div>
                     <h3>24/7 support</h3>
                     <p>Reach a real person whenever something's not working or you're not sure what to do next.</p>
-                    <div class="talk" aria-hidden="true"><span>My payment is still pending.</span><span>We're checking it now.</span></div>
+                    <div class="talk" aria-hidden="true"><span>How do I add a product?</span><span>Here's how, step by step.</span></div>
                 </article>
             </div>
         </div>

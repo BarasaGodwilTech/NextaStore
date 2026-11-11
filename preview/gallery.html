@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NextaStore template gallery</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap">
+<style>
+:root{--bg:#F7FAF8;--ink:#0B3B2B;--mut:#52615B;--card:#fff;--line:#DCE6E1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A1C15;--ink:#EAF4EF;--mut:#9DB5AA;--card:#12281F;--line:#23423A}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Poppins,system-ui,sans-serif}
+header{padding:20px 16px 8px}h1{font-size:20px;margin:0 0 4px}p.s{margin:0;color:var(--mut);font-size:13px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:8px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--line)}
+nav a{white-space:nowrap;padding:8px 14px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:700}
+section{padding:18px 16px}h2{font-size:17px;margin:0 0 4px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px;margin-top:12px}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px}
+figure canvas{width:100%;height:auto;display:block;border-radius:10px;background:#ddd}
+figcaption{font-size:12px;margin-top:8px;color:var(--mut)}figcaption b{color:var(--ink)}
+.new{background:#FFB038;color:#0B3B2B;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px}
+.err{color:#b3261e;font-size:12px}
+</style></head><body>
+<header><h1>NextaStore template gallery</h1><p class="s" id="meta">Drawn live by the studio's own code with sample store data. <span class="new">NEW</span> = added this round.</p></header>
+<nav><a href="#posts">Product posts</a><a href="#posters">Posters &amp; signs</a></nav>
+<section id="posts"><h2>Product posts</h2><p class="s">Portrait 1080×1350, deep and light moods.</p><div class="grid" id="gPosts"></div></section>
+<section id="posters"><h2>Posters &amp; signs</h2><p class="s">Same swatches as the studio.</p><div class="grid" id="gPosters"></div></section>
+<script>
+/**
+ * NextaQR: a small, dependency-free QR code generator (byte mode, error correction M, versions 1 to 10,
+ * so up to 213 bytes: plenty for an invite link). It exists so a Crew member's QR code works with NO
+ * internet and no CDN, which matters in a market with weak data.
+ *
+ *   NextaQR.encode('https://...')               -> { size, modules: boolean[][] }
+ *   NextaQR.svg('https://...', { scale: 6 })    -> '<svg ...>' string
+ *   NextaQR.draw(canvas, 'https://...', { scale: 6, margin: 4 })
+ *   NextaQR.render(containerEl, 'https://...')  -> appends a canvas
+ *
+ * The algorithm follows the public QR Code Model 2 spec (the structure is the well-known one used by
+ * Project Nayuki's MIT-licensed reference generator). scripts/growth-qr-test.py decodes its output
+ * with OpenCV to prove it scans.
+ */
+(function (root) {
+    'use strict';
+
+    const ECC_PER_BLOCK_M = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26];
+    const NUM_BLOCKS_M = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
+    const MAX_VERSION = 10;
+    const FORMAT_BITS_M = 0; // error correction level M
+
+    const getBit = (x, i) => ((x >>> i) & 1) !== 0;
+
+    function rawDataModules(ver) {
+        let result = (16 * ver + 128) * ver + 64;
+        if (ver >= 2) {
+            const numAlign = Math.floor(ver / 7) + 2;
+            result -= (25 * numAlign - 10) * numAlign - 55;
+            if (ver >= 7) result -= 36;
+        }
+        return result;
+    }
+    const dataCodewords = (ver) => Math.floor(rawDataModules(ver) / 8) - ECC_PER_BLOCK_M[ver] * NUM_BLOCKS_M[ver];
+
+    // ---- Reed-Solomon over GF(2^8), polynomial 0x11D
+    function gfMul(x, y) {
+        let z = 0;
+        for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; }
+        return z;
+    }
+    function rsDivisor(degree) {
+        const result = new Array(degree).fill(0);
+        result[degree - 1] = 1;
+        let r = 1;
+        for (let i = 0; i < degree; i++) {
+            for (let j = 0; j < result.length; j++) { result[j] = gfMul(result[j], r); if (j + 1 < result.length) result[j] ^= result[j + 1]; }
+            r = gfMul(r, 0x02);
+        }
+        return result;
+    }
+    function rsRemainder(data, divisor) {
+        const result = divisor.map(() => 0);
+        for (const b of data) {
+            const factor = b ^ result.shift();
+            result.push(0);
+            divisor.forEach((coef, i) => { result[i] ^= gfMul(coef, factor); });
+        }
+        return result;
+    }
+
+    function utf8Bytes(text) {
+        if (typeof TextEncoder !== 'undefined') return Array.from(new TextEncoder().encode(text));
+        const s = unescape(encodeURIComponent(text)); const out = [];
+        for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i));
+        return out;
+    }
+
+    function buildCodewords(bytes, ver) {
+        const bits = [];
+        const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+        put(0x4, 4);                              // byte mode
+        put(bytes.length, ver >= 10 ? 16 : 8);    // character count
+        bytes.forEach((b) => put(b, 8));
+        const capacityBits = dataCodewords(ver) * 8;
+        put(0, Math.min(4, capacityBits - bits.length)); // terminator
+        put(0, (8 - (bits.length % 8)) % 8);             // byte align
+        for (let pad = 0xEC; bits.length < capacityBits; pad ^= 0xEC ^ 0x11) put(pad, 8);
+        const data = new Array(bits.length / 8).fill(0);
+        bits.forEach((b, i) => { data[i >>> 3] |= b << (7 - (i & 7)); });
+        return data;
+    }
+
+    function addEccAndInterleave(data, ver) {
+        const numBlocks = NUM_BLOCKS_M[ver], eccLen = ECC_PER_BLOCK_M[ver];
+        const rawCodewords = Math.floor(rawDataModules(ver) / 8);
+        const numShort = numBlocks - (rawCodewords % numBlocks);
+        const shortLen = Math.floor(rawCodewords / numBlocks);
+        const blocks = []; const div = rsDivisor(eccLen);
+        for (let i = 0, k = 0; i < numBlocks; i++) {
+            const dat = data.slice(k, k + shortLen - eccLen + (i < numShort ? 0 : 1)); k += dat.length;
+            const ecc = rsRemainder(dat, div);
+            if (i < numShort) dat.push(0);
+            blocks.push(dat.concat(ecc));
+        }
+        const result = [];
+        for (let i = 0; i < blocks[0].length; i++) blocks.forEach((block, j) => { if (i !== shortLen - eccLen || j >= numShort) result.push(block[i]); });
+        return result;
+    }
+
+    function alignmentPositions(ver) {
+        if (ver === 1) return [];
+        const n = Math.floor(ver / 7) + 2;
+        const step = Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2;
+        const result = [6];
+        for (let pos = ver * 4 + 10; result.length < n; pos -= step) result.splice(1, 0, pos);
+        return result;
+    }
+
+    function encode(text) {
+        const bytes = utf8Bytes(String(text));
+        let ver = 1;
+        for (; ver <= MAX_VERSION; ver++) {
+            const used = 4 + (ver >= 10 ? 16 : 8) + bytes.length * 8;
+            if (used <= dataCodewords(ver) * 8) break;
+        }
+        if (ver > MAX_VERSION) throw new Error('NextaQR: text is too long for a QR code here.');
+        const size = ver * 4 + 17;
+        const modules = Array.from({ length: size }, () => new Array(size).fill(false));
+        const isFn = Array.from({ length: size }, () => new Array(size).fill(false));
+        const setFn = (x, y, dark) => { modules[y][x] = dark; isFn[y][x] = true; };
+
+        // function patterns
+        for (let i = 0; i < size; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+        const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)); const x = cx + dx, y = cy + dy; if (x >= 0 && x < size && y >= 0 && y < size) setFn(x, y, d !== 2 && d !== 4); } };
+        finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+        const al = alignmentPositions(ver);
+        for (let i = 0; i < al.length; i++) for (let j = 0; j < al.length; j++) {
+            if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) continue;
+            for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setFn(al[i] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+        }
+        const drawFormat = (mask) => {
+            const data = (FORMAT_BITS_M << 3) | mask; let rem = data;
+            for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+            const bits = ((data << 10) | rem) ^ 0x5412;
+            for (let i = 0; i <= 5; i++) setFn(8, i, getBit(bits, i));
+            setFn(8, 7, getBit(bits, 6)); setFn(8, 8, getBit(bits, 7)); setFn(7, 8, getBit(bits, 8));
+            for (let i = 9; i < 15; i++) setFn(14 - i, 8, getBit(bits, i));
+            for (let i = 0; i < 8; i++) setFn(size - 1 - i, 8, getBit(bits, i));
+            for (let i = 8; i < 15; i++) setFn(8, size - 15 + i, getBit(bits, i));
+            setFn(8, size - 8, true);
+        };
+        drawFormat(0);
+        if (ver >= 7) {
+            let rem = ver;
+            for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25);
+            const bits = (ver << 12) | rem;
+            for (let i = 0; i < 18; i++) { const bit = getBit(bits, i); const a = size - 11 + (i % 3); const b = Math.floor(i / 3); setFn(a, b, bit); setFn(b, a, bit); }
+        }
+
+        // data placement
+        const codewords = addEccAndInterleave(buildCodewords(bytes, ver), ver);
+        let bitIndex = 0;
+        for (let right = size - 1; right >= 1; right -= 2) {
+            if (right === 6) right = 5;
+            for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+                const x = right - j; const upward = ((right + 1) & 2) === 0; const y = upward ? size - 1 - vert : vert;
+                if (!isFn[y][x] && bitIndex < codewords.length * 8) { modules[y][x] = getBit(codewords[bitIndex >>> 3], 7 - (bitIndex & 7)); bitIndex++; }
+            }
+        }
+
+        // masking: try all 8 and keep the best
+        const applyMask = (mask) => {
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+                let invert;
+                switch (mask) {
+                    case 0: invert = (x + y) % 2 === 0; break;
+                    case 1: invert = y % 2 === 0; break;
+                    case 2: invert = x % 3 === 0; break;
+                    case 3: invert = (x + y) % 3 === 0; break;
+                    case 4: invert = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break;
+                    case 5: invert = ((x * y) % 2) + ((x * y) % 3) === 0; break;
+                    case 6: invert = (((x * y) % 2) + ((x * y) % 3)) % 2 === 0; break;
+                    default: invert = (((x + y) % 2) + ((x * y) % 3)) % 2 === 0;
+                }
+                if (!isFn[y][x] && invert) modules[y][x] = !modules[y][x];
+            }
+        };
+        const penalty = () => {
+            let result = 0;
+            const addHistory = (run, hist) => { if (hist[0] === 0) run += size; hist.pop(); hist.unshift(run); };
+            const countPatterns = (h) => { const n = h[1]; const core = n > 0 && h[2] === n && h[3] === n * 3 && h[4] === n && h[5] === n; return (core && h[0] >= n * 4 && h[6] >= n ? 1 : 0) + (core && h[6] >= n * 4 && h[0] >= n ? 1 : 0); };
+            const terminate = (color, run, hist) => { if (color) { addHistory(run, hist); run = 0; } run += size; addHistory(run, hist); return countPatterns(hist); };
+            for (let pass = 0; pass < 2; pass++) {
+                for (let a = 0; a < size; a++) {
+                    let color = false, run = 0; const hist = [0, 0, 0, 0, 0, 0, 0];
+                    for (let b = 0; b < size; b++) {
+                        const m = pass === 0 ? modules[a][b] : modules[b][a];
+                        if (m === color) { run++; if (run === 5) result += 3; else if (run > 5) result++; }
+                        else { addHistory(run, hist); if (!color) result += countPatterns(hist) * 40; color = m; run = 1; }
+                    }
+                    result += terminate(color, run, hist) * 40;
+                }
+            }
+            for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = modules[y][x]; if (c === modules[y][x + 1] && c === modules[y + 1][x] && c === modules[y + 1][x + 1]) result += 3; }
+            let dark = 0; modules.forEach((row) => row.forEach((m) => { if (m) dark++; }));
+            const total = size * size; result += (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
+            return result;
+        };
+        let best = 0, bestScore = Infinity;
+        for (let m = 0; m < 8; m++) { applyMask(m); drawFormat(m); const s = penalty(); if (s < bestScore) { bestScore = s; best = m; } applyMask(m); }
+        applyMask(best); drawFormat(best);
+        return { size, modules, version: ver, mask: best };
+    }
+
+    function svg(text, opts = {}) {
+        const { scale = 6, margin = 4, dark = '#0b3b2b', light = '#ffffff' } = opts;
+        const q = encode(text); const dim = (q.size + margin * 2) * scale;
+        let path = '';
+        for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.modules[y][x]) path += `M${(x + margin) * scale},${(y + margin) * scale}h${scale}v${scale}h-${scale}z`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" width="${dim}" height="${dim}" role="img" aria-label="QR code"><rect width="${dim}" height="${dim}" fill="${light}"/><path d="${path}" fill="${dark}"/></svg>`;
+    }
+
+    function draw(canvas, text, opts = {}) {
+        const { scale = 6, margin = 4, dark = '#0b3b2b', light = '#ffffff' } = opts;
+        const q = encode(text); const dim = (q.size + margin * 2) * scale;
+        canvas.width = dim; canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = light; ctx.fillRect(0, 0, dim, dim); ctx.fillStyle = dark;
+        for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.modules[y][x]) ctx.fillRect((x + margin) * scale, (y + margin) * scale, scale, scale);
+        return canvas;
+    }
+
+    function render(container, text, opts = {}) {
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', 'QR code with your invite link');
+        canvas.style.maxWidth = '100%'; canvas.style.height = 'auto';
+        draw(canvas, text, opts); container.innerHTML = ''; container.appendChild(canvas); return canvas;
+    }
+
+    const api = { encode, svg, draw, render };
+    if (typeof module !== 'undefined' && module.exports) module.exports = api;
+    root.NextaQR = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/**
+ * NextaBrandKit: draws a seller's printable and shareable marketing pieces (poster, counter sign, WhatsApp status,
+ * square post, business cards) on a <canvas>, with the store's own QR code on every one. Works offline: the QR
+ * comes from js/growth-qr.js (NextaQR) and nothing is fetched except the seller's own logo.
+ *
+ *   NextaBrandKit.TEMPLATES                       -> [{ id, label, w, h, ... }]
+ *   await NextaBrandKit.render(canvas, id, data)  -> draws the template into `canvas` (sets its pixel size)
+ *   NextaBrandKit.qrCanvas(url, px, { fg, bg })   -> a plain QR canvas (for the "Download QR" button)
+ *   NextaBrandKit.qrSvg(url, { fg, bg })          -> SVG string
+ *   NextaBrandKit.pdfFromCanvases([canvas...], { widthMm, heightMm }) -> Blob (application/pdf), one page each
+ *   NextaBrandKit.cardSheet(data)                 -> canvas: A4 sheet with 10 business cards + cut marks
+ *   NextaBrandKit.canvasToBlob(canvas, type, q)   -> Promise<Blob>
+ *
+ * data = { name, tagline, phone, url, logo, cta, owner, title, email, theme: { bg, fg, accent }, showPhone, showLogo }
+ * Layouts are drawn on a fixed design grid and scaled, so every size stays proportional.
+ */
+(function (root) {
+    'use strict';
+
+    const FONT = "Poppins, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+
+    const TEMPLATES = [
+        { id: 'poster',  group: 'poster', label: 'Poster (A4)',        w: 2480, h: 3508, mm: [210, 297], pdf: true,  file: 'poster-a4' },
+        { id: 'sign',    group: 'poster', label: 'Counter sign (A5)',  w: 1748, h: 2480, mm: [148, 210], pdf: true,  file: 'counter-sign-a5' },
+        { id: 'story',   group: 'social', label: 'WhatsApp status',    w: 1080, h: 1920, file: 'whatsapp-status' },
+        { id: 'square',  group: 'social', label: 'Square post',        w: 1080, h: 1080, file: 'square-post' },
+        { id: 'card',    group: 'card',   label: 'Business card',      w: 1050, h: 600,  mm: [88.9, 50.8], file: 'business-card' }
+    ];
+
+    // ---- colour helpers -------------------------------------------------------------------------------------
+    function hex(c) { return /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : null; }
+    function rgb(c) { const h = hex(c) || '#0B3B2B'; return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+    function luminance(c) { const [r, g, b] = rgb(c).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
+    function isDark(c) { return luminance(c) < 0.38; }
+    function mix(a, b, t) { const A = rgb(a), B = rgb(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+    function themeFrom(data) {
+        const t = data.theme || {};
+        const bg = hex(t.bg) || '#0B3B2B';
+        const dark = isDark(bg);
+        return {
+            bg, dark,
+            fg: hex(t.fg) || (dark ? '#FFFFFF' : '#0B3B2B'),
+            // accent is the highlight colour: gold on dark backgrounds, deep green on light ones
+            accent: hex(t.accent) || (dark ? '#FFB038' : '#008558'),
+            soft: dark ? mix(bg, '#FFFFFF', 0.12) : mix(bg, '#000000', 0.06),
+            muted: dark ? mix(bg, '#FFFFFF', 0.72) : mix(bg, '#000000', 0.62),
+            qrFg: dark ? mix(bg, '#000000', 0.35) : mix('#0B3B2B', '#000000', 0.2)
+        };
+    }
+
+    // ---- canvas helpers -------------------------------------------------------------------------------------
+    function rr(ctx, x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+    function font(weight, size) { return `${weight} ${Math.round(size)}px ${FONT}`; }
+    function wrap(ctx, text, maxW) {
+        const words = String(text || '').split(/\s+/).filter(Boolean), lines = []; let line = '';
+        for (const w of words) {
+            const t = line ? line + ' ' + w : w;
+            if (ctx.measureText(t).width <= maxW || !line) line = t; else { lines.push(line); line = w; }
+        }
+        if (line) lines.push(line);
+        return lines;
+    }
+    /** Largest size (from `size` down to `min`) at which `text` fits in `maxW` x `maxLines`. Returns { size, lines }. */
+    function fit(ctx, text, weight, size, min, maxW, maxLines) {
+        for (let s = size; s >= min; s -= 2) {
+            ctx.font = font(weight, s);
+            const lines = wrap(ctx, text, maxW);
+            if (lines.length <= maxLines && lines.every((l) => ctx.measureText(l).width <= maxW)) return { size: s, lines };
+        }
+        ctx.font = font(weight, min);
+        let lines = wrap(ctx, text, maxW).slice(0, maxLines);
+        const last = lines.length - 1;
+        if (last >= 0) { let l = lines[last]; while (l.length > 1 && ctx.measureText(l + '…').width > maxW) l = l.slice(0, -1); if (l !== lines[last] || wrap(ctx, text, maxW).length > maxLines) lines[last] = l + '…'; }
+        return { size: min, lines };
+    }
+    function drawLines(ctx, lines, cx, y, lh, align) {
+        ctx.textAlign = align || 'center'; ctx.textBaseline = 'alphabetic';
+        lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
+        return y + lines.length * lh;
+    }
+    function initials(name) { return String(name || 'N').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'N'; }
+
+    /**
+     * Loads an image so it can be drawn into a canvas AND exported. Order:
+     *   1. straight from its address with CORS (works when the image host allows it, and for data: / blob: images)
+     *   2. through our own image route, /api/media/proxy, for images in our storage bucket (which is on another origin
+     *      and usually sends no CORS headers, so a browser will show it but refuses to let a canvas read it)
+     * Resolves to an Image, or null if neither works. Each try gives up after 12 seconds, so nothing can hang.
+     */
+    let imageTimeoutMs = 12000;      // tests shorten this; a real browser reports a failed load straight away
+    function tryImage(url, cors) {
+        return new Promise((resolve) => {
+            const img = new Image(); let done = false;
+            const end = (v) => { if (!done) { done = true; clearTimeout(t); resolve(v); } };
+            const t = setTimeout(() => end(null), imageTimeoutMs);
+            if (cors) img.crossOrigin = 'anonymous';
+            img.onload = () => end(img); img.onerror = () => end(null);
+            img.src = url;
+        });
+    }
+    const imageCache = new Map();
+    function loadImageSafe(src) {
+        if (!src) return Promise.resolve(null);
+        if (imageCache.has(src)) return imageCache.get(src);
+        const p = (async () => {
+            if (/^(data|blob):/i.test(src)) return tryImage(src, false);
+            const direct = await tryImage(src, true);
+            if (direct) return direct;
+            const api = (typeof app !== 'undefined' && app && app.apiBaseUrl) || '';   // `app` is a global const, not a window property
+            if (!api || !/^https?:/i.test(src)) return null;
+            return tryImage(`${String(api).replace(/\/+$/, '')}/media/proxy?u=${encodeURIComponent(src)}`, true);
+        })();
+        imageCache.set(src, p);
+        p.then((v) => { if (!v) imageCache.delete(src); });     // a failure is retried next time, not remembered
+        return p;
+    }
+    function loadLogo(src) { return loadImageSafe(src); }
+    function drawLogo(ctx, img, name, cx, cy, r, t) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath();
+        ctx.fillStyle = t.dark ? '#FFFFFF' : t.soft; ctx.fill();
+        if (img) {
+            ctx.clip();
+            const s = Math.max((r * 2) / img.width, (r * 2) / img.height);
+            ctx.drawImage(img, cx - (img.width * s) / 2, cy - (img.height * s) / 2, img.width * s, img.height * s);
+        } else {
+            ctx.fillStyle = t.dark ? mix(t.bg, '#000000', 0.2) : t.bg; ctx.font = font(700, r * 0.82); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(initials(name), cx, cy + r * 0.04);
+        }
+        ctx.restore();
+        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.lineWidth = Math.max(2, r * 0.05); ctx.strokeStyle = t.accent; ctx.stroke(); ctx.restore();
+    }
+    /** Draws the QR with a white quiet zone (4 modules) inside a rounded white card. `size` is the card's side. */
+    function drawQR(ctx, url, x, y, size, t, opts = {}) {
+        const q = NextaQR.encode(url);
+        const quiet = 4, mods = q.size + quiet * 2, cell = Math.floor((size * 100) / mods) / 100;
+        ctx.save();
+        ctx.fillStyle = '#FFFFFF';
+        if (opts.shadow) { ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = size * 0.08; ctx.shadowOffsetY = size * 0.03; }
+        rr(ctx, x, y, size, size, opts.radius == null ? size * 0.07 : opts.radius); ctx.fill();
+        ctx.restore();
+        const inner = cell * mods, ox = x + (size - inner) / 2 + quiet * cell, oy = y + (size - inner) / 2 + quiet * cell;
+        ctx.fillStyle = opts.fg || t.qrFg;
+        for (let r = 0; r < q.size; r++) for (let c = 0; c < q.size; c++) if (q.modules[r][c]) ctx.fillRect(Math.round((ox + c * cell) * 100) / 100, Math.round((oy + r * cell) * 100) / 100, cell + 0.6, cell + 0.6);
+    }
+    function backdrop(ctx, W, H, t, style) {
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H);
+        ctx.save();
+        ctx.globalAlpha = t.dark ? 0.10 : 0.07; ctx.fillStyle = t.dark ? '#FFFFFF' : t.accent;
+        ctx.beginPath(); ctx.arc(W * 0.92, H * 0.06, Math.min(W, H) * 0.34, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(W * 0.04, H * 0.97, Math.min(W, H) * 0.26, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // thin accent band at the very top
+        ctx.fillStyle = t.accent; ctx.fillRect(0, 0, W, Math.max(8, H * 0.008));
+        if (style === 'footer') { ctx.fillStyle = t.dark ? mix(t.bg, '#000000', 0.25) : t.soft; ctx.fillRect(0, H - H * 0.075, W, H * 0.075); }
+    }
+    function urlLabel(url) { return String(url || '').replace(/^https?:\/\//i, '').replace(/\/$/, ''); }
+    function poweredBy(ctx, W, H, t, size) {
+        ctx.font = font(400, size); ctx.fillStyle = t.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('Powered by NextaStore', W / 2, H - H * 0.0375);
+    }
+    function pill(ctx, text, cx, cy, size, t, filled) {
+        ctx.font = font(700, size);
+        const w = ctx.measureText(text).width + size * 1.8, h = size * 2.1;
+        rr(ctx, cx - w / 2, cy - h / 2, w, h, h / 2);
+        if (filled) { ctx.fillStyle = t.accent; ctx.fill(); ctx.fillStyle = isDark(t.accent) ? '#FFFFFF' : '#0B3B2B'; }
+        else { ctx.lineWidth = Math.max(2, size * 0.1); ctx.strokeStyle = t.accent; ctx.stroke(); ctx.fillStyle = t.fg; }
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, cx, cy + size * 0.04);
+    }
+
+    // ---- layouts --------------------------------------------------------------------------------------------
+    // Poster, counter sign and WhatsApp status share one vertical layout drawn on a 1000-unit-wide grid.
+    function verticalLayout(ctx, W, H, d, t, logo, mode) {
+        const u = W / 1000;
+        backdrop(ctx, W, H, t, 'footer');
+        const cx = W / 2, pad = 90 * u, maxW = W - pad * 2;
+        const tall = H / W; // 1.414 (A4/A5) or 1.78 (story)
+        let y = (mode === 'story' ? 170 : 92) * u;
+
+        if (d.showLogo !== false) { const r = (mode === 'sign' ? 60 : 66) * u; drawLogo(ctx, logo, d.name, cx, y + r, r, t); y += r * 2 + 28 * u; }
+
+        const nameFit = fit(ctx, String(d.name || 'My Store').toUpperCase(), 700, 88 * u, 44 * u, maxW, 2);
+        ctx.font = font(700, nameFit.size); ctx.fillStyle = t.fg;
+        y = drawLines(ctx, nameFit.lines, cx, y + nameFit.size * 0.9, nameFit.size * 1.12) ;
+        if (d.tagline) {
+            const tf = fit(ctx, d.tagline, 400, 40 * u, 26 * u, maxW, 2);
+            ctx.font = font(400, tf.size); ctx.fillStyle = t.accent;
+            y = drawLines(ctx, tf.lines, cx, y + 14 * u + tf.size * 0.8, tf.size * 1.3);
+        }
+
+        // QR card sits in the middle of the remaining space
+        const footer = H * 0.075;
+        const textBlock = (mode === 'story' ? 380 : 345) * u;           // CTA + url + phone under the QR
+        const qrMax = Math.min(W - pad * 2, 780 * u);
+        const free = H - footer - y - textBlock - 30 * u;
+        const qrSize = Math.max(380 * u, Math.min(qrMax, free));
+        const qrY = y + Math.max(18 * u, (free - qrSize) / 2) + 8 * u;
+        drawQR(ctx, d.url, cx - qrSize / 2, qrY, qrSize, t, { shadow: true, radius: 36 * u });
+        y = qrY + qrSize + 70 * u;
+
+        const cta = String(d.cta || 'Scan to shop online').toUpperCase();
+        const cf = fit(ctx, cta, 700, 64 * u, 34 * u, maxW, 2);
+        ctx.font = font(700, cf.size); ctx.fillStyle = t.fg;
+        y = drawLines(ctx, cf.lines, cx, y, cf.size * 1.15);
+
+        ctx.font = font(400, 34 * u); ctx.fillStyle = t.muted; ctx.textAlign = 'center';
+        ctx.fillText('Point your phone camera at the code', cx, y + 18 * u);
+        y += 30 * u + 56 * u;
+
+        const label = urlLabel(d.url);
+        const lf = fit(ctx, label, 700, 40 * u, 24 * u, maxW - 60 * u, 1);
+        pill(ctx, lf.lines[0], cx, y, lf.size / (1), t, true);
+        y += 92 * u;
+
+        if (d.showPhone && d.phone) {
+            ctx.font = font(700, 46 * u); ctx.fillStyle = t.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+            ctx.fillText(d.phone, cx, y);
+        }
+        poweredBy(ctx, W, H, t, 26 * u);
+    }
+
+    function squareLayout(ctx, W, H, d, t, logo) {
+        const u = W / 1000;
+        backdrop(ctx, W, H, t, 'footer');
+        const pad = 70 * u, colW = 440 * u;
+        // left: text column
+        let y = 100 * u;
+        if (d.showLogo !== false) { drawLogo(ctx, logo, d.name, pad + 56 * u, y + 56 * u, 56 * u, t); y += 140 * u; }
+        const nf = fit(ctx, String(d.name || 'My Store').toUpperCase(), 700, 84 * u, 44 * u, colW, 3);
+        ctx.font = font(700, nf.size); ctx.fillStyle = t.fg;
+        y = drawLines(ctx, nf.lines, pad, y + nf.size * 0.9, nf.size * 1.12, 'left');
+        if (d.tagline) {
+            const tf = fit(ctx, d.tagline, 400, 36 * u, 24 * u, colW, 3);
+            ctx.font = font(400, tf.size); ctx.fillStyle = t.accent;
+            y = drawLines(ctx, tf.lines, pad, y + 16 * u + tf.size * 0.8, tf.size * 1.3, 'left');
+        }
+        const cf = fit(ctx, String(d.cta || 'Scan to shop online').toUpperCase(), 700, 48 * u, 28 * u, colW, 2);
+        const bottom = H - H * 0.075 - 60 * u;
+        ctx.font = font(700, cf.size); ctx.fillStyle = t.fg;
+        const label = urlLabel(d.url); const lf = fit(ctx, label, 700, 28 * u, 18 * u, colW, 1);
+        let by = bottom - (d.showPhone && d.phone ? 60 * u : 0) - 70 * u - cf.lines.length * cf.size * 1.15;
+        drawLines(ctx, cf.lines, pad, by + cf.size * 0.9, cf.size * 1.15, 'left');
+        ctx.font = font(700, lf.size); ctx.fillStyle = t.accent; ctx.textAlign = 'left';
+        ctx.fillText(lf.lines[0], pad, bottom - (d.showPhone && d.phone ? 60 * u : 0) - 8 * u);
+        if (d.showPhone && d.phone) { ctx.font = font(700, 34 * u); ctx.fillStyle = t.fg; ctx.fillText(d.phone, pad, bottom); }
+        // right: QR
+        const qs = 440 * u; drawQR(ctx, d.url, W - pad - qs, (H - H * 0.075 - qs) / 2, qs, t, { shadow: true, radius: 30 * u });
+        poweredBy(ctx, W, H, t, 22 * u);
+    }
+
+    function cardFront(ctx, W, H, d, t, logo) {
+        const u = W / 1050;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H);
+        ctx.save(); ctx.globalAlpha = t.dark ? 0.10 : 0.07; ctx.fillStyle = t.dark ? '#FFFFFF' : t.accent;
+        ctx.beginPath(); ctx.arc(W * 0.98, H * 0.02, H * 0.78, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.fillStyle = t.accent; ctx.fillRect(0, 0, 18 * u, H);
+        const pad = 80 * u, maxW = W - pad * 2 - (d.showLogo !== false ? 150 * u : 0);
+        if (d.showLogo !== false) drawLogo(ctx, logo, d.name, W - pad - 60 * u, pad + 50 * u, 56 * u, t);
+        let y = 120 * u;
+        const owner = d.owner || d.name || 'Your Name';
+        const of = fit(ctx, owner, 700, 62 * u, 36 * u, maxW, 1);
+        ctx.font = font(700, of.size); ctx.fillStyle = t.fg; y = drawLines(ctx, of.lines, pad, y, 0, 'left') ; y += 0;
+        ctx.font = font(400, 30 * u); ctx.fillStyle = t.accent; ctx.textAlign = 'left';
+        const sub = [d.title, d.owner ? d.name : ''].filter(Boolean).join(' · ');
+        const sf = fit(ctx, sub || d.tagline || '', 400, 30 * u, 22 * u, maxW, 2);
+        ctx.font = font(400, sf.size); ctx.fillStyle = t.accent;
+        drawLines(ctx, sf.lines, pad, 120 * u + 52 * u, sf.size * 1.3, 'left');
+        // contact lines at the bottom
+        const rows = [];
+        if (d.showPhone && d.phone) rows.push(['phone', d.phone]);
+        if (d.email) rows.push(['mail', d.email]);
+        rows.push(['web', urlLabel(d.url)]);
+        let ry = H - pad - (rows.length - 1) * 54 * u;
+        rows.forEach(([k, v]) => {
+            ctx.fillStyle = t.accent; ctx.beginPath(); ctx.arc(pad + 9 * u, ry - 10 * u, 8 * u, 0, Math.PI * 2); ctx.fill();
+            const f = fit(ctx, v, 400, 32 * u, 20 * u, W - pad * 2 - 40 * u, 1);
+            ctx.font = font(400, f.size); ctx.fillStyle = t.fg; ctx.textAlign = 'left'; ctx.fillText(f.lines[0], pad + 40 * u, ry);
+            ry += 54 * u;
+        });
+    }
+    function cardBack(ctx, W, H, d, t, logo) {
+        const u = W / 1050;
+        // back is always light so the QR prints with the best contrast
+        const bt = Object.assign({}, t, { bg: '#FFFFFF', dark: false, fg: '#0B3B2B', muted: '#52615B', soft: '#EAF0ED' });
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = t.dark ? t.bg : t.accent; ctx.fillRect(0, H - 22 * u, W, 22 * u);
+        const qs = 400 * u, qx = 70 * u, qy = (H - 22 * u - qs) / 2;
+        ctx.save(); ctx.fillStyle = '#F7FAF8'; rr(ctx, qx - 10 * u, qy - 10 * u, qs + 20 * u, qs + 20 * u, 30 * u); ctx.fill(); ctx.restore();
+        drawQR(ctx, d.url, qx, qy, qs, t, { radius: 24 * u, fg: '#0B3B2B' });
+        const tx = qx + qs + 60 * u, maxW = W - tx - 60 * u;
+        let y = 150 * u;
+        const cf = fit(ctx, String(d.cta || 'Scan to shop'), 700, 58 * u, 34 * u, maxW, 2);
+        ctx.font = font(700, cf.size); ctx.fillStyle = '#0B3B2B'; y = drawLines(ctx, cf.lines, tx, y, cf.size * 1.15, 'left');
+        const nf = fit(ctx, d.name || '', 700, 34 * u, 22 * u, maxW, 2);
+        ctx.font = font(700, nf.size); ctx.fillStyle = bt.dark ? '#0B3B2B' : (t.dark ? mix(t.bg, '#FFB038', 0.0) : t.accent);
+        ctx.fillStyle = t.dark ? '#008558' : t.accent;
+        y = drawLines(ctx, nf.lines, tx, y + 14 * u + nf.size * 0.6, nf.size * 1.2, 'left');
+        ctx.font = font(400, 26 * u); ctx.fillStyle = '#52615B'; ctx.textAlign = 'left';
+        drawLines(ctx, wrap(ctx, 'Point your camera at the code to see every product.', maxW), tx, y + 20 * u + 20 * u, 36 * u, 'left');
+        const lf = fit(ctx, urlLabel(d.url), 700, 28 * u, 18 * u, maxW, 1);
+        ctx.font = font(700, lf.size); ctx.fillStyle = '#0B3B2B'; ctx.fillText(lf.lines[0], tx, H - 70 * u);
+    }
+
+    // ---- public API -----------------------------------------------------------------------------------------
+    async function ensureFonts() {
+        try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load(font(400, 40)), document.fonts.load(font(700, 40))]); } catch (e) { /* fall back to system font */ }
+    }
+    function tpl(id) { const t = TEMPLATES.find((x) => x.id === id); if (!t) throw new Error('Unknown template ' + id); return t; }
+
+    async function render(canvas, id, data, opts = {}) {
+        if (typeof NextaQR === 'undefined') throw new Error('QR generator missing');
+        if (!data || !data.url) throw new Error('No store link to put in the QR code');
+        const T = tpl(id); await ensureFonts();
+        const logo = data.showLogo === false ? null : await loadLogo(data.logo);
+        const scale = opts.scale || 1; // preview passes <1 for speed; downloads use 1
+        canvas.width = Math.round(T.w * scale); canvas.height = Math.round(T.h * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.save(); ctx.scale(scale, scale);
+        const t = themeFrom(data);
+        const side = opts.side || 'front';
+        if (id === 'card') (side === 'back' ? cardBack : cardFront)(ctx, T.w, T.h, data, t, logo);
+        else if (id === 'square') squareLayout(ctx, T.w, T.h, data, t, logo);
+        else verticalLayout(ctx, T.w, T.h, data, t, logo, id);
+        ctx.restore();
+        return canvas;
+    }
+
+    function qrCanvas(url, px, o = {}) {
+        const q = NextaQR.encode(url), quiet = 4, mods = q.size + quiet * 2, cell = Math.max(1, Math.floor(px / mods));
+        const dim = cell * mods, c = document.createElement('canvas'); c.width = c.height = dim;
+        const ctx = c.getContext('2d'); ctx.fillStyle = o.bg || '#FFFFFF'; ctx.fillRect(0, 0, dim, dim); ctx.fillStyle = o.fg || '#0B3B2B';
+        for (let r = 0; r < q.size; r++) for (let k = 0; k < q.size; k++) if (q.modules[r][k]) ctx.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+        return c;
+    }
+    function qrSvg(url, o = {}) {
+        const q = NextaQR.encode(url), quiet = 4, dim = q.size + quiet * 2; let d = '';
+        for (let r = 0; r < q.size; r++) for (let k = 0; k < q.size; k++) if (q.modules[r][k]) d += `M${k + quiet} ${r + quiet}h1v1h-1z`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" width="${dim * 12}" height="${dim * 12}" shape-rendering="crispEdges"><rect width="${dim}" height="${dim}" fill="${o.bg || '#FFFFFF'}"/><path d="${d}" fill="${o.fg || '#0B3B2B'}"/></svg>`;
+    }
+
+    /** A4 sheet at 300 dpi: 2 columns x 5 rows of 3.5 x 2 inch cards, light cut marks. */
+    async function cardSheet(data, side) {
+        const W = 2480, H = 3508, cw = 1050, ch = 600, gx = 190, gy = 254;
+        const sheet = document.createElement('canvas'); sheet.width = W; sheet.height = H;
+        const ctx = sheet.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H);
+        const one = document.createElement('canvas'); await render(one, 'card', data, { side });
+        for (let r = 0; r < 5; r++) for (let c = 0; c < 2; c++) ctx.drawImage(one, gx + c * cw, gy + r * ch);
+        ctx.strokeStyle = '#9EADA7'; ctx.lineWidth = 3;
+        const mark = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+        for (let c = 0; c <= 2; c++) { const x = gx + c * cw; mark(x, gy - 60, x, gy - 14); mark(x, gy + 5 * ch + 14, x, gy + 5 * ch + 60); }
+        for (let r = 0; r <= 5; r++) { const y = gy + r * ch; mark(gx - 60, y, gx - 14, y); mark(gx + 2 * cw + 14, y, gx + 2 * cw + 60, y); }
+        return sheet;
+    }
+
+    function canvasToBlob(canvas, type, q) {
+        return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not create the file. Try again.'))), type || 'image/png', q));
+    }
+
+    // ---- tiny PDF writer: each page is one full-page JPEG ------------------------------------------------------
+    async function pdfFromCanvases(canvases, o = {}) {
+        const wPt = (o.widthMm || 210) / 25.4 * 72, hPt = (o.heightMm || 297) / 25.4 * 72;
+        const enc = new TextEncoder(), parts = []; let size = 0, objs = []; const offsets = [];
+        const push = (u8) => { parts.push(u8); size += u8.length; };
+        const str = (s) => push(enc.encode(s));
+        const jpegs = [];
+        for (const c of canvases) { const b = await canvasToBlob(c, 'image/jpeg', 0.92); jpegs.push({ bytes: new Uint8Array(await b.arrayBuffer()), w: c.width, h: c.height }); }
+        const n = canvases.length;
+        // object numbers: 1 catalog, 2 pages, then per page: page, content, image
+        const pageObj = (i) => 3 + i * 3, contObj = (i) => 4 + i * 3, imgObj = (i) => 5 + i * 3;
+        str('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+        const begin = (num) => { offsets[num] = size; str(`${num} 0 obj\n`); };
+        begin(1); str('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+        begin(2); str(`<< /Type /Pages /Count ${n} /Kids [${jpegs.map((_, i) => pageObj(i) + ' 0 R').join(' ')}] >>\nendobj\n`);
+        jpegs.forEach((j, i) => {
+            begin(pageObj(i)); str(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt.toFixed(2)} ${hPt.toFixed(2)}] /Resources << /XObject << /Im0 ${imgObj(i)} 0 R >> >> /Contents ${contObj(i)} 0 R >>\nendobj\n`);
+            const content = `q ${wPt.toFixed(2)} 0 0 ${hPt.toFixed(2)} 0 0 cm /Im0 Do Q`;
+            begin(contObj(i)); str(`<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+            begin(imgObj(i)); str(`<< /Type /XObject /Subtype /Image /Width ${j.w} /Height ${j.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${j.bytes.length} >>\nstream\n`);
+            push(j.bytes); str('\nendstream\nendobj\n');
+        });
+        const total = 3 + n * 3, xref = size;
+        str(`xref\n0 ${total}\n0000000000 65535 f \n`);
+        for (let k = 1; k < total; k++) str(String(offsets[k]).padStart(10, '0') + ' 00000 n \n');
+        str(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+        return new Blob(parts, { type: 'application/pdf' });
+    }
+
+    // Drawing helpers, shared with js/brand-kit-posts.js so product posts speak the same visual language as the store posters.
+    const helpers = { rr, font, wrap, fit, drawLines, initials, loadLogo, loadImageSafe, setImageTimeout: (ms) => { imageTimeoutMs = ms; }, drawLogo, drawQR, mix, hex, rgb, luminance, isDark, urlLabel, FONT };
+    root.NextaBrandKit = { TEMPLATES, render, qrCanvas, qrSvg, cardSheet, pdfFromCanvases, canvasToBlob, themeFrom, isDark, helpers };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/**
+ * (Round 2 adds: delivery, openhours, thanks, flash, newin - see the bottom of the template list.)
+ * More poster templates for the Promote studio, added NEXT TO the originals in js/brand-kit.js (nothing there is changed):
+ *   opening   Grand opening poster (A4)       sale      Big sale poster (A4)       scansign  Scan-to-order counter sign (A5)
+ * They take the same data and the same colour swatch as the originals, so every control in the studio keeps working:
+ *   tagline -> the line under the headline (opening) or the offer band (sale) or the sub-line (scansign)
+ *   cta     -> the date / invitation pill (opening), the small line under the offer (sale) or the sign headline (scansign)
+ * Loaded after brand-kit.js. It wraps NextaBrandKit.render: any other template id goes straight to the original.
+ */
+(function (root) {
+    'use strict';
+    const K = root.NextaBrandKit;
+    if (!K || K.__moreTemplates) return;
+    K.__moreTemplates = true;
+    const H = K.helpers, INK = '#0B3B2B', DEEP = '#008558', PAPER = '#F7FAF8';
+    const font = (w, s) => H.font(w, Math.round(s));
+
+    K.TEMPLATES.push(
+        { id: 'opening',  group: 'poster', label: 'Grand opening (A4)',    w: 2480, h: 3508, mm: [210, 297], pdf: true, file: 'grand-opening-a4' },
+        { id: 'sale',     group: 'poster', label: 'Big sale (A4)',         w: 2480, h: 3508, mm: [210, 297], pdf: true, file: 'big-sale-a4' },
+        { id: 'scansign', group: 'poster', label: 'Scan to order (A5)',    w: 1748, h: 2480, mm: [148, 210], pdf: true, file: 'scan-to-order-a5' },
+        { id: 'delivery', group: 'poster', label: 'We deliver (A4)',       w: 2480, h: 3508, mm: [210, 297], pdf: true, file: 'we-deliver-a4' },
+        { id: 'openhours',group: 'poster', label: 'We are open (A5)',      w: 1748, h: 2480, mm: [148, 210], pdf: true, file: 'we-are-open-a5' },
+        { id: 'thanks',   group: 'poster', label: 'Thank-you card (A6)',   w: 1240, h: 1748, mm: [105, 148], pdf: true, file: 'thank-you-a6' },
+        { id: 'flash',    group: 'social', label: 'Flash sale story',      w: 1080, h: 1920, file: 'flash-sale-story' },
+        { id: 'newin',    group: 'social', label: 'New in stock (square)', w: 1080, h: 1080, file: 'new-in-square' }
+    );
+
+    function spaced(ctx, px) { if ('letterSpacing' in ctx) ctx.letterSpacing = px + 'px'; }
+    function lines(ctx, ls, x, y, lh, align) { ctx.textAlign = align || 'center'; ls.forEach((l, i) => ctx.fillText(l, x, y + i * lh)); return y + ls.length * lh; }
+    function ring(ctx, cx, cy, r, color, alpha, lw) { ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+    function archPath(ctx, x, y, w, h) { const r = w / 2; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + r); ctx.arc(x + r, y + r, r, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath(); }
+    function logoOn(ctx, logo, d, cx, cy, r, th) { H.drawLogo(ctx, d.showLogo === false ? null : logo, d.name, cx, cy, r, th); }
+    const lightTheme = (t) => ({ dark: false, soft: '#EAF0ED', bg: INK, accent: DEEP, fg: INK, muted: '#52615B', qrFg: INK });
+
+    /** The rounded store plate at the foot: logo, name, phone or how to order, link, QR. */
+    function plate(ctx, x, y, w, h, d, t, logo, u) {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 30 * u; ctx.shadowOffsetY = 10 * u;
+        H.rr(ctx, x, y, w, h, 38 * u); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
+        const qs = h - 28 * u, qx = x + w - qs - 14 * u;
+        H.drawQR(ctx, d.url, qx, y + 14 * u, qs, t, { fg: INK, radius: 16 * u });
+        const r = Math.min(46 * u, h * 0.27), lx = x + 26 * u + r;
+        logoOn(ctx, logo, d, lx, y + h / 2, r, lightTheme(t));
+        const tx = lx + r + 24 * u, tw = qx - 20 * u - tx;
+        const nf = H.fit(ctx, String(d.name || 'My Store'), 700, 40 * u, 24 * u, tw, 1);
+        const second = d.showPhone && d.phone ? d.phone : 'Scan to order';
+        const sf = H.fit(ctx, second, 400, 28 * u, 20 * u, tw, 1), uf = H.fit(ctx, H.urlLabel(d.url), 700, 26 * u, 16 * u, tw, 1);
+        const top = y + (h - (nf.size + sf.size + uf.size + 28 * u)) / 2;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        ctx.font = font(700, nf.size); ctx.fillStyle = INK; ctx.fillText(nf.lines[0], tx, top + nf.size * 0.9);
+        ctx.font = font(400, sf.size); ctx.fillStyle = '#52615B'; ctx.fillText(sf.lines[0], tx, top + nf.size + 8 * u + sf.size * 0.9);
+        ctx.font = font(700, uf.size); ctx.fillStyle = DEEP; ctx.fillText(uf.lines[0], tx, top + nf.size + sf.size + 20 * u + uf.size * 0.9);
+    }
+
+    function opening(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 240 * u, 1320 * u, 500 * u, t.accent, 0.3, 3 * u); ring(ctx, 860 * u, 60 * u, 350 * u, t.dark ? '#2EDDA2' : t.accent, 0.25, 3 * u);
+        // store name across the top
+        const nf = H.fit(ctx, String(d.name || 'My Store').toUpperCase(), 700, 28 * u, 18 * u, 800 * u, 1);
+        ctx.font = font(700, nf.size); ctx.fillStyle = t.accent; ctx.textBaseline = 'alphabetic'; spaced(ctx, 6 * u); lines(ctx, nf.lines, W / 2, 80 * u, 0); spaced(ctx, 0);
+        // the arch
+        const ax = 140 * u, ay = 130 * u, aw = 720 * u, ah = 760 * u;
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 40 * u; ctx.shadowOffsetY = 14 * u; archPath(ctx, ax, ay, aw, ah); ctx.fillStyle = t.dark ? PAPER : '#FFFFFF'; ctx.fill(); ctx.restore();
+        // confetti
+        [[100, 300, 13, t.accent], [900, 262, 10, '#2EDDA2'], [70, 570, 8, '#2EDDA2'], [930, 530, 11, t.accent], [120, 830, 7, t.accent], [880, 812, 12, '#2EDDA2'], [200, 156, 7, '#2EDDA2'], [800, 140, 9, t.accent]]
+            .forEach(([x, y, r, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x * u, y * u, r * u, 0, Math.PI * 2); ctx.fill(); });
+        logoOn(ctx, logo, d, 500 * u, 262 * u, 66 * u, lightTheme(t));
+        ctx.fillStyle = INK; const g = H.fit(ctx, 'GRAND', 700, 168 * u, 80 * u, 640 * u, 1); ctx.font = font(700, g.size); lines(ctx, g.lines, W / 2, 470 * u, 0);
+        ctx.fillStyle = DEEP; const o = H.fit(ctx, 'OPENING', 700, 142 * u, 70 * u, 640 * u, 1); ctx.font = font(700, o.size); lines(ctx, o.lines, W / 2, 600 * u, 0);
+        ctx.fillStyle = '#FFB038'; H.rr(ctx, 420 * u, 660 * u, 160 * u, 6 * u, 3 * u); ctx.fill();
+        const line = String(d.tagline || 'Come and celebrate with us'), tf = H.fit(ctx, line, 400, 32 * u, 22 * u, 620 * u, 3);
+        ctx.font = font(400, tf.size); ctx.fillStyle = '#52615B'; lines(ctx, tf.lines, W / 2, 725 * u, tf.size * 1.4);
+        // the date / invitation pill
+        ctx.fillStyle = '#FFB038'; H.rr(ctx, 140 * u, 930 * u, 720 * u, 120 * u, 60 * u); ctx.fill();
+        const pf = H.fit(ctx, String(d.cta || 'Join us this Saturday'), 700, 40 * u, 24 * u, 640 * u, 1);
+        ctx.font = font(700, pf.size); ctx.fillStyle = INK; ctx.textBaseline = 'middle'; lines(ctx, pf.lines, W / 2, 991 * u, 0); ctx.textBaseline = 'alphabetic';
+        ctx.font = font(400, 30 * u); ctx.fillStyle = t.fg; ctx.globalAlpha = 0.85; lines(ctx, ['Point your camera at the code to see our store'], W / 2, 1100 * u, 0); ctx.globalAlpha = 1;
+        plate(ctx, 50 * u, 1196 * u, 900 * u, 164 * u, d, t, logo, u);
+    }
+
+    function sale(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 200 * u, 150 * u, 400 * u, t.fg, 0.14, 3 * u); ring(ctx, 870 * u, 1050 * u, 350 * u, t.fg, 0.14, 3 * u);
+        // chip + logo
+        ctx.font = font(700, 24 * u); spaced(ctx, 3 * u); const cw = ctx.measureText('LIMITED TIME').width + 52 * u; spaced(ctx, 0);
+        ctx.fillStyle = t.dark ? t.accent : INK; H.rr(ctx, 50 * u, 60 * u, cw, 58 * u, 29 * u); ctx.fill();
+        ctx.fillStyle = t.dark ? INK : '#FFFFFF'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; spaced(ctx, 3 * u); ctx.fillText('LIMITED TIME', 76 * u, 90 * u); spaced(ctx, 0); ctx.textBaseline = 'alphabetic';
+        logoOn(ctx, logo, d, 900 * u, 90 * u, 44 * u, t);
+        // BIG / SALE
+        const b = H.fit(ctx, 'BIG', 700, 230 * u, 100 * u, 900 * u, 1); ctx.font = font(700, b.size); ctx.fillStyle = t.fg; ctx.textAlign = 'left'; ctx.fillText(b.lines[0], 46 * u, 330 * u);
+        const s = H.fit(ctx, 'SALE', 700, 380 * u, 160 * u, 910 * u, 1); ctx.font = font(700, s.size); ctx.fillStyle = t.accent; ctx.fillText(s.lines[0], 38 * u, 630 * u);
+        // offer band
+        const bandBg = t.dark ? H.mix(t.bg, '#000000', 0.38) : INK, bandFg = t.dark ? t.accent : '#FFFFFF';
+        ctx.fillStyle = bandBg; ctx.fillRect(0, 860 * u, W, 170 * u);
+        const of = H.fit(ctx, String(d.tagline || 'UP TO 50% OFF').toUpperCase(), 700, 96 * u, 40 * u, 900 * u, 1);
+        ctx.font = font(700, of.size); ctx.fillStyle = bandFg; ctx.textBaseline = 'middle'; lines(ctx, of.lines, W / 2, 946 * u, 0); ctx.textBaseline = 'alphabetic';
+        const cf = H.fit(ctx, String(d.cta || 'While stock lasts'), 700, 38 * u, 24 * u, 880 * u, 2);
+        ctx.font = font(700, cf.size); ctx.fillStyle = t.fg; lines(ctx, cf.lines, W / 2, 1090 * u, cf.size * 1.3);
+        plate(ctx, 50 * u, 1196 * u, 900 * u, 164 * u, d, t, logo, u);
+    }
+
+    function scansign(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        // header band with rounded bottom
+        const band = t.dark ? H.mix(t.bg, '#000000', 0.3) : INK;
+        ctx.fillStyle = band; H.rr(ctx, 0, -80 * u, W, 480 * u, 70 * u); ctx.fill();
+        ring(ctx, 800 * u, 40 * u, 230 * u, '#FFB038', 0.4, 3 * u);
+        logoOn(ctx, logo, d, W / 2, 110 * u, 46 * u, { dark: true, soft: '#EAF0ED', bg: band, accent: '#FFB038', fg: '#FFFFFF', muted: '#BFD3CA', qrFg: INK });
+        const hf = H.fit(ctx, String(d.cta || 'Scan to order'), 700, 104 * u, 48 * u, 840 * u, 2);
+        ctx.font = font(700, hf.size); ctx.fillStyle = '#FFFFFF'; const hy = lines(ctx, hf.lines, W / 2, 232 * u + hf.size * 0.2, hf.size * 1.08);
+        const sf = H.fit(ctx, String(d.tagline || 'Point your phone camera at the code'), 400, 32 * u, 22 * u, 820 * u, 2);
+        ctx.font = font(400, sf.size); ctx.fillStyle = '#2EDDA2'; lines(ctx, sf.lines, W / 2, Math.max(hy + 4 * u, 330 * u), sf.size * 1.3);
+        // QR card
+        const qs = 600 * u, qx = (W - qs) / 2, qy = 430 * u;
+        H.drawQR(ctx, d.url, qx, qy, qs, t, { fg: INK, shadow: true, radius: 56 * u });
+        // three steps
+        [['1', 'Scan', 'with your camera'], ['2', 'Choose', 'what you want'], ['3', 'Order', 'and we get it to you']].forEach((st, i) => {
+            const cx = 190 * u + i * 310 * u;
+            ctx.fillStyle = '#FFB038'; ctx.beginPath(); ctx.arc(cx, 1138 * u, 38 * u, 0, Math.PI * 2); ctx.fill();
+            ctx.font = font(700, 40 * u); ctx.fillStyle = INK; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(st[0], cx, 1141 * u); ctx.textBaseline = 'alphabetic';
+            ctx.font = font(700, 34 * u); ctx.fillStyle = t.fg; ctx.fillText(st[1], cx, 1226 * u);
+            ctx.font = font(400, 23 * u); ctx.fillStyle = t.muted; ctx.fillText(st[2], cx, 1262 * u);
+        });
+        const nf = H.fit(ctx, [d.name, d.showPhone && d.phone ? d.phone : ''].filter(Boolean).join('  ·  '), 700, 30 * u, 18 * u, 880 * u, 1);
+        ctx.font = font(700, nf.size); ctx.fillStyle = t.accent; lines(ctx, nf.lines, W / 2, 1340 * u, 0);
+        const uf = H.fit(ctx, H.urlLabel(d.url), 400, 26 * u, 16 * u, 880 * u, 1);
+        ctx.font = font(400, uf.size); ctx.fillStyle = t.muted; lines(ctx, uf.lines, W / 2, 1384 * u, 0);
+    }
+
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // Round 2
+    function qrCard(ctx, d, t, x, y, size, u) { H.drawQR(ctx, d.url, x, y, size, t, { fg: INK, shadow: true, radius: size * 0.1 }); }
+    function pill(ctx, x, y, w, h, bg, fg, text, weight, size, maxW) {
+        ctx.fillStyle = bg; H.rr(ctx, x, y, w, h, h / 2); ctx.fill();
+        const f = H.fit(ctx, text, weight, size, size * 0.55, maxW, 1); ctx.font = font(weight, f.size); ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(f.lines[0], x + w / 2, y + h / 2 + f.size * 0.04); ctx.textBaseline = 'alphabetic';
+    }
+    function brandRow(ctx, d, t, logo, cx, cy, r, u, color) {
+        logoOn(ctx, logo, d, cx, cy, r, t);
+        const f = H.fit(ctx, String(d.name || 'My Store'), 700, 34 * u, 20 * u, 700 * u, 1); ctx.font = font(700, f.size); ctx.fillStyle = color || t.fg; ctx.textAlign = 'center'; ctx.fillText(f.lines[0], cx, cy + r + 20 * u + f.size * 0.8);
+    }
+    function truck(ctx, x, y, s, body, cab, glass) {
+        ctx.fillStyle = body; H.rr(ctx, x, y, 300 * s, 190 * s, 22 * s); ctx.fill();
+        ctx.fillStyle = cab; H.rr(ctx, x + 310 * s, y + 60 * s, 170 * s, 130 * s, 26 * s); ctx.fill();
+        ctx.fillStyle = glass; H.rr(ctx, x + 350 * s, y + 80 * s, 100 * s, 56 * s, 12 * s); ctx.fill();
+        ctx.fillStyle = cab; ctx.fillRect(x + 20 * s, y + 175 * s, 460 * s, 16 * s);
+        [[90, 210], [390, 210]].forEach(([wx, wy]) => { ctx.fillStyle = '#15171A'; ctx.beginPath(); ctx.arc(x + wx * s, y + wy * s, 38 * s, 0, 7); ctx.fill(); ctx.fillStyle = '#C9D1CD'; ctx.beginPath(); ctx.arc(x + wx * s, y + wy * s, 16 * s, 0, 7); ctx.fill(); });
+        ctx.strokeStyle = glass; ctx.globalAlpha = 0.5; ctx.lineWidth = 6 * s; ctx.lineCap = 'round';
+        [[-90, 60], [-130, 100], [-70, 130]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.moveTo(x + dx * s, y + dy * s); ctx.lineTo(x - 10 * s + dx * s * 0.2, y + dy * s); ctx.stroke(); }); ctx.globalAlpha = 1;
+    }
+    function heart(ctx, cx, cy, s, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(cx, cy + s * 0.9); ctx.bezierCurveTo(cx - s * 1.5, cy - s * 0.1, cx - s * 0.7, cy - s * 1.1, cx, cy - s * 0.35); ctx.bezierCurveTo(cx + s * 0.7, cy - s * 1.1, cx + s * 1.5, cy - s * 0.1, cx, cy + s * 0.9); ctx.fill(); }
+
+    function delivery(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 900 * u, 120 * u, 380 * u, t.accent, 0.3, 3 * u); ring(ctx, 80 * u, 1100 * u, 420 * u, t.fg, 0.1, 3 * u);
+        pill(ctx, 50 * u, 60 * u, 330 * u, 58 * u, t.dark ? t.accent : INK, t.dark ? INK : '#FFFFFF', 'FAST AND SAFE', 700, 24 * u, 280 * u);
+        logoOn(ctx, logo, d, 900 * u, 90 * u, 44 * u, t);
+        ctx.textAlign = 'left'; ctx.fillStyle = t.fg; const a = H.fit(ctx, 'WE', 700, 200 * u, 100 * u, 900 * u, 1); ctx.font = font(700, a.size); ctx.fillText(a.lines[0], 46 * u, 310 * u);
+        ctx.fillStyle = t.accent; const b = H.fit(ctx, 'DELIVER', 700, 250 * u, 100 * u, 910 * u, 1); ctx.font = font(700, b.size); ctx.fillText(b.lines[0], 40 * u, 520 * u);
+        truck(ctx, 250 * u, 640 * u, 1.0 * u, t.dark ? '#FFFFFF' : INK, t.accent, t.dark ? t.bg : '#FFFFFF');
+        const tf = H.fit(ctx, String(d.tagline || 'Order online and we bring it to your door'), 700, 40 * u, 24 * u, 860 * u, 2);
+        ctx.font = font(700, tf.size); ctx.fillStyle = t.fg; lines(ctx, tf.lines, W / 2, 940 * u, tf.size * 1.25);
+        const cf = H.fit(ctx, String(d.cta || 'Kampala and nearby areas'), 400, 32 * u, 20 * u, 860 * u, 1);
+        ctx.font = font(400, cf.size); ctx.fillStyle = t.muted; lines(ctx, cf.lines, W / 2, 1050 * u, 0);
+        plate(ctx, 50 * u, 1196 * u, 900 * u, 164 * u, d, t, logo, u);
+    }
+
+    function openhours(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 500 * u, 560 * u, 470 * u, t.accent, 0.28, 3 * u); ring(ctx, 500 * u, 560 * u, 400 * u, t.fg, 0.1, 3 * u);
+        brandRow(ctx, d, t, logo, 500 * u, 110 * u, 48 * u, u);
+        ctx.fillStyle = t.fg; ctx.font = font(700, 54 * u); ctx.textAlign = 'center'; ctx.fillText("WE'RE", 500 * u, 460 * u);
+        ctx.fillStyle = t.accent; const o = H.fit(ctx, 'OPEN', 700, 300 * u, 120 * u, 760 * u, 1); ctx.font = font(700, o.size); ctx.fillText(o.lines[0], 500 * u, 700 * u);
+        ctx.fillStyle = '#2EDDA2'; ctx.beginPath(); ctx.arc(500 * u, 760 * u, 14 * u, 0, 7); ctx.fill();
+        const hf = H.fit(ctx, String(d.tagline || 'Mon to Sat  ·  8:00 AM to 7:00 PM'), 700, 38 * u, 22 * u, 840 * u, 2);
+        ctx.font = font(700, hf.size); ctx.fillStyle = t.fg; lines(ctx, hf.lines, W / 2, 850 * u, hf.size * 1.3);
+        const cf = H.fit(ctx, String(d.cta || 'Walk in or order online'), 400, 30 * u, 20 * u, 840 * u, 1);
+        ctx.font = font(400, cf.size); ctx.fillStyle = t.muted; lines(ctx, cf.lines, W / 2, 960 * u, 0);
+        qrCard(ctx, d, t, 380 * u, 1020 * u, 240 * u, u);
+        const uf = H.fit(ctx, H.urlLabel(d.url), 700, 28 * u, 16 * u, 880 * u, 1); ctx.font = font(700, uf.size); ctx.fillStyle = t.accent; lines(ctx, uf.lines, W / 2, 1330 * u, 0);
+    }
+
+    function thanks(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 900 * u, 80 * u, 330 * u, t.accent, 0.3, 3 * u); ring(ctx, 60 * u, 1300 * u, 380 * u, t.fg, 0.1, 3 * u);
+        brandRow(ctx, d, t, logo, 500 * u, 130 * u, 56 * u, u);
+        heart(ctx, 500 * u, 470 * u, 90 * u, t.dark ? t.accent : '#FFB038');
+        ctx.fillStyle = t.fg; const f = H.fit(ctx, 'Thank you!', 700, 150 * u, 70 * u, 880 * u, 1); ctx.font = font(700, f.size); ctx.textAlign = 'center'; ctx.fillText(f.lines[0], 500 * u, 700 * u);
+        const mf = H.fit(ctx, String(d.tagline || 'We really appreciate your order'), 400, 38 * u, 22 * u, 760 * u, 3);
+        ctx.font = font(400, mf.size); ctx.fillStyle = t.fg; ctx.globalAlpha = 0.9; lines(ctx, mf.lines, W / 2, 780 * u, mf.size * 1.35); ctx.globalAlpha = 1;
+        qrCard(ctx, d, t, 360 * u, 930 * u, 280 * u, u);
+        const cf = H.fit(ctx, String(d.cta || 'Scan to order again'), 700, 34 * u, 20 * u, 840 * u, 1);
+        ctx.font = font(700, cf.size); ctx.fillStyle = t.accent; lines(ctx, cf.lines, W / 2, 1270 * u, 0);
+        const pf = H.fit(ctx, d.showPhone && d.phone ? d.phone : H.urlLabel(d.url), 400, 28 * u, 16 * u, 840 * u, 1);
+        ctx.font = font(400, pf.size); ctx.fillStyle = t.muted; lines(ctx, pf.lines, W / 2, 1330 * u, 0);
+    }
+
+    function flash(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 880 * u, 380 * u, 430 * u, t.accent, 0.3, 3 * u); ring(ctx, 80 * u, 1300 * u, 430 * u, t.fg, 0.1, 3 * u);
+        brandRow(ctx, d, t, logo, 500 * u, 270 * u, 56 * u, u);
+        ctx.textAlign = 'left'; ctx.fillStyle = t.fg; const a = H.fit(ctx, 'FLASH', 700, 300 * u, 120 * u, 900 * u, 1); ctx.font = font(700, a.size); ctx.fillText(a.lines[0], 46 * u, 700 * u);
+        ctx.fillStyle = t.accent; const b = H.fit(ctx, 'SALE', 700, 400 * u, 160 * u, 910 * u, 1); ctx.font = font(700, b.size); ctx.fillText(b.lines[0], 38 * u, 1010 * u);
+        const bandBg = t.dark ? H.mix(t.bg, '#000000', 0.38) : INK, bandFg = t.dark ? t.accent : '#FFFFFF';
+        ctx.fillStyle = bandBg; ctx.fillRect(0, 1080 * u, W, 150 * u);
+        const of = H.fit(ctx, String(d.tagline || 'TODAY ONLY').toUpperCase(), 700, 84 * u, 36 * u, 900 * u, 1); ctx.font = font(700, of.size); ctx.fillStyle = bandFg; ctx.textBaseline = 'middle'; lines(ctx, of.lines, W / 2, 1157 * u, 0); ctx.textBaseline = 'alphabetic';
+        const cf = H.fit(ctx, String(d.cta || 'Scan to shop now'), 700, 36 * u, 22 * u, 860 * u, 1); ctx.font = font(700, cf.size); ctx.fillStyle = t.fg; lines(ctx, cf.lines, W / 2, 1300 * u, 0);
+        qrCard(ctx, d, t, 350 * u, 1340 * u, 300 * u, u);
+        const uf = H.fit(ctx, H.urlLabel(d.url), 700, 28 * u, 16 * u, 880 * u, 1); ctx.font = font(700, uf.size); ctx.fillStyle = t.accent; lines(ctx, uf.lines, W / 2, 1690 * u, 0);
+    }
+
+    function newin(ctx, W, H_, d, t, logo) {
+        const u = W / 1000;
+        ctx.fillStyle = t.bg; ctx.fillRect(0, 0, W, H_);
+        ring(ctx, 880 * u, 180 * u, 380 * u, t.accent, 0.3, 3 * u); ring(ctx, 60 * u, 980 * u, 340 * u, t.fg, 0.1, 3 * u);
+        logoOn(ctx, logo, d, 100 * u, 100 * u, 44 * u, t);
+        const nf = H.fit(ctx, String(d.name || 'My Store'), 700, 34 * u, 20 * u, 640 * u, 1); ctx.font = font(700, nf.size); ctx.fillStyle = t.fg; ctx.textAlign = 'left'; ctx.fillText(nf.lines[0], 166 * u, 112 * u);
+        ctx.fillStyle = t.accent; const a = H.fit(ctx, 'NEW', 700, 330 * u, 140 * u, 900 * u, 1); ctx.font = font(700, a.size); ctx.fillText(a.lines[0], 50 * u, 440 * u);
+        ctx.fillStyle = t.fg; const b = H.fit(ctx, 'IN STOCK', 700, 150 * u, 70 * u, 900 * u, 1); ctx.font = font(700, b.size); ctx.fillText(b.lines[0], 54 * u, 590 * u);
+        const tf = H.fit(ctx, String(d.tagline || 'Fresh arrivals, ready for you'), 400, 36 * u, 22 * u, 860 * u, 2); ctx.font = font(400, tf.size); ctx.fillStyle = t.muted; lines(ctx, tf.lines, 54 * u, 660 * u, tf.size * 1.3, 'left');
+        pill(ctx, 54 * u, 790 * u, 560 * u, 96 * u, '#FFB038', INK, String(d.cta || 'Scan to shop now'), 700, 36 * u, 480 * u);
+        const uf = H.fit(ctx, H.urlLabel(d.url), 700, 28 * u, 16 * u, 560 * u, 1); ctx.font = font(700, uf.size); ctx.fillStyle = t.accent; ctx.textAlign = 'left'; ctx.fillText(uf.lines[0], 54 * u, 950 * u);
+        qrCard(ctx, d, t, 690 * u, 700 * u, 260 * u, u);
+    }
+
+    const LAYOUTS = { opening, sale, scansign, delivery, openhours, thanks, flash, newin };
+    const base = K.render;
+    K.render = async function (canvas, id, data, opts) {
+        if (!LAYOUTS[id]) return base.apply(this, arguments);
+        if (typeof root.NextaQR === 'undefined') throw new Error('QR generator missing');
+        if (!data || !data.url) throw new Error('No store link to put in the QR code');
+        opts = opts || {};
+        const T = K.TEMPLATES.find((x) => x.id === id);
+        try { if (root.document && root.document.fonts && root.document.fonts.load) await Promise.all([root.document.fonts.load(font(400, 40)), root.document.fonts.load(font(700, 40))]); } catch (e) { /* system font */ }
+        const logo = data.showLogo === false ? null : await H.loadLogo(data.logo);
+        const scale = opts.scale || 1;
+        canvas.width = Math.round(T.w * scale); canvas.height = Math.round(T.h * scale);
+        const ctx = canvas.getContext('2d'), t = K.themeFrom(data);
+        ctx.save(); ctx.scale(scale, scale); LAYOUTS[id](ctx, T.w, T.h, data, t, logo); ctx.restore();
+        return canvas;
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/**
+ * NextaPosts: product posts a seller can share in two taps. Extends the brand kit (js/brand-kit.js) and takes the
+ * store's own branding automatically: logo, banner image, brand colour, name, phone and QR.
+ *
+ *   NextaPosts.STYLES / FORMATS / MOODS / BADGES      what the studio offers
+ *   await NextaPosts.render(canvas, data, { scale })  -> report
+ *
+ * data = {
+ *   style:  'spotlight' | 'deal' | 'collection',
+ *   format: 'square' | 'portrait' | 'story',
+ *   mood:   'deep' | 'light' | 'brand',
+ *   badge:  'NEW IN' | 'ON SALE' | ... | '',          cta: 'Scan to order',
+ *   store:  { name, logo, banner, color, phone, url },  // logo / banner: url, data: url, Image or canvas
+ *   showPhone, showBanner, showLogo,
+ *   products: [{ name, price, originalPrice, image: Image|canvas, mode: 'cutout'|'photo' }]
+ * }
+ *
+ * The visual identity is NextaStore's own: the logo's open ring and gold dot as the hero motif, arch-window photo
+ * frames, a paper price tag with punched holes, a scalloped gold discount seal, and a rounded "store plate" at the
+ * foot with the QR. Nothing is positioned by the seller, so layouts cannot break; every text block is fitted to its
+ * box and reports back if it had to shrink or be cut, so js/nexta-quality.js can hold back a poor result.
+ *
+ * report = { upscale: [n per product], shrunk: [{ id, label, from, to, min }], truncated: [ids], contrast: minRatio }
+ */
+(function (root) {
+    'use strict';
+    const K = () => root.NextaBrandKit;
+    const env = { createCanvas(w, h) { const c = root.document.createElement('canvas'); c.width = w; c.height = h; return c; } };
+
+    const FORMATS = [
+        { id: 'square',   label: 'Square',   sub: 'Feed & chats',     w: 1080, h: 1080, top: 56,  bottom: 56 },
+        { id: 'portrait', label: 'Portrait', sub: 'Feed, best reach', w: 1080, h: 1350, top: 64,  bottom: 64 },
+        { id: 'story',    label: 'Status',   sub: 'WhatsApp status',  w: 1080, h: 1920, top: 210, bottom: 230 }
+    ];
+    const STYLES = [
+        { id: 'spotlight',  label: 'Spotlight',  sub: 'One product, big and clear',  products: [1, 1] },
+        { id: 'deal',       label: 'Deal',       sub: 'Lead with the price drop',    products: [1, 1], needsDiscount: true },
+        { id: 'collection', label: 'Collection', sub: '2 to 4 products together',   products: [2, 4] },
+        { id: 'arch',       label: 'Arch',       sub: 'Product in an arch window',   products: [1, 1] },
+        { id: 'drop',       label: 'Price drop', sub: 'Big seal, old price crossed out', products: [1, 1], needsDiscount: true },
+        { id: 'catalogue',  label: 'Catalogue',  sub: 'Header band, 2 to 4 products', products: [2, 4] },
+        { id: 'bold',       label: 'Bold price', sub: 'The price is the headline',    products: [1, 1] }
+    ];
+    const MOODS = [
+        { id: 'deep',  label: 'Deep' },
+        { id: 'light', label: 'Light' },
+        { id: 'brand', label: 'My colour' }
+    ];
+    const BADGES = ['', 'NEW IN', 'ON SALE', 'LIMITED STOCK', 'BACK IN STOCK', 'BEST SELLER', 'FRESH TODAY', 'NEW ARRIVALS'];
+
+    const INK = '#0B3B2B', GOLD = '#FFB038', MINT = '#2EDDA2', PAPER = '#F7FAF8';
+
+    // ---- colour ---------------------------------------------------------------------------------------------------
+    const lum = (c) => K().helpers.luminance(c);
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const mix = (a, b, t) => K().helpers.mix(a, b, t);
+    const hexOr = (c, d) => K().helpers.hex(c) || d;
+    function warm(c) { const [r, g, b] = K().helpers.rgb(c); return r > 190 && g > 130 && b < 130; }   // yellow / orange brands: gold would vanish
+    function bestText(bg) { return ratio('#FFFFFF', bg) >= ratio(INK, bg) ? '#FFFFFF' : INK; }
+
+    /** Pulls `color` towards `toward` until it reads at `target`:1 against every colour in `bgs`. */
+    function reach(color, bgs, target, toward) {
+        let c = color, n = 0;
+        while (bgs.some((b) => ratio(c, b) < target) && n++ < 12) c = mix(c, toward, 0.14);
+        return c;
+    }
+
+    /** First preferred colour that reads at 4.5:1 on every background; otherwise whichever reads best. */
+    function pickAccent(bgs, prefs) {
+        const worst = (c) => Math.min(...bgs.map((b) => ratio(c, b)));
+        const hit = prefs.find((c) => worst(c) >= 4.5);
+        if (hit) return hit;
+        return prefs.concat(['#FFFFFF', INK]).reduce((best, c) => (worst(c) > worst(best) ? c : best));
+    }
+
+    function palette(brandColor, mood) {
+        const brand = hexOr(brandColor, '#00B074');
+        let P;
+        if (mood === 'light') {
+            const bg2 = mix(PAPER, brand, 0.14);
+            const accent = reach(mix(brand, '#000000', 0.12), [PAPER, bg2], 4.5, '#000000');
+            P = { bg1: PAPER, bg2, text: INK, muted: '#52615B', accent, accentText: bestText(accent), ring: accent, ringAlpha: 0.9, dark: false, heroGlow: mix(PAPER, brand, 0.22) };
+        } else if (mood === 'brand') {
+            // Your colour as the whole background. If neither white nor dark text can read on it, the colour is deepened a step at a time.
+            let bg1 = brand, text;
+            if (ratio('#FFFFFF', bg1) >= 4.5) text = '#FFFFFF';
+            else if (ratio(INK, bg1) >= 4.5) text = INK;
+            else { let n = 0; while (ratio('#FFFFFF', bg1) < 4.5 && n++ < 14) bg1 = mix(bg1, '#000000', 0.1); text = '#FFFFFF'; }
+            const dark = text === '#FFFFFF', bg2 = dark ? mix(bg1, '#000000', 0.24) : mix(bg1, '#FFFFFF', 0.16);
+            const accent = pickAccent([bg1, bg2], dark ? [GOLD, '#FFFFFF'] : [INK]);
+            const muted = reach(dark ? mix(bg1, '#FFFFFF', 0.82) : mix(bg1, INK, 0.8), [bg1, bg2], 4.5, text);
+            P = { bg1, bg2, text, muted, accent, accentText: bestText(accent), ring: dark ? '#FFFFFF' : INK, ringAlpha: 0.6, dark, heroGlow: mix(bg1, '#FFFFFF', 0.2) };
+        } else {
+            let bg1 = mix(brand, '#04140E', 0.62), bg2 = mix(brand, '#031510', 0.8), n = 0;
+            while (ratio('#FFFFFF', bg1) < 7 && n++ < 10) { bg1 = mix(bg1, '#000000', 0.15); bg2 = mix(bg2, '#000000', 0.15); }
+            const accent = pickAccent([bg1, bg2], [warm(brand) ? MINT : GOLD, GOLD, MINT]);
+            P = { bg1, bg2, text: '#FFFFFF', muted: reach(mix(bg1, '#FFFFFF', 0.78), [bg1, bg2], 4.5, '#FFFFFF'), accent, accentText: bestText(accent), ring: accent, ringAlpha: 0.95, dark: true, heroGlow: mix(bg1, '#FFFFFF', 0.1) };
+        }
+        P.brand = brand;
+        P.card = '#FFFFFF'; P.cardInk = INK; P.cardMuted = '#52615B';
+        P.cardAccent = reach(P.accent, ['#FFFFFF'], 4.5, INK);
+        P.brandOnCard = reach(brand, ['#FFFFFF'], 4.5, '#000000');
+        return P;
+    }
+
+    // ---- small drawing helpers ------------------------------------------------------------------------------------
+    const money = (n) => Math.round(Number(n || 0)).toLocaleString('en-UG');
+    const iw = (i) => i.naturalWidth || i.width, ih = (i) => i.naturalHeight || i.height;
+    function loadImage(src) {
+        if (!src) return Promise.resolve(null);
+        if (typeof src !== 'string') return Promise.resolve(src);
+        return K().helpers.loadImageSafe(src);          // direct, then through /api/media/proxy; never hangs
+    }
+    function gradient(ctx, x0, y0, x1, y1, stops) { const g = ctx.createLinearGradient(x0, y0, x1, y1); stops.forEach(([t, c]) => g.addColorStop(t, c)); return g; }
+    function withAlpha(hex, a) { const [r, g, b] = K().helpers.rgb(hex); return `rgba(${r},${g},${b},${a})`; }
+
+    /** Fit text into maxW x maxLines, and tell the report if it had to shrink a lot or be cut off. */
+    function fitText(rep, id, label, ctx, text, weight, size, min, maxW, maxLines, legible) {
+        const f = K().helpers.fit(ctx, text, weight, size, min, maxW, maxLines);
+        const cut = f.lines.length && /…$/.test(f.lines[f.lines.length - 1]) && !/…$/.test(String(text));
+        if (cut) rep.truncated.push(id);
+        if (f.size < size) rep.shrunk.push({ id, label, from: size, to: f.size, min: legible || min });
+        return f;
+    }
+    function text(ctx, s, x, y, o) {
+        ctx.font = K().helpers.font(o.weight || 400, o.size); ctx.fillStyle = o.color; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+        ctx.fillText(s, x, y);
+    }
+    function lines(ctx, ls, x, y, lh, o) { ls.forEach((l, i) => text(ctx, l, x, y + i * lh, o)); return y + ls.length * lh; }
+    function track(rep, bg, fg) { const r = ratio(bg, fg); if (rep.contrast == null || r < rep.contrast) rep.contrast = Math.round(r * 100) / 100; }
+
+    /** The open ring and dot from the NextaStore mark, used large and soft behind the product. */
+    function ring(ctx, cx, cy, r, P, bold) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = withAlpha(P.ring, 0.14 * (P.ringAlpha)); ctx.lineWidth = r * 0.02;
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.16, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = withAlpha(P.ring, P.ringAlpha * (bold ? 0.6 : 0.5)); ctx.lineWidth = r * 0.04;
+        const a0 = -Math.PI * 0.18, a1 = Math.PI * 1.32;                    // open at the upper right, like the logo
+        ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1, false); ctx.stroke();
+        const dx = cx + r * Math.cos(a0 - 0.12), dy = cy + r * Math.sin(a0 - 0.12);
+        ctx.fillStyle = P.accent; ctx.beginPath(); ctx.arc(dx, dy, r * 0.055, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+    /** Little ring mark for the plate. */
+    function miniMark(ctx, cx, cy, r, color, dot) {
+        ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = color; ctx.lineWidth = r * 0.34;
+        ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI * 0.2, Math.PI * 1.3); ctx.stroke();
+        ctx.fillStyle = dot; ctx.beginPath(); ctx.arc(cx + r * 0.78, cy - r * 0.5, r * 0.26, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    function seal(ctx, cx, cy, r, label, sub, P, rep) {
+        const bumps = 14, inner = r * 0.9;
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = r * 0.25; ctx.shadowOffsetY = r * 0.08;
+        ctx.beginPath();
+        for (let i = 0; i <= 360; i += 2) { const a = (i * Math.PI) / 180, rr = inner + (r - inner) * (0.5 + 0.5 * Math.cos(a * bumps)); const x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.closePath(); ctx.fillStyle = GOLD; ctx.fill(); ctx.restore();
+        const col = INK; track(rep, GOLD, col);
+        const f = K().helpers.fit(ctx, label, 700, r * 0.62, r * 0.3, r * 1.45, 1);
+        text(ctx, f.lines[0], cx, cy + f.size * 0.12, { size: f.size, weight: 700, color: col, align: 'center' });
+        if (sub) text(ctx, sub, cx, cy + r * 0.52, { size: r * 0.26, weight: 700, color: col, align: 'center' });
+    }
+    function badgePill(ctx, label, rightX, y, P, rep) {
+        if (!label) return 0;
+        const size = 26; ctx.font = K().helpers.font(700, size);
+        const w = ctx.measureText(label).width + size * 1.7, h = size * 2.1;
+        K().helpers.rr(ctx, rightX - w, y, w, h, h / 2); ctx.fillStyle = P.accent; ctx.fill();
+        track(rep, P.accent, P.accentText);
+        text(ctx, label, rightX - w / 2, y + h / 2 + size * 0.04, { size, weight: 700, color: P.accentText, align: 'center', base: 'middle' });
+        return w;
+    }
+
+    // ---- heroes ---------------------------------------------------------------------------------------------------
+    /** A cut-out product: sits on a soft pool of light with a ground shadow, inside the ring. */
+    function heroCutout(ctx, img, box, P) {
+        const pad = Math.min(box.w, box.h) * 0.05, aw = box.w - pad * 2, ah = box.h - pad * 2;
+        const s = Math.min(aw / iw(img), ah / ih(img)), w = iw(img) * s, h = ih(img) * s;
+        const cx = box.x + box.w / 2, cy = box.y + box.h / 2, x = cx - w / 2, y = cy - h / 2 - box.h * 0.01;
+        ring(ctx, cx, cy, Math.min(box.w, box.h) * 0.41, P, true);
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(box.w, box.h) * 0.42);
+        glow.addColorStop(0, withAlpha(P.heroGlow, 0.85)); glow.addColorStop(1, withAlpha(P.heroGlow, 0));
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, Math.min(box.w, box.h) * 0.42, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(cx, y + h + h * 0.012); ctx.scale(1, 0.14);
+        const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(40, w * 0.42)); sh.addColorStop(0, 'rgba(0,0,0,.42)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(0, 0, Math.max(40, w * 0.42), 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, x, y, w, h); ctx.restore();
+        return s;
+    }
+    /** A photo: an arch window with a white edge and a gold line inside it. */
+    function heroPhoto(ctx, img, box, P) {
+        const w = Math.min(box.w, box.h * 0.86), h = Math.min(box.h, w / 0.86), x = box.x + (box.w - w) / 2, y = box.y + (box.h - h) / 2;
+        const archPath = (px, py, pw, ph, r) => { ctx.beginPath(); ctx.moveTo(px, py + ph - 36); ctx.lineTo(px, py + pw / 2); ctx.arc(px + pw / 2, py + pw / 2, pw / 2, Math.PI, 0); ctx.lineTo(px + pw, py + ph - 36); ctx.arcTo(px + pw, py + ph, px + pw - 36, py + ph, 36); ctx.lineTo(px + 36, py + ph); ctx.arcTo(px, py + ph, px, py + ph - 36, 36); ctx.closePath(); };
+        ring(ctx, x + w / 2, y + h / 2, Math.min(w, h) * 0.55, P, false);
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.32)'; ctx.shadowBlur = 36; ctx.shadowOffsetY = 14; archPath(x, y, w, h); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
+        const b = Math.max(10, w * 0.022);
+        ctx.save(); archPath(x + b, y + b, w - b * 2, h - b * 2); ctx.clip();
+        const s = Math.max((w - b * 2) / iw(img), (h - b * 2) / ih(img)), dw = iw(img) * s, dh = ih(img) * s;
+        ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); ctx.restore();
+        ctx.save(); archPath(x + b * 2.1, y + b * 2.1, w - b * 4.2, h - b * 4.2); ctx.strokeStyle = withAlpha(GOLD, 0.9); ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+        return s;
+    }
+
+    // ---- store pieces ---------------------------------------------------------------------------------------------
+    function logoDisc(ctx, logo, name, cx, cy, r, P, show) {
+        const th = { dark: P.dark, soft: P.dark ? mix(P.bg1, '#FFFFFF', 0.12) : mix(PAPER, '#000000', 0.06), bg: P.bg1, accent: P.accent };
+        K().helpers.drawLogo(ctx, show === false ? null : logo, name, cx, cy, r, th);
+    }
+    function header(ctx, x, y, w, d, assets, P, rep, badgeLabel, hs) {
+        const r = hs || 40, cx = x + r, cy = y + r;
+        logoDisc(ctx, assets.logo, d.store.name, cx, cy, r, P, d.showLogo);
+        const badgeW = badgeLabel ? 40 + (ctx.font = K().helpers.font(700, 26), ctx.measureText(badgeLabel).width) + 20 : 0;
+        const maxW = w - r * 2 - 20 - badgeW;
+        const f = fitText(rep, 'storeName', 'The store name', ctx, String(d.store.name || 'My Store'), 700, 34, 24, maxW, 1, 24);
+        text(ctx, f.lines[0], x + r * 2 + 20, cy + f.size * 0.36, { size: f.size, weight: 700, color: P.text });
+        track(rep, P.bg1, P.text);
+        if (badgeLabel) badgePill(ctx, badgeLabel, x + w, cy - 27, P, rep);
+    }
+    /** The rounded "store plate" at the foot: logo, name, how to order, QR. */
+    function plate(ctx, x, y, w, h, d, assets, P, rep) {
+        const H = K().helpers;
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+        H.rr(ctx, x, y, w, h, 34); ctx.fillStyle = P.card; ctx.fill(); ctx.restore();
+        const qs = h - 28, qx = x + w - qs - 16, qy = y + 14;
+        let qrOk = true;
+        try { H.drawQR(ctx, d.store.url, qx, qy, qs, { qrFg: INK }, { fg: INK, radius: 14 }); } catch (e) { qrOk = false; }
+        const lr = Math.min(40, h * 0.27), lx = x + 24 + lr;
+        logoDisc(ctx, assets.logo, d.store.name, lx, y + h / 2, lr, Object.assign({}, P, { dark: false, bg1: P.brandOnCard, accent: P.cardAccent }), d.showLogo);
+        const tx = lx + lr + 22, tw = (qrOk ? qx - 20 : x + w - 20) - tx;
+        const nf = fitText(rep, 'plateName', 'The store name', ctx, String(d.store.name || 'My Store'), 700, 34, 22, tw, 1, 22);
+        const contact = d.showPhone && d.store.phone ? d.store.phone : (d.cta || 'Scan to order');
+        const cf = fitText(rep, 'plateLine', 'The contact line', ctx, contact, 400, 26, 20, tw, 1, 20);
+        const uf = fitText(rep, 'plateUrl', 'The store link', ctx, H.urlLabel(d.store.url), 700, 24, 16, tw, 1, 16);
+        const total = 34 + 14 + 26 + 10 + 24, top = y + (h - total) / 2;
+        text(ctx, nf.lines[0], tx, top + 30, { size: nf.size, weight: 700, color: P.cardInk });
+        text(ctx, cf.lines[0], tx, top + 30 + 14 + 24, { size: cf.size, weight: 400, color: P.cardMuted });
+        text(ctx, uf.lines[0], tx, top + 30 + 14 + 24 + 10 + 22, { size: uf.size, weight: 700, color: P.brandOnCard });
+        track(rep, '#FFFFFF', P.cardMuted); track(rep, '#FFFFFF', P.brandOnCard);
+    }
+
+    // ---- price tag ------------------------------------------------------------------------------------------------
+    /** A paper tag with two punched holes. Returns its height. */
+    function priceTag(ctx, rect, p, P, rep, o) {
+        o = o || {}; const H = K().helpers, price = Number(p.price), orig = Number(p.originalPrice);
+        const disc = orig > price && price > 0 ? Math.round(((orig - price) / orig) * 100) : 0;
+        const h = rect.h;
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+        H.rr(ctx, rect.x, rect.y, rect.w, h, 28); ctx.fillStyle = P.card; ctx.fill(); ctx.restore();
+        ctx.save(); ctx.fillStyle = P.dark ? P.bg1 : P.bg2; for (const hy of [0.3, 0.7]) { ctx.beginPath(); ctx.arc(rect.x + 20, rect.y + h * hy, 6, 0, Math.PI * 2); ctx.fill(); } ctx.restore();
+        const lx = rect.x + 52, rightPad = (disc >= 5 && o.sealInside ? 150 : 28);
+        if (!(price > 0)) {
+            const f = fitText(rep, 'price', 'The price', ctx, 'Message us for the price', 700, 38, 26, rect.w - 80, 2, 26);
+            lines(ctx, f.lines, lx, rect.y + h / 2 - (f.lines.length - 1) * f.size * 0.55 + f.size * 0.35, f.size * 1.15, { size: f.size, weight: 700, color: P.cardInk });
+            return;
+        }
+        const showWas = disc >= 5, hasRight = showWas && o.was !== false;
+        const leftW = hasRight ? rect.w * 0.56 : rect.w - 52 - rightPad;
+        const amount = money(price);
+        text(ctx, 'UGX', lx, rect.y + h * 0.32, { size: 24, weight: 700, color: P.cardMuted });
+        const f = fitText(rep, 'price', 'The price', ctx, amount, 700, o.big || 76, 40, leftW - 8, 1, 46);
+        text(ctx, f.lines[0], lx, rect.y + h * 0.32 + f.size * 0.98, { size: f.size, weight: 700, color: P.cardInk });
+        track(rep, '#FFFFFF', P.cardInk);
+        if (hasRight) {
+            const dx = rect.x + rect.w * 0.6;
+            ctx.save(); ctx.strokeStyle = '#C1D0CA'; ctx.lineWidth = 3; ctx.setLineDash([2, 10]); ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(dx - 22, rect.y + 24); ctx.lineTo(dx - 22, rect.y + h - 24); ctx.stroke(); ctx.restore();
+            text(ctx, 'WAS', dx, rect.y + h * 0.36, { size: 22, weight: 700, color: P.cardMuted });
+            const wf = fitText(rep, 'was', 'The old price', ctx, money(orig), 400, 40, 28, rect.x + rect.w - dx - rightPad + 8, 1, 28);
+            text(ctx, wf.lines[0], dx, rect.y + h * 0.36 + wf.size * 1.25, { size: wf.size, weight: 400, color: P.cardMuted });
+            const wm = ctx.measureText(wf.lines[0]).width; ctx.strokeStyle = P.cardMuted; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(dx, rect.y + h * 0.36 + wf.size * 0.98); ctx.lineTo(dx + wm, rect.y + h * 0.36 + wf.size * 0.98); ctx.stroke();
+        }
+        if (!showWas && p.tagNote && o.note !== false) {
+            const nf = fitText(rep, 'tagNote', 'The stock note', ctx, p.tagNote, 700, 30, 22, rect.w * 0.34, 1, 22), nx = rect.x + rect.w - 36;
+            ctx.font = K().helpers.font(700, nf.size); const nw = ctx.measureText(nf.lines[0]).width;
+            ctx.fillStyle = P.brandOnCard; ctx.beginPath(); ctx.arc(nx - nw - 18, rect.y + h / 2, 7, 0, Math.PI * 2); ctx.fill();
+            text(ctx, nf.lines[0], nx, rect.y + h / 2 + nf.size * 0.36, { size: nf.size, weight: 700, color: P.brandOnCard, align: 'right' });
+        }
+        if (showWas && o.sealInside) seal(ctx, rect.x + rect.w - 74, rect.y + h * 0.5, 62, `-${disc}%`, 'OFF', P, rep);
+    }
+
+    // ---- layouts ----------------------------------------------------------------------------------------------------
+    // ---- long names: limits per design ------------------------------------------------------------------------------
+    // Product names on a marketplace run long ("Samsung Galaxy A06 - 6.7" 4GB RAM 64GB ROM 50MP 5000mAh - Black"). A post
+    // is read in a second on a phone, so each design sets how much name it has room for: the part before the first
+    // " - " is the headline, the rest becomes one quieter line of details, and anything beyond the limits is trimmed
+    // at a word. The full name stays on the store; the studio tells the seller when a name was shortened.
+    const NAME_RULES = {
+        spotlight:  { title: 46, lines: 2, sub: 64 },
+        deal:       { title: 40, lines: 2, sub: 56 },
+        column:     { title: 34, lines: 3, sub: 40 },
+        card:       { title: 40, lines: 2, sub: 0 },
+        cardNarrow: { title: 30, lines: 3, sub: 0 }
+    };
+    function cutWords(s, max) {
+        if (s.length <= max) return s;
+        let out = '';
+        for (const w of s.split(' ')) { const t = out ? out + ' ' + w : w; if (t.length > max - 1) break; out = t; }
+        return (out || s.slice(0, max - 1)).replace(/[\s,.;:\-\u2013\u2014|]+$/, '') + '\u2026';
+    }
+    /** { title, sub, titleCut, subCut }. subMax 0 = this design has no room for details (they are dropped, not an error). */
+    function splitName(name, titleMax, subMax) {
+        const clean = String(name || '').replace(/\s+/g, ' ').trim(), out = { title: clean, sub: '', titleCut: false, subCut: false };
+        if (!clean) return out;
+        const parts = clean.split(/\s+[-\u2013\u2014|:]\s+|,\s+/).map((x) => x.trim()).filter(Boolean);
+        let title = parts[0] || clean; const rest = parts.slice(1);
+        if (title.length > titleMax) { title = cutWords(title, titleMax); out.titleCut = true; rest.length = 0; }
+        out.title = title;
+        if (subMax > 0 && rest.length) { let sub = rest.join(' \u00B7 '); if (sub.length > subMax) { sub = cutWords(sub, subMax); out.subCut = true; } out.sub = sub; }
+        return out;
+    }
+    function planName(ctx, p, rule, size, subSize, maxW, rep, id) {
+        const sn = splitName(p.name, rule.title, rule.sub);
+        const f = fitText(rep, id, 'The product name', ctx, sn.title, 700, size, Math.round(size * 0.72), maxW, rule.lines, 40);
+        const sf = sn.sub ? fitText(rep, id + ':sub', 'The product details', ctx, sn.sub, 400, subSize, 22, maxW, 1, 22) : null;
+        if (sn.titleCut || sn.subCut) rep.shortened.push(id);
+        const lh = f.size * 1.16;
+        return { f, sf, lh, h: f.lines.length * lh + (sf ? 10 + sf.size * 1.3 : 0) };
+    }
+    function drawName(ctx, plan, x, y, P, rep) {
+        lines(ctx, plan.f.lines, x, y + plan.f.size * 0.92, plan.lh, { size: plan.f.size, weight: 700, color: P.text });
+        track(rep, P.bg1, P.text);
+        if (plan.sf) { text(ctx, plan.sf.lines[0], x, y + plan.f.lines.length * plan.lh + 10 + plan.sf.size * 0.95, { size: plan.sf.size, weight: 400, color: P.muted }); track(rep, P.bg1, P.muted); }
+        return y + plan.h;
+    }
+
+    function dealPlan(ctx, w, p, rep, compact) {
+        const price = Number(p.price), orig = Number(p.originalPrice);
+        const pf = fitText(rep, 'price', 'The price', ctx, money(price), 700, compact ? 96 : 132, 56, w, 1, 56);
+        const wasText = orig > price ? `was UGX ${money(orig)}` : '';
+        const wf = wasText ? fitText(rep, 'was', 'The old price', ctx, wasText, 400, 32, 22, w - (compact ? 0 : 200), 1, 22) : null;
+        return { pf, wf, wasText, h: 26 + pf.size * 1.12 + (wf ? wf.size * 1.5 : 0) + 14 };
+    }
+    function drawDeal(ctx, x, y, dp, P, rep, label) {
+        text(ctx, label || 'NOW  UGX', x, y + 26, { size: 26, weight: 700, color: P.accent }); track(rep, P.bg1, P.accent);
+        text(ctx, dp.pf.lines[0], x, y + 26 + dp.pf.size * 0.98, { size: dp.pf.size, weight: 700, color: P.text }); track(rep, P.bg1, P.text);
+        let yy = y + 26 + dp.pf.size * 1.12;
+        if (dp.wf) {
+            text(ctx, dp.wasText, x, yy + dp.wf.size, { size: dp.wf.size, weight: 400, color: P.muted });
+            ctx.font = K().helpers.font(400, dp.wf.size); const m = ctx.measureText(dp.wasText).width;
+            ctx.strokeStyle = P.muted; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, yy + dp.wf.size * 0.66); ctx.lineTo(x + m, yy + dp.wf.size * 0.66); ctx.stroke();
+            track(rep, P.bg1, P.muted);
+        }
+    }
+
+    function spotlightLayout(ctx, W, H, F, d, assets, P, rep, split) {
+        const pad = 56, p = d.products[0], img = assets.products[0], badge = d.badge;
+        header(ctx, pad, F.top, W - pad * 2, d, assets, P, rep, badge);
+        const footH = split ? 136 : 168, fy = H - F.bottom - footH;
+        const deal = d.style === 'deal', disc = Number(p.originalPrice) > Number(p.price) ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100) : 0;
+        let hero;
+        if (split) {
+            const colX = pad + 570, colW = W - pad - colX, top = F.top + 112;
+            hero = { x: pad, y: top, w: 540, h: fy - top - 16 };
+            drawHero(ctx, p, img, hero, P, rep, 0);
+            const y = top + 40;
+            if (deal) {
+                const dp = dealPlan(ctx, colW, p, rep, true); drawDeal(ctx, colX, y, dp, P, rep);
+                if (disc >= 5) seal(ctx, hero.x + hero.w - 96, hero.y + 70, 76, `-${disc}%`, 'OFF', P, rep);
+                drawName(ctx, planName(ctx, p, NAME_RULES.column, 44, 26, colW, rep, 'name'), colX, y + dp.h, P, rep);
+            } else {
+                const plan = planName(ctx, p, NAME_RULES.column, 50, 28, colW, rep, 'name');
+                drawName(ctx, plan, colX, y, P, rep);
+                const ty = y + plan.h + 26;
+                priceTag(ctx, { x: colX, y: ty, w: colW, h: 150 }, p, P, rep, { big: 68, was: false, note: false });
+                const sub = disc >= 5 ? `Save ${disc}%` : (p.tagNote || '');
+                if (sub) { const sf = fitText(rep, 'tagNote', 'The stock note', ctx, sub, 700, 30, 22, colW, 1, 22); text(ctx, sf.lines[0], colX + 4, ty + 150 + 44, { size: sf.size, weight: 700, color: P.accent }); track(rep, P.bg1, P.accent); }
+            }
+        } else {
+            const top = F.top + 124, fullW = W - pad * 2;
+            const plan = planName(ctx, p, deal ? NAME_RULES.deal : NAME_RULES.spotlight, deal ? 52 : 58, 30, fullW, rep, 'name');
+            const dp = deal ? dealPlan(ctx, fullW, p, rep, false) : null, tagH = 140;
+            const infoH = deal ? dp.h + plan.h : plan.h + 18 + tagH, infoTop = fy - 26 - infoH;
+            hero = { x: pad, y: top, w: fullW, h: infoTop - top - 8 };
+            drawHero(ctx, p, img, hero, P, rep, 0);
+            if (deal) {
+                if (disc >= 5) seal(ctx, W - pad - 100, hero.y + 100, 100, `-${disc}%`, 'OFF', P, rep);
+                drawDeal(ctx, pad, infoTop, dp, P, rep);
+                drawName(ctx, plan, pad, infoTop + dp.h, P, rep);
+            } else {
+                drawName(ctx, plan, pad, infoTop, P, rep);
+                priceTag(ctx, { x: pad, y: infoTop + plan.h + 18, w: fullW, h: tagH }, p, P, rep, { big: 84, sealInside: true });
+            }
+        }
+        plate(ctx, pad, fy, W - pad * 2, footH, d, assets, P, rep);
+    }
+
+    // ---- arch & price drop (added next to the original designs) -----------------------------------------------------
+    function archPath(ctx, x, y, w, h) { const r = w / 2; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + r); ctx.arc(x + r, y + r, r, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath(); }
+    /** The product stands in a tall arch window, with a dotted outline and a paper price tag tilted over its corner. */
+    function archLayout(ctx, W, H, F, d, assets, P, rep) {
+        const pad = 56, p = d.products[0], img = assets.products[0], fullW = W - pad * 2, sq = F.id === 'square';
+        header(ctx, pad, F.top, fullW, d, assets, P, rep, d.badge);
+        const footH = sq ? 128 : 168, fy = H - F.bottom - footH;
+        const plan = planName(ctx, p, NAME_RULES.spotlight, sq ? 44 : 58, 28, fullW, rep, 'name');
+        const top = F.top + 112, infoTop = fy - 26 - plan.h, availH = infoTop - top - 14;
+        const aw = Math.min(fullW * (sq ? 0.5 : 0.66), availH * 0.86), ah = Math.min(availH, aw / 0.86), ax = (W - aw) / 2, ay = top + (availH - ah) / 2;
+        ctx.save(); ctx.setLineDash([2, 14]); ctx.lineCap = 'round'; ctx.strokeStyle = withAlpha(P.ring, P.ringAlpha * 0.55); ctx.lineWidth = 4;
+        archPath(ctx, ax - 26, ay - 26, aw + 52, ah + 26); ctx.stroke(); ctx.restore();
+        ctx.save(); archPath(ctx, ax, ay, aw, ah); ctx.fillStyle = P.dark ? mix(P.bg1, '#FFFFFF', 0.12) : mix(P.bg2, P.brand, 0.14); ctx.fill(); ctx.clip();
+        if (img) {
+            if (p.mode === 'cutout') {
+                const s = Math.min((aw * 0.8) / iw(img), (ah * 0.78) / ih(img)), w = iw(img) * s, h = ih(img) * s, x = ax + (aw - w) / 2, y = ay + ah * 0.52 - h / 2;
+                ctx.fillStyle = withAlpha('#000000', 0.12); ctx.beginPath(); ctx.ellipse(ax + aw / 2, y + h + 6, w * 0.4, 14, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, x, y, w, h); rep.upscale[0] = Math.round(s * 100) / 100;
+            } else {
+                const s = Math.max(aw / iw(img), ah / ih(img)); ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, ax + (aw - iw(img) * s) / 2, ay + (ah - ih(img) * s) / 2, iw(img) * s, ih(img) * s); rep.upscale[0] = Math.round(s * 100) / 100;
+            }
+        } else rep.upscale[0] = 99;
+        ctx.restore();
+        const tw = Math.min(360, fullW * 0.42), th = 128;
+        ctx.save(); ctx.translate(ax + aw - tw * 0.62, ay + ah - th * 0.8); ctx.rotate(-0.07);
+        priceTag(ctx, { x: 0, y: 0, w: tw, h: th }, p, P, rep, { big: 58, was: false, note: false }); ctx.restore();
+        drawName(ctx, plan, pad, infoTop, P, rep);
+        plate(ctx, pad, fy, fullW, footH, d, assets, P, rep);
+    }
+    /** Headline top-left, a big gold seal top-right, the product between, the new price huge with the old one crossed out. */
+    function dropLayout(ctx, W, H, F, d, assets, P, rep) {
+        const pad = 56, p = d.products[0], img = assets.products[0], fullW = W - pad * 2, sq = F.id === 'square';
+        header(ctx, pad, F.top, fullW, d, assets, P, rep, d.badge);
+        const footH = sq ? 128 : 168, fy = H - F.bottom - footH;
+        const disc = Number(p.originalPrice) > Number(p.price) ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100) : 0;
+        const top = F.top + 112, colW = disc >= 5 ? fullW * 0.6 : fullW;
+        const plan = planName(ctx, p, NAME_RULES.column, sq ? 40 : 56, 26, colW, rep, 'name');
+        drawName(ctx, plan, pad, top, P, rep);
+        const dp = dealPlan(ctx, fullW, p, rep, sq), infoTop = fy - 22 - dp.h;
+        const heroTop = top + Math.max(plan.h, sq ? 130 : 200) + 10, hero = { x: pad, y: heroTop, w: fullW, h: Math.max(220, infoTop - heroTop - 6) };
+        drawHero(ctx, p, img, hero, P, rep, 0);
+        if (disc >= 5) seal(ctx, W - pad - (sq ? 92 : 128), top + (sq ? 92 : 128), sq ? 92 : 128, `-${disc}%`, 'OFF', P, rep);
+        drawDeal(ctx, pad, infoTop, dp, P, rep);
+        plate(ctx, pad, fy, fullW, footH, d, assets, P, rep);
+    }
+
+    /** The price is the headline: huge number on top, the product under it, the name and store plate at the foot. */
+    function boldLayout(ctx, W, H, F, d, assets, P, rep) {
+        const pad = 56, p = d.products[0], img = assets.products[0], fullW = W - pad * 2, sq = F.id === 'square';
+        header(ctx, pad, F.top, fullW, d, assets, P, rep, d.badge);
+        const footH = sq ? 128 : 168, fy = H - F.bottom - footH, top = F.top + 112;
+        const dp = dealPlan(ctx, fullW, p, rep, sq), was = Number(p.originalPrice) > Number(p.price);
+        drawDeal(ctx, pad, top, dp, P, rep, was ? 'NOW  UGX' : 'UGX');
+        const plan = planName(ctx, p, NAME_RULES.spotlight, sq ? 42 : 54, 26, fullW, rep, 'name');
+        const infoTop = fy - 22 - plan.h, heroTop = top + dp.h + 10;
+        drawHero(ctx, p, img, { x: pad, y: heroTop, w: fullW, h: Math.max(220, infoTop - heroTop - 8) }, P, rep, 0);
+        drawName(ctx, plan, pad, infoTop, P, rep);
+        plate(ctx, pad, fy, fullW, footH, d, assets, P, rep);
+    }
+
+    function drawHero(ctx, p, img, box, P, rep, idx) {
+        if (!img) { rep.upscale[idx] = 99; return; }
+        const s = (p.mode === 'cutout') ? heroCutout(ctx, img, box, P) : heroPhoto(ctx, img, box, P);
+        rep.upscale[idx] = Math.round(s * 100) / 100;       // how many times the photo was stretched to fill its place
+    }
+
+    function collectionLayout(ctx, W, H, F, d, assets, P, rep, band) {
+        const pad = 56, list = d.products, n = list.length, HH = K().helpers;
+        if (band) {         // 'Catalogue': the title sits on a darker band with rounded corners
+            const sqb = F.id === 'square', bh = F.top + (sqb ? 168 : 232);
+            ctx.save(); ctx.fillStyle = P.dark ? mix(P.bg1, '#000000', 0.28) : mix(P.bg2, '#000000', 0.06);
+            HH.rr(ctx, 0, -60, W, bh + 60, 56); ctx.fill(); ctx.restore();
+        }
+        header(ctx, pad, F.top, W - pad * 2, d, assets, P, rep, '');
+        const sq = F.id === 'square', footH = sq ? 128 : 168, fy = H - F.bottom - footH;
+        const head = d.badge || 'NEW ARRIVALS';
+        let y = F.top + (sq ? 100 : 118);
+        const hf = fitText(rep, 'headline', 'The headline', ctx, head, 700, sq ? 54 : 84, 40, W - pad * 2 - 40, 1, 40);
+        text(ctx, hf.lines[0], pad, y + hf.size * 0.9, { size: hf.size, weight: 700, color: P.text }); track(rep, P.bg1, P.text);
+        ctx.fillStyle = P.accent; HH.rr(ctx, pad, y + hf.size * 1.12, 120, 8, 4); ctx.fill();
+        y += hf.size * 1.12 + (sq ? 26 : 40);
+        const three = n === 3 && sq, cells = n === 3 && !three ? 4 : n, cols = three ? 3 : (cells <= 2 ? cells : 2), rows = Math.ceil(cells / cols);
+        const gap = sq ? 20 : 26, gridH = fy - (sq ? 20 : 26) - y, cw = (W - pad * 2 - gap * (cols - 1)) / cols, ch = (gridH - gap * (rows - 1)) / rows;
+        for (let i = 0; i < cells; i++) {
+            const c = i % cols, r = Math.floor(i / cols), x = pad + c * (cw + gap), yy = y + r * (ch + gap);
+            ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8; HH.rr(ctx, x, yy, cw, ch, 28); ctx.fillStyle = P.card; ctx.fill(); ctx.restore();
+            if (i >= n) {           // the "more in store" cell
+                miniMark(ctx, x + cw / 2, yy + ch / 2 - 34, 44, P.brandOnCard, P.cardAccent);
+                text(ctx, 'More in our store', x + cw / 2, yy + ch / 2 + 50, { size: 30, weight: 700, color: P.cardInk, align: 'center' });
+                text(ctx, 'Scan the QR below', x + cw / 2, yy + ch / 2 + 90, { size: 24, weight: 400, color: P.cardMuted, align: 'center' });
+                continue;
+            }
+            const p = list[i], img = assets.products[i];
+            const nS = cw < 340 ? 26 : 32, nL = cw < 340 ? 3 : 2, pS = cw < 340 ? 30 : 36, textH = nL * nS * 1.15 + pS + 30, imgBox = { x: x + 14, y: yy + 14, w: cw - 28, h: ch - textH - 22 };
+            ctx.save(); HH.rr(ctx, imgBox.x, imgBox.y, imgBox.w, imgBox.h, 20); ctx.clip();
+            ctx.fillStyle = mix(P.brandOnCard, '#FFFFFF', 0.9); ctx.fillRect(imgBox.x, imgBox.y, imgBox.w, imgBox.h);
+            if (img) {
+                if (p.mode === 'cutout') { const s = Math.min((imgBox.w * 0.82) / iw(img), (imgBox.h * 0.86) / ih(img)); ctx.drawImage(img, imgBox.x + (imgBox.w - iw(img) * s) / 2, imgBox.y + (imgBox.h - ih(img) * s) / 2, iw(img) * s, ih(img) * s); rep.upscale[i] = Math.round(s * 100) / 100; }
+                else { const s = Math.max(imgBox.w / iw(img), imgBox.h / ih(img)); ctx.drawImage(img, imgBox.x + (imgBox.w - iw(img) * s) / 2, imgBox.y + (imgBox.h - ih(img) * s) / 2, iw(img) * s, ih(img) * s); rep.upscale[i] = Math.round(s * 100) / 100; }
+            } else rep.upscale[i] = 99;
+            ctx.restore();
+            const tx = x + 20, tw = cw - 40, ty = yy + ch - textH + 4;
+            const sn = splitName(p.name, nL === 3 ? NAME_RULES.cardNarrow.title : NAME_RULES.card.title, 0); if (sn.titleCut) rep.shortened.push('name:' + i);
+            const nf = fitText(rep, 'name:' + i, 'A product name', ctx, sn.title, 700, nS, 22, tw, nL, 22);
+            lines(ctx, nf.lines, tx, ty + nf.size * 0.9, nf.size * 1.15, { size: nf.size, weight: 700, color: P.cardInk });
+            const price = Number(p.price);
+            const label = price > 0 ? `UGX ${money(price)}` : 'Ask for price';
+            const pf = fitText(rep, 'price:' + i, 'A price', ctx, label, 700, pS, 22, tw, 1, 22);
+            text(ctx, pf.lines[0], tx, yy + ch - 20, { size: pf.size, weight: 700, color: P.brandOnCard });
+            if (Number(p.originalPrice) > price && price > 0) {
+                const dp = Math.round(((p.originalPrice - price) / p.originalPrice) * 100);
+                if (dp >= 5) { const bw = 96, bh = 42; HH.rr(ctx, x + cw - bw - 24 + 6, imgBox.y + 12, bw, bh, 21); ctx.fillStyle = GOLD; ctx.fill(); text(ctx, `-${dp}%`, x + cw - bw / 2 - 18, imgBox.y + 12 + bh / 2 + 1, { size: 26, weight: 700, color: INK, align: 'center', base: 'middle' }); }
+            }
+        }
+        plate(ctx, pad, fy, W - pad * 2, footH, d, assets, P, rep);
+    }
+
+    /** The banner as a grey texture, so a banner in one colour never fights the brand colour. (Pixel loop, because canvas filters are missing on iPhone Safari.) */
+    function bannerTexture(img) {
+        const s = Math.min(1, 480 / iw(img)), w = Math.max(1, Math.round(iw(img) * s)), h = Math.max(1, Math.round(ih(img) * s));
+        const c = env.createCanvas(w, h), x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
+        try { const d = x.getImageData(0, 0, w, h), a = d.data; for (let i = 0; i < a.length; i += 4) { const g = 0.2126 * a[i] + 0.7152 * a[i + 1] + 0.0722 * a[i + 2]; a[i] = a[i + 1] = a[i + 2] = g; } x.putImageData(d, 0, 0); } catch (e) { /* keep colour */ }
+        return c;
+    }
+
+    // ---- backdrop ---------------------------------------------------------------------------------------------------
+    function backdrop(ctx, W, H, P, banner, show) {
+        ctx.fillStyle = gradient(ctx, 0, 0, W * 0.6, H, [[0, P.bg1], [1, P.bg2]]); ctx.fillRect(0, 0, W, H);
+        if (banner && show) {
+            // the store's own banner, tinted into the background so the post feels like THEIR shop
+            // the texture fades to nothing towards the bottom, so there is never a visible edge
+            const tex = bannerTexture(banner), s = Math.max(W / iw(tex), (H * 0.5) / ih(tex)), texH = Math.ceil(ih(tex) * s);
+            const layer = env.createCanvas(W, texH), lx = layer.getContext('2d');
+            lx.drawImage(tex, (W - iw(tex) * s) / 2, 0, iw(tex) * s, ih(tex) * s);
+            lx.globalCompositeOperation = 'destination-in';
+            const fade = lx.createLinearGradient(0, 0, 0, texH); fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(0.55, 'rgba(0,0,0,.55)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+            lx.fillStyle = fade; lx.fillRect(0, 0, W, texH);
+            ctx.save(); ctx.globalAlpha = P.dark ? 0.3 : 0.16; ctx.drawImage(layer, 0, 0); ctx.restore();
+        }
+        ctx.save(); ctx.globalAlpha = P.dark ? 0.045 : 0.05; ctx.fillStyle = P.dark ? '#FFFFFF' : P.brand;
+        ctx.beginPath(); ctx.arc(W * 0.96, H * 0.04, W * 0.34, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+
+    // ---- public ---------------------------------------------------------------------------------------------------
+    async function ensureFonts() { try { if (root.document && root.document.fonts && root.document.fonts.load) await Promise.all([root.document.fonts.load('400 40px Poppins'), root.document.fonts.load('700 40px Poppins')]); } catch (e) { /* system font */ } }
+
+    async function render(canvas, data, opts) {
+        opts = opts || {};
+        if (!K() || typeof root.NextaQR === 'undefined') throw new Error('The design tools did not load. Refresh the page.');
+        if (!data.store || !data.store.url) throw new Error('No store link to put in the QR code');
+        const F = FORMATS.find((f) => f.id === data.format) || FORMATS[1];
+        const style = data.style || 'spotlight';
+        const d = Object.assign({ mood: 'deep', showLogo: true, showBanner: true, showPhone: false }, data, { style });
+        if (style !== 'collection' && style !== 'catalogue') d.products = (d.products || []).slice(0, 1); else d.products = (d.products || []).slice(0, 4);
+        await ensureFonts();
+        const [logo, banner] = await Promise.all([loadImage(d.store.logo), loadImage(d.store.banner)]);
+        const assets = { logo, banner, products: await Promise.all(d.products.map((p) => loadImage(p.image))) };
+        const scale = opts.scale || 1;
+        canvas.width = Math.round(F.w * scale); canvas.height = Math.round(F.h * scale);
+        const ctx = canvas.getContext('2d'), P = palette(d.store.color, d.mood);
+        const rep = { upscale: [], shrunk: [], truncated: [], shortened: [], contrast: null, assets: { logo: !!d.store.logo && d.showLogo !== false && !logo, banner: !!d.store.banner && d.showBanner !== false && !banner } };
+        ctx.save(); ctx.scale(scale, scale);
+        backdrop(ctx, F.w, F.h, P, assets.banner, d.showBanner);
+        if (style === 'collection') collectionLayout(ctx, F.w, F.h, F, d, assets, P, rep);
+        else if (style === 'catalogue') collectionLayout(ctx, F.w, F.h, F, d, assets, P, rep, true);
+        else if (style === 'arch') archLayout(ctx, F.w, F.h, F, d, assets, P, rep);
+        else if (style === 'drop') dropLayout(ctx, F.w, F.h, F, d, assets, P, rep);
+        else if (style === 'bold') boldLayout(ctx, F.w, F.h, F, d, assets, P, rep);
+        else spotlightLayout(ctx, F.w, F.h, F, d, assets, P, rep, F.id === 'square');
+        ctx.restore();
+        rep.format = F; rep.palette = { bg: P.bg1, text: P.text, accent: P.accent };
+        return rep;
+    }
+
+    root.NextaPosts = { STYLES, FORMATS, MOODS, BADGES, render, palette, loadImage, env, _splitName: splitName };
+    if (typeof module !== 'undefined' && module.exports) module.exports = root.NextaPosts;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(async function(){
+  const store={name:'Nakato Gadgets',url:'https://nextastores.com/nakato-gadgets',color:'#00B074',phone:'0772 123 456',logo:null,banner:null};
+  function phoneImg(body,screen){const c=document.createElement('canvas');c.width=460;c.height=900;const x=c.getContext('2d');
+    x.fillStyle=body;x.beginPath();x.roundRect(10,10,440,880,80);x.fill();x.fillStyle=screen;x.beginPath();x.roundRect(30,34,400,832,62);x.fill();
+    x.fillStyle='rgba(255,255,255,.18)';x.beginPath();x.roundRect(30,34,400,360,62);x.fill();x.fillStyle=body;x.beginPath();x.arc(230,76,18,0,7);x.fill();return c;}
+  function photoImg(a,b){const c=document.createElement('canvas');c.width=1000;c.height=1000;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,1000,1000);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,1000,1000);
+    x.fillStyle='rgba(255,255,255,.9)';x.beginPath();x.roundRect(330,170,340,660,60);x.fill();return c;}
+  const P1={name:'Samsung Galaxy A06 - 6.7" 4GB RAM 128GB - Black',price:689000,originalPrice:985000,image:phoneImg('#15171A','#2EDDA2'),mode:'cutout'};
+  const P2={name:'Itel P55',price:520000,originalPrice:0,image:phoneImg('#3B2A12','#FFB038'),mode:'cutout'};
+  const P3={name:'Lenovo IdeaPad 3',price:1850000,originalPrice:0,image:photoImg('#7FD6FF','#2A6F97'),mode:'photo'};
+  const P4={name:'Wireless earbuds',price:85000,originalPrice:99000,image:photoImg('#FFD59A','#E08A00'),mode:'photo'};
+  const meta=document.getElementById('meta');const mk=(grid,label,isNew)=>{const f=document.createElement('figure');const c=document.createElement('canvas');const cap=document.createElement('figcaption');cap.innerHTML='<b>'+label+'</b>'+(isNew?'<span class="new">NEW</span>':'');f.append(c,cap);document.getElementById(grid).appendChild(f);return {c,cap};};
+  const NEW_STYLES=['arch','drop','catalogue','bold'];
+  for(const st of NextaPosts.STYLES){
+    for(const mood of ['deep','light']){
+      const {c,cap}=mk('gPosts',st.label+' · '+mood,NEW_STYLES.includes(st.id));
+      const multi=st.products[1]>1, prods=multi?[P1,P2,P3,P4]:[P1];
+      try{const rep=await NextaPosts.render(c,{style:st.id,format:'portrait',mood,badge:multi?'NEW ARRIVALS':(st.id==='deal'||st.id==='drop'?'ON SALE':'NEW IN'),cta:'Scan to order',store,showPhone:true,showBanner:false,showLogo:true,products:prods},{scale:.5});
+        if(rep.shrunk.length||rep.truncated.length)cap.innerHTML+=' <span class="err">text shrunk/cut: '+rep.shrunk.length+'/'+rep.truncated.length+'</span>';
+      }catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}
+    }
+  }
+  for(const fmt of ['square','story']){for(const sid of ['arch','drop']){const {c,cap}=mk('gPosts',sid+' · '+fmt,true);
+    try{await NextaPosts.render(c,{style:sid,format:fmt,mood:'deep',badge:sid==='drop'?'ON SALE':'NEW IN',cta:'Scan to order',store,showPhone:true,showBanner:false,showLogo:true,products:[P1]},{scale:.4});}catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}}}
+  const NEWT=['opening','sale','scansign','delivery','openhours','thanks','flash','newin'];
+  const swatches=[['ink','#0B3B2B'],['gold','#FFB038'],['light','#FFFFFF']];
+  for(const t of NextaBrandKit.TEMPLATES.filter(t=>t.group!=='card')){
+    for(const [sid,bg] of swatches){
+      const {c,cap}=mk('gPosters',t.label+' · '+sid,NEWT.includes(t.id));
+      try{await NextaBrandKit.render(c,t.id,{name:store.name,url:store.url,phone:store.phone,showPhone:true,showLogo:true,tagline:'',cta:'',theme:{bg}},{scale:t.w>2000?.2:.4});}
+      catch(e){cap.innerHTML+=' <span class="err">'+e.message+'</span>';}
+    }
+  }
+  meta.insertAdjacentHTML('beforeend',' Rendered '+document.querySelectorAll('canvas').length+' previews.');
+})();
+</script></body></html>

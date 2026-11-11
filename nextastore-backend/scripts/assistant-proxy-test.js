@@ -3,6 +3,7 @@
  * service using plain Node http - no database or Express needed.
  * Run: node scripts/assistant-proxy-test.js
  */
+process.env.STAFF_SECRET = process.env.STAFF_SECRET || 'test-only-staff-signing-key-0123456789abcdefghij';  // production config now requires it
 const http = require('http');
 
 let pass = 0, fail = 0;

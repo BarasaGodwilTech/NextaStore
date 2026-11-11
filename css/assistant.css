@@ -526,7 +526,7 @@ html.nexi-lock, html.nexi-lock body { overflow: hidden !important; }
    ========================================================================== */
 .hero-chat {
     position: relative; overflow: hidden;
-    max-width: 580px; margin: 0 0 var(--spacing-md, var(--nx-s4));
+    max-width: 580px; margin: 0;
     padding: var(--nx-s5) var(--nx-s4) var(--nx-s3);
     background: rgba(255, 255, 255, 0.94);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
@@ -552,7 +552,6 @@ html.nexi-lock, html.nexi-lock body { overflow: hidden !important; }
 .marketplace-hero.is-chatting .hero-lead,
 .marketplace-hero.is-chatting .hero-sell-line { display: none; }
 @media (max-width: 768px) {
-    .hero-lead-ask { display: none; } /* the chat is right below; save the vertical space */
     .hero-chat { max-width: none; padding: var(--nx-s5) var(--nx-s3) var(--nx-s2); }
     .hero-chat-title strong { font-size: var(--nx-t16); }
 }

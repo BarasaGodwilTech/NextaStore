@@ -1,22 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
   <defs>
-    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD98A"/><stop offset=".6" stop-color="#F7AE3A"/><stop offset="1" stop-color="#E58A10"/></linearGradient>
-    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF0C6"/><stop offset="1" stop-color="#FFCB63"/></linearGradient>
-    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9800A"/><stop offset="1" stop-color="#A25800"/></linearGradient>
-    <linearGradient id="tape" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFBF1"/><stop offset="1" stop-color="#EBD3A4"/></linearGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <filter id="blur" x="-30%" y="-50%" width="160%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
-    <clipPath id="fc"><rect x="48" y="96" width="112" height="108" rx="6"/></clipPath>
+    <filter id="kraft" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6 1.1" numOctaves="2" seed="5" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale="0.8" diffuseConstant="1.18" lighting-color="#fff" result="lit"><feDistantLight azimuth="235" elevation="58"/></feDiffuseLighting>
+      <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
+      <feBlend in="SourceGraphic" in2="litc" mode="multiply"/>
+    </filter>
+    <filter id="mottle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.05" numOctaves="2" seed="9" result="m"/>
+      <feColorMatrix in="m" type="matrix" values="0 0 0 0 .4  0 0 0 0 .23  0 0 0 0 .08  0 0 0 .6 -.14" result="mc"/>
+      <feComposite in="mc" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="tapefx" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale=".35" diffuseConstant="1.1" lighting-color="#fff" result="l"><feDistantLight azimuth="235" elevation="62"/></feDiffuseLighting>
+      <feComposite in="l" in2="SourceAlpha" operator="in" result="lc"/>
+      <feBlend in="SourceGraphic" in2="lc" mode="multiply"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="soft2" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="1.4"/></filter>
+    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E0B678"/><stop offset="1" stop-color="#C58F4C"/></linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B9823F"/><stop offset="1" stop-color="#8E5E28"/></linearGradient>
+    <linearGradient id="top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#F0CE98"/><stop offset="1" stop-color="#DDB679"/></linearGradient>
+    <linearGradient id="tape" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F7DFA6"/><stop offset=".5" stop-color="#EBC878"/><stop offset="1" stop-color="#D7A957"/></linearGradient>
+    <pattern id="flute" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M0 2.5 Q1.25 0 2.5 2.5 T5 2.5" fill="none" stroke="#7a4e22" stroke-width="1.1" opacity=".75"/></pattern>
+    <pattern id="ribs" width="3.2" height="10" patternUnits="userSpaceOnUse"><rect width="1.1" height="10" fill="#6b4217" opacity=".12"/></pattern>
+    <clipPath id="frontC"><path d="M40 106H150V200H40Z"/></clipPath>
   </defs>
-  <ellipse cx="128" cy="218" rx="84" ry="9" fill="#000" opacity=".3" filter="url(#blur)"/>
-  <path d="M160 108L196 72V176L160 204Z" fill="url(#side)" stroke="url(#side)" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M48 96L84 60H196L160 96Z" fill="url(#top)" stroke="url(#top)" stroke-width="2" stroke-linejoin="round"/>
-  <rect x="48" y="96" width="112" height="108" rx="6" fill="url(#front)"/>
-  <g clip-path="url(#fc)"><path d="M30 80H160L70 214H30Z" fill="url(#gloss)"/></g>
-  <!-- tape -->
-  <path d="M96 96L132 60H156L120 96Z" fill="url(#tape)"/>
-  <rect x="96" y="96" width="24" height="108" fill="url(#tape)" clip-path="url(#fc)"/>
-  <path d="M120 96L156 60V70L120 106Z" fill="#000" opacity=".08"/>
-  <!-- label -->
-  <rect x="128" y="146" width="26" height="30" rx="4" fill="#FFFBF1"/><rect x="132" y="152" width="18" height="3" rx="1.5" fill="#0B3B2B" opacity=".6"/><rect x="132" y="159" width="14" height="3" rx="1.5" fill="#0B3B2B" opacity=".35"/><rect x="132" y="166" width="10" height="3" rx="1.5" fill="#01B075"/>
+  <ellipse cx="128" cy="214" rx="86" ry="9" fill="#000" opacity=".36" filter="url(#soft)"/>
+  <ellipse cx="108" cy="203" rx="68" ry="3.2" fill="#000" opacity=".4" filter="url(#soft2)"/>
+  <!-- side -->
+  <g filter="url(#kraft)"><path d="M150 106 L202 82 V178 L150 200Z" fill="url(#side)"/></g>
+  <path d="M150 106 L202 82 V178 L150 200Z" fill="url(#ribs)"/>
+  <!-- front -->
+  <g filter="url(#kraft)"><path d="M40 106H150V200H40Z" fill="url(#front)"/></g>
+  <g clip-path="url(#frontC)"><rect x="40" y="106" width="110" height="94" filter="url(#mottle)"/></g>
+  <!-- top -->
+  <g filter="url(#kraft)"><path d="M40 106 L92 82 H202 L150 106Z" fill="url(#top)"/></g>
+  <!-- flap seam + corrugated cut edge along the front-top edge -->
+  <path d="M117 106 L169 82" stroke="#8c5e2b" stroke-width="1.6" opacity=".55"/>
+  <path d="M40 106H150V110.5H40Z" fill="#D9AE6F"/>
+  <path d="M40 106H150V110.5H40Z" fill="url(#flute)"/>
+  <path d="M150 106 L202 82 V86.5 L150 110.5Z" fill="#B88444"/>
+  <!-- packing tape: over the seam, down the front -->
+  <g filter="url(#tapefx)">
+    <path d="M104 106 L156 82 L172 82 L124 106Z M104 106 H124 V156 H104Z" fill="url(#tape)" opacity=".94"/>
+  </g>
+  <path d="M104 106 H124 V156 L120 160 L116 156 L112 160 L104 156Z" fill="url(#tape)" opacity=".94"/>
+  <path d="M106 110 V152" stroke="#fff" stroke-opacity=".6" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M110 100 L150 83" stroke="#fff" stroke-opacity=".5" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M123 108 V152" stroke="#8a5a1f" stroke-opacity=".28" stroke-width="1.2"/>
+  <!-- shipping label -->
+  <g transform="rotate(-2.5 80 168)">
+    <rect x="48" y="138" width="46" height="52" rx="2.4" fill="#000" opacity=".22" transform="translate(1.6 2.2)"/>
+    <rect x="48" y="138" width="46" height="52" rx="2.4" fill="#FBF8F0"/>
+    <rect x="48" y="138" width="46" height="52" rx="2.4" fill="none" stroke="#d8ccb4" stroke-width=".8"/>
+    <rect x="53" y="143" width="20" height="3.4" rx="1.7" fill="#0B3B2B"/>
+    <rect x="53" y="150" width="34" height="2.2" rx="1.1" fill="#9aa59f"/>
+    <rect x="53" y="155" width="28" height="2.2" rx="1.1" fill="#9aa59f"/>
+    <g fill="#14231b"><rect x="53" y="164" width="1.6" height="16"/><rect x="56" y="164" width="3" height="16"/><rect x="60.6" y="164" width="1.2" height="16"/><rect x="63.4" y="164" width="2.4" height="16"/><rect x="67.5" y="164" width="1.4" height="16"/><rect x="70.4" y="164" width="3.2" height="16"/><rect x="75" y="164" width="1.2" height="16"/><rect x="77.8" y="164" width="2.2" height="16"/><rect x="81.6" y="164" width="1.6" height="16"/><rect x="84.6" y="164" width="2.8" height="16"/></g>
+    <circle cx="84" cy="146.5" r="4.4" fill="#16C48A"/><path d="M81.8 146.6 l1.5 1.6 l2.9 -3.1" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- rim light on the lit edges -->
+  <path d="M40 106 L92 82 H202" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M40.6 108 V198" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>
+  <path d="M150 112 V198" stroke="#5a3912" stroke-opacity=".3" stroke-width="1.2"/>
 </svg>

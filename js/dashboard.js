@@ -235,12 +235,14 @@ class DashboardManager {
             sec.style.display = sec.id === `${section}Section` ? 'block' : 'none';
         });
 
-        const titles = { overview: 'Dashboard', products: 'Products', orders: 'Orders', analytics: 'Analytics', settings: 'Settings' };
+        const titles = { overview: 'Dashboard', products: 'Products', orders: 'Orders', analytics: 'Analytics', promote: 'Promote', templates: 'Templates', settings: 'Settings' };
         const topTitle = document.querySelector('.top-bar-left h2');
         if (topTitle) topTitle.textContent = titles[section] || 'Dashboard';
 
+        this.syncTopbarHeight();
+
         // Update active navigation item
-        document.querySelectorAll('.nav-item').forEach(item => {
+        document.querySelectorAll('.nav-item, .tab-item[data-section]').forEach(item => {
             item.classList.remove('active');
             if (item.dataset.section === section) {
                 item.classList.add('active');
@@ -257,12 +259,21 @@ class DashboardManager {
         return this.loadSectionData(section);
     }
 
+    /** The studios pin their live preview just under the sticky top bar, so they need to know how tall it is on this screen. */
+    syncTopbarHeight() {
+        const set = () => { const bar = document.querySelector('.top-bar'); if (bar) document.documentElement.style.setProperty('--topbar-h', `${Math.round(bar.getBoundingClientRect().height)}px`); };
+        set();
+        if (!this._topbarSync) { this._topbarSync = true; window.addEventListener('resize', set); window.addEventListener('orientationchange', set); }
+    }
+
     async loadSectionData(section) {
         try {
             if (section === 'overview') await this.loadOverview();
             else if (section === 'products') await this.loadProducts();
             else if (section === 'orders') await this.loadOrders();
             else if (section === 'analytics') await this.loadAnalytics();
+            else if (section === 'promote') await this.loadPromote();
+            else if (section === 'templates') await this.loadTemplates();
             else if (section === 'settings') await this.loadSettings();
         } catch (error) {
             app.showAlert(error.message || `Couldn\u2019t load ${section}`, 'error');
@@ -869,6 +880,9 @@ class DashboardManager {
                     ? `<span class="stock-badge stock-badge-low">Low stock &middot; ${stock} left</span>`
                     : '';
             const checked = this.selectedProductIds.has(p.id) ? 'checked' : '';
+            // On a phone the badge sits beside the stock count instead of on the (tiny) thumbnail;
+            // css/dashboard-manage.css shows whichever copy fits the screen.
+            const stockInline = stockBadge.replace('class="stock-badge ', 'class="stock-badge stock-badge--inline ');
             return `
             <div class="manage-product-card" data-category="${p.category}" data-product-id="${p.id}">
                 <div class="manage-product-image">
@@ -881,8 +895,8 @@ class DashboardManager {
                 <div class="manage-product-body">
                     <h4>${app.escapeHtml(p.name)}</h4>
                     <div class="manage-product-meta">
-                        <span>${app.formatCurrency(p.price)}</span>
-                        <span>${isPhysical ? `${stock} in stock` : (p.listingType === 'service' ? 'Service' : 'Digital item')}</span>
+                        <span class="manage-product-price">${app.formatCurrency(p.price)}</span>
+                        <span class="manage-product-stock">${isPhysical ? `${stock} in stock` : (p.listingType === 'service' ? 'Service' : 'Digital item')}${stockInline}</span>
                     </div>
                 </div>
                 <div class="manage-product-actions">
@@ -2004,6 +2018,21 @@ class DashboardManager {
         });
 
         document.getElementById('orderStatusFilter')?.addEventListener('change', () => this.loadOrders());
+        // Status chips drive the (visually hidden) select, so the select stays the single source of truth.
+        const statusSelect = document.getElementById('orderStatusFilter');
+        const statusChips = document.getElementById('orderStatusChips');
+        const syncStatusChips = () => statusChips?.querySelectorAll('.dash-chip').forEach(chip => {
+            const on = chip.dataset.status === (statusSelect?.value || '');
+            chip.classList.toggle('is-active', on);
+            chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        statusSelect?.addEventListener('change', syncStatusChips);
+        statusChips?.addEventListener('click', e => {
+            const chip = e.target.closest('.dash-chip');
+            if (!chip || !statusSelect || statusSelect.value === chip.dataset.status) return;
+            statusSelect.value = chip.dataset.status;
+            statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
 
         document.getElementById('storeSettingsForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2178,12 +2207,28 @@ class DashboardManager {
         });
 
         // Jump chips scroll within the long Store form.
-        document.querySelectorAll('.store-settings-jump a').forEach(a => {
+        // The chip for the part of the form you are looking at is filled in (see css/dashboard-manage.css).
+        const jumpLinks = [...document.querySelectorAll('.store-settings-jump a')];
+        const setJumpActive = (id) => jumpLinks.forEach(l => {
+            const on = l.dataset.jump === id;
+            l.classList.toggle('active', on);
+            if (on) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current');
+        });
+        setJumpActive('ss-basics');
+        jumpLinks.forEach(a => {
             a.addEventListener('click', (e) => {
                 e.preventDefault();
+                setJumpActive(a.dataset.jump);
                 document.getElementById(a.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
+        if (jumpLinks.length && 'IntersectionObserver' in window) {
+            const jumpObserver = new IntersectionObserver((entries) => {
+                const first = entries.filter(en => en.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+                if (first) setJumpActive(first.target.id);
+            }, { rootMargin: '-15% 0px -70% 0px' });
+            jumpLinks.forEach(a => { const target = document.getElementById(a.dataset.jump); if (target) jumpObserver.observe(target); });
+        }
 
         // Appearance panel: color picker live preview (before saving)
         document.getElementById('bannerColor')?.addEventListener('input', (e) => {
@@ -2356,6 +2401,7 @@ class DashboardManager {
         };
 
         menuToggle?.addEventListener('click', () => this.setDrawerOpen(!isOpen()));
+        document.getElementById('tabMore')?.addEventListener('click', () => this.setDrawerOpen(!isOpen()));
         overlay?.addEventListener('click', () => this.setDrawerOpen(false));
         document.addEventListener('keydown', (e) => {
             if (!isOpen()) return;
@@ -2437,54 +2483,95 @@ class DashboardManager {
 
     showShareModal() {
         const storeUrlInput = document.getElementById('storeUrlModal');
-        // Was built from the store's display name (e.g. "Amina Nakato's
-        // Store") instead of its slug, producing a link the API can't
-        // resolve. The slug is what /store/public actually matches against.
+        // Built from the store's slug (not its display name): the slug is what /store/public matches against.
         storeUrlInput.value = this.publicStoreUrl(this.currentStore?.slug || 'my-store');
-        document.getElementById('shareModal').style.display = 'flex';
+        this.paintShareQr(storeUrlInput.value);
+        const modal = document.getElementById('shareModal');
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        this._shareReturnFocus = document.activeElement;
+        this._shareKey = this._shareKey || ((e) => { if (e.key === 'Escape') this.hideShareModal(); });
+        document.addEventListener('keydown', this._shareKey);
+        modal.querySelector('.modal-close')?.focus({ preventScroll: true });
     }
 
     hideShareModal() {
         document.getElementById('shareModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+        if (this._shareKey) document.removeEventListener('keydown', this._shareKey);
+        try { this._shareReturnFocus?.focus?.({ preventScroll: true }); } catch (e) { /* element may be gone */ }
+    }
+
+    /** Draws the real, scannable QR code (works offline: no CDN) into the share sheet. */
+    paintShareQr(url) {
+        const canvas = document.getElementById('shareQrCanvas');
+        if (!canvas || !window.NextaBrandKit) return;
+        try {
+            const src = NextaBrandKit.qrCanvas(url, 480);
+            canvas.width = src.width; canvas.height = src.height;
+            canvas.getContext('2d').drawImage(src, 0, 0);
+        } catch (err) {
+            canvas.replaceWith(Object.assign(document.createElement('p'), { className: 'share-qr-fallback', textContent: 'The QR code could not be drawn for this link. Copy the link instead.' }));
+        }
+    }
+
+    openPromoteFromShare() {
+        this.hideShareModal();
+        this.switchSection('promote');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     copyStoreUrlModal() {
         const storeUrlInput = document.getElementById('storeUrlModal');
+        const btn = document.getElementById('copyStoreUrlModalBtn');
+        const done = () => {
+            const originalText = '<i class="fas fa-copy"></i> Copy';
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+            btn.classList.add('btn-primary'); btn.classList.remove('btn-outline');
+            setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('btn-primary'); btn.classList.add('btn-outline'); }, 2000);
+        };
         storeUrlInput.select();
         storeUrlInput.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(storeUrlInput.value).then(() => {
-            const btn = document.getElementById('copyStoreUrlModalBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-            btn.classList.add('btn-primary');
-            btn.classList.remove('btn-outline');
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-outline');
-            }, 2000);
-        });
+        const fallback = () => { try { document.execCommand('copy') ? done() : app.showAlert('Press and hold the link to copy it.', 'warning'); } catch (e) { app.showAlert('Press and hold the link to copy it.', 'warning'); } };
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(storeUrlInput.value).then(done, fallback); else fallback();
     }
 
     shareOnWhatsApp() {
         const storeUrl = document.getElementById('storeUrlModal').value;
         const text = encodeURIComponent(`Check out my store on NextaStore! ${storeUrl}`);
-        window.open(`https://wa.me/?text=${text}`, '_blank');
+        window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener');
     }
 
     shareOnFacebook() {
         const storeUrl = encodeURIComponent(document.getElementById('storeUrlModal').value);
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${storeUrl}`, '_blank');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${storeUrl}`, '_blank', 'noopener');
     }
 
     shareOnTwitter() {
         const storeUrl = encodeURIComponent(document.getElementById('storeUrlModal').value);
         const text = encodeURIComponent('Check out my store on NextaStore!');
-        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${storeUrl}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${storeUrl}`, '_blank', 'noopener');
     }
 
-    downloadQRCode() {
-        app.showAlert('QR code download feature coming soon!', 'warning');
+    async downloadQRCode() {
+        if (!window.NextaBrandKit) return app.showAlert('The QR tools did not load. Refresh the page and try again.', 'error');
+        try {
+            const url = document.getElementById('storeUrlModal').value;
+            const blob = await NextaBrandKit.canvasToBlob(NextaBrandKit.qrCanvas(url, 1200), 'image/png');
+            window.NextaPromote ? NextaPromote.save(blob, `${this.currentStore?.slug || 'store'}-qr-code.png`) : app.showAlert('Could not save the QR code.', 'error');
+        } catch (err) { app.showAlert(err.message || 'Could not create the QR code.', 'error'); }
+    }
+
+    async loadPromote() {
+        if (!window.NextaPromote) throw new Error('The promote tools did not load. Refresh the page.');
+        if (!this.currentStore) await this.loadStoreChrome();
+        NextaPromote.mount(this);
+    }
+
+    async loadTemplates() {
+        if (!window.NextaTemplates) throw new Error('The templates page did not load. Refresh the page.');
+        if (!this.currentStore) await this.loadStoreChrome();
+        await NextaTemplates.mount(this);
     }
 
     // ---- Global Search ----
