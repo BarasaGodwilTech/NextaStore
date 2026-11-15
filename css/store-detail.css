@@ -1633,3 +1633,39 @@ body.store-closed-public .footer { display: none !important; }
     .store-card{padding:var(--spacing-xl) calc(var(--spacing-xl) + .5rem)}
     .products-section{min-height:560px}
 }
+
+/* ===== List view: the sparse tile must never add a second column (that squeezed the 2nd product) ===== */
+.products-grid.list-view{grid-template-columns:minmax(0,1fr)}
+.products-grid.list-view .store-sparse-tile{grid-column:1/-1;min-height:0}
+.products-grid.list-view .product-card{min-width:0}
+.products-grid.list-view .product-image{overflow:hidden}
+.products-grid.list-view .product-image img{width:100%;height:100%;object-fit:cover;display:block}
+@media(min-width:1000px){
+    .products-grid.list-view{gap:1rem}
+    .products-grid.list-view .product-card{grid-template-columns:200px minmax(0,1fr);min-height:176px}
+    .products-grid.list-view .product-image{min-height:176px}
+    .products-grid.list-view .product-details{padding:1.25rem 1.5rem;gap:1.5rem}
+    .products-grid.list-view .product-details h3{font-size:1.02rem;-webkit-line-clamp:2}
+    .products-grid.list-view .product-details .btn{min-width:150px}
+}
+
+/* ===== Follow button states ===== */
+#followBtn.is-following,.store-sparse-actions .is-following{gap:.4rem}
+#followBtn[aria-busy=true],.store-sparse-actions [aria-busy=true]{opacity:.75;pointer-events:none}
+
+/* ===== Mobile search: icon in the top bar opens a full-width search bar ===== */
+.mobile-search-toggle,.search-bar .search-close{display:none}
+@media(max-width:480px){
+    .store-detail-nav{position:relative}
+    .store-detail-nav .nav-right{gap:.4rem}
+    .mobile-search-toggle{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--gray-200);background:#fff;color:var(--ink);font-size:.95rem;cursor:pointer}
+    .mobile-search-toggle:focus-visible,.search-bar .search-close:focus-visible{outline:3px solid color-mix(in srgb,var(--store-green) 45%,transparent);outline-offset:2px}
+    .store-detail-nav.search-open .search-bar{display:flex;position:absolute;inset:.45rem .6rem;z-index:40;width:auto;background:#fff;border-color:var(--store-green);box-shadow:0 6px 24px rgba(11,59,43,.14);padding:0 .35rem 0 .9rem}
+    .store-detail-nav.search-open .search-bar .store-search-wrap{flex:1;min-width:0}
+    .store-detail-nav.search-open .search-bar input{width:100%;font-size:1rem;height:100%;min-height:44px}
+    .store-detail-nav.search-open .search-bar .search-close{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border:0;border-radius:50%;background:var(--gray-100);color:var(--gray-600);cursor:pointer}
+    /* Filters keeps its icon and count but drops the word on narrow phones so the bar fits. */
+    .mobile-sidebar-toggle span:not(.filter-count){display:none}
+    .mobile-sidebar-toggle{padding-left:.65rem;padding-right:.65rem}
+    .store-search-wrap .search-preview-dropdown{position:absolute;left:-2.2rem;right:-2.2rem;top:calc(100% + .6rem);width:auto;margin-top:0;max-height:60vh}
+}

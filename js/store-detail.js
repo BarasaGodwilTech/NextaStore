@@ -19,6 +19,7 @@ class StoreDetailManager {
     async init() {
         this.setupEventListeners();
         this.setupMobileSidebar();
+        this.setupMobileSearch();
         this.setupProductEventListeners();
         this.showLoadingStates();
         await this.loadStoreData();
@@ -385,6 +386,32 @@ class StoreDetailManager {
         });
     }
 
+    /** Phones hide the inline search bar, so give them a search icon in the top bar. It opens the same search
+     *  field (and the same suggestions) as a full-width bar over the top bar, with a close button. */
+    setupMobileSearch() {
+        const nav = document.querySelector('.store-detail-nav'), navRight = document.querySelector('.nav-right');
+        const bar = nav && nav.querySelector('.search-bar'), input = document.getElementById('storeSearch');
+        if (!nav || !navRight || !bar || !input || nav.querySelector('.mobile-search-toggle')) return;
+        const open = document.createElement('button');
+        open.type = 'button'; open.className = 'mobile-search-toggle'; open.setAttribute('aria-label', 'Search this store'); open.setAttribute('aria-expanded', 'false');
+        open.innerHTML = '<i class="fas fa-magnifying-glass" aria-hidden="true"></i>';
+        const close = document.createElement('button');
+        close.type = 'button'; close.className = 'search-close'; close.setAttribute('aria-label', 'Close search'); close.innerHTML = '<i class="fas fa-xmark" aria-hidden="true"></i>';
+        bar.appendChild(close);
+        const setOpen = (on) => {
+            nav.classList.toggle('search-open', on);
+            open.setAttribute('aria-expanded', String(on));
+            if (on) requestAnimationFrame(() => input.focus());
+            else { this.closeSearchPreview(); input.blur(); }
+        };
+        open.addEventListener('click', () => setOpen(true));
+        close.addEventListener('click', () => setOpen(false));
+        input.addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('search-open')) setOpen(false); });
+        // Enter on a phone should put the keyboard away so the filtered list is visible.
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && window.matchMedia('(max-width: 480px)').matches && !document.querySelector('#storeSearchPreview .search-preview-item.is-active')) input.blur(); });
+        navRight.insertBefore(open, navRight.querySelector('.account-nav-slot'));
+    }
+
     setupMobileSidebar() {
         const sidebar = document.getElementById('storeSidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -594,12 +621,17 @@ class StoreDetailManager {
     }
 
     renderFollowButton() {
-        const btn = document.getElementById('followBtn');
-        if (!btn) return;
-        btn.innerHTML = this.isFollowing ? '<i class="fas fa-heart"></i> Following' : '<i class="fas fa-heart"></i> Follow';
-        btn.classList.toggle('btn-primary', this.isFollowing);
-        btn.classList.toggle('btn-outline', !this.isFollowing);
-        btn.setAttribute('aria-pressed', String(this.isFollowing));
+        // The header button and the "More on the way" tile button always show the same state.
+        document.querySelectorAll('#followBtn, [data-sparse="follow"]').forEach((btn) => {
+            const isTile = btn.hasAttribute('data-sparse');
+            btn.innerHTML = this.isFollowing ? '<i class="fas fa-check"></i> Following' : '<i class="fas fa-heart"></i> Follow';
+            // Header: filled when following. Tile: filled while it is the call to action, outlined once done.
+            btn.classList.toggle('btn-primary', isTile ? !this.isFollowing : this.isFollowing);
+            btn.classList.toggle('btn-outline', isTile ? this.isFollowing : !this.isFollowing);
+            btn.classList.toggle('is-following', this.isFollowing);
+            btn.setAttribute('aria-pressed', String(this.isFollowing));
+            btn.setAttribute('aria-busy', String(!!this._followBusy));
+        });
     }
 
     renderStoreInfo() {
@@ -1283,9 +1315,10 @@ class StoreDetailManager {
         tile.addEventListener('click', (e) => {
             const b = e.target.closest('[data-sparse]'); if (!b) return;
             e.stopPropagation();
-            document.getElementById(b.dataset.sparse === 'follow' ? 'followBtn' : 'contactBtn')?.click();
+            if (b.dataset.sparse === 'follow') this.toggleFollow(); else this.openContactModal();
         });
         grid.appendChild(tile);
+        this.renderFollowButton();
     }
 
     setupProductEventListeners() {
@@ -1355,26 +1388,27 @@ class StoreDetailManager {
 
     async toggleFollow() {
         if (!app.requireLogin('Log in to follow this store.', { type: 'follow-store', storeId: this.store?.id })) return;
-        if (!this.store?.id) return;
-        const btn = document.getElementById('followBtn');
-        if (!btn || btn.disabled) return;
+        if (!this.store?.id || this._followBusy) return;
         const wasFollowing = this.isFollowing;
-        btn.disabled = true;
+        this._followBusy = true;
+        // Flip straight away so the tap feels instant; the server answer confirms it, a failure puts it back.
+        this.isFollowing = !wasFollowing;
+        this.renderFollowButton();
         try {
             const response = await app.apiRequest(`/store/follow/${encodeURIComponent(this.store.id)}`, {
                 method: wasFollowing ? 'DELETE' : 'POST'
             });
-            this.isFollowing = !!response.data?.following;
+            if (typeof response.data?.following === 'boolean') this.isFollowing = response.data.following;
             if (typeof response.data?.followers === 'number') this.store.followers = response.data.followers;
-            this.renderFollowButton();
-            this.renderTrustSignals();
             app.showAlert(this.isFollowing ? 'You are now following this store' : 'Unfollowed this store', 'success');
         } catch (error) {
+            this.isFollowing = wasFollowing;
             console.error('Failed to update store follow:', error);
             app.showAlert(error.message || 'Could not update your follow. Please try again.', 'error');
         } finally {
-            btn.disabled = false;
+            this._followBusy = false;
             this.renderFollowButton();
+            this.renderTrustSignals();
         }
     }
 
