@@ -134,9 +134,50 @@
     S.register({ key: 'settings', title: 'Settings', icon: 'sliders', group: 'finance', any: ['settings.manage'], async render() {
         const [st, methods] = await Promise.all([api.get('/settings'), api.get('/payment-methods')]);
         const wrap = h('div', null, pageHead('Settings', 'Payment details sellers see, support contact and payment methods.'));
-        const SETTING_HELP = { mtnMomoCode: 'The merchant code or number sellers pay to when buying a Seller Pass with MTN Mobile Money.', mtnMomoName: 'The name sellers should see on their phone when they pay, so they know it is the right account.', mtnMomoInstructions: 'Plain steps shown to the seller, e.g. "Dial *165#, choose Pay, enter the code".', airtelMoneyCode: 'The merchant code or number for Airtel Money payments.', airtelMoneyName: 'The account name shown on the seller\'s phone for Airtel payments.', airtelMoneyInstructions: 'Plain steps shown to the seller for Airtel Money.', supportWhatsappNumber: 'International format without + or spaces, e.g. 256700000000. Shoppers tap it to chat.', supportContactLabel: 'The name on the WhatsApp button, e.g. "NextaStore Support".', supportHoursNote: 'When people can expect a reply, e.g. "Mon–Sat, 8am–6pm".' };
-        const fields = [['mtnMomoCode', 'MTN MoMo code'], ['mtnMomoName', 'MTN MoMo account name'], ['mtnMomoInstructions', 'MTN MoMo instructions'], ['airtelMoneyCode', 'Airtel Money code'], ['airtelMoneyName', 'Airtel Money account name'], ['airtelMoneyInstructions', 'Airtel Money instructions'], ['supportWhatsappNumber', 'Support WhatsApp number'], ['supportContactLabel', 'Support contact label'], ['supportHoursNote', 'Support hours note']];
-        const form = h('form', { class: 'stack', novalidate: true }, h('div', { class: 'grid2' }, fields.map(([k, l]) => h('label', { class: 'f' }, h('span', { class: 'lbl' }, l, SETTING_HELP[k] ? S.help(SETTING_HELP[k], l) : null), h('input', { name: k, value: st[k] || '', maxlength: 240 })))), h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'supportWhatsappEnabled', checked: !!st.supportWhatsappEnabled }), h('span', null, 'Show WhatsApp support to shoppers')), h('div', { class: 'err', role: 'alert' }), h('div', null, h('button', { class: 'btn primary', type: 'submit' }, 'Save settings')));
+        const SETTING_HELP = { mtnMomoCode: 'The merchant code or number sellers pay to when buying a Seller Pass with MTN Mobile Money.', mtnMomoName: 'The name sellers should see on their phone when they pay, so they know it is the right account.', mtnMomoInstructions: 'Plain steps shown to the seller, e.g. "Dial *165#, choose Pay, enter the code".', airtelMoneyCode: 'The merchant code or number for Airtel Money payments.', airtelMoneyName: 'The account name shown on the seller\'s phone for Airtel payments.', airtelMoneyInstructions: 'The steps a seller sees. It is filled in for you. {code}, {amount} and {name} are swapped for your real Airtel code, the amount for their plan and the account name, so never type the code yourself.', supportWhatsappNumber: 'International format without + or spaces, e.g. 256700000000. Shoppers tap it to chat.', supportContactLabel: 'The name on the WhatsApp button, e.g. "NextaStore Support".', supportHoursNote: 'When people can expect a reply, e.g. "Mon–Sat, 8am–6pm".' };
+        const plain = [['mtnMomoCode', 'MTN MoMo code'], ['mtnMomoName', 'MTN MoMo account name'], ['airtelMoneyCode', 'Airtel Money code'], ['airtelMoneyName', 'Airtel Money account name'], ['supportWhatsappNumber', 'Support WhatsApp number'], ['supportContactLabel', 'Support contact label'], ['supportHoursNote', 'Support hours note']];
+        const fields = [...plain, ['mtnMomoInstructions', 'MTN MoMo instructions'], ['airtelMoneyInstructions', 'Airtel Money instructions']];
+        // Instructions are templates. The standard wording is filled in so the admin never starts from a blank box, and it
+        // carries {code} so the number a seller is told to pay is always the code saved above, never a typed one.
+        const DEFAULT_DIAL = { mtnMomoInstructions: 'Dial *165*3*{code}*{amount}#, enter your PIN, then confirm.', airtelMoneyInstructions: 'Dial *185*9*{code}*{amount}#, enter your PIN, then confirm.' };
+        const TOKEN = /\{(code|amount|name)\}/g;
+        const hasTypedNumber = (v) => /\d{4,}/.test(String(v || '').replace(TOKEN, ''));
+        const lblFor = (k, l) => h('span', { class: 'lbl' }, l, SETTING_HELP[k] ? S.help(SETTING_HELP[k], l) : null);
+        const plainField = ([k, l]) => h('label', { class: 'f' }, lblFor(k, l), h('input', { name: k, value: st[k] || '', maxlength: 240 }));
+        const dialBlock = (k, l, codeKey, nameKey) => {
+            const saved = st[k] || '';
+            const legacy = !!saved && hasTypedNumber(saved);
+            const ta = h('textarea', { name: k, id: 'dial_' + k, rows: 2, maxlength: 240, value: (!saved || legacy) ? DEFAULT_DIAL[k] : saved });
+            const preview = h('div', { class: 'dial-preview', 'aria-live': 'polite' });
+            const warn = h('div', { class: 'hint dial-warn', role: 'alert' });
+            const paint = () => {
+                const code = (form.elements[codeKey].value || '').trim(), name = (form.elements[nameKey].value || '').trim() || 'NextaStore', v = ta.value, typed = hasTypedNumber(v);
+                warn.textContent = typed ? 'This has a typed number in it. Use {code} and {amount} instead, or sellers could be sent to the wrong merchant.' : ((/\{code\}/.test(v) || !code) ? '' : 'Tip: add {code} so sellers see the merchant code automatically.');
+                warn.classList.toggle('bad', typed);
+                preview.textContent = '';
+                v.split(/(\{code\}|\{amount\}|\{name\})/).forEach((part) => {
+                    if (part === '{code}') preview.append(code ? h('strong', null, code) : h('em', { class: 'muted' }, '(set the code above first)'));
+                    else if (part === '{amount}') preview.append(h('em', null, '‹amount for their plan›'));
+                    else if (part === '{name}') preview.append(h('strong', null, name));
+                    else preview.append(part);
+                });
+            };
+            const insert = (tok) => { const i = ta.selectionStart == null ? ta.value.length : ta.selectionStart, j = ta.selectionEnd == null ? i : ta.selectionEnd; ta.value = ta.value.slice(0, i) + tok + ta.value.slice(j); ta.focus(); ta.setSelectionRange(i + tok.length, i + tok.length); paint(); };
+            const chips = h('div', { class: 'chips' },
+                [['{code}', 'Merchant code'], ['{amount}', 'Amount'], ['{name}', 'Account name']].map(([tok, t]) => h('button', { type: 'button', title: 'Insert ' + tok, onclick: () => insert(tok) }, '+ ' + t)),
+                h('button', { type: 'button', title: 'Put the standard wording back', onclick: () => { ta.value = DEFAULT_DIAL[k]; paint(); } }, 'Reset to standard'));
+            ta.addEventListener('input', paint);
+            queueMicrotask(() => { [codeKey, nameKey].forEach((x) => form.elements[x].addEventListener('input', paint)); paint(); });
+            return h('div', { class: 'f dial-block', style: 'grid-column:1/-1' }, h('label', { class: 'lbl', for: 'dial_' + k }, l, SETTING_HELP[k] ? S.help(SETTING_HELP[k], l) : null), ta, chips,
+                h('div', { class: 'dial-preview-wrap' }, h('span', { class: 'hint' }, 'What the seller will see'), preview), warn,
+                legacy ? h('div', { class: 'hint dial-warn bad' }, 'The saved text had a typed number in it, so the standard wording was put back. Save to apply it.') : null);
+        };
+        const form = h('form', { class: 'stack', novalidate: true }, h('div', { class: 'grid2' },
+            plain.slice(0, 4).map(plainField),
+            dialBlock('mtnMomoInstructions', 'MTN MoMo instructions', 'mtnMomoCode', 'mtnMomoName'),
+            dialBlock('airtelMoneyInstructions', 'Airtel Money instructions', 'airtelMoneyCode', 'airtelMoneyName'),
+            plain.slice(4).map(plainField)),
+            h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'supportWhatsappEnabled', checked: !!st.supportWhatsappEnabled }), h('span', null, 'Show WhatsApp support to shoppers')), h('div', { class: 'err', role: 'alert' }), h('div', null, h('button', { class: 'btn primary', type: 'submit' }, 'Save settings')));
         form.addEventListener('submit', async (e) => { e.preventDefault(); const err = form.querySelector('.err'); err.textContent = ''; const body = {}; fields.forEach(([k]) => { body[k] = form.elements[k].value.trim(); }); body.supportWhatsappEnabled = form.elements.supportWhatsappEnabled.checked; try { await api.put('/settings', body); toast('Settings saved.', 'good'); } catch (x) { if (x.code !== 'REAUTH_CANCELLED') err.textContent = x.message; } });
         const slot = h('div', null);
         async function loadMethods() {

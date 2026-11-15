@@ -54,7 +54,13 @@ router.post('/tickets', openLimiter, optionalAuth, async (req, res, next) => {
 router.get('/tickets', requireAuth, async (req, res, next) => {
     try {
         const rows = await prisma.supportTicket.findMany({ where: { requesterId: req.user.id }, orderBy: { lastMessageAt: 'desc' }, take: 50 });
-        res.json({ data: rows.map(pub) });
+        // Who spoke last on each ticket, so the page can flag an unread reply from support without loading every thread.
+        const lastMsgs = rows.length ? await prisma.supportTicketMessage.findMany({
+            where: { ticketId: { in: rows.map((r) => r.id) }, isInternal: false },
+            orderBy: { createdAt: 'desc' }, distinct: ['ticketId'], select: { ticketId: true, authorKind: true, createdAt: true }
+        }) : [];
+        const lastBy = new Map(lastMsgs.map((m) => [m.ticketId, m]));
+        res.json({ data: rows.map((t) => { const m = lastBy.get(t.id); return { ...pub(t), lastFrom: m ? (m.authorKind === 'staff' ? 'support' : 'you') : null, lastReplyAt: m ? m.createdAt : null }; }) });
     } catch (err) { next(err); }
 });
 

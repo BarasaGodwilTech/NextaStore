@@ -20,6 +20,8 @@ class FollowingPageManager {
 
     render(stores, p) {
         const c = document.getElementById('followingListContainer');
+        const total = (p && p.total) || stores.length, cnt = document.getElementById('followingCount');
+        if (cnt) { cnt.hidden = !total; cnt.textContent = total === 1 ? '1 store' : total + ' stores'; }
         if (!stores.length) {
             c.innerHTML = `<div class="following-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>Not following any stores yet</h2><p>Follow a seller's store to keep up with their new products here.</p><a href="/marketplace" class="btn btn-primary">Browse marketplace</a></div>`;
             document.getElementById('followingPagination').style.display = 'none';

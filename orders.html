@@ -61,7 +61,8 @@
     </header>
 
     <main class="orders-page">
-        <h1>My Orders</h1>
+        <div class="orders-head"><h1>My Orders</h1><p class="orders-sub" id="ordersSub">Everything you buy on NextaStore will be listed here.</p></div>
+        <div class="orders-filters" id="ordersFilters" role="tablist" aria-label="Filter orders" hidden></div>
         <div id="ordersListContainer">
             <div class="loading-spinner-inline"><i class="fas fa-spinner fa-spin"></i></div>
         </div>
@@ -76,7 +77,7 @@
             <a href="/marketplace">Marketplace</a>
             <a href="/signup" data-hide-when-authed>Create account</a>
             <a href="/marketplace">Shop</a>
-            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+            <a href="/support">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
         <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>

@@ -2254,3 +2254,20 @@ const app = new NextaStoreApp();
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(start, 600)); else setTimeout(start, 600);
 })();
+
+/* Instant product open: when a product card is tapped, remember its name, price and photo for a moment so the
+ * product page can show them straight away in place of the grey placeholders while the full details load. */
+(function () {
+    document.addEventListener('click', function (e) {
+        try {
+            var card = e.target.closest && e.target.closest('[data-product-id]');
+            if (!card || e.target.closest('button, .favorite-btn, .mk-fav, input, select')) return;
+            var img = card.querySelector('img'), name = card.querySelector('h3, .mk-name, [class*="name"]'), price = card.querySelector('.current-price, .mk-price, [class*="price"]'), orig = card.querySelector('.original-price');
+            sessionStorage.setItem('ns_pd_preview', JSON.stringify({
+                t: Date.now(), id: card.getAttribute('data-product-id'),
+                name: name ? name.textContent.trim().slice(0, 200) : '', price: price ? price.textContent.trim().slice(0, 40) : '',
+                orig: orig ? orig.textContent.trim().slice(0, 40) : '', img: img && /^https?:|^\//.test(img.getAttribute('src') || '') ? img.getAttribute('src') : ''
+            }));
+        } catch (err) { /* preview is a nicety, never block navigation */ }
+    }, true);
+})();

@@ -32,6 +32,7 @@
         .following-page .store-actions { display: flex; gap: var(--spacing-sm); }
         .following-page .store-actions .btn { flex: 1; }
     </style>
+    <link rel="stylesheet" href="css/saved.css">
 </head>
 <body data-auth-required>
     <div id="nxLoader" class="nx-loader" data-nx-theme="general" data-nx-wait="app page" data-nx-timeout="7000" data-nx-phrases="Loading stores you follow|Checking for updates|Almost there" aria-label="Loading NextaStore">
@@ -72,7 +73,7 @@
     </header>
 
     <main class="following-page">
-        <h1>Following</h1>
+        <div class="saved-head"><div><h1>Following</h1><p class="saved-sub" id="followingSub">Stores you follow. New products from them are easy to find here.</p></div><span class="saved-count" id="followingCount" hidden></span></div>
         <div class="stores-grid" id="followingListContainer">
             <div class="loading-spinner-inline"><i class="fas fa-spinner fa-spin"></i></div>
         </div>
@@ -87,7 +88,7 @@
             <a href="/marketplace">Marketplace</a>
             <a href="/signup" data-hide-when-authed>Create account</a>
             <a href="/marketplace">Shop</a>
-            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+            <a href="/support">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
         <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>

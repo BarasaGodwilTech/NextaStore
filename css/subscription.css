@@ -298,3 +298,5 @@ body.modal-open{overflow:hidden}
 .goal-perks ul{margin:0;padding:0;list-style:none;display:grid;gap:5px}
 .goal-perks li{position:relative;padding-left:20px;font-size:.8125rem;color:#3f524b;line-height:1.4}
 .goal-perks li::before{content:"\2713";position:absolute;left:0;color:#00794f;font-weight:800}
+.subscription-pay-dial .pay-dial-check{display:block;margin-top:.45rem;font-size:.68rem;line-height:1.45;color:#3f5a52}
+.subscription-pay-dial .pay-dial-check b{color:var(--sub-deep)}

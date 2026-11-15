@@ -13,6 +13,7 @@ class ProductDetailManager {
     async init() {
         this.setupEventListeners();
         this.showLoadingStates();
+        this.paintPreview();
         await this.loadProductData();
         this.setupBackNavigation();
         await this.loadRelatedProducts();
@@ -59,6 +60,26 @@ class ProductDetailManager {
             this.openMessageSellerDialog();
             return;
         }
+    }
+
+    /** Shows the name, price and photo of the tapped card inside the placeholders right away, so the page feels open
+     *  before the network answers. It only runs when the remembered card is this same product and fresh; the real
+     *  render replaces it. */
+    paintPreview() {
+        try {
+            const raw = sessionStorage.getItem('ns_pd_preview'); if (!raw) return;
+            sessionStorage.removeItem('ns_pd_preview');
+            const p = JSON.parse(raw), { productId } = this.readRoute();
+            if (!p || Date.now() - p.t > 15000 || !productId || String(p.id) !== String(productId)) return;
+            const info = document.getElementById('productLoadingState');
+            if (info && p.name) {
+                const t = info.querySelector('.skeleton-title'); if (t) { const h = document.createElement('h1'); h.className = 'product-title'; h.textContent = p.name; t.replaceWith(h); }
+                const pr = info.querySelector('.skeleton-price'); if (pr && p.price) { const d = document.createElement('div'); d.className = 'product-price-preview'; d.textContent = p.price; d.style.cssText = 'font-size:1.6rem;font-weight:700;color:var(--primary-dark);margin:.5rem 0'; pr.replaceWith(d); }
+                document.title = p.name + ' - NextaStore';
+            }
+            const g = document.querySelector('#galleryLoadingState .skeleton-image');
+            if (g && p.img) { const im = document.createElement('img'); im.src = p.img; im.alt = p.name || ''; im.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block'; g.replaceWith(im); }
+        } catch (e) { /* preview is optional */ }
     }
 
     showLoadingStates() {

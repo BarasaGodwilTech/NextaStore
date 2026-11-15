@@ -295,13 +295,26 @@ const subscriptionPaymentSchema = z.object({
 const { normalizeUgandanWhatsapp } = require('./whatsapp-normalizer');
 const ugandanWhatsappSchema = z.string().trim().max(30).transform(normalizeUgandanWhatsapp)
     .refine(v => v === '' || /^2567\d{8}$/.test(v), 'must be a valid Ugandan mobile number (e.g. 0761789006 or +256 761 789006)');
+// Dial instructions are TEMPLATES. The seller page fills {code}, {amount} and
+// {name} from the live platform settings, so the merchant code a seller is told
+// to pay can never drift from the one the admin set. Typing a code (or any run
+// of 4+ digits) straight into the text is refused: a stale or mistyped number
+// would send a seller's money to the wrong merchant.
+const DIAL_TOKENS = /\{(code|amount|name)\}/g;
+const dialInstructionsSchema = z.string().trim().max(240).refine(
+    (v) => !/\d{4,}/.test(v.replace(DIAL_TOKENS, '')),
+    'Do not type a merchant code or amount into the instructions. Use {code} and {amount} so the seller always sees the real ones.'
+).refine(
+    (v) => !/\{[^}]*\}/.test(v.replace(DIAL_TOKENS, '')),
+    'Only {code}, {amount} and {name} can be used inside curly brackets.'
+);
 const platformSettingsSchema = z.object({
     mtnMomoCode: z.string().trim().max(40).optional(),
     mtnMomoName: z.string().trim().max(60).optional(),
     airtelMoneyCode: z.string().trim().max(40).optional(),
     airtelMoneyName: z.string().trim().max(60).optional(),
-    mtnMomoInstructions: z.string().trim().max(240).optional(),
-    airtelMoneyInstructions: z.string().trim().max(240).optional(),
+    mtnMomoInstructions: dialInstructionsSchema.optional(),
+    airtelMoneyInstructions: dialInstructionsSchema.optional(),
     supportWhatsappNumber: ugandanWhatsappSchema.optional(),
     supportWhatsappEnabled: z.boolean().optional(),
     supportContactLabel: z.string().trim().min(1).max(80).optional(),

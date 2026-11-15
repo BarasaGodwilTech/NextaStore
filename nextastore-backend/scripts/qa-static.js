@@ -735,7 +735,7 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
     /airtelMoneyInstructions\s+String\s+@default\(""\)/.test(schema) &&
     /ADD COLUMN "mtnMomoInstructions"/.test(platformSettingsMigration) &&
     /ADD COLUMN "airtelMoneyInstructions"/.test(platformSettingsMigration) &&
-    /mtnMomoInstructions:\s*z\.string\(\)\.trim\(\)\.max\(240\)\.optional\(\)/.test(validation) &&
+    /mtnMomoInstructions:\s*dialInstructionsSchema\.optional\(\)/.test(validation) && /dialInstructionsSchema\s*=\s*z\.string\(\)\.trim\(\)\.max\(240/.test(validation) &&
     /mtnMomoInstructions:\s*settings\.mtnMomoInstructions/.test(subscriptionRoute));
   check('Staff Settings form exposes and saves both dial-instruction fields',
     /'mtnMomoInstructions'/.test(adminJs) && /'airtelMoneyInstructions'/.test(adminJs));
@@ -755,7 +755,8 @@ check('Integration test covers Seller Pass approval flow', /subscription\/paymen
   check('Dial box has its own [hidden] override so it actually disappears instead of showing an empty strip (same class of bug as .proof-modal-overlay)',
     /\.subscription-pay-dial\[hidden\]\{display:none\}/.test(subscriptionCss));
   check('Dial instructions always render once a network is chosen: a generated fallback (merchant code + live amount) is used whenever no admin text has been set',
-    /const fallback = code/.test(subscriptionJs) && /const text = custom \|\| fallback/.test(subscriptionJs));
+    /const fallback = code/.test(subscriptionJs) && /const text = this\.resolveDialTemplate\(.*\) \|\| fallback/.test(subscriptionJs));
+  check('Dial instructions are templates: {code}/{amount}/{name} are filled from live settings; a typed 4+ digit number is rejected by the server and ignored by the seller page, so a seller is never sent to a stale or sample merchant code', /DIAL_TOKENS/.test(read('nextastore-backend/src/validation.js')) && read('nextastore-backend/src/validation.js').includes("\\d{4,}") && subscriptionJs.includes("resolveDialTemplate(template, vars)") && subscriptionJs.includes("\\d{4,}") && read('staff/js/sections-admin.js').includes("DEFAULT_DIAL") && read('staff/js/sections-admin.js').includes("{code}"));
   check('Dial instructions refresh when the selected coverage/amount changes, not only when the network is (re)selected',
     /const currentMethod = document\.getElementById\('subMethod'\)\?\.value;\s*\n\s*if \(currentMethod\) this\.renderDialInstructions\(currentMethod\);/.test(subscriptionJs));
 }

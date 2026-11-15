@@ -140,7 +140,7 @@ function buildFacts() {
         onboardingSteps: ONBOARDING_STEPS.slice(),
         launchNeedsProduct: ONBOARDING_LAUNCH_NEEDS_PRODUCT,
         account: { passwordMinLength: PASSWORD_MIN_LENGTH, emailDeliveryConfigured: Boolean(process.env.SMTP_HOST) },
-        support: { email: process.env.SUPPORT_EMAIL || 'support@nextawillstechnologies.com', url: process.env.SUPPORT_URL || 'https://nextawillstechnologies.com' }
+        support: { email: process.env.SUPPORT_EMAIL || 'support@nextawillstechnologies.com', url: process.env.SUPPORT_URL || (/^https:\/\//.test(process.env.PUBLIC_URL || '') ? process.env.PUBLIC_URL.replace(/\/+$/, '') + '/support' : 'https://nextawillstechnologies.com') }
     };
 }
 

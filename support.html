@@ -7,25 +7,57 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="assets/brand/png/social/og-link-preview-1200x630.png">
     <link rel="stylesheet" href="css/mobile.css">
-<link rel="stylesheet" href="css/assistant.css"></head><body><header class="safety-topbar"><a href="/marketplace" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a><a href="/marketplace" class="btn btn-ghost btn-sm" data-back-link data-back-fallback="/marketplace" data-back-fallback-label="Back to marketplace"><span aria-hidden="true">&larr;</span> <span data-back-label>Back</span></a><div class="account-nav-slot" data-account-nav></div></header><main class="safety-page">
-<section class="safety-hero"><span class="eyebrow">Help &amp; Support</span><h1>How can we help?</h1><p>Tell us what happened and the NextaStore team will reply by email, usually within one working day. For payment and account problems we reply sooner.</p></section>
-<section class="support-card" aria-labelledby="supportFormTitle">
+<link rel="stylesheet" href="css/assistant.css"></head><body><header class="safety-topbar"><a href="/marketplace" class="logo brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-512.png" alt="NextaStore"></a><a href="/marketplace" class="btn btn-ghost btn-sm" data-back-link data-back-fallback="/marketplace" data-back-fallback-label="Back to marketplace"><span aria-hidden="true">&larr;</span> <span data-back-label>Back</span></a><div class="account-nav-slot" data-account-nav></div></header><main class="sp-page" id="main">
+<section class="sp-hero">
+<span class="eyebrow">Help &amp; Support</span>
+<h1>How can we help?</h1>
+<p>Tell us what happened and the NextaStore team will reply here and by email, usually within one working day. Payment and account problems get a faster answer.</p>
+<div class="sp-quick" id="spQuick" aria-label="Common topics">
+<button type="button" data-cat="payments" data-subject="My Seller Pass payment">Seller Pass payment</button>
+<button type="button" data-cat="orders" data-subject="Question about an order">An order</button>
+<button type="button" data-cat="account" data-subject="Problem with my account">My account</button>
+<button type="button" data-cat="report" data-subject="Report a seller">Report a seller</button>
+</div>
+</section>
+<div class="sp-grid">
+<section class="sp-card sp-form-card" aria-labelledby="supportFormTitle">
 <h2 id="supportFormTitle">Open a support ticket</h2>
 <form id="supportForm" class="support-form" novalidate>
+<div id="supportWho" class="sp-who" hidden><span class="sp-who-av" id="supportWhoAv" aria-hidden="true"></span><div><strong id="supportWhoName"></strong><small id="supportWhoMail"></small></div></div>
 <div id="supportGuest" class="support-grid" hidden>
 <label>Your name<input name="name" autocomplete="name" maxlength="80"></label>
 <label>Your email<input name="email" type="email" autocomplete="email" maxlength="160"></label>
 </div>
-<label>What is it about?
-<select name="category"><option value="general">Something else</option><option value="orders">An order</option><option value="payments">A payment or Seller Pass</option><option value="account">My account or sign-in</option><option value="seller">My store</option><option value="listing">A product listing</option><option value="report">Report a problem with a seller</option><option value="technical">Something is not working</option></select></label>
-<label>Short title<input name="subject" maxlength="160" required></label>
-<label>Tell us what happened<textarea name="body" rows="6" maxlength="5000" required></textarea></label>
+<fieldset class="sp-cats"><legend>What is it about?</legend>
+<div class="sp-cat-row" id="spCats">
+<label><input type="radio" name="category" value="orders"><span>An order</span></label>
+<label><input type="radio" name="category" value="payments"><span>Payment or Seller Pass</span></label>
+<label><input type="radio" name="category" value="account"><span>My account</span></label>
+<label><input type="radio" name="category" value="seller"><span>My store</span></label>
+<label><input type="radio" name="category" value="listing"><span>A product listing</span></label>
+<label><input type="radio" name="category" value="report"><span>Report a seller</span></label>
+<label><input type="radio" name="category" value="technical"><span>Something is not working</span></label>
+<label><input type="radio" name="category" value="general" checked><span>Something else</span></label>
+</div></fieldset>
+<input type="hidden" name="orderId" value="">
+<label>Short title<input name="subject" maxlength="160" required placeholder="e.g. My payment has not been confirmed"></label>
+<label>Tell us what happened<textarea name="body" rows="6" maxlength="5000" required placeholder="Include the transaction ID, order number or product name if you have it."></textarea></label>
 <p id="supportError" class="support-error" role="alert"></p>
-<button class="btn btn-primary" type="submit">Send</button>
+<div class="sp-send"><span class="sp-send-note" id="spSendNote">We will reply by email.</span><button class="btn btn-primary" type="submit">Send to support</button></div>
 </form>
 <div id="supportDone" class="support-done" role="status" hidden></div>
 </section>
-<section class="support-card" id="myTicketsCard" hidden><h2>Your tickets</h2><ul id="myTickets" class="support-list"></ul></section>
+<aside class="sp-side" aria-label="Your tickets and other ways to reach us">
+<section class="sp-card sp-tickets" id="myTicketsCard">
+<div class="sp-tickets-head"><h2>Your tickets</h2><span class="sp-new" id="spNewCount" hidden></span></div>
+<div class="sp-tabs" id="spTabs" role="tablist" hidden></div>
+<ul id="myTickets" class="support-list"></ul>
+<div class="sp-empty" id="spEmpty" hidden><i class="fas fa-inbox" aria-hidden="true"></i><strong>No tickets yet</strong><span>When you contact us, your conversation and our replies stay here.</span></div>
+<div class="sp-empty" id="spGuestNote" hidden><i class="fas fa-user-lock" aria-hidden="true"></i><strong>Sign in to follow replies</strong><span>Signed-in members can read every reply and answer here. Guests get replies by email only.</span><a class="btn btn-outline btn-sm" href="/login?redirect=support">Sign in</a></div>
+</section>
+<section class="sp-card sp-fast" id="spFast" hidden><h3>Need an answer faster?</h3><p id="spFastText">Chat with the NextaStore support team on WhatsApp.</p><a class="btn btn-primary" id="spFastLink" target="_blank" rel="noopener"><i class="fab fa-whatsapp" aria-hidden="true"></i> Chat on WhatsApp</a></section>
+</aside>
+</div>
 </main>
     <footer class="footer">
         <div class="footer-brand brand-lockup"><img src="assets/brand/png/lockup/lockup-horizontal-white.png" alt="NextaStore"></div>
@@ -34,7 +66,7 @@
             <a href="/marketplace">Marketplace</a>
             <a href="/signup" data-hide-when-authed>Create account</a>
             <a href="/marketplace">Shop</a>
-            <a href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Support</a>
+            <a href="/support">Support</a>
         </div>
         <p>&copy; 2026 NextaStore. Powered by <a class="brand-link" href="https://nextawillstechnologies.com" target="_blank" rel="noopener">Nextawills Technologies</a></p>
         <a href="/safety" class="footer-safety-link">Trust &amp; Safety</a>

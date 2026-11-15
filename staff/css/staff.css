@@ -190,3 +190,9 @@ h2.sect{font-size:.8125rem;text-transform:uppercase;letter-spacing:.06em;color:v
 .page-head .row{justify-content:flex-end}
 a.me-btn{text-decoration:none}.me-btn .who,.me-btn .who small{text-decoration:none}
 .grid2>.card+.card,.stats>.card+.card{margin-top:0}
+/* Seller Pass dial instructions: template field + live preview */
+.dial-block{display:grid;gap:8px}
+.dial-preview-wrap{display:grid;gap:4px}
+.dial-preview{padding:10px 12px;border-radius:var(--radius-sm);background:var(--brand-soft);border:1px dashed #b7dccc;color:var(--ink);font-size:.9rem;line-height:1.5}
+.dial-preview strong{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--brand-dark)}
+.dial-warn{min-height:0}.dial-warn:empty{display:none}.dial-warn.bad{color:#b42318;font-weight:600}

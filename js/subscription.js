@@ -234,6 +234,7 @@ class SubscriptionManager {
         el.innerHTML = rows.length ? rows.join('') : '<div class="subscription-pay-empty"><i class="fas fa-circle-info"></i><span>Mobile-money payment details have not been configured yet. Contact NextaStore before sending money.</span></div>';
         this.dialInstructions = { mtnMomo: info.mtnMomoInstructions || '', airtelMoney: info.airtelMoneyInstructions || '' };
         this.paymentCodes = { mtnMomo: info.mtnMomoCode || '', airtelMoney: info.airtelMoneyCode || '' };
+        this.paymentNames = { mtnMomo: info.mtnMomoName || '', airtelMoney: info.airtelMoneyName || '' };
         const mark = (btn, active) => { btn.classList.toggle('is-selected', active); btn.setAttribute('aria-pressed', String(active)); };
         el.querySelectorAll('[data-pay-method]').forEach(btn => btn.addEventListener('click', () => {
             const method = btn.dataset.payMethod;
@@ -248,27 +249,50 @@ class SubscriptionManager {
     }
 
     // Shows how to pay for whichever network is currently chosen. Nothing
-    // chosen yet → hidden. Once a network IS chosen, this always renders
-    // something: an admin's own dial-instructions text if they've set one
-    // (platform settings), otherwise a generated fallback built from the
-    // real merchant code and the real amount for the coverage currently
-    // selected — so a seller is never left staring at a blank box just
-    // because nobody has typed custom copy into the admin panel yet.
+    // chosen yet -> hidden. Once a network IS chosen, this always renders
+    // something.
+    //
+    // The admin's instructions are a TEMPLATE: {code}, {amount} and {name}
+    // are filled here from the live platform settings and the coverage the
+    // seller has selected, so the merchant code on screen is always the one
+    // the admin actually set. Two guards keep a seller from ever being told
+    // to pay a wrong merchant:
+    //   1. a template that has a number of 4+ digits typed into it (old text
+    //      saved before templates existed, or a typo) is ignored and the
+    //      generated steps are shown instead;
+    //   2. a template that asks for {code} when no code is configured is
+    //      ignored for the same reason.
+    // The generated fallback is built from the real code and amount too, so
+    // nobody is ever left with a blank box or a sample number.
+    resolveDialTemplate(template, vars) {
+        const text = String(template || '').trim();
+        if (!text) return '';
+        const stripped = text.replace(/\{(code|amount|name)\}/g, '');
+        if (/\d{4,}/.test(stripped)) return '';
+        if (/\{[^}]*\}/.test(stripped)) return '';
+        if (/\{code\}/.test(text) && !vars.code) return '';
+        if (/\{amount\}/.test(text) && !vars.amount) return text.replace(/\{amount\}/g, 'the amount shown above').replace(/\{code\}/g, vars.code).replace(/\{name\}/g, vars.name);
+        return text.replace(/\{code\}/g, vars.code).replace(/\{amount\}/g, vars.amount).replace(/\{name\}/g, vars.name);
+    }
+
     renderDialInstructions(method) {
         const el = document.getElementById('subPayDial');
         if (!el) return;
         if (!method) { el.hidden = true; el.innerHTML = ''; return; }
         const label = method === 'mtnMomo' ? 'MTN MoMo' : 'Airtel Money';
-        const custom = (this.dialInstructions?.[method] || '').trim();
-        const code = this.paymentCodes?.[method] || '';
-        const amount = this.expectedAmount ? this.expectedAmount() : 0;
+        const code = String(this.paymentCodes?.[method] || '').trim();
+        const name = String(this.paymentNames?.[method] || 'NextaStore').trim();
+        const amountNum = this.expectedAmount ? this.expectedAmount() : 0;
+        const vars = { code, name, amount: amountNum ? String(amountNum) : '' };
         const star = method === 'mtnMomo' ? '*165*3*' : '*185*9*';
         const fallback = code
-            ? `Dial ${star}${code}*${amount || '<amount>'}#, enter your PIN, then confirm.`
+            ? (amountNum
+                ? `Dial ${star}${code}*${amountNum}#, enter your PIN, then confirm.`
+                : `Dial ${star}${code}*(the amount shown above)#, enter your PIN, then confirm.`)
             : `Open your ${label} menu, choose Send Money, enter the number above and the amount shown, then confirm with your PIN.`;
-        const text = custom || fallback;
+        const text = this.resolveDialTemplate(this.dialInstructions?.[method], vars) || fallback;
         el.hidden = false;
-        el.innerHTML = `<i class="fas fa-phone"></i><div><strong>How to pay with ${app.escapeHtml(label)}</strong><p>${app.escapeHtml(text)}</p></div>`;
+        el.innerHTML = `<i class="fas fa-phone"></i><div><strong>How to pay with ${app.escapeHtml(label)}</strong><p>${app.escapeHtml(text)}</p>${code ? `<small class="pay-dial-check">Paying <b>${app.escapeHtml(name)}</b> &middot; code <b>${app.escapeHtml(code)}</b>. Check the name on your phone before you confirm.</small>` : ''}</div>`;
     }
 
     renderHistory() {

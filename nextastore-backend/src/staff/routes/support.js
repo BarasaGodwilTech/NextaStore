@@ -118,7 +118,7 @@ router.post('/tickets/:id/messages', A.requirePermission(PM.TICKETS_MANAGE), wra
             try { await sendMail({ to: p.email, subject: `Re: [#${t.number}] ${t.subject}`, text, html: `<div style="font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.55;color:#24352d"><p>Hi ${esc(p.name.split(/\s+/)[0] || 'there')},</p><p style="white-space:pre-wrap">${esc(body)}</p><p>— ${esc(req.staff.name)}, NextaStore Support<br><span style="color:#6b7c73;font-size:12px">Ticket #${t.number}: ${esc(t.subject)}</span></p></div>` }); }
             catch (err) { console.warn('[staff] ticket reply email failed:', err.message); }
         }
-        if (p.id) await createNotification({ userId: p.id, type: 'subscription', title: `Support replied to #${t.number}`, body: body.slice(0, 140), link: '/support' });
+        if (p.id) await createNotification({ userId: p.id, type: 'subscription', title: `Support replied to #${t.number}`, body: body.slice(0, 140), link: `/support?ticket=${encodeURIComponent(t.id)}` });
     }
     await A.audit(req, internal ? 'ticket.note_added' : 'ticket.replied', 'ticket', t.id, { targetUserId: t.requester ? t.requester.id : null, metadata: { number: t.number } });
     res.status(201).json({ data: { id: msg.id } });

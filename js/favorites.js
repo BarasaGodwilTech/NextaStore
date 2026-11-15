@@ -18,18 +18,26 @@ class FavoritesPageManager {
         }
     }
 
+    paintCount(shown, p) {
+        const total = (p && p.total) || shown, count = document.getElementById('favoritesCount'), sub = document.getElementById('favoritesSub');
+        if (count) { count.hidden = !total; count.textContent = total === 1 ? '1 saved' : total + ' saved'; }
+        if (sub && !total) sub.textContent = 'Save products you like and find them again here.';
+    }
+
     render(products, p) {
         const c = document.getElementById('favoritesListContainer');
         if (!products.length) {
+            this.paintCount(0, p);
             c.innerHTML = `<div class="favorites-empty" style="grid-column:1/-1;"><i class="far fa-heart"></i><h2>No favorites yet</h2><p>Tap the heart on any product to save it here for later.</p><a href="/marketplace" class="btn btn-primary">Browse marketplace</a></div>`;
             document.getElementById('favoritesPagination').style.display = 'none';
             return;
         }
 
+        this.paintCount(products.length, p);
         c.innerHTML = products.map(product => {
             const thumb = app.productThumb(product);
             return `
-            <div class="product-card" data-product-id="${app.escapeHtml(product.id)}">
+            <div class="product-card" data-product-id="${app.escapeHtml(product.id)}" tabindex="0" role="link" aria-label="${app.escapeHtml(product.name)}">
                 <div class="product-image" style="${thumb ? `background-image: url(${thumb})` : ''}">
                     ${!thumb ? `<i class="fas ${product.icon || 'fa-box'}"></i>` : ''}
                     <button class="favorite-remove-btn" type="button" aria-label="Remove from favorites" data-remove-favorite="${app.escapeHtml(product.id)}"><i class="fas fa-heart"></i></button>
@@ -49,6 +57,7 @@ class FavoritesPageManager {
         }).join('');
 
         c.querySelectorAll('[data-product-id]').forEach(card => {
+            card.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === card) card.click(); });
             card.addEventListener('click', (e) => {
                 if (e.target.closest('[data-remove-favorite]')) return;
                 const product = products.find(p => p.id === card.dataset.productId);

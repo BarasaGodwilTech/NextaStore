@@ -337,7 +337,12 @@ class StoreDetailManager {
                 this.loadProducts(1, false);
             }, 120));
             searchInput.addEventListener('focus', () => this.renderSearchPreview(searchInput.value));
-            searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') this.closeSearchPreview(); });
+            searchInput.addEventListener('keydown', e => {
+                if (e.key === 'Escape') this.closeSearchPreview();
+                else if (e.key === 'ArrowDown') { e.preventDefault(); this.moveSearchPreview(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); this.moveSearchPreview(-1); }
+                else if (e.key === 'Enter') { const a = document.querySelector('#storeSearchPreview .search-preview-item.is-active'); if (a) { e.preventDefault(); window.location.href = a.href; } else this.closeSearchPreview(); }
+            });
             document.addEventListener('click', e => { if (!document.getElementById('storeSearchBar')?.contains(e.target)) this.closeSearchPreview(); });
         }
 
@@ -1136,10 +1141,30 @@ class StoreDetailManager {
         const q = (term || '').trim().toLowerCase();
         if (!bar || !dropdown) return;
         if (q.length < 2) { this.closeSearchPreview(); return; }
-        const matches = (this.products || []).filter(p => String(p.name || '').toLowerCase().includes(q)).slice(0, 6);
-        if (!matches.length) { dropdown.innerHTML = `<div class="search-preview-empty">No products match “${app.escapeHtml(term)}”.</div>`; bar.classList.add('open'); return; }
-        dropdown.innerHTML = matches.map(p => `<a class="search-preview-item" href="${app.productLink(p, this.store?.slug)}"><span class="search-preview-thumb" style="${app.productThumb(p) ? `background-image:url('${app.escapeHtml(app.productThumb(p))}')` : ''}">${app.productThumb(p) ? '' : '<i class="fas fa-box"></i>'}</span><span><span class="search-preview-name">${app.escapeHtml(p.name)}</span><span class="search-preview-meta">${app.formatCurrency(p.price)}</span></span></a>`).join('');
+        const esc = (v) => app.escapeHtml(v);
+        const all = (this.products || []).filter(p => String(p.name || '').toLowerCase().includes(q));
+        // Names that START with what was typed come first, then the rest in their current order.
+        all.sort((a, b) => (String(b.name).toLowerCase().startsWith(q) ? 1 : 0) - (String(a.name).toLowerCase().startsWith(q) ? 1 : 0));
+        const matches = all.slice(0, 6);
+        if (!matches.length) { dropdown.innerHTML = `<div class="search-preview-empty">No products match “${esc(term)}”.<small>Try a shorter word, or clear the search to see everything.</small></div>`; bar.classList.add('open'); return; }
+        // Highlight the typed text inside the (possibly long) name without ever injecting markup.
+        const mark = (name) => { const i = String(name).toLowerCase().indexOf(q); return i < 0 ? esc(name) : `${esc(name.slice(0, i))}<mark>${esc(name.slice(i, i + q.length))}</mark>${esc(name.slice(i + q.length))}`; };
+        dropdown.innerHTML = matches.map((p, i) => {
+            const thumb = app.productThumb(p);
+            const cat = p.category && typeof p.category === 'string' ? p.category : (p.category && p.category.name) || '';
+            return `<a class="search-preview-item" role="option" id="sp-opt-${i}" href="${app.productLink(p, this.store?.slug)}"><span class="search-preview-thumb" style="${thumb ? `background-image:url('${esc(thumb)}')` : ''}">${thumb ? '' : '<i class="fas fa-box"></i>'}</span><span class="search-preview-text"><span class="search-preview-name" title="${esc(p.name)}">${mark(p.name)}</span><span class="search-preview-meta"><b>${app.formatCurrency(p.price)}</b>${cat ? ` · ${esc(cat)}` : ''}</span></span></a>`;
+        }).join('') + `<div class="search-preview-foot"><span>${all.length === 1 ? '1 match' : all.length + ' matches'} shown in the list below</span><kbd>Esc</kbd></div>`;
+        dropdown.setAttribute('role', 'listbox');
+        this.searchActive = -1;
         bar.classList.add('open');
+    }
+
+    /** Arrow keys move through the dropdown, Enter opens the highlighted product. */
+    moveSearchPreview(step) {
+        const items = [...document.querySelectorAll('#storeSearchPreview .search-preview-item')];
+        if (!items.length) return;
+        this.searchActive = (((this.searchActive ?? -1) + step) % items.length + items.length) % items.length;
+        items.forEach((el, i) => { el.classList.toggle('is-active', i === this.searchActive); if (i === this.searchActive) { el.scrollIntoView({ block: 'nearest' }); document.getElementById('storeSearch')?.setAttribute('aria-activedescendant', el.id); } });
     }
 
     closeSearchPreview() { document.getElementById('storeSearchBar')?.classList.remove('open'); }
@@ -1237,11 +1262,30 @@ class StoreDetailManager {
         }).join('') + (hasMore
             ? `<div class="load-more-row"><button type="button" class="btn btn-outline" id="storeLoadMoreProducts">Load more${remaining ? ` (${remaining.toLocaleString()} more)` : ''}</button></div>` : '');
 
+        this.renderSparseTile(grid, hasMore);
+
         document.getElementById('storeLoadMoreProducts')?.addEventListener('click', (e) => {
             e.currentTarget.disabled = true;
             e.currentTarget.textContent = 'Loading…';
             this.loadProducts(this.productsPage + 1, true);
         });
+    }
+
+    /** A store with only a few products leaves most of a desktop grid empty. Fill that space with something useful
+     *  (real actions only, no invented stats): follow, message the seller, or keep browsing the marketplace. */
+    renderSparseTile(grid, hasMore) {
+        grid.querySelector('.store-sparse-tile')?.remove();
+        if (hasMore || this.hasActiveFilters() || this.products.length === 0 || this.products.length > 3) return;
+        const name = app.escapeHtml(this.store?.name || 'this store');
+        const tile = document.createElement('div');
+        tile.className = 'store-sparse-tile';
+        tile.innerHTML = `<i class="fas fa-store" aria-hidden="true"></i><h3>More on the way</h3><p>${name} is still adding products. Follow the store to hear about new ones first, or ask the seller about something you do not see here.</p><div class="store-sparse-actions"><button type="button" class="btn btn-primary btn-sm" data-sparse="follow"><i class="fas fa-heart"></i> Follow</button><button type="button" class="btn btn-outline btn-sm" data-sparse="message"><i class="fas fa-comment"></i> Message seller</button><a class="btn btn-outline btn-sm" href="/marketplace">Browse marketplace</a></div>`;
+        tile.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-sparse]'); if (!b) return;
+            e.stopPropagation();
+            document.getElementById(b.dataset.sparse === 'follow' ? 'followBtn' : 'contactBtn')?.click();
+        });
+        grid.appendChild(tile);
     }
 
     setupProductEventListeners() {

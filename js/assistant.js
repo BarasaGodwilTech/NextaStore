@@ -732,14 +732,12 @@
         if (result.length > 600) result = result.slice(0, 597).replace(/\s+\S*$/, '') + '...';
         return result;
     }
+    // Support always lands on the in-site Help & Support page, never an external site or mailto, so the person can
+    // follow our reply in their account. The question Nexi could not answer is carried over as the ticket text.
     function supportFallbackLink() {
-        var holder = { url: 'https://nextawillstechnologies.com', label: 'NextaStore support' };
-        return fetch(apiBase() + '/facts').then(function (r) { return r.ok ? r.json() : null; }).then(function (facts) {
-            var support = facts && (facts.support || (facts.data && facts.data.support));
-            if (support && support.url) holder.url = support.url;
-            else if (support && support.email) holder.url = 'mailto:' + support.email;
-            return holder;
-        }).catch(function () { return holder; });
+        var q = ''; try { q = lastUserText(); } catch (e) { /* not ready */ }
+        var url = '/support?category=general' + (q ? '&body=' + encodeURIComponent(String(q).slice(0, 600)) : '');
+        return Promise.resolve({ url: url, label: 'NextaStore support' });
     }
     function buildHandoffHref(contact, question) {
         if (!contact || !contact.enabled || !/^2567\d{8}$/.test(String(contact.whatsappDigits || ''))) return '';
@@ -770,7 +768,7 @@
         n.classList.toggle('is-warn', h.mode === 'unavailable');
         if (h.mode === 'explain') { if (h.hint) { n.hidden = true; return; } n.textContent = t('talk_explain'); return; }
         n.appendChild(document.createTextNode(t('talk_unavailable')));
-        if (h.support) { var link = document.createElement('a'); link.href = h.support.url; link.target = '_blank'; link.rel = 'noopener'; link.textContent = h.support.label; n.appendChild(link); }
+        if (h.support) { var link = document.createElement('a'); link.href = h.support.url; link.textContent = h.support.label; n.appendChild(link); }
     }
     function showHandoffNote(h, mode) {
         h.mode = mode;
